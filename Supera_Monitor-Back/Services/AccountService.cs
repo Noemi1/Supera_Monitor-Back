@@ -14,6 +14,7 @@ namespace Supera_Monitor_Back.Services {
 
     public interface IAccountService {
         AuthenticateResponse Authenticate(AuthenticateRequest model, string ipAddress);
+        AuthenticateResponse RefreshToken(string token, string ipAddress);
     }
 
     public class AccountService : IAccountService {
@@ -32,12 +33,19 @@ namespace Supera_Monitor_Back.Services {
             _mapper = mapper;
         }
 
-        /* Created hashing route for testing
+
+        #region Testing purpose
+        #endregion
+
+
+        /* Route that hashes a password for testing
         public string Hash(string password)
         {
             return BC.HashPassword(password);
         }
         */
+
+        #region USE CASES
 
         public AuthenticateResponse Authenticate(AuthenticateRequest model, string ipAddress)
         {
@@ -74,13 +82,76 @@ namespace Supera_Monitor_Back.Services {
             return response;
         }
 
-        public void removeOldRefreshTokens(Account account)
+        public AuthenticateResponse RefreshToken(string token, string ipAddress)
+        {
+            var (refreshToken, account) = getRefreshToken(token);
+
+            // Renew refresh and JWT tokens
+            var newRefreshToken = generateRefreshToken(ipAddress);
+            refreshToken.Revoked = TimeFunctions.HoraAtualBR();
+            refreshToken.RevokedByIp = ipAddress;
+            refreshToken.ReplacedByToken = newRefreshToken.Token;
+            account.AccountRefreshToken.Add(newRefreshToken);
+
+            removeOldRefreshTokens(account);
+
+            // Save newly refreshed token on database
+            _db.Update(account);
+            _db.SaveChanges();
+
+            // Send the updated JWT token back to the user
+            string jwtToken = generateJwtToken(account);
+
+            AuthenticateResponse response = _mapper.Map<AuthenticateResponse>(account);
+
+            // response.Role = account.AccountRole.Role;
+            response.JwtToken = jwtToken;
+            response.RefreshToken = newRefreshToken.Token;
+            return response;
+        }
+
+        public void RevokeToken(string token, string ipAddress)
+        {
+            var (refreshToken, account) = getRefreshToken(token);
+
+            refreshToken.Revoked = TimeFunctions.HoraAtualBR();
+            refreshToken.RevokedByIp = ipAddress;
+
+            _db.AccountRefreshToken.Update(refreshToken);
+            _db.SaveChanges();
+        }
+
+        #endregion
+
+        #region HELPER FUNCTIONS
+
+        private (AccountRefreshToken, Account) getRefreshToken(string token)
+        {
+            var accounts = _db.Account
+                .Include(x => x.AccountRefreshToken)
+                .ToList();
+
+            var account = accounts
+                .SingleOrDefault(acc => acc.AccountRefreshToken.Any(t => t.Token == token));
+
+            if (account == null)
+                throw new Exception("Invalid token.");
+
+            var refreshToken = account.AccountRefreshToken.Single(t => t.Token == token);
+
+            if (!refreshToken.IsActive)
+                throw new Exception("Invalid token.");
+
+            return (refreshToken, account);
+        }
+
+        private void removeOldRefreshTokens(Account account)
         {
             account.AccountRefreshToken = account.AccountRefreshToken.Where(token =>
                 token.IsActive && token.Created.AddDays(_appSettings.RefreshTokenTTL) > TimeFunctions.HoraAtualBR()).ToList();
         }
 
-        public string generateJwtToken(Account account)
+        private string generateJwtToken(Account account)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = System.Text.Encoding.UTF8.GetBytes(_appSettings.Secret);
@@ -94,7 +165,7 @@ namespace Supera_Monitor_Back.Services {
             return tokenHandler.WriteToken(token);
         }
 
-        public AccountRefreshToken generateRefreshToken(string ipAddress)
+        private AccountRefreshToken generateRefreshToken(string ipAddress)
         {
             return new AccountRefreshToken {
                 Token = randomTokenString(),
@@ -106,12 +177,14 @@ namespace Supera_Monitor_Back.Services {
 
         // TODO: RNGCryptoServiceProvider is obsolete
         // Generate a random sequence of bytes and convert them to hex string
-        public string randomTokenString()
+        private string randomTokenString()
         {
             using var rngCryptoServiceProvider = new RNGCryptoServiceProvider();
             var randomBytes = new byte[40];
             rngCryptoServiceProvider.GetBytes(randomBytes);
             return BitConverter.ToString(randomBytes).Replace("-", "");
         }
+
+        #endregion
     }
 }

@@ -10,6 +10,7 @@ namespace Supera_Monitor_Back.Controllers {
         private readonly IAccountService _accountService;
         private readonly DataContext _db;
 
+        // TODO: Add logger
         public AccountsController(
             IAccountService accountService,
             DataContext db
@@ -19,19 +20,7 @@ namespace Supera_Monitor_Back.Controllers {
             _db = db;
         }
 
-
-        [HttpPost("authenticate")]
-        public ActionResult<AuthenticateResponse> Authenticate(AuthenticateRequest model)
-        {
-            try {
-                var response = _accountService.Authenticate(model, ipAddress());
-                setTokenCookie(response.RefreshToken);
-                return Ok(response);
-            } catch (Exception e) {
-                return StatusCode(500, e);
-            }
-        }
-
+        #region TEST ROUTES
         [HttpGet("dbcheck")]
         public async Task<ActionResult> CheckConnection()
         {
@@ -73,6 +62,44 @@ namespace Supera_Monitor_Back.Controllers {
             return Ok("Account created manually");
         }
         */
+        #endregion
+
+        #region CONTROLLER ROUTES
+
+        [HttpPost("authenticate")]
+        public ActionResult<AuthenticateResponse> Authenticate(AuthenticateRequest model)
+        {
+            try {
+                var response = _accountService.Authenticate(model, ipAddress());
+                setTokenCookie(response.RefreshToken);
+                return Ok(response);
+            } catch (Exception e) {
+                return StatusCode(500, e);
+            }
+        }
+
+        [HttpPost("refresh-token")]
+        public ActionResult<AuthenticateResponse> RefreshToken()
+        {
+            try {
+                var refreshToken = Request.Cookies["refreshToken"];
+
+                if (string.IsNullOrEmpty(refreshToken)) {
+                    return Unauthorized(new { message = "Token is required." });
+                }
+
+                var response = _accountService.RefreshToken(refreshToken, ipAddress());
+                setTokenCookie(response.RefreshToken);
+                return Ok(response);
+            } catch (Exception e) {
+                // TODO: LogError
+                return StatusCode(500, $"Unexpected error: {e.Message}");
+            }
+        }
+
+        #endregion
+
+        #region HELPER FUNCTIONS
 
         private void setTokenCookie(string token)
         {
@@ -94,5 +121,8 @@ namespace Supera_Monitor_Back.Controllers {
             else
                 return HttpContext.Connection.RemoteIpAddress!.MapToIPv4().ToString();
         }
+
+        #endregion
+
     }
 }
