@@ -13,7 +13,7 @@ using BC = BCrypt.Net.BCrypt;
 namespace Supera_Monitor_Back.Services {
 
     public interface IAccountService {
-        AuthenticateResponse Authenticate(AuthenticateRequest model);
+        AuthenticateResponse Authenticate(AuthenticateRequest model, string ipAddress);
 
     }
     public class AccountService : IAccountService {
@@ -59,7 +59,7 @@ namespace Supera_Monitor_Back.Services {
             _db.SaveChanges();
 
             AuthenticateResponse response = _mapper.Map<AuthenticateResponse>(account);
-            // Role da account
+            // TODO: Add account roles
 
             response.JwtToken = jwtToken;
             response.RefreshToken = refreshToken.Token;
@@ -83,11 +83,6 @@ namespace Supera_Monitor_Back.Services {
             };
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
-
-            var now = TimeFunctions.HoraAtualBR().ToUniversalTime();
-            var tokenDate = DateTimeOffset.FromUnixTimeSeconds(1680366360).UtcDateTime;
-
-
             return tokenHandler.WriteToken(token);
         }
 
@@ -101,18 +96,14 @@ namespace Supera_Monitor_Back.Services {
             };
         }
 
+        // TODO: RNGCryptoServiceProvider is obsolete
+        // Generate a random sequence of bytes and convert them to hex string
         public string randomTokenString()
         {
             using var rngCryptoServiceProvider = new RNGCryptoServiceProvider();
             var randomBytes = new byte[40];
             rngCryptoServiceProvider.GetBytes(randomBytes);
-            // convert random bytes to hex string
             return BitConverter.ToString(randomBytes).Replace("-", "");
-        }
-
-        public AuthenticateResponse Authenticate(AuthenticateRequest model)
-        {
-            throw new NotImplementedException();
         }
     }
 }
