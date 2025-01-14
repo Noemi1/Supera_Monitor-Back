@@ -3,6 +3,7 @@
 
         public Account()
         {
+            Created_Account = new HashSet<Account>();
             AccountRefreshToken = new HashSet<AccountRefreshToken>();
         }
 
@@ -13,12 +14,15 @@
         public string PasswordHash { get; set; } = string.Empty;
         public bool AcceptTerms { get; set; }
         public string? VerificationToken { get; set; }
-        public DateTime? Verified;
-        public bool IsVerified { get; set; }
+        public DateTime? Verified { get; set; }
+        public bool IsVerified => Verified.HasValue || PasswordReset.HasValue;
         public string? ResetToken { get; set; }
-        public DateTime? ResetTokenExpires;
-        public DateTime? PasswordReset;
+        public DateTime? ResetTokenExpires { get; set; }
+        public DateTime? PasswordReset { get; set; }
+
+        public virtual ICollection<Account> Created_Account { get; set; }
 
         public virtual ICollection<AccountRefreshToken> AccountRefreshToken { get; set; }
+
     }
 }

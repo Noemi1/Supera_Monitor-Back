@@ -14,8 +14,8 @@ namespace Supera_Monitor_Back.Services {
 
     public interface IAccountService {
         AuthenticateResponse Authenticate(AuthenticateRequest model, string ipAddress);
-
     }
+
     public class AccountService : IAccountService {
         private readonly DataContext _db;
         private readonly AppSettings _appSettings;
@@ -23,14 +23,21 @@ namespace Supera_Monitor_Back.Services {
 
         public AccountService(
             DataContext context,
-             IOptions<AppSettings> appSettings,
-             IMapper mapper
+            IOptions<AppSettings> appSettings,
+            IMapper mapper
             )
         {
             _db = context;
             _appSettings = appSettings.Value;
             _mapper = mapper;
         }
+
+        /* Created hashing route for testing
+        public string Hash(string password)
+        {
+            return BC.HashPassword(password);
+        }
+        */
 
         public AuthenticateResponse Authenticate(AuthenticateRequest model, string ipAddress)
         {
@@ -69,7 +76,8 @@ namespace Supera_Monitor_Back.Services {
 
         public void removeOldRefreshTokens(Account account)
         {
-            account.AccountRefreshToken = account.AccountRefreshToken.Where(x => x.IsActive && x.Created.AddDays(_appSettings.RefreshTokenTTL) > TimeFunctions.HoraAtualBR()).ToList();
+            account.AccountRefreshToken = account.AccountRefreshToken.Where(token =>
+                token.IsActive && token.Created.AddDays(_appSettings.RefreshTokenTTL) > TimeFunctions.HoraAtualBR()).ToList();
         }
 
         public string generateJwtToken(Account account)

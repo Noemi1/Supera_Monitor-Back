@@ -1,4 +1,6 @@
+using Microsoft.EntityFrameworkCore;
 using Supera_Monitor_Back.Helpers;
+using Supera_Monitor_Back.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,8 +8,6 @@ builder.Services.AddControllers();
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
 
-/*
- * TODO: Entender e habilitar DbContext
 #region SQL
 builder.Services.AddDbContext<DataContext>(options => {
     options.UseSqlServer(builder.Configuration.GetConnectionString("ConnectionStringLocal")
@@ -22,7 +22,11 @@ builder.Services.AddDbContext<DataContext>(options => {
     );
 });
 #endregion
-*/
+
+#region SERVICES
+builder.Services.AddScoped<IAccountService, AccountService>();
+#endregion
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
