@@ -70,6 +70,9 @@ namespace Supera_Monitor_Back.Migrations
                     b.Property<DateTime?>("ResetTokenExpires")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("Role_Id")
+                        .HasColumnType("int");
+
                     b.Property<string>("VerificationToken")
                         .HasColumnType("nvarchar(max)");
 
@@ -80,7 +83,25 @@ namespace Supera_Monitor_Back.Migrations
 
                     b.HasIndex("Account_Created_Id");
 
+                    b.HasIndex("Role_Id");
+
                     b.ToTable("Account");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            AcceptTerms = true,
+                            Created = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Email = "galax1y@test.com",
+                            Name = "galax1y",
+                            PasswordHash = "$2b$10$a46QGCAIbzhXEKJl36cD1OBQE5xMNyATdvrrfh1s/wtqTdawg2lHu",
+                            PasswordReset = new DateTime(2025, 1, 14, 17, 29, 5, 365, DateTimeKind.Local).AddTicks(1289),
+                            Phone = "123456789",
+                            ResetTokenExpires = new DateTime(2025, 1, 14, 17, 29, 5, 365, DateTimeKind.Local).AddTicks(1276),
+                            Role_Id = 8,
+                            VerificationToken = ""
+                        });
                 });
 
             modelBuilder.Entity("Supera_Monitor_Back.Entities.AccountRefreshToken", b =>
@@ -123,12 +144,56 @@ namespace Supera_Monitor_Back.Migrations
                     b.ToTable("AccountRefreshToken");
                 });
 
+            modelBuilder.Entity("Supera_Monitor_Back.Entities.AccountRole", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Role")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AccountRole");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 8,
+                            Role = "Admin"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Role = "Teacher"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Role = "Assistant"
+                        },
+                        new
+                        {
+                            Id = 1,
+                            Role = "Student"
+                        });
+                });
+
             modelBuilder.Entity("Supera_Monitor_Back.Entities.Account", b =>
                 {
                     b.HasOne("Supera_Monitor_Back.Entities.Account", "Account_Created")
                         .WithMany("Created_Account")
                         .HasForeignKey("Account_Created_Id")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Supera_Monitor_Back.Entities.AccountRole", "AccountRole")
+                        .WithMany("Account")
+                        .HasForeignKey("Role_Id");
+
+                    b.Navigation("AccountRole");
 
                     b.Navigation("Account_Created");
                 });
@@ -149,6 +214,11 @@ namespace Supera_Monitor_Back.Migrations
                     b.Navigation("AccountRefreshToken");
 
                     b.Navigation("Created_Account");
+                });
+
+            modelBuilder.Entity("Supera_Monitor_Back.Entities.AccountRole", b =>
+                {
+                    b.Navigation("Account");
                 });
 #pragma warning restore 612, 618
         }

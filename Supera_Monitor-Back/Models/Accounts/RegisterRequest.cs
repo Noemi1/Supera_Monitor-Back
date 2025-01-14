@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
 namespace Supera_Monitor_Back.Models.Accounts {
+    // Unused (for now?)
     public class RegisterRequest {
         [Required]
         public string Name { get; set; } = string.Empty;

@@ -17,21 +17,18 @@ namespace Supera_Monitor_Back.Helpers {
             optionsBuilder.UseSqlServer(connectionString);
         }
 
+        #region Tables
         public virtual DbSet<Account> Account { get; set; }
         public virtual DbSet<AccountRefreshToken> AccountRefreshToken { get; set; }
+        public virtual DbSet<AccountRole> AccountRole { get; set; }
+        #endregion
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Account>(entity => {
-                #region Tables
-
                 entity.HasMany(x => x.AccountRefreshToken)
                 .WithOne(x => x.Account)
                 .HasForeignKey(x => x.Account_Id);
-
-                #endregion
-
-                #region Created
 
                 entity.HasMany(x => x.Created_Account)
                     .WithOne(x => x.Account_Created)
@@ -39,13 +36,41 @@ namespace Supera_Monitor_Back.Helpers {
                     // Tive que adicionar essa linha pra funcionar.
                     // Tava gerando ciclos no relacionamento Account_Account_Created_Id
                     .OnDelete(DeleteBehavior.Restrict);
+
+                // Testing purposes: Create default account
+                entity.HasData(
+                    new Account {
+                        Id = 1,
+                        Name = "galax1y",
+                        AcceptTerms = true,
+                        PasswordHash = "$2b$10$a46QGCAIbzhXEKJl36cD1OBQE5xMNyATdvrrfh1s/wtqTdawg2lHu",
+                        Email = "galax1y@test.com",
+                        Phone = "123456789",
+                        VerificationToken = "",
+                        ResetTokenExpires = DateTime.Now,
+                        PasswordReset = DateTime.Now,
+                        Role_Id = 8,
+                    }
+                );
+
                 /* Descrição do erro:
                  * A introdução da restrição FOREIGN KEY 'FK_Account_Account_Account_Created_Id' na tabela 'Account' pode causar ciclos ou vários caminhos em cascata.
                  * Especifique ON DELETE NO ACTION ou ON UPDATE NO ACTION, ou modifique outras restrições FOREIGN KEY.
                  * Não foi possí­vel criar a restrição ou o í­ndice. Consulte os erros anteriores.
                  */
+            });
 
-                #endregion
+            modelBuilder.Entity<AccountRole>(entity => {
+                entity.HasMany(x => x.Account)
+                .WithOne(x => x.AccountRole)
+                .HasForeignKey(x => x.Role_Id);
+
+                entity.HasData(
+                    new AccountRole { Id = ( int )Role.Admin, Role = "Admin" },
+                    new AccountRole { Id = ( int )Role.Teacher, Role = "Teacher" },
+                    new AccountRole { Id = ( int )Role.Assistant, Role = "Assistant" },
+                    new AccountRole { Id = ( int )Role.Student, Role = "Student" }
+                );
             });
         }
     }

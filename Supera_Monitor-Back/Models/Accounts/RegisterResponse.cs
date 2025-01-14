@@ -1,4 +1,5 @@
 ﻿namespace Supera_Monitor_Back.Models.Accounts {
+    // Unused (for now?)
     public class RegisterResponse : BaseModel {
         public string Name { get; set; } = string.Empty;
 

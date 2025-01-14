@@ -20,6 +20,9 @@
         public DateTime? ResetTokenExpires { get; set; }
         public DateTime? PasswordReset { get; set; }
 
+        public int? Role_Id { get; set; }
+        public AccountRole? AccountRole { get; set; } = null!;
+
         public virtual ICollection<Account> Created_Account { get; set; }
 
         public virtual ICollection<AccountRefreshToken> AccountRefreshToken { get; set; }
