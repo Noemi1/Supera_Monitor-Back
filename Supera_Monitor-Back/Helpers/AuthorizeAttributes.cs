@@ -20,22 +20,15 @@ public class AuthorizeAttribute : Attribute, IAuthorizationFilter {
 
             List<int> rolesId = _roles.Select(x => ( int )x).ToList();
 
-            // usahiudhasuid oi =) ?
-            //var oi = _roles.ToList();
             var any = _roles.Any();
 
             if (account == null || account.Deactivated.HasValue || !account.IsVerified) {
-                //Console.WriteLine("Account is null", account == null);
-                //Console.WriteLine("Account is deactivated", account.Deactivated.HasValue);
-                //Console.WriteLine("Account is not verified", account.IsVerified);
                 context.Result = new JsonResult(new { message = "Unauthorized" }) { StatusCode = StatusCodes.Status401Unauthorized };
                 return;
             }
 
             var contains = rolesId.Contains(account.Role_Id);
-            //var a = any && !contains;
             if ((any && !contains)) {
-                // not logged in or role not authorized
                 context.Result = new JsonResult(new { message = "Forbidden" }) { StatusCode = StatusCodes.Status403Forbidden };
                 return;
             }
