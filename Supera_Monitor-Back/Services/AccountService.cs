@@ -34,9 +34,7 @@ namespace Supera_Monitor_Back.Services {
         }
 
 
-        #region Testing purpose
-        #endregion
-
+        #region TESTING
 
         /* Route that hashes a password for testing
         public string Hash(string password)
@@ -45,12 +43,15 @@ namespace Supera_Monitor_Back.Services {
         }
         */
 
+        #endregion
+
         #region USE CASES
 
         public AuthenticateResponse Authenticate(AuthenticateRequest model, string ipAddress)
         {
             Account? account = _db.Account
                 .Include(e => e.AccountRefreshToken)
+                .Include(e => e.AccountRole)
                 .SingleOrDefault(x => x.Email == model.Email);
 
             if (account == null || !BC.Verify(model.Password, account.PasswordHash))
@@ -74,7 +75,7 @@ namespace Supera_Monitor_Back.Services {
             _db.SaveChanges();
 
             AuthenticateResponse response = _mapper.Map<AuthenticateResponse>(account);
-            // TODO: Add account roles
+            response.Role = account.AccountRole.Role;
 
             response.JwtToken = jwtToken;
             response.RefreshToken = refreshToken.Token;

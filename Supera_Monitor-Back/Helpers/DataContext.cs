@@ -37,27 +37,30 @@ namespace Supera_Monitor_Back.Helpers {
                     // Tava gerando ciclos no relacionamento Account_Account_Created_Id
                     .OnDelete(DeleteBehavior.Restrict);
 
-                // Testing purposes: Create default account
-                entity.HasData(
-                    new Account {
-                        Id = 1,
-                        Name = "galax1y",
-                        AcceptTerms = true,
-                        PasswordHash = "$2b$10$a46QGCAIbzhXEKJl36cD1OBQE5xMNyATdvrrfh1s/wtqTdawg2lHu",
-                        Email = "galax1y@test.com",
-                        Phone = "123456789",
-                        VerificationToken = "",
-                        ResetTokenExpires = DateTime.Now,
-                        PasswordReset = DateTime.Now,
-                        Role_Id = 8,
-                    }
-                );
-
                 /* Descrição do erro:
                  * A introdução da restrição FOREIGN KEY 'FK_Account_Account_Account_Created_Id' na tabela 'Account' pode causar ciclos ou vários caminhos em cascata.
                  * Especifique ON DELETE NO ACTION ou ON UPDATE NO ACTION, ou modifique outras restrições FOREIGN KEY.
                  * Não foi possí­vel criar a restrição ou o í­ndice. Consulte os erros anteriores.
                  */
+
+                entity.Property(e => e.Role_Id).HasDefaultValue(( int )Role.Student);
+
+                // Testing purposes: Create default account
+                entity.HasData(
+                    new Account {
+                        Id = 1,
+                        Name = "galax1y",
+                        Email = "galax1y@test.com",
+                        PasswordHash = "$2b$10$a46QGCAIbzhXEKJl36cD1OBQE5xMNyATdvrrfh1s/wtqTdawg2lHu", // Hashed "galax2y"
+                        Phone = "123456789",
+                        AcceptTerms = true,
+                        Verified = DateTime.Now,
+                        VerificationToken = "",
+                        Created = DateTime.Now,
+                    }
+                );
+
+
             });
 
             modelBuilder.Entity<AccountRole>(entity => {
