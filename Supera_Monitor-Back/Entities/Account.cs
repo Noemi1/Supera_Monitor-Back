@@ -27,5 +27,10 @@
 
         public virtual ICollection<AccountRefreshToken> AccountRefreshToken { get; set; }
 
+        public bool OwnsToken(string token)
+        {
+            var list = this.AccountRefreshToken.ToList().Find(x => x.Token == token) != null;
+            return list;
+        }
     }
 }

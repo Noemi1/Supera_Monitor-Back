@@ -1,12 +1,24 @@
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Supera_Monitor_Back.Helpers;
+using Supera_Monitor_Back.Middlewares;
 using Supera_Monitor_Back.Services;
+using System.Globalization;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
-builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
+
+builder.Services.AddControllers()
+    .AddJsonOptions(x => {
+        x.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    })
+    .AddNewtonsoftJson(x => {
+        x.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+        x.SerializerSettings.Culture = new CultureInfo("pt-BR", false);
+    });
 builder.Services.AddHttpContextAccessor();
 
 #region SQL
@@ -23,6 +35,8 @@ builder.Services.AddDbContext<DataContext>(options => {
     );
 });
 #endregion
+
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 #region SERVICES
 builder.Services.AddScoped<IAccountService, AccountService>();
@@ -45,5 +59,7 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.UseMiddleware<JwtMiddleware>();
 
 app.Run();

@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Helpers;
+using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Accounts;
 using Supera_Monitor_Back.Services;
 
@@ -21,6 +23,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         #region TEST ROUTES
+
         [HttpGet("dbcheck")]
         public async Task<ActionResult> CheckConnection()
         {
@@ -62,6 +65,7 @@ namespace Supera_Monitor_Back.Controllers {
             return Ok("Account created manually");
         }
         */
+
         #endregion
 
         #region CONTROLLER ROUTES
@@ -74,6 +78,7 @@ namespace Supera_Monitor_Back.Controllers {
                 setTokenCookie(response.RefreshToken);
                 return Ok(response);
             } catch (Exception e) {
+                //_logger.LogError(e, MethodBase.GetCurrentMethod().DeclaringType.Name.ToString() + "." + MethodBase.GetCurrentMethod().ToString());
                 return StatusCode(500, e);
             }
         }
@@ -93,7 +98,126 @@ namespace Supera_Monitor_Back.Controllers {
                 return Ok(response);
             } catch (Exception e) {
                 // TODO: LogError
+                //_logger.LogError(e, MethodBase.GetCurrentMethod().DeclaringType.Name.ToString() + "." + MethodBase.GetCurrentMethod().ToString());
                 return StatusCode(500, $"Unexpected error: {e.Message}");
+            }
+        }
+
+        [Authorize]
+        [HttpPost("revoke-token")]
+        public ActionResult RevokeToken()
+        {
+            try {
+                var token = Request.Cookies["refreshToken"];
+
+                if (string.IsNullOrEmpty(token)) {
+                    return Unauthorized(new { message = "Token is required." });
+                }
+
+                Account? account = _db.Account.Find(Account.Id);
+                account!.AccountRefreshToken = _db.AccountRefreshToken
+                    .Where(x => x.Account_Id == account.Id)
+                    .ToList();
+
+                var ownsToken = Account.OwnsToken(token);
+
+                // Users can only revoke their own tokens and admins can revoke any token
+                if (!ownsToken && Account.Role_Id != ( int )Role.Admin) {
+                    return Unauthorized(new { message = $"Unauthorized, can't revoke token {token}" });
+                }
+
+                _accountService.RevokeToken(token, ipAddress());
+
+                return Ok(new { message = "Token revoked" });
+            } catch (Exception e) {
+                //_logger.LogError(e, MethodBase.GetCurrentMethod().DeclaringType.Name.ToString() + "." + MethodBase.GetCurrentMethod().ToString());
+                return StatusCode(500, e);
+            }
+        }
+
+        [HttpPost("forgot-password")]
+        public ActionResult ForgotPassword(ForgotPasswordRequest model)
+        {
+            try {
+                ResponseModel response = _accountService.ForgotPassword(model, Request.Headers["origin"]);
+
+                if (response.Success) {
+                    //_logger.Log("Forgot Password", "Account", response, response.Customer_Id, response.Object!.Id);
+                }
+
+                return Ok(response);
+            } catch (Exception e) {
+                //_logger.LogError(e, MethodBase.GetCurrentMethod().DeclaringType.Name.ToString() + "." + MethodBase.GetCurrentMethod().ToString());
+                return StatusCode(500, e);
+            }
+        }
+
+        [HttpPost("reset-password")]
+        public ActionResult ResetPassword(ResetPasswordRequest model)
+        {
+            try {
+                ResponseModel response = _accountService.ResetPassword(model);
+
+                if (response.Success) {
+                    //_logger.Log("Password Updated", "Account", response, response.Customer_Id, response.Object!.Id);
+                }
+
+                return Ok(response);
+            } catch (Exception e) {
+                //_logger.LogError(e, MethodBase.GetCurrentMethod().DeclaringType.Name.ToString() + "." + MethodBase.GetCurrentMethod().ToString());
+                return StatusCode(500, e);
+            }
+        }
+
+        [HttpPost("change-password")]
+        public ActionResult ChangePassword(ChangePasswordRequest model)
+        {
+            try {
+                ResponseModel response = _accountService.ChangePassword(model);
+
+                if (response.Success) {
+                    //_logger.Log("Change Password", "Account", response, response.Customer_Id, response.Object.Id);
+                }
+
+                return Ok(response);
+            } catch (Exception e) {
+                //_logger.LogError(e, MethodBase.GetCurrentMethod().DeclaringType.Name.ToString() + "." + MethodBase.GetCurrentMethod().ToString());
+                return StatusCode(500, e);
+            }
+        }
+
+        [Authorize]
+        [HttpPost("update-account")]
+        public ActionResult<ResponseModel> UpdateAccount(UpdateAccountRequest model)
+        {
+            try {
+                ResponseModel response = _accountService.UpdateAccount(model);
+
+                if (response.Success) {
+                    //_logger.Log("Update", "Account", response, response.Customer_Id, response.Object.Id);
+                }
+
+                return Ok(response);
+            } catch (Exception e) {
+                //_logger.LogError(e, MethodBase.GetCurrentMethod().DeclaringType.Name.ToString() + "." + MethodBase.GetCurrentMethod().ToString());
+                return StatusCode(500, e);
+            }
+        }
+
+        [HttpPost("verify-email")]
+        public ActionResult VerifyEmail(VerifyEmailRequest model)
+        {
+            try {
+                ResponseModel response = _accountService.VerifyEmail(model.Token);
+
+                if (response.Success) {
+                    //_logger.Log("Verification", "Account", response, response.Customer_Id, response.Object.Id);
+                }
+
+                return Ok(response);
+            } catch (Exception e) {
+                //_logger.LogError(e, MethodBase.GetCurrentMethod().DeclaringType.Name.ToString() + "." + MethodBase.GetCurrentMethod().ToString());
+                return StatusCode(500, e);
             }
         }
 
@@ -110,16 +234,18 @@ namespace Supera_Monitor_Back.Controllers {
                 Secure = true,
                 SameSite = SameSiteMode.None,
             };
+
             Response.Cookies.Append("refreshToken", token, cookieOptions);
         }
 
         // TODO: Null checks? For now I've overidden the warnings with !
         private string ipAddress()
         {
-            if (Request.Headers.ContainsKey("X-Forwarded-For"))
+            if (Request.Headers.ContainsKey("X-Forwarded-For")) {
                 return Request.Headers["X-Forwarded-For"]!;
-            else
-                return HttpContext.Connection.RemoteIpAddress!.MapToIPv4().ToString();
+            }
+
+            return HttpContext.Connection.RemoteIpAddress!.MapToIPv4().ToString();
         }
 
         #endregion

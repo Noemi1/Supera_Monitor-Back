@@ -1,5 +1,5 @@
 ﻿namespace Supera_Monitor_Back.Models {
-    public class BaseModel {
+    public class _BaseModel {
         public int Account_Created_Id { get; set; }
         public string Account_Created_Name { get; set; } = string.Empty;
         public DateTime Created { get; set; }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Supera_Monitor_Back.Entities;
+using Supera_Monitor_Back.Entities.Views;
 
 namespace Supera_Monitor_Back.Helpers {
     public class DataContext : DbContext {
@@ -23,6 +24,10 @@ namespace Supera_Monitor_Back.Helpers {
         public virtual DbSet<AccountRole> AccountRole { get; set; }
         #endregion
 
+        #region Views
+        public virtual DbSet<AccountList> AccountList { get; set; }
+        #endregion
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Account>(entity => {
@@ -33,8 +38,8 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.HasMany(x => x.Created_Account)
                     .WithOne(x => x.Account_Created)
                     .HasForeignKey(x => x.Account_Created_Id)
-                    // Tive que adicionar essa linha pra funcionar.
-                    // Tava gerando ciclos no relacionamento Account_Account_Created_Id
+                    // TODO: Analisar - É possível que o DeleteBehavior.Restrict não seja o comportamento desejado
+                    // Porém, resolve ciclos no relacionamento Account_Account_Created_Id que não permitia a criação da tabela
                     .OnDelete(DeleteBehavior.Restrict);
 
                 /* Descrição do erro:
@@ -59,8 +64,6 @@ namespace Supera_Monitor_Back.Helpers {
                         Created = DateTime.Now,
                     }
                 );
-
-
             });
 
             modelBuilder.Entity<AccountRole>(entity => {
@@ -68,6 +71,7 @@ namespace Supera_Monitor_Back.Helpers {
                 .WithOne(x => x.AccountRole)
                 .HasForeignKey(x => x.Role_Id);
 
+                // Seeding default roles
                 entity.HasData(
                     new AccountRole { Id = ( int )Role.Admin, Role = "Admin" },
                     new AccountRole { Id = ( int )Role.Teacher, Role = "Teacher" },
@@ -75,6 +79,11 @@ namespace Supera_Monitor_Back.Helpers {
                     new AccountRole { Id = ( int )Role.Student, Role = "Student" }
                 );
             });
+
+            // Declaring a view with modelBuilder - readOnly - doesn't create view
+            modelBuilder.Entity<AccountList>()
+                .ToView("AccountList")
+                .HasKey(accList => accList.Id);
         }
     }
 }
