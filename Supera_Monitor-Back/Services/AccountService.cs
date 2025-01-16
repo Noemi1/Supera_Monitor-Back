@@ -23,6 +23,7 @@ namespace Supera_Monitor_Back.Services {
         ResponseModel ChangePassword(ChangePasswordRequest model);
         ResponseModel ResetPassword(ResetPasswordRequest model);
 
+        public string Hash(string toHash);
         void ValidateResetToken(ValidateResetTokenRequest model);
         void RevokeToken(string token, string ipAddress);
     }
@@ -31,30 +32,33 @@ namespace Supera_Monitor_Back.Services {
         private readonly DataContext _db;
         private readonly AppSettings _appSettings;
         private readonly IMapper _mapper;
+        private readonly IEmailService _emailService;
         private readonly Account? _account;
 
         public AccountService(
             DataContext context,
             IOptions<AppSettings> appSettings,
             IMapper mapper,
+            IEmailService emailService,
             IHttpContextAccessor httpContextAccessor
             )
         {
             _db = context;
             _appSettings = appSettings.Value;
             _mapper = mapper;
+            _emailService = emailService;
             _account = ( Account? )httpContextAccessor.HttpContext?.Items["Account"];
         }
 
 
         #region TESTING
 
-        /* Route that hashes a password for testing
+        // Use case that hashes a password for testing
         public string Hash(string password)
         {
             return BC.HashPassword(password);
         }
-        */
+
 
         #endregion
 
@@ -118,7 +122,7 @@ namespace Supera_Monitor_Back.Services {
 
             AuthenticateResponse response = _mapper.Map<AuthenticateResponse>(account);
 
-            // response.Role = account.AccountRole.Role;
+            response.Role = account.AccountRole.Role;
             response.JwtToken = jwtToken;
             response.RefreshToken = newRefreshToken.Token;
             return response;
@@ -142,7 +146,7 @@ namespace Supera_Monitor_Back.Services {
             if (account == null) {
                 return new ResponseModel { Message = "Account not found." };
             }
-            // DÚVIDA: Não entendi essa interação com _account (?)
+
             if (account.Email != _account!.Email) {
                 return new ResponseModel { Message = "Invalid attempt." };
             }
@@ -167,10 +171,10 @@ namespace Supera_Monitor_Back.Services {
         public ResponseModel ForgotPassword(ForgotPasswordRequest model, string origin)
         {
             Account? account = _db.Account.SingleOrDefault(acc => acc.Email == model.Email);
+            ResponseModel response = new();
 
-            // Always return OK response to prevent e-mail enumeration
+            // Create a reset token that lasts 1 day
             if (account != null) {
-                // Create a reset token that lasts 1 day
                 account.ResetToken = randomTokenString();
                 account.ResetTokenExpires = TimeFunctions.HoraAtualBR().AddDays(1);
 
@@ -179,11 +183,8 @@ namespace Supera_Monitor_Back.Services {
 
                 sendPasswordResetEmail(account, origin);
 
-                return new ResponseModel {
-                    Success = true,
-                    Object = _db.AccountList.Find(account.Id)
-                };
-
+                response.Success = true;
+                response.Object = _db.AccountList.Find(account.Id);
             }
 
             return new ResponseModel { Message = @"Please, check your inbox e-mail (" + model.Email + ") for password recovery instructions." };
@@ -259,7 +260,7 @@ namespace Supera_Monitor_Back.Services {
 
         public ResponseModel VerifyEmail(string token)
         {
-            Account? account = _db.Account.FirstOrDefault(x => x.VerificationToken == token);
+            Account? account = _db.Account.FirstOrDefault(acc => acc.VerificationToken == token);
 
             if (account == null) {
                 return new ResponseModel { Message = "Verification failed." };
@@ -364,16 +365,16 @@ namespace Supera_Monitor_Back.Services {
 
 
             Console.WriteLine("Sending email");
-            //_emailService.Send(
-            //    to: account.Email,
-            //    subject: "ArkAsset_Back - Password Reset",
-            //    html: $@"<h4>Password Reset Email.</h4> 
-            //        {message}
-            //        <br>
-            //        <p>Your password is personal and non-transferable and must be kept confidential and in a secure environment. Do not share your password.</p>
-            //        <br>
-            //        <p>Warning: This automatic Message is intended exclusively for the person(s) to whom it is addressed, and may contain confidential and legally protected information. If you are not the intended recipient of this Message, you are hereby notified to refrain from disclosing, copying, distributing, examining or, in any way, using the information contained in this Message, as it is illegal. If you have received this Message by mistake, please reply to this Message informing us of what happened.</p>"
-            //);
+            _emailService.Send(
+                to: account.Email,
+                subject: "Supera - Password Reset",
+                html: $@"<h4>Password Reset Email.</h4> 
+                    {message}
+                    <br>
+                    <p>Your password is personal and non-transferable and must be kept confidential and in a secure environment. Do not share your password.</p>
+                    <br>
+                    <p>Warning: This automatic Message is intended exclusively for the person(s) to whom it is addressed, and may contain confidential and legally protected information. If you are not the intended recipient of this Message, you are hereby notified to refrain from disclosing, copying, distributing, examining or, in any way, using the information contained in this Message, as it is illegal. If you have received this Message by mistake, please reply to this Message informing us of what happened.</p>"
+            );
         }
 
         #endregion

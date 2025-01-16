@@ -41,22 +41,22 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         /*
-        Create account manually
-        Email: galax1y@test.com
-        Password: galax2y
-
-        [HttpPost("createAccount")]
-        public ActionResult CreateAccount()
+        Creates account manually
+        Should be disabled in production
+        */
+        [HttpPost("register")]
+        public ActionResult CreateAccount(RegisterRequest model)
         {
-            Account account = new Account {
-                Name = "galax1y",
-                AcceptTerms = true,
-                PasswordHash = "$2b$10$a46QGCAIbzhXEKJl36cD1OBQE5xMNyATdvrrfh1s/wtqTdawg2lHu",
-                Email = "galax1y@test.com",
-                Phone = "123456789",
+            Account account = new() {
+                Name = model.Name,
+                AcceptTerms = model.AcceptTerms,
+                PasswordHash = _accountService.Hash(model.Password),
+                Email = model.Email,
+                Phone = model.Phone,
                 VerificationToken = "",
                 ResetTokenExpires = DateTime.Now,
-                PasswordReset = DateTime.Now
+                PasswordReset = DateTime.Now,
+                Created = DateTime.Now
             };
 
             _db.Account.Add(account);
@@ -64,7 +64,6 @@ namespace Supera_Monitor_Back.Controllers {
 
             return Ok("Account created manually");
         }
-        */
 
         #endregion
 
@@ -169,6 +168,7 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
+        [Authorize]
         [HttpPost("change-password")]
         public ActionResult ChangePassword(ChangePasswordRequest model)
         {
