@@ -80,11 +80,11 @@ namespace Supera_Monitor_Back.Services {
             if (account == null || account.Deactivated.HasValue)
                 throw new Exception("Your account is disabled. Please contact your administrator.");
 
-            removeOldRefreshTokens(account);
+            RemoveOldRefreshTokens(account);
 
-            string jwtToken = generateJwtToken(account);
+            string jwtToken = GenerateJwtToken(account);
 
-            AccountRefreshToken refreshToken = generateRefreshToken(ipAddress);
+            AccountRefreshToken refreshToken = GenerateRefreshToken(ipAddress);
             refreshToken.Account_Id = account.Id;
             account.AccountRefreshToken.Add(refreshToken);
 
@@ -102,23 +102,23 @@ namespace Supera_Monitor_Back.Services {
 
         public AuthenticateResponse RefreshToken(string token, string ipAddress)
         {
-            var (refreshToken, account) = getRefreshToken(token);
+            var (refreshToken, account) = GetRefreshToken(token);
 
             // Renew refresh and JWT tokens
-            var newRefreshToken = generateRefreshToken(ipAddress);
+            var newRefreshToken = GenerateRefreshToken(ipAddress);
             refreshToken.Revoked = TimeFunctions.HoraAtualBR();
             refreshToken.RevokedByIp = ipAddress;
             refreshToken.ReplacedByToken = newRefreshToken.Token;
             account.AccountRefreshToken.Add(newRefreshToken);
 
-            removeOldRefreshTokens(account);
+            RemoveOldRefreshTokens(account);
 
             // Save newly refreshed token on database
             _db.Update(account);
             _db.SaveChanges();
 
             // Send the updated JWT token back to the user
-            string jwtToken = generateJwtToken(account);
+            string jwtToken = GenerateJwtToken(account);
 
             AuthenticateResponse response = _mapper.Map<AuthenticateResponse>(account);
 
@@ -130,7 +130,7 @@ namespace Supera_Monitor_Back.Services {
 
         public void RevokeToken(string token, string ipAddress)
         {
-            var (refreshToken, account) = getRefreshToken(token);
+            var (refreshToken, _) = GetRefreshToken(token);
 
             refreshToken.Revoked = TimeFunctions.HoraAtualBR();
             refreshToken.RevokedByIp = ipAddress;
@@ -175,19 +175,21 @@ namespace Supera_Monitor_Back.Services {
 
             // Create a reset token that lasts 1 day
             if (account != null) {
-                account.ResetToken = randomTokenString();
+                account.ResetToken = RandomTokenString();
                 account.ResetTokenExpires = TimeFunctions.HoraAtualBR().AddDays(1);
 
                 _db.Account.Update(account);
                 _db.SaveChanges();
 
-                sendPasswordResetEmail(account, origin);
+                SendPasswordResetEmail(account, origin);
 
                 response.Success = true;
-                response.Object = _db.AccountList.Find(account.Id);
+                response.Object = _db.AccountList.Find(account.Id); // gera exceção
             }
 
-            return new ResponseModel { Message = @"Please, check your inbox e-mail (" + model.Email + ") for password recovery instructions." };
+            response.Message = @"Please, check your inbox e-mail (" + model.Email + ") for password recovery instructions.";
+
+            return response;
         }
 
         public ResponseModel ChangePassword(ChangePasswordRequest model)
@@ -295,7 +297,7 @@ namespace Supera_Monitor_Back.Services {
 
         #region HELPER FUNCTIONS
 
-        private (AccountRefreshToken, Account) getRefreshToken(string token)
+        private (AccountRefreshToken, Account) GetRefreshToken(string token)
         {
             var accounts = _db.Account
                 .Include(x => x.AccountRefreshToken)
@@ -304,24 +306,26 @@ namespace Supera_Monitor_Back.Services {
             var account = accounts
                 .SingleOrDefault(acc => acc.AccountRefreshToken.Any(t => t.Token == token));
 
-            if (account == null)
+            if (account == null) {
                 throw new Exception("Invalid token.");
+            }
 
             var refreshToken = account.AccountRefreshToken.Single(t => t.Token == token);
 
-            if (!refreshToken.IsActive)
+            if (!refreshToken.IsActive) {
                 throw new Exception("Invalid token.");
+            }
 
             return (refreshToken, account);
         }
 
-        private void removeOldRefreshTokens(Account account)
+        private void RemoveOldRefreshTokens(Account account)
         {
             account.AccountRefreshToken = account.AccountRefreshToken.Where(token =>
                 token.IsActive && token.Created.AddDays(_appSettings.RefreshTokenTTL) > TimeFunctions.HoraAtualBR()).ToList();
         }
 
-        private string generateJwtToken(Account account)
+        private string GenerateJwtToken(Account account)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = System.Text.Encoding.UTF8.GetBytes(_appSettings.Secret);
@@ -335,10 +339,10 @@ namespace Supera_Monitor_Back.Services {
             return tokenHandler.WriteToken(token);
         }
 
-        private AccountRefreshToken generateRefreshToken(string ipAddress)
+        private static AccountRefreshToken GenerateRefreshToken(string ipAddress)
         {
             return new AccountRefreshToken {
-                Token = randomTokenString(),
+                Token = RandomTokenString(),
                 Expires = TimeFunctions.HoraAtualBR().AddDays(7),
                 Created = TimeFunctions.HoraAtualBR(),
                 CreatedByIp = ipAddress
@@ -347,7 +351,7 @@ namespace Supera_Monitor_Back.Services {
 
         // TODO: RNGCryptoServiceProvider is obsolete
         // Generate a random sequence of bytes and convert them to hex string
-        private string randomTokenString()
+        private static string RandomTokenString()
         {
             using var rngCryptoServiceProvider = new RNGCryptoServiceProvider();
             var randomBytes = new byte[40];
@@ -356,15 +360,13 @@ namespace Supera_Monitor_Back.Services {
         }
 
 
-        private void sendPasswordResetEmail(Account account, string url)
+        private void SendPasswordResetEmail(Account account, string url)
         {
             var resetUrl = $"{url}/account/reset-password?token={account.ResetToken}";
             string message = $" <p>Please, follow link below to reset password:</p>"
              + $"<p><a href='{resetUrl}'>{resetUrl}</a></p>"
              + $"<p style='color: red'>Obs.: The link is valid for 1 day.</p>";
 
-
-            Console.WriteLine("Sending email");
             _emailService.Send(
                 to: account.Email,
                 subject: "Supera - Password Reset",

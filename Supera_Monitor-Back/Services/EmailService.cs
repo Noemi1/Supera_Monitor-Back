@@ -6,20 +6,18 @@ using System.Text;
 
 namespace Supera_Monitor_Back.Services {
     public interface IEmailService {
-        void Send(string to, string subject, string html, string from = null);
+        Task Send(string to, string subject, string html, string from = null);
     }
 
     public class EmailService : IEmailService {
         private readonly AppSettings _appSettings;
-        private readonly DataContext _db;
 
-        public EmailService(IOptions<AppSettings> appSettings, DataContext db)
+        public EmailService(IOptions<AppSettings> appSettings)
         {
             _appSettings = appSettings.Value;
-            _db = db;
         }
 
-        public void Send(string to, string subject, string html, string from = null)
+        public async Task Send(string to, string subject, string html, string from = null)
         {
             try {
                 // Create and populate message instance
@@ -47,7 +45,7 @@ namespace Supera_Monitor_Back.Services {
                     EnableSsl = true
                 };
 
-                smtpClient.Send(email);
+                await smtpClient.SendMailAsync(email);
             } catch (Exception e) {
                 Console.WriteLine(e);
             }

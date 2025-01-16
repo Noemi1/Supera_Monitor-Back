@@ -10,6 +10,5 @@
 
         public int Role_Id { get; set; }
         public string Role { get; set; } = string.Empty;
-
     }
 }

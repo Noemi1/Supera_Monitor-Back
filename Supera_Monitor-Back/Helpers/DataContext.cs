@@ -22,10 +22,13 @@ namespace Supera_Monitor_Back.Helpers {
         public virtual DbSet<Account> Account { get; set; }
         public virtual DbSet<AccountRefreshToken> AccountRefreshToken { get; set; }
         public virtual DbSet<AccountRole> AccountRole { get; set; }
+        public virtual DbSet<Log> Log { get; set; }
+        public virtual DbSet<LogError> LogError { get; set; }
         #endregion
 
         #region Views
         public virtual DbSet<AccountList> AccountList { get; set; }
+        public virtual DbSet<LogList> LogList { get; set; }
         #endregion
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -47,6 +50,10 @@ namespace Supera_Monitor_Back.Helpers {
                  * Especifique ON DELETE NO ACTION ou ON UPDATE NO ACTION, ou modifique outras restrições FOREIGN KEY.
                  * Não foi possí­vel criar a restrição ou o í­ndice. Consulte os erros anteriores.
                  */
+
+                entity.HasMany(x => x.Logs)
+                    .WithOne(x => x.Account)
+                    .HasForeignKey(x => x.Account_Id);
 
                 entity.Property(e => e.Role_Id).HasDefaultValue(( int )Role.Student);
 
@@ -80,10 +87,24 @@ namespace Supera_Monitor_Back.Helpers {
                 );
             });
 
-            // Declaring a view with modelBuilder - readOnly - doesn't create view
+            /* 
+             * Declaring a view with modelBuilder DOES NOT CREATE a view in the database
+             * However, it communicates the CLI that it should not create a regular table for the view.
+             * Which makes sense because a view is just a 'stored query'
+             * Code-first approach problems =)
+             * 
+             * The view still needs to be created so the options are:
+             * 1. Create the view manually on the database (drop the database = create views all over again)
+             * 2. Create the view through raw SQL execution (hardcoded for safety, more things to remember)
+             */
+
             modelBuilder.Entity<AccountList>()
                 .ToView("AccountList")
                 .HasKey(accList => accList.Id);
+
+            modelBuilder.Entity<LogList>()
+                .ToView("LogList")
+                .HasKey(logList => logList.Id);
         }
     }
 }

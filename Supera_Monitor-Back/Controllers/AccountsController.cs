@@ -4,6 +4,7 @@ using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Accounts;
 using Supera_Monitor_Back.Services;
+using System.Reflection;
 
 namespace Supera_Monitor_Back.Controllers {
     [ApiController]
@@ -11,15 +12,18 @@ namespace Supera_Monitor_Back.Controllers {
     public class AccountsController : BaseController {
         private readonly IAccountService _accountService;
         private readonly DataContext _db;
+        private readonly ILogService _logger;
 
         // TODO: Add logger
         public AccountsController(
             IAccountService accountService,
-            DataContext db
+            DataContext db,
+            ILogService logger
             )
         {
             _accountService = accountService;
             _db = db;
+            _logger = logger;
         }
 
         #region TEST ROUTES
@@ -73,11 +77,11 @@ namespace Supera_Monitor_Back.Controllers {
         public ActionResult<AuthenticateResponse> Authenticate(AuthenticateRequest model)
         {
             try {
-                var response = _accountService.Authenticate(model, ipAddress());
-                setTokenCookie(response.RefreshToken);
+                var response = _accountService.Authenticate(model, IpAddress());
+                SetTokenCookie(response.RefreshToken);
                 return Ok(response);
             } catch (Exception e) {
-                //_logger.LogError(e, MethodBase.GetCurrentMethod().DeclaringType.Name.ToString() + "." + MethodBase.GetCurrentMethod().ToString());
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
@@ -92,12 +96,11 @@ namespace Supera_Monitor_Back.Controllers {
                     return Unauthorized(new { message = "Token is required." });
                 }
 
-                var response = _accountService.RefreshToken(refreshToken, ipAddress());
-                setTokenCookie(response.RefreshToken);
+                var response = _accountService.RefreshToken(refreshToken, IpAddress());
+                SetTokenCookie(response.RefreshToken);
                 return Ok(response);
             } catch (Exception e) {
-                // TODO: LogError
-                //_logger.LogError(e, MethodBase.GetCurrentMethod().DeclaringType.Name.ToString() + "." + MethodBase.GetCurrentMethod().ToString());
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, $"Unexpected error: {e.Message}");
             }
         }
@@ -125,11 +128,11 @@ namespace Supera_Monitor_Back.Controllers {
                     return Unauthorized(new { message = $"Unauthorized, can't revoke token {token}" });
                 }
 
-                _accountService.RevokeToken(token, ipAddress());
+                _accountService.RevokeToken(token, IpAddress());
 
                 return Ok(new { message = "Token revoked" });
             } catch (Exception e) {
-                //_logger.LogError(e, MethodBase.GetCurrentMethod().DeclaringType.Name.ToString() + "." + MethodBase.GetCurrentMethod().ToString());
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
@@ -141,12 +144,12 @@ namespace Supera_Monitor_Back.Controllers {
                 ResponseModel response = _accountService.ForgotPassword(model, Request.Headers["origin"]);
 
                 if (response.Success) {
-                    //_logger.Log("Forgot Password", "Account", response, response.Customer_Id, response.Object!.Id);
+                    _logger.Log("Forgot Password", "Account", response, response.Object?.Id);
                 }
 
                 return Ok(response);
             } catch (Exception e) {
-                //_logger.LogError(e, MethodBase.GetCurrentMethod().DeclaringType.Name.ToString() + "." + MethodBase.GetCurrentMethod().ToString());
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
@@ -158,12 +161,12 @@ namespace Supera_Monitor_Back.Controllers {
                 ResponseModel response = _accountService.ResetPassword(model);
 
                 if (response.Success) {
-                    //_logger.Log("Password Updated", "Account", response, response.Customer_Id, response.Object!.Id);
+                    _logger.Log("Password Updated", "Account", response, response.Object!.Id);
                 }
 
                 return Ok(response);
             } catch (Exception e) {
-                //_logger.LogError(e, MethodBase.GetCurrentMethod().DeclaringType.Name.ToString() + "." + MethodBase.GetCurrentMethod().ToString());
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
@@ -176,12 +179,12 @@ namespace Supera_Monitor_Back.Controllers {
                 ResponseModel response = _accountService.ChangePassword(model);
 
                 if (response.Success) {
-                    //_logger.Log("Change Password", "Account", response, response.Customer_Id, response.Object.Id);
+                    _logger.Log("Change Password", "Account", response, response.Object.Id);
                 }
 
                 return Ok(response);
             } catch (Exception e) {
-                //_logger.LogError(e, MethodBase.GetCurrentMethod().DeclaringType.Name.ToString() + "." + MethodBase.GetCurrentMethod().ToString());
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
@@ -194,12 +197,12 @@ namespace Supera_Monitor_Back.Controllers {
                 ResponseModel response = _accountService.UpdateAccount(model);
 
                 if (response.Success) {
-                    //_logger.Log("Update", "Account", response, response.Customer_Id, response.Object.Id);
+                    _logger.Log("Update", "Account", response, response.Object.Id);
                 }
 
                 return Ok(response);
             } catch (Exception e) {
-                //_logger.LogError(e, MethodBase.GetCurrentMethod().DeclaringType.Name.ToString() + "." + MethodBase.GetCurrentMethod().ToString());
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
@@ -211,12 +214,12 @@ namespace Supera_Monitor_Back.Controllers {
                 ResponseModel response = _accountService.VerifyEmail(model.Token);
 
                 if (response.Success) {
-                    //_logger.Log("Verification", "Account", response, response.Customer_Id, response.Object.Id);
+                    _logger.Log("Verification", "Account", response, response.Object.Id);
                 }
 
                 return Ok(response);
             } catch (Exception e) {
-                //_logger.LogError(e, MethodBase.GetCurrentMethod().DeclaringType.Name.ToString() + "." + MethodBase.GetCurrentMethod().ToString());
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
@@ -225,7 +228,7 @@ namespace Supera_Monitor_Back.Controllers {
 
         #region HELPER FUNCTIONS
 
-        private void setTokenCookie(string token)
+        private void SetTokenCookie(string token)
         {
             var cookieOptions = new CookieOptions {
                 HttpOnly = true,
@@ -239,7 +242,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         // TODO: Null checks? For now I've overidden the warnings with !
-        private string ipAddress()
+        private string IpAddress()
         {
             if (Request.Headers.ContainsKey("X-Forwarded-For")) {
                 return Request.Headers["X-Forwarded-For"]!;

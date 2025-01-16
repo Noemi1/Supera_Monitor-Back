@@ -5,6 +5,7 @@
         {
             Created_Account = new HashSet<Account>();
             AccountRefreshToken = new HashSet<AccountRefreshToken>();
+            Logs = new HashSet<Log>();
         }
 
         public int Id { get; set; }
@@ -26,6 +27,7 @@
         public virtual ICollection<Account> Created_Account { get; set; }
 
         public virtual ICollection<AccountRefreshToken> AccountRefreshToken { get; set; }
+        public ICollection<Log> Logs { get; set; }
 
         public bool OwnsToken(string token)
         {

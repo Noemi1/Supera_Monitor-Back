@@ -33,7 +33,7 @@ public class AuthorizeAttribute : Attribute, IAuthorizationFilter {
                 return;
             }
         } catch (Exception e) {
-
+            Console.WriteLine($"Caught an exception on AuthorizeAttributes {e.Message}");
         }
     }
 }
