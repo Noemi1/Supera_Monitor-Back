@@ -22,6 +22,9 @@ namespace Supera_Monitor_Back.Helpers {
         public virtual DbSet<Account> Account { get; set; }
         public virtual DbSet<AccountRefreshToken> AccountRefreshToken { get; set; }
         public virtual DbSet<AccountRole> AccountRole { get; set; }
+
+        public virtual DbSet<User> User { get; set; }
+
         public virtual DbSet<Log> Log { get; set; }
         public virtual DbSet<LogError> LogError { get; set; }
         #endregion
@@ -34,9 +37,15 @@ namespace Supera_Monitor_Back.Helpers {
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Account>(entity => {
+                entity.Property(e => e.Role_Id).HasDefaultValue(( int )Role.Student);
+
                 entity.HasMany(x => x.AccountRefreshToken)
                 .WithOne(x => x.Account)
                 .HasForeignKey(x => x.Account_Id);
+
+                entity.HasMany(x => x.Logs)
+                    .WithOne(x => x.Account)
+                    .HasForeignKey(x => x.Account_Id);
 
                 entity.HasMany(x => x.Created_Account)
                     .WithOne(x => x.Account_Created)
@@ -50,12 +59,6 @@ namespace Supera_Monitor_Back.Helpers {
                  * Especifique ON DELETE NO ACTION ou ON UPDATE NO ACTION, ou modifique outras restrições FOREIGN KEY.
                  * Não foi possí­vel criar a restrição ou o í­ndice. Consulte os erros anteriores.
                  */
-
-                entity.HasMany(x => x.Logs)
-                    .WithOne(x => x.Account)
-                    .HasForeignKey(x => x.Account_Id);
-
-                entity.Property(e => e.Role_Id).HasDefaultValue(( int )Role.Student);
 
                 // Testing purposes: Create default account
                 entity.HasData(
@@ -87,6 +90,14 @@ namespace Supera_Monitor_Back.Helpers {
                 );
             });
 
+            modelBuilder.Entity<User>(entity => {
+                entity.HasMany(x => x.Account)
+                .WithOne(x => x.User)
+                .HasForeignKey(x => x.User_Id);
+            });
+
+            #region VIEW DECLARATION
+
             /* 
              * Declaring a view with modelBuilder DOES NOT CREATE a view in the database
              * However, it communicates the CLI that it should not create a regular table for the view.
@@ -95,7 +106,7 @@ namespace Supera_Monitor_Back.Helpers {
              * 
              * The view still needs to be created so the options are:
              * 1. Create the view manually on the database (drop the database = create views all over again)
-             * 2. Create the view through raw SQL execution (hardcoded for safety, more things to remember)
+             * 2. Create the view through raw SQL execution (hardcoded for safety, but adds more things to maintain)
              */
 
             modelBuilder.Entity<AccountList>()
@@ -105,6 +116,8 @@ namespace Supera_Monitor_Back.Helpers {
             modelBuilder.Entity<LogList>()
                 .ToView("LogList")
                 .HasKey(logList => logList.Id);
+
+            #endregion
         }
     }
 }

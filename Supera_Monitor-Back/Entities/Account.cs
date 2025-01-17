@@ -1,5 +1,5 @@
 ﻿namespace Supera_Monitor_Back.Entities {
-    public partial class Account : BaseEntity {
+    public partial class Account : _BaseEntity {
 
         public Account()
         {
@@ -23,6 +23,9 @@
 
         public int Role_Id { get; set; }
         public AccountRole AccountRole { get; set; } = null!;
+
+        public int? User_Id { get; set; }
+        public User? User { get; set; } = null!;
 
         public virtual ICollection<Account> Created_Account { get; set; }
 

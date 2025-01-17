@@ -9,12 +9,12 @@ using System.Reflection;
 namespace Supera_Monitor_Back.Controllers {
     [ApiController]
     [Route("back/[controller]")]
-    public class AccountsController : BaseController {
+    public class AccountsController : _BaseController {
+        private const string V = "origin";
         private readonly IAccountService _accountService;
         private readonly DataContext _db;
         private readonly ILogService _logger;
 
-        // TODO: Add logger
         public AccountsController(
             IAccountService accountService,
             DataContext db,
@@ -77,7 +77,7 @@ namespace Supera_Monitor_Back.Controllers {
         public ActionResult<AuthenticateResponse> Authenticate(AuthenticateRequest model)
         {
             try {
-                var response = _accountService.Authenticate(model, IpAddress());
+                var response = _accountService.Authenticate(model, GetIpAddressFromHeaders());
                 SetTokenCookie(response.RefreshToken);
                 return Ok(response);
             } catch (Exception e) {
@@ -96,7 +96,7 @@ namespace Supera_Monitor_Back.Controllers {
                     return Unauthorized(new { message = "Token is required." });
                 }
 
-                var response = _accountService.RefreshToken(refreshToken, IpAddress());
+                var response = _accountService.RefreshToken(refreshToken, GetIpAddressFromHeaders());
                 SetTokenCookie(response.RefreshToken);
                 return Ok(response);
             } catch (Exception e) {
@@ -128,7 +128,7 @@ namespace Supera_Monitor_Back.Controllers {
                     return Unauthorized(new { message = $"Unauthorized, can't revoke token {token}" });
                 }
 
-                _accountService.RevokeToken(token, IpAddress());
+                _accountService.RevokeToken(token, GetIpAddressFromHeaders());
 
                 return Ok(new { message = "Token revoked" });
             } catch (Exception e) {
@@ -141,7 +141,7 @@ namespace Supera_Monitor_Back.Controllers {
         public ActionResult ForgotPassword(ForgotPasswordRequest model)
         {
             try {
-                ResponseModel response = _accountService.ForgotPassword(model, Request.Headers["origin"]);
+                ResponseModel response = _accountService.ForgotPassword(model, Request.Headers[V]);
 
                 if (response.Success) {
                     _logger.Log("Forgot Password", "Account", response, response.Object?.Id);
@@ -155,7 +155,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPost("reset-password")]
-        public ActionResult ResetPassword(ResetPasswordRequest model)
+        public ActionResult ResetPassword([FromBody] ResetPasswordRequest model)
         {
             try {
                 ResponseModel response = _accountService.ResetPassword(model);
@@ -239,16 +239,6 @@ namespace Supera_Monitor_Back.Controllers {
             };
 
             Response.Cookies.Append("refreshToken", token, cookieOptions);
-        }
-
-        // TODO: Null checks? For now I've overidden the warnings with !
-        private string IpAddress()
-        {
-            if (Request.Headers.ContainsKey("X-Forwarded-For")) {
-                return Request.Headers["X-Forwarded-For"]!;
-            }
-
-            return HttpContext.Connection.RemoteIpAddress!.MapToIPv4().ToString();
         }
 
         #endregion

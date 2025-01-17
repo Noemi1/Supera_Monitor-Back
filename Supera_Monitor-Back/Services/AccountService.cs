@@ -9,7 +9,6 @@ using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Accounts;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography;
 using BC = BCrypt.Net.BCrypt;
 
 namespace Supera_Monitor_Back.Services {
@@ -175,7 +174,7 @@ namespace Supera_Monitor_Back.Services {
 
             // Create a reset token that lasts 1 day
             if (account != null) {
-                account.ResetToken = RandomTokenString();
+                account.ResetToken = Utils.RandomTokenString();
                 account.ResetTokenExpires = TimeFunctions.HoraAtualBR().AddDays(1);
 
                 _db.Account.Update(account);
@@ -342,23 +341,12 @@ namespace Supera_Monitor_Back.Services {
         private static AccountRefreshToken GenerateRefreshToken(string ipAddress)
         {
             return new AccountRefreshToken {
-                Token = RandomTokenString(),
+                Token = Utils.RandomTokenString(),
                 Expires = TimeFunctions.HoraAtualBR().AddDays(7),
                 Created = TimeFunctions.HoraAtualBR(),
                 CreatedByIp = ipAddress
             };
         }
-
-        // TODO: RNGCryptoServiceProvider is obsolete
-        // Generate a random sequence of bytes and convert them to hex string
-        private static string RandomTokenString()
-        {
-            using var rngCryptoServiceProvider = new RNGCryptoServiceProvider();
-            var randomBytes = new byte[40];
-            rngCryptoServiceProvider.GetBytes(randomBytes);
-            return BitConverter.ToString(randomBytes).Replace("-", "");
-        }
-
 
         private void SendPasswordResetEmail(Account account, string url)
         {

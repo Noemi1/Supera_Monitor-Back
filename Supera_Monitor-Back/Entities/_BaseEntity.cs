@@ -1,5 +1,5 @@
 ﻿namespace Supera_Monitor_Back.Entities {
-    public abstract class BaseEntity {
+    public abstract class _BaseEntity {
 
         public int? Account_Created_Id { get; set; }
         public DateTime Created { get; set; }
