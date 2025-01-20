@@ -7,8 +7,5 @@
         public DateTime? Deactivated { get; set; }
 
         public bool Active => !Deactivated.HasValue;
-
-        public int User_Id { get; set; }
-        public string User { get; set; } = string.Empty;
     }
 }
