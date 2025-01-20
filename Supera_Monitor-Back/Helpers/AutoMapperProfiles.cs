@@ -19,6 +19,7 @@ namespace Supera_Monitor_Back.Helpers {
 
             CreateMap<Account, AccountResponse>();
             CreateMap<Account, AuthenticateResponse>();
+            CreateMap<CreateAccountRequest, Account>();
         }
     }
 }

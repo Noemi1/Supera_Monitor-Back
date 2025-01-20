@@ -5,6 +5,8 @@ using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Accounts;
+using Supera_Monitor_Back.Services.Email;
+using Supera_Monitor_Back.Services.Email.Models;
 
 namespace Supera_Monitor_Back.Services {
     public interface IUserService {
@@ -16,7 +18,6 @@ namespace Supera_Monitor_Back.Services {
         ResponseModel Delete(int accountId);
         ResponseModel ResetPassword(int accountId);
         ResponseModel Deactivated(int accountId, bool activate, string ipAddress);
-        void SendVerificationEmail(Account account, string url, string randomPassword);
     }
 
     public class UserService : IUserService {
@@ -190,26 +191,17 @@ namespace Supera_Monitor_Back.Services {
             };
         }
 
-        public void SendVerificationEmail(Account account, string url, string randomPassword)
+        private void SendVerificationEmail(Account account, string url, string randomPassword)
         {
-            var verifyUrl = $"{url}/account/verify-email?token={account.VerificationToken}";
-
-            string message = $@"<p>A registration was made on Supera_Back with your email.</p>
-                            <p>Please click the link below to verify your account.:</p>
-                            <p><a href='{verifyUrl}'>{verifyUrl}</a></p>
-                            <p>To login, enter your e-mail ({account.Email}) and password ({randomPassword})</p>
-                            <p>If this was a mistake, please disregard this message.</p>";
-
-            _emailService.Send(
-                to: account.Email,
-                subject: "Supera - Account Registration",
-                html: $@"<h4>Account Registration</h4>
-                         {message}
-                        <br>
-                         <p>Your password is personal and non-transferable and must be kept confidential and in a secure environment. Do not share your password.</p>
-                        <br>
-                        <p> Warning: This automatic message is intended exclusively for the person(s) to whom it is addressed, and may contain confidential and legally protected information. If you are not the intended recipient of this Message, you are hereby notified to refrain from disclosing, copying, distributing, examining or, in any way, using the information contained in this Message, as it is illegal. If you have received this Message by mistake, please reply to this Message informing us of what happened.</p>"
-            );
+            _emailService.SendEmail(
+                templateType: "VerifyAccount",
+                model: new VerificationEmailModel {
+                    Url = url,
+                    VerificationToken = account.VerificationToken,
+                    Email = account.Email,
+                    RandomPassword = randomPassword
+                },
+                to: account.Email);
         }
 
         public ResponseModel ResetPassword(int accountId)
@@ -233,17 +225,10 @@ namespace Supera_Monitor_Back.Services {
             _db.Account.Update(account);
             _db.SaveChanges();
 
-            var html = @$"<h4>Password reset e-mail</h4>
-                        <p>Your password has been reseted by admin.</p>
-                        <p>Use your new password below to login.</p>
-                        <p>New passsword: <b> {randomPassword} </b></p>
-                        <br>
-                        <p>Your password is personal and non-transferable and must be kept confidential and in a secure environment. Do not share your password.</p>
-                        <br>
-                        <p> Warning: This automatic Message is intended exclusively for the person(s) to whom it is addressed, and may contain confidential and legally protected information. If you are not the intended recipient of this Message, you are hereby notified to refrain from disclosing, copying, distributing, examining or, in any way, using the information contained in this Message, as it is illegal. If you have received this Message by mistake, please reply to this Message informing us of what happened.</p>
-                ";
-
-            _emailService.Send(account.Email, "Supera - Password reset", html);
+            _emailService.SendEmail(
+                templateType: "PasswordReset",
+                model: new PasswordResetModel { RandomPassword = randomPassword },
+                to: account.Email);
 
             return new ResponseModel {
                 Message = "Email de recuperação de senha enviado!",
@@ -313,7 +298,6 @@ namespace Supera_Monitor_Back.Services {
 
             return entity;
         }
-
 
         #endregion
     }

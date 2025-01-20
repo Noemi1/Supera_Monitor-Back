@@ -7,6 +7,8 @@ using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Accounts;
+using Supera_Monitor_Back.Services.Email;
+using Supera_Monitor_Back.Services.Email.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using BC = BCrypt.Net.BCrypt;
@@ -180,7 +182,11 @@ namespace Supera_Monitor_Back.Services {
                 _db.Account.Update(account);
                 _db.SaveChanges();
 
-                SendPasswordResetEmail(account, origin);
+                // Send password reset email
+                _emailService.SendEmail(
+                    templateType: "ForgotPassword",
+                    model: new ForgotPasswordModel { ResetToken = account.ResetToken, Url = origin },
+                    to: account.Email);
 
                 response.Success = true;
                 response.Object = _db.AccountList.Find(account.Id); // gera exceção
@@ -346,25 +352,6 @@ namespace Supera_Monitor_Back.Services {
                 Created = TimeFunctions.HoraAtualBR(),
                 CreatedByIp = ipAddress
             };
-        }
-
-        private void SendPasswordResetEmail(Account account, string url)
-        {
-            var resetUrl = $"{url}/account/reset-password?token={account.ResetToken}";
-            string message = $" <p>Please, follow link below to reset password:</p>"
-             + $"<p><a href='{resetUrl}'>{resetUrl}</a></p>"
-             + $"<p style='color: red'>Obs.: The link is valid for 1 day.</p>";
-
-            _emailService.Send(
-                to: account.Email,
-                subject: "Supera - Password Reset",
-                html: $@"<h4>Password Reset Email.</h4> 
-                    {message}
-                    <br>
-                    <p>Your password is personal and non-transferable and must be kept confidential and in a secure environment. Do not share your password.</p>
-                    <br>
-                    <p>Warning: This automatic Message is intended exclusively for the person(s) to whom it is addressed, and may contain confidential and legally protected information. If you are not the intended recipient of this Message, you are hereby notified to refrain from disclosing, copying, distributing, examining or, in any way, using the information contained in this Message, as it is illegal. If you have received this Message by mistake, please reply to this Message informing us of what happened.</p>"
-            );
         }
 
         #endregion

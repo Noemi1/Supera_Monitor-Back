@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Middlewares;
 using Supera_Monitor_Back.Services;
+using Supera_Monitor_Back.Services.Email;
 using System.Globalization;
 using System.Text.Json.Serialization;
 
@@ -44,6 +45,8 @@ builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ILogService, LogService>();
+
+builder.Services.AddScoped<IEmailTemplateFactory, EmailTemplateFactory>();
 
 #endregion
 
