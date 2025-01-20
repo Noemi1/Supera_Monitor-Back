@@ -10,7 +10,6 @@ namespace Supera_Monitor_Back.Controllers {
     [ApiController]
     [Route("back/[controller]")]
     public class AccountsController : _BaseController {
-        private const string V = "origin";
         private readonly IAccountService _accountService;
         private readonly DataContext _db;
         private readonly ILogService _logger;
@@ -141,7 +140,8 @@ namespace Supera_Monitor_Back.Controllers {
         public ActionResult ForgotPassword(ForgotPasswordRequest model)
         {
             try {
-                ResponseModel response = _accountService.ForgotPassword(model, Request.Headers[V]);
+                ResponseModel response = _accountService.ForgotPassword(model, Request.Headers["origin"]);
+
 
                 if (response.Success) {
                     _logger.Log("Forgot Password", "Account", response, response.Object?.Id);

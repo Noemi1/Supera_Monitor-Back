@@ -25,11 +25,11 @@ namespace Supera_Monitor_Back.Controllers {
             _logger = logService;
         }
 
-        [HttpGet("all/{User_Id}")]
-        public ActionResult GetAll(int User_Id)
+        [HttpGet("all/{accountId}")]
+        public ActionResult GetAll(int accountId)
         {
             try {
-                var response = _userService.GetAll(User_Id);
+                var response = _userService.GetAll(accountId);
 
                 return Ok(response);
             } catch (Exception e) {
@@ -83,8 +83,8 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
-        [HttpPut()]
-        public ActionResult Update<AccountResponse>(UpdateAccountRequest model)
+        [HttpPut]
+        public ActionResult<ResponseModel> Update(UpdateAccountRequest model)
         {
             try {
                 ResponseModel response = _userService.Update(model);
@@ -100,12 +100,12 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
-        [HttpDelete("{User_Id}")]
+        [HttpDelete("{accountId}")]
         [Authorize(Entities.Role.Admin)]
-        public ActionResult<AccountResponse> Delete(int User_Id)
+        public ActionResult<AccountResponse> Delete(int accountId)
         {
             try {
-                ResponseModel response = _userService.Delete(User_Id);
+                ResponseModel response = _userService.Delete(accountId);
 
                 if (response.Success) {
                     _logger.Log("Delete", "Account", response.Object, Account?.Id);

@@ -9,7 +9,7 @@ using Supera_Monitor_Back.Models.Accounts;
 namespace Supera_Monitor_Back.Services {
     public interface IUserService {
         AccountResponse Get(int accountId);
-        List<AccountList> GetAll(int User_Id);
+        List<AccountList> GetAll(int accountId);
         List<AccountRoleModel> GetRoles();
         ResponseModel Insert(CreateAccountRequest model, string origin);
         ResponseModel Update(UpdateAccountRequest model/*, string ip*/);
@@ -45,23 +45,23 @@ namespace Supera_Monitor_Back.Services {
 
         public AccountResponse Get(int accountId)
         {
-            Account? user = _db.Account
+            Account? account = _db.Account
                 .Include(acc => acc.AccountRole)
                 .FirstOrDefault(acc => acc.Id == accountId);
 
-            if (user == null) {
+            if (account == null) {
                 throw new Exception("Account not found.");
             }
 
-            AccountResponse response = _mapper.Map<AccountResponse>(user);
+            AccountResponse response = _mapper.Map<AccountResponse>(account);
 
             return response;
         }
 
-        public List<AccountList> GetAll(int User_Id)
+        public List<AccountList> GetAll(int accountId)
         {
             List<AccountList> accounts = _db.AccountList
-                .Where(accList => accList.User_Id == User_Id)
+                .Where(accList => accList.Id == accountId)
                 .ToList();
 
             return accounts;
@@ -77,18 +77,13 @@ namespace Supera_Monitor_Back.Services {
         public ResponseModel Insert(CreateAccountRequest model, string origin)
         {
             Account? account = _db.Account.FirstOrDefault(acc => acc.Email == model.Email);
-            User user = _db.User.FirstOrDefault(user => user.Id == model.User_Id);
 
             if (account != null) {
                 return new ResponseModel { Message = "This e-mail has already been registered." };
             }
 
-            if (user == null) {
-                return new ResponseModel { Message = "User not found." };
-            }
-
-            if (user.Deactivated != null) {
-                return new ResponseModel { Message = "This user has been deactivated." };
+            if (_account.Deactivated != null) {
+                return new ResponseModel { Message = "This account has been deactivated." };
             }
 
             // Validations passed
@@ -105,7 +100,7 @@ namespace Supera_Monitor_Back.Services {
             SendVerificationEmail(account, origin, randomPassword);
 
             return new ResponseModel {
-                Message = "Usuário cadastrado com sucesso!",
+                Message = "Conta cadastrada com sucesso!",
                 Success = true,
                 Object = _db.AccountList.Find(account.Id),
             };
@@ -114,22 +109,19 @@ namespace Supera_Monitor_Back.Services {
         public ResponseModel Update(UpdateAccountRequest model)
         {
             Account? account = _db.Account.Find(model.Id);
-            User? user = _db.User.FirstOrDefault(user => user.Id == model.User_Id);
 
             if (account == null) {
                 return new ResponseModel { Message = "Account not found." };
             }
 
-            if (_db.Account.Any(x => x.Email == model.Email && x.Id != model.Id)) {
+            var emailIsAlreadyTaken = _db.Account.Any(acc => acc.Email == model.Email && acc.Id != model.Id);
+
+            if (emailIsAlreadyTaken) {
                 return new ResponseModel { Message = "This e-mail has already been registered." };
             }
 
-            if (user == null) {
-                return new ResponseModel { Message = "User not found." };
-            }
-
-            if (user.Deactivated != null) {
-                return new ResponseModel { Message = "You cannot update an account if the user is deactivated." };
+            if (account.Deactivated != null) {
+                return new ResponseModel { Message = "You cannot update an account if it is deactivated." };
             }
 
             if (_account.Role_Id != ( int )Role.Admin && _account.Id != account.Id) {
@@ -141,7 +133,6 @@ namespace Supera_Monitor_Back.Services {
             account.Name = model.Name;
             account.Phone = model.Phone;
             account.Role_Id = model.Role_Id;
-            account.User_Id = model.User_Id;
             account.LastUpdated = TimeFunctions.HoraAtualBR();
 
             // If user is editing his own account
@@ -157,7 +148,7 @@ namespace Supera_Monitor_Back.Services {
             _db.SaveChanges();
 
             return new ResponseModel {
-                Message = "Usuário atualizado com sucesso!",
+                Message = "Conta atualizada com sucesso!",
                 Success = true,
                 Object = _db.AccountList.AsNoTracking().FirstOrDefault(x => x.Id == account.Id),
                 OldObject = old
@@ -171,14 +162,12 @@ namespace Supera_Monitor_Back.Services {
                 .Include(acc => acc.AccountRole)
                 .FirstOrDefault(acc => acc.Id == accountId);
 
-            User? user = _db.User.FirstOrDefault(x => x.Id == account!.User_Id);
-
             if (account == null) {
                 return new ResponseModel { Message = "Account not found." };
             }
 
-            if (user == null || user.Deactivated != null) {
-                return new ResponseModel { Message = "You cannot update an existing account if the user is deactivated." };
+            if (account.Deactivated != null) {
+                return new ResponseModel { Message = "You cannot update an existing account if it is deactivated." };
             }
 
             if (_account == null || _account.Role_Id != ( int )Role.Admin && _account.Id != account.Id) {
@@ -205,7 +194,7 @@ namespace Supera_Monitor_Back.Services {
         {
             var verifyUrl = $"{url}/account/verify-email?token={account.VerificationToken}";
 
-            string message = $@"<p>A registration was made on ArkAsset_Back with your email.</p>
+            string message = $@"<p>A registration was made on Supera_Back with your email.</p>
                             <p>Please click the link below to verify your account.:</p>
                             <p><a href='{verifyUrl}'>{verifyUrl}</a></p>
                             <p>To login, enter your e-mail ({account.Email}) and password ({randomPassword})</p>
@@ -226,21 +215,11 @@ namespace Supera_Monitor_Back.Services {
         public ResponseModel ResetPassword(int accountId)
         {
             Account? account = _db.Account
-                 .Include(x => x.User)
                  .Include(x => x.AccountRole)
                  .FirstOrDefault(x => x.Id == accountId);
 
-            User? user = _db.User.FirstOrDefault(x => x.Id == account!.User_Id);
-
             if (account == null) {
                 return new ResponseModel { Message = "Account not found." };
-            }
-            if (user == null) {
-                return new ResponseModel { Message = "User not found." };
-            }
-
-            if (user == null || user.Deactivated != null) {
-                return new ResponseModel { Message = "You cannot reset password from a deactivated user." };
             }
 
             if (account.Deactivated != null) {
@@ -279,21 +258,15 @@ namespace Supera_Monitor_Back.Services {
                             .Include(acc => acc.AccountRefreshToken)
                             .FirstOrDefault(acc => acc.Id == accountId);
 
-            User? user = _db.User.FirstOrDefault(user => user.Id == account!.User_Id);
-
             if (account == null) {
                 return new ResponseModel { Message = "Account not found." };
             }
 
-            if (user == null) {
-                return new ResponseModel { Message = "User not found." };
+            if (account.Deactivated != null && activate) {
+                return new ResponseModel { Message = "You cannot enable a deactivated account." };
             }
 
-            if (user.Deactivated != null && activate) {
-                return new ResponseModel { Message = "You cannot enable the account of a deactivated user." };
-            }
-
-            if (_account.Role_Id > account.Role_Id) {
+            if (_account.Role_Id < account.Role_Id) {
                 return new ResponseModel { Message = "You are not allowed to perform this action." };
             }
 
@@ -322,7 +295,6 @@ namespace Supera_Monitor_Back.Services {
             return new ResponseModel {
                 Success = true,
                 Object = _db.AccountList.Find(account.Id),
-                Message = ""
             };
         }
 

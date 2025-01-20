@@ -23,8 +23,6 @@ namespace Supera_Monitor_Back.Helpers {
         public virtual DbSet<AccountRefreshToken> AccountRefreshToken { get; set; }
         public virtual DbSet<AccountRole> AccountRole { get; set; }
 
-        public virtual DbSet<User> User { get; set; }
-
         public virtual DbSet<Log> Log { get; set; }
         public virtual DbSet<LogError> LogError { get; set; }
         #endregion
@@ -88,12 +86,6 @@ namespace Supera_Monitor_Back.Helpers {
                     new AccountRole { Id = ( int )Role.Assistant, Role = "Assistant" },
                     new AccountRole { Id = ( int )Role.Student, Role = "Student" }
                 );
-            });
-
-            modelBuilder.Entity<User>(entity => {
-                entity.HasMany(x => x.Account)
-                .WithOne(x => x.User)
-                .HasForeignKey(x => x.User_Id);
             });
 
             #region VIEW DECLARATION

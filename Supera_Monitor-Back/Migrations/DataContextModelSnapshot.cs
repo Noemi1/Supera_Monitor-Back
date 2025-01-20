@@ -75,9 +75,6 @@ namespace Supera_Monitor_Back.Migrations
                         .HasColumnType("int")
                         .HasDefaultValue(1);
 
-                    b.Property<int?>("User_Id")
-                        .HasColumnType("int");
-
                     b.Property<string>("VerificationToken")
                         .HasColumnType("nvarchar(max)");
 
@@ -90,23 +87,21 @@ namespace Supera_Monitor_Back.Migrations
 
                     b.HasIndex("Role_Id");
 
-                    b.HasIndex("User_Id");
-
-                    b.ToTable("Account");
+                    b.ToTable("Account", (string)null);
 
                     b.HasData(
                         new
                         {
                             Id = 1,
                             AcceptTerms = true,
-                            Created = new DateTime(2025, 1, 17, 15, 4, 55, 307, DateTimeKind.Local).AddTicks(7083),
+                            Created = new DateTime(2025, 1, 16, 14, 49, 32, 43, DateTimeKind.Local).AddTicks(4090),
                             Email = "galax1y@test.com",
                             Name = "galax1y",
                             PasswordHash = "$2b$10$a46QGCAIbzhXEKJl36cD1OBQE5xMNyATdvrrfh1s/wtqTdawg2lHu",
                             Phone = "123456789",
                             Role_Id = 0,
                             VerificationToken = "",
-                            Verified = new DateTime(2025, 1, 17, 15, 4, 55, 307, DateTimeKind.Local).AddTicks(7071)
+                            Verified = new DateTime(2025, 1, 16, 14, 49, 32, 43, DateTimeKind.Local).AddTicks(4076)
                         });
                 });
 
@@ -147,7 +142,7 @@ namespace Supera_Monitor_Back.Migrations
 
                     b.HasIndex("Account_Id");
 
-                    b.ToTable("AccountRefreshToken");
+                    b.ToTable("AccountRefreshToken", (string)null);
                 });
 
             modelBuilder.Entity("Supera_Monitor_Back.Entities.AccountRole", b =>
@@ -163,7 +158,7 @@ namespace Supera_Monitor_Back.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AccountRole");
+                    b.ToTable("AccountRole", (string)null);
 
                     b.HasData(
                         new
@@ -218,7 +213,7 @@ namespace Supera_Monitor_Back.Migrations
 
                     b.HasIndex("Account_Id");
 
-                    b.ToTable("Log");
+                    b.ToTable("Log", (string)null);
                 });
 
             modelBuilder.Entity("Supera_Monitor_Back.Entities.LogError", b =>
@@ -242,49 +237,7 @@ namespace Supera_Monitor_Back.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("LogError");
-                });
-
-            modelBuilder.Entity("Supera_Monitor_Back.Entities.User", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("Account_CreatedId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("Account_Created_Id")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("Created")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("Deactivated")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("LastUpdated")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Phone")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Account_CreatedId");
-
-                    b.ToTable("User");
+                    b.ToTable("LogError", (string)null);
                 });
 
             modelBuilder.Entity("Supera_Monitor_Back.Entities.Views.AccountList", b =>
@@ -293,6 +246,7 @@ namespace Supera_Monitor_Back.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Account_Created")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("Account_Created_Id")
@@ -327,13 +281,6 @@ namespace Supera_Monitor_Back.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Role_Id")
-                        .HasColumnType("int");
-
-                    b.Property<string>("User")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("User_Id")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("Verified")
@@ -391,15 +338,9 @@ namespace Supera_Monitor_Back.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Supera_Monitor_Back.Entities.User", "User")
-                        .WithMany("Account")
-                        .HasForeignKey("User_Id");
-
                     b.Navigation("AccountRole");
 
                     b.Navigation("Account_Created");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Supera_Monitor_Back.Entities.AccountRefreshToken", b =>
@@ -422,15 +363,6 @@ namespace Supera_Monitor_Back.Migrations
                     b.Navigation("Account");
                 });
 
-            modelBuilder.Entity("Supera_Monitor_Back.Entities.User", b =>
-                {
-                    b.HasOne("Supera_Monitor_Back.Entities.Account", "Account_Created")
-                        .WithMany()
-                        .HasForeignKey("Account_CreatedId");
-
-                    b.Navigation("Account_Created");
-                });
-
             modelBuilder.Entity("Supera_Monitor_Back.Entities.Account", b =>
                 {
                     b.Navigation("AccountRefreshToken");
@@ -441,11 +373,6 @@ namespace Supera_Monitor_Back.Migrations
                 });
 
             modelBuilder.Entity("Supera_Monitor_Back.Entities.AccountRole", b =>
-                {
-                    b.Navigation("Account");
-                });
-
-            modelBuilder.Entity("Supera_Monitor_Back.Entities.User", b =>
                 {
                     b.Navigation("Account");
                 });

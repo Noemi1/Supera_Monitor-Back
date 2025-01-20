@@ -24,9 +24,6 @@
         public int Role_Id { get; set; }
         public AccountRole AccountRole { get; set; } = null!;
 
-        public int? User_Id { get; set; }
-        public User? User { get; set; } = null!;
-
         public virtual ICollection<Account> Created_Account { get; set; }
 
         public virtual ICollection<AccountRefreshToken> AccountRefreshToken { get; set; }
