@@ -13,7 +13,6 @@ namespace Supera_Monitor_Back.Controllers {
 
         public LogController(ILogService service)
         {
-
             _service = service;
         }
 

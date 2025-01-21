@@ -48,6 +48,8 @@ builder.Services.AddScoped<ILogService, LogService>();
 
 builder.Services.AddScoped<IEmailTemplateFactory, EmailTemplateFactory>();
 
+builder.Services.AddScoped<ITurmaService, TurmaService>();
+
 #endregion
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

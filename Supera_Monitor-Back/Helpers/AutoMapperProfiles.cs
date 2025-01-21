@@ -2,6 +2,7 @@
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Accounts;
+using Supera_Monitor_Back.Models.Turma;
 
 namespace Supera_Monitor_Back.Helpers {
     public class AutoMapperProfiles : Profile {
@@ -20,6 +21,9 @@ namespace Supera_Monitor_Back.Helpers {
             CreateMap<Account, AccountResponse>();
             CreateMap<Account, AuthenticateResponse>();
             CreateMap<CreateAccountRequest, Account>();
+
+            CreateMap<Turma, TurmaResponse>();
+            CreateMap<CreateTurmaRequest, Turma>();
         }
     }
 }

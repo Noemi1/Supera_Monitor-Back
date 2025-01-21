@@ -14,9 +14,8 @@ namespace Supera_Monitor_Back.Entities {
     }
 
     public enum Role {
-        Student = 1,
-        Assistant = 2,
-        Teacher = 4,
-        Admin = 8,
+        Assistant = 1,
+        Teacher = 2,
+        Admin = 3,
     }
 }

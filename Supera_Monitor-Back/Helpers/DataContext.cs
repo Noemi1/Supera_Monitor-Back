@@ -23,6 +23,9 @@ namespace Supera_Monitor_Back.Helpers {
         public virtual DbSet<AccountRefreshToken> AccountRefreshToken { get; set; }
         public virtual DbSet<AccountRole> AccountRole { get; set; }
 
+        public virtual DbSet<Turma> Turma { get; set; }
+        public virtual DbSet<Turma_Tipo> Turma_Tipo { get; set; }
+
         public virtual DbSet<Log> Log { get; set; }
         public virtual DbSet<LogError> LogError { get; set; }
         #endregion
@@ -30,16 +33,16 @@ namespace Supera_Monitor_Back.Helpers {
         #region Views
         public virtual DbSet<AccountList> AccountList { get; set; }
         public virtual DbSet<LogList> LogList { get; set; }
+
+        public virtual DbSet<TurmaList> TurmaList { get; set; }
         #endregion
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Account>(entity => {
-                entity.Property(e => e.Role_Id).HasDefaultValue(( int )Role.Student);
-
                 entity.HasMany(x => x.AccountRefreshToken)
-                .WithOne(x => x.Account)
-                .HasForeignKey(x => x.Account_Id);
+                    .WithOne(x => x.Account)
+                    .HasForeignKey(x => x.Account_Id);
 
                 entity.HasMany(x => x.Logs)
                     .WithOne(x => x.Account)
@@ -83,9 +86,16 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.HasData(
                     new AccountRole { Id = ( int )Role.Admin, Role = "Admin" },
                     new AccountRole { Id = ( int )Role.Teacher, Role = "Teacher" },
-                    new AccountRole { Id = ( int )Role.Assistant, Role = "Assistant" },
-                    new AccountRole { Id = ( int )Role.Student, Role = "Student" }
+                    new AccountRole { Id = ( int )Role.Assistant, Role = "Assistant" }
                 );
+            });
+
+            modelBuilder.Entity<Turma>(entity => { });
+
+            modelBuilder.Entity<Turma_Tipo>(entity => {
+                entity.HasMany(x => x.Turma)
+                .WithOne(x => x.Turma_Tipo)
+                .HasForeignKey(x => x.Turma_Tipo_Id);
             });
 
             #region VIEW DECLARATION
@@ -108,6 +118,10 @@ namespace Supera_Monitor_Back.Helpers {
             modelBuilder.Entity<LogList>()
                 .ToView("LogList")
                 .HasKey(logList => logList.Id);
+
+            modelBuilder.Entity<TurmaList>()
+                .ToView("TurmaList")
+                .HasKey(turmaList => turmaList.Id);
 
             #endregion
         }
