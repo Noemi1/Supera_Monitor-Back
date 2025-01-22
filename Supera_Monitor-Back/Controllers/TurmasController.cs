@@ -23,7 +23,7 @@ namespace Supera_Monitor_Back.Controllers {
             try {
                 var response = _turmaService.Get(turmaId);
 
-                return Ok();
+                return Ok(response);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
@@ -36,7 +36,7 @@ namespace Supera_Monitor_Back.Controllers {
             try {
                 var response = _turmaService.GetAll();
 
-                return Ok();
+                return Ok(response);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
@@ -52,7 +52,7 @@ namespace Supera_Monitor_Back.Controllers {
                 return Ok(response);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-                return StatusCode(500, e);
+                return StatusCode(500, e.Message);
             }
         }
 
@@ -82,6 +82,7 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
+        [Authorize(Entities.Role.Admin)]
         [HttpDelete("{turmaId}")]
         public ActionResult Delete(int turmaId)
         {

@@ -36,6 +36,8 @@ namespace Supera_Monitor_Back.Services {
                 throw new Exception("Turma not found.");
             }
 
+            // Validations passed
+
             TurmaResponse response = _mapper.Map<TurmaResponse>(turma);
 
             return response;
@@ -75,12 +77,56 @@ namespace Supera_Monitor_Back.Services {
 
         public ResponseModel Update(UpdateTurmaRequest model)
         {
-            throw new NotImplementedException();
+            Turma? turma = _db.Turma.FirstOrDefault(t => t.Id == model.Id);
+
+            if (turma == null) {
+                return new ResponseModel { Message = "Turma não encontrada" };
+            }
+
+            // Não devo poder atualizar turma colocando um professor que não existe
+            // Não devo poder atualizar turma colocando um tipo que não existe
+            // Validations passed
+
+            TurmaList? old = _db.TurmaList.AsNoTracking().FirstOrDefault(t => t.Id == model.Id);
+
+            turma.DiaSemana = model.DiaSemana;
+            turma.Horario = model.Horario;
+            turma.Professor_Id = model.Professor_Id;
+            turma.Turma_Tipo_Id = model.Turma_Tipo_Id;
+
+            _db.Turma.Update(turma);
+            _db.SaveChanges();
+
+            return new ResponseModel {
+                Message = "Turma atualizada com sucesso",
+                Object = _db.TurmaList.AsNoTracking().FirstOrDefault(x => x.Id == model.Id),
+                Success = true,
+                OldObject = old
+            };
         }
 
         public ResponseModel Delete(int turmaId)
         {
-            throw new NotImplementedException();
+            Turma? turma = _db.Turma
+                .Include(t => t.Turma_Tipo)
+                .FirstOrDefault(t => t.Id == turmaId);
+
+            if (turma == null) {
+                return new ResponseModel { Message = "Turma não encontrada" };
+            }
+
+            // Validations passed
+
+            TurmaList? logObject = _db.TurmaList.Find(turmaId);
+
+            _db.Turma.Remove(turma);
+            _db.SaveChanges();
+
+            return new ResponseModel {
+                Message = "Turma deletada com sucesso.",
+                Success = true,
+                Object = logObject,
+            };
         }
     }
 }

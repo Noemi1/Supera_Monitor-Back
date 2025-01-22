@@ -96,34 +96,39 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.HasMany(x => x.Turma)
                 .WithOne(x => x.Turma_Tipo)
                 .HasForeignKey(x => x.Turma_Tipo_Id);
+
+                entity.HasData(
+                    new Turma_Tipo { Id = ( int )Tipo.A, Nome = "TipoA" },
+                    new Turma_Tipo { Id = ( int )Tipo.B, Nome = "TipoB" }
+                );
+
+                #region VIEW DECLARATION
+
+                /* 
+                 * Declaring a view with modelBuilder DOES NOT CREATE a view in the database
+                 * However, it communicates the CLI that it should not create a regular table for the view.
+                 * Which makes sense because a view is just a 'stored query'
+                 * Code-first approach problems =)
+                 * 
+                 * The view still needs to be created so the options are:
+                 * 1. Create the view manually on the database (drop the database = create views all over again)
+                 * 2. Create the view through raw SQL execution (hardcoded for safety, but adds more things to maintain)
+                 */
+
+                modelBuilder.Entity<AccountList>()
+                    .ToView("AccountList")
+                    .HasKey(accList => accList.Id);
+
+                modelBuilder.Entity<LogList>()
+                    .ToView("LogList")
+                    .HasKey(logList => logList.Id);
+
+                modelBuilder.Entity<TurmaList>()
+                    .ToView("TurmaList")
+                    .HasKey(turmaList => turmaList.Id);
+
+                #endregion
             });
-
-            #region VIEW DECLARATION
-
-            /* 
-             * Declaring a view with modelBuilder DOES NOT CREATE a view in the database
-             * However, it communicates the CLI that it should not create a regular table for the view.
-             * Which makes sense because a view is just a 'stored query'
-             * Code-first approach problems =)
-             * 
-             * The view still needs to be created so the options are:
-             * 1. Create the view manually on the database (drop the database = create views all over again)
-             * 2. Create the view through raw SQL execution (hardcoded for safety, but adds more things to maintain)
-             */
-
-            modelBuilder.Entity<AccountList>()
-                .ToView("AccountList")
-                .HasKey(accList => accList.Id);
-
-            modelBuilder.Entity<LogList>()
-                .ToView("LogList")
-                .HasKey(logList => logList.Id);
-
-            modelBuilder.Entity<TurmaList>()
-                .ToView("TurmaList")
-                .HasKey(turmaList => turmaList.Id);
-
-            #endregion
         }
     }
 }
