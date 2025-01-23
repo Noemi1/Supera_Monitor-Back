@@ -49,6 +49,7 @@ builder.Services.AddScoped<ILogService, LogService>();
 builder.Services.AddScoped<IEmailTemplateFactory, EmailTemplateFactory>();
 
 builder.Services.AddScoped<ITurmaService, TurmaService>();
+builder.Services.AddScoped<IAlunoService, AlunoService>();
 
 #endregion
 

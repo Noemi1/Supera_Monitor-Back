@@ -13,7 +13,7 @@ public partial class TurmaAulaAluno {
 
     public int? Ah { get; set; }
 
-    public int AlunoId { get; set; }
+    public int Aluno_Id { get; set; }
     public virtual Aluno Aluno { get; set; } = null!;
 
     public int Turma_Aula_Id { get; set; }

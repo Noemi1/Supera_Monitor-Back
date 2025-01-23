@@ -95,5 +95,44 @@ namespace Supera_Monitor_Back.Controllers {
                 return StatusCode(500, e);
             }
         }
+
+        [HttpPost("aulas")]
+        public ActionResult RegisterAula(RegisterAulaRequest model)
+        {
+            try {
+                var response = _turmaService.RegisterAula(model);
+
+                return Ok(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
+
+        [HttpGet("aulas")]
+        public ActionResult GetAllAulas()
+        {
+            try {
+                var response = _turmaService.GetAllAulas();
+
+                return Ok(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
+
+        [HttpGet("aulas/presenca")]
+        public ActionResult RegisterPresenca(RegisterPresencaRequest model)
+        {
+            try {
+                var response = _turmaService.RegisterPresenca(model);
+
+                return Ok(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
     }
 }

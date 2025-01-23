@@ -14,6 +14,10 @@ namespace Supera_Monitor_Back.Services {
         ResponseModel Insert(CreateTurmaRequest model);
         ResponseModel Update(UpdateTurmaRequest model/*, string ip*/);
         ResponseModel Delete(int turmaId);
+
+        List<TurmaAula> GetAllAulas();
+        ResponseModel RegisterAula(RegisterAulaRequest model);
+        ResponseModel RegisterPresenca(RegisterPresencaRequest model);
     }
 
     public class TurmaService : ITurmaService {
@@ -63,6 +67,8 @@ namespace Supera_Monitor_Back.Services {
             // Não devo poder criar turma com um professor que não existe
             // Não devo poder criar turma com um tipo que não existe
 
+            // Validations passed
+
             Turma turma = _mapper.Map<Turma>(model);
 
             _db.Turmas.Add(turma);
@@ -79,12 +85,19 @@ namespace Supera_Monitor_Back.Services {
         {
             Turma? turma = _db.Turmas.FirstOrDefault(t => t.Id == model.Id);
 
+            // Não devo poder atualizar uma turma que não existe
             if (turma == null) {
                 return new ResponseModel { Message = "Turma não encontrada" };
             }
+            // Não devo poder atualizar turma colocando um tipo que não existe
+            bool TurmaTipoExists = _db.TurmaTipos.Any(t => t.Id == model.Turma_Tipo_Id);
+
+            if (!TurmaTipoExists) {
+                return new ResponseModel { Message = "Este tipo de turma não existe." };
+            }
 
             // Não devo poder atualizar turma colocando um professor que não existe
-            // Não devo poder atualizar turma colocando um tipo que não existe
+
             // Validations passed
 
             TurmaList? old = _db.TurmaList.AsNoTracking().FirstOrDefault(t => t.Id == model.Id);
@@ -111,6 +124,7 @@ namespace Supera_Monitor_Back.Services {
                 .Include(t => t.Turma_Tipo)
                 .FirstOrDefault(t => t.Id == turmaId);
 
+            // Não devo poder deletar uma turma que não existe
             if (turma == null) {
                 return new ResponseModel { Message = "Turma não encontrada" };
             }
@@ -123,9 +137,88 @@ namespace Supera_Monitor_Back.Services {
             _db.SaveChanges();
 
             return new ResponseModel {
-                Message = "Turma deletada com sucesso.",
+                Message = "Turma deletada com sucesso",
                 Success = true,
                 Object = logObject,
+            };
+        }
+
+        public ResponseModel RegisterAula(RegisterAulaRequest model)
+        {
+            // Não devo poder registrar uma aula colocando uma turma que não existe
+            bool TurmaExists = _db.Turmas.Any(t => t.Id == model.Turma_Id);
+
+            if (!TurmaExists) {
+                return new ResponseModel { Message = "Turma não encontrada" };
+            }
+
+            // Não devo poder registrar uma aula colocando um professor que não existe
+
+            // Validations passed
+
+            TurmaAula aula = new() {
+                Turma_Id = model.Turma_Id,
+                Professor_Id = model.Professor_Id,
+                Data = model.Data
+            };
+
+            _db.TurmaAulas.Add(aula);
+            _db.SaveChanges();
+
+            return new ResponseModel {
+                Message = "Aula registrada com sucesso",
+                Object = aula,
+                Success = true
+            };
+        }
+
+        public List<TurmaAula> GetAllAulas()
+        {
+            List<TurmaAula> aulas = _db.TurmaAulas
+                .Include(t => t.Turma_Aula_Alunos)
+                .ToList();
+
+            return aulas;
+        }
+
+        public ResponseModel RegisterPresenca(RegisterPresencaRequest model)
+        {
+            TurmaAula? aula = _db.TurmaAulas.Find(model.Turma_Aula_Id);
+
+            // Não devo poder registrar presença em uma aula que não existe
+            if (aula == null) {
+                return new ResponseModel { Message = "Aula não encontrada" };
+            }
+
+            // Não devo poder registrar presença de um aluno que não pertence a essa turma
+            bool AlunoBelongsToTurma = _db.AlunoList
+                .AsNoTracking()
+                .Any(a => a.Id == model.Aluno_Id && a.Turma_Id == aula.Turma_Id);
+
+            if (!AlunoBelongsToTurma) {
+                return new ResponseModel { Message = "Aluno não pertence à turma" };
+            }
+
+            // Validations passed
+
+            TurmaAulaAluno presenca = new() {
+                Presente = model.Presente,
+                Ah = model.Ah,
+                ApostilaAbaco = model.ApostilaAbaco,
+                NumeroPaginaAbaco = model.NumeroPaginaAbaco,
+                NumeroPaginaAh = model.NumeroPaginaAH,
+
+                Turma_Aula_Id = model.Turma_Aula_Id,
+                Aluno_Id = model.Aluno_Id,
+            };
+
+            _db.TurmaAulaAlunos.Add(presenca);
+            _db.SaveChanges();
+
+            return new ResponseModel {
+                Message = "Presença registrada com sucesso",
+                Object = presenca,
+                Success = true
             };
         }
     }

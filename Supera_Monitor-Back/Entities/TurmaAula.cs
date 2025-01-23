@@ -6,7 +6,7 @@ public partial class TurmaAula {
 
     public int Professor_Id { get; set; }
 
-    public int? TurmaId { get; set; }
+    public int? Turma_Id { get; set; }
     public virtual Turma? Turma { get; set; }
 
     public virtual ICollection<TurmaAulaAluno> Turma_Aula_Alunos { get; set; } = new List<TurmaAulaAluno>();
