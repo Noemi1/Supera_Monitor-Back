@@ -28,7 +28,7 @@ namespace Supera_Monitor_Back.Services {
 
         public TurmaResponse Get(int turmaId)
         {
-            Turma? turma = _db.Turma
+            Turma? turma = _db.Turmas
                 .Include(t => t.Turma_Tipo)
                 .FirstOrDefault(t => t.Id == turmaId);
 
@@ -52,7 +52,7 @@ namespace Supera_Monitor_Back.Services {
 
         public List<TurmaTipoModel> GetTypes()
         {
-            List<Turma_Tipo> types = _db.Turma_Tipo.ToList();
+            List<TurmaTipo> types = _db.TurmaTipos.ToList();
 
             return _mapper.Map<List<TurmaTipoModel>>(types);
         }
@@ -65,19 +65,19 @@ namespace Supera_Monitor_Back.Services {
 
             Turma turma = _mapper.Map<Turma>(model);
 
-            _db.Turma.Add(turma);
+            _db.Turmas.Add(turma);
             _db.SaveChanges();
 
             return new ResponseModel {
                 Message = "Turma cadastrada com sucesso",
-                Object = _db.TurmaList.Find(turma.Id),
+                Object = _db.TurmaList.AsNoTracking().FirstOrDefault(t => t.Id == turma.Id),
                 Success = true,
             };
         }
 
         public ResponseModel Update(UpdateTurmaRequest model)
         {
-            Turma? turma = _db.Turma.FirstOrDefault(t => t.Id == model.Id);
+            Turma? turma = _db.Turmas.FirstOrDefault(t => t.Id == model.Id);
 
             if (turma == null) {
                 return new ResponseModel { Message = "Turma não encontrada" };
@@ -94,7 +94,7 @@ namespace Supera_Monitor_Back.Services {
             turma.Professor_Id = model.Professor_Id;
             turma.Turma_Tipo_Id = model.Turma_Tipo_Id;
 
-            _db.Turma.Update(turma);
+            _db.Turmas.Update(turma);
             _db.SaveChanges();
 
             return new ResponseModel {
@@ -107,7 +107,7 @@ namespace Supera_Monitor_Back.Services {
 
         public ResponseModel Delete(int turmaId)
         {
-            Turma? turma = _db.Turma
+            Turma? turma = _db.Turmas
                 .Include(t => t.Turma_Tipo)
                 .FirstOrDefault(t => t.Id == turmaId);
 
@@ -119,7 +119,7 @@ namespace Supera_Monitor_Back.Services {
 
             TurmaList? logObject = _db.TurmaList.Find(turmaId);
 
-            _db.Turma.Remove(turma);
+            _db.Turmas.Remove(turma);
             _db.SaveChanges();
 
             return new ResponseModel {

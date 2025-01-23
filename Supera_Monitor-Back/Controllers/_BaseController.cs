@@ -15,7 +15,6 @@ namespace Supera_Monitor_Back.Controllers {
             }
 
             return HttpContext.Connection.RemoteIpAddress!.MapToIPv4().ToString();
-
         }
     }
 }

@@ -4,13 +4,13 @@ namespace Supera_Monitor_Back.Entities {
     public partial class AccountRole {
         public AccountRole()
         {
-            Account = new HashSet<Account>();
+            Accounts = new HashSet<Account>();
         }
 
         public int Id { get; set; }
         public string Role { get; set; }
 
-        public virtual ICollection<Account> Account { get; set; }
+        public virtual ICollection<Account> Accounts { get; set; }
     }
 
     public enum Role {

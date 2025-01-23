@@ -1,13 +1,5 @@
 ﻿namespace Supera_Monitor_Back.Entities {
     public partial class Account : _BaseEntity {
-
-        public Account()
-        {
-            Created_Account = new HashSet<Account>();
-            AccountRefreshToken = new HashSet<AccountRefreshToken>();
-            Logs = new HashSet<Log>();
-        }
-
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
@@ -22,12 +14,11 @@
         public DateTime? PasswordReset { get; set; }
 
         public int Role_Id { get; set; }
-        public AccountRole AccountRole { get; set; } = null!;
+        public virtual AccountRole Account_Role { get; set; } = null!;
 
-        public virtual ICollection<Account> Created_Account { get; set; }
-
-        public virtual ICollection<AccountRefreshToken> AccountRefreshToken { get; set; }
-        public ICollection<Log> Logs { get; set; }
+        public virtual ICollection<Account> Created_Account { get; set; } = new HashSet<Account>();
+        public virtual ICollection<AccountRefreshToken> AccountRefreshToken { get; set; } = new HashSet<AccountRefreshToken>();
+        public virtual ICollection<Log> Logs { get; set; } = new HashSet<Log>();
 
         public bool OwnsToken(string token)
         {

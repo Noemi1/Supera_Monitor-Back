@@ -3,9 +3,36 @@ using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
 
 namespace Supera_Monitor_Back.Helpers {
-    public class DataContext : DbContext {
-
+    public partial class DataContext : DbContext {
         public DataContext(DbContextOptions<DataContext> options) : base(options) { }
+
+        public virtual DbSet<Account> Accounts { get; set; }
+
+        public virtual DbSet<AccountList> AccountList { get; set; }
+
+        public virtual DbSet<AccountRefreshToken> AccountRefreshTokens { get; set; }
+
+        public virtual DbSet<AccountRole> AccountRoles { get; set; }
+
+        public virtual DbSet<Aluno> Alunos { get; set; }
+
+        public virtual DbSet<Log> Logs { get; set; }
+
+        public virtual DbSet<LogError> LogErrors { get; set; }
+
+        public virtual DbSet<LogList> LogList { get; set; }
+
+        public virtual DbSet<Pessoa> Pessoas { get; set; }
+
+        public virtual DbSet<Turma> Turmas { get; set; }
+
+        public virtual DbSet<TurmaAula> TurmaAulas { get; set; }
+
+        public virtual DbSet<TurmaAulaAluno> TurmaAulaAlunos { get; set; }
+
+        public virtual DbSet<TurmaList> TurmaList { get; set; }
+
+        public virtual DbSet<TurmaTipo> TurmaTipos { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -18,117 +45,162 @@ namespace Supera_Monitor_Back.Helpers {
             optionsBuilder.UseSqlServer(connectionString);
         }
 
-        #region Tables
-        public virtual DbSet<Account> Account { get; set; }
-        public virtual DbSet<AccountRefreshToken> AccountRefreshToken { get; set; }
-        public virtual DbSet<AccountRole> AccountRole { get; set; }
-
-        public virtual DbSet<Turma> Turma { get; set; }
-        public virtual DbSet<Turma_Tipo> Turma_Tipo { get; set; }
-
-        public virtual DbSet<Log> Log { get; set; }
-        public virtual DbSet<LogError> LogError { get; set; }
-        #endregion
-
-        #region Views
-        public virtual DbSet<AccountList> AccountList { get; set; }
-        public virtual DbSet<LogList> LogList { get; set; }
-
-        public virtual DbSet<TurmaList> TurmaList { get; set; }
-        #endregion
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Account>(entity => {
-                entity.HasMany(x => x.AccountRefreshToken)
-                    .WithOne(x => x.Account)
-                    .HasForeignKey(x => x.Account_Id);
+                entity.ToTable("Account");
 
-                entity.HasMany(x => x.Logs)
-                    .WithOne(x => x.Account)
-                    .HasForeignKey(x => x.Account_Id);
+                entity.HasIndex(e => e.Account_Created_Id, "IX_Account_Account_Created_Id");
 
-                entity.HasMany(x => x.Created_Account)
-                    .WithOne(x => x.Account_Created)
-                    .HasForeignKey(x => x.Account_Created_Id)
-                    // TODO: Analisar - É possível que o DeleteBehavior.Restrict não seja o comportamento desejado
-                    // Porém, resolve ciclos no relacionamento Account_Account_Created_Id que não permitia a criação da tabela
-                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasIndex(e => e.Role_Id, "IX_Account_Role_Id");
 
-                /* Descrição do erro:
-                 * A introdução da restrição FOREIGN KEY 'FK_Account_Account_Account_Created_Id' na tabela 'Account' pode causar ciclos ou vários caminhos em cascata.
-                 * Especifique ON DELETE NO ACTION ou ON UPDATE NO ACTION, ou modifique outras restrições FOREIGN KEY.
-                 * Não foi possí­vel criar a restrição ou o í­ndice. Consulte os erros anteriores.
-                 */
+                entity.Property(e => e.Account_Created_Id).HasColumnName("Account_Created_Id");
+                entity.Property(e => e.Role_Id)
+                    .HasDefaultValueSql("((1))")
+                    .HasColumnName("Role_Id");
 
-                // Testing purposes: Create default account
-                entity.HasData(
-                    new Account {
-                        Id = 1,
-                        Name = "galax1y",
-                        Email = "galax1y@test.com",
-                        PasswordHash = "$2b$10$a46QGCAIbzhXEKJl36cD1OBQE5xMNyATdvrrfh1s/wtqTdawg2lHu", // Hashed "galax2y"
-                        Phone = "123456789",
-                        AcceptTerms = true,
-                        Verified = DateTime.Now,
-                        VerificationToken = "",
-                        Created = DateTime.Now,
-                    }
-                );
+                entity.HasOne(d => d.Account_Created).WithMany(p => p.Created_Account).HasForeignKey(d => d.Account_Created_Id);
+
+                entity.HasOne(d => d.Account_Role).WithMany(p => p.Accounts).HasForeignKey(d => d.Role_Id);
+            });
+
+            modelBuilder.Entity<AccountList>(entity => {
+                entity
+                    .HasNoKey()
+                    .ToView("AccountList");
+
+                entity.Property(e => e.Account_Created).HasColumnName("Account_Created");
+                entity.Property(e => e.Account_Created_Id).HasColumnName("Account_Created_Id");
+                entity.Property(e => e.Role_Id).HasColumnName("Role_Id");
+            });
+
+            modelBuilder.Entity<AccountRefreshToken>(entity => {
+                entity.ToTable("AccountRefreshToken");
+
+                entity.HasIndex(e => e.AccountId, "IX_AccountRefreshToken_Account_Id");
+
+                entity.Property(e => e.AccountId).HasColumnName("Account_Id");
+
+                entity.HasOne(d => d.Account).WithMany(p => p.AccountRefreshToken).HasForeignKey(d => d.AccountId);
             });
 
             modelBuilder.Entity<AccountRole>(entity => {
-                entity.HasMany(x => x.Account)
-                .WithOne(x => x.AccountRole)
-                .HasForeignKey(x => x.Role_Id);
-
-                // Seeding default roles
-                entity.HasData(
-                    new AccountRole { Id = ( int )Role.Admin, Role = "Admin" },
-                    new AccountRole { Id = ( int )Role.Teacher, Role = "Teacher" },
-                    new AccountRole { Id = ( int )Role.Assistant, Role = "Assistant" }
-                );
+                entity.ToTable("AccountRole");
             });
 
-            modelBuilder.Entity<Turma>(entity => { });
+            modelBuilder.Entity<Aluno>(entity => {
+                entity.ToTable("Aluno");
 
-            modelBuilder.Entity<Turma_Tipo>(entity => {
-                entity.HasMany(x => x.Turma)
-                .WithOne(x => x.Turma_Tipo)
-                .HasForeignKey(x => x.Turma_Tipo_Id);
+                entity.Property(e => e.Pessoa_Id).HasColumnName("Pessoa_Id");
+                entity.Property(e => e.Turma_Id).HasColumnName("Turma_Id");
 
-                entity.HasData(
-                    new Turma_Tipo { Id = ( int )Tipo.A, Nome = "TipoA" },
-                    new Turma_Tipo { Id = ( int )Tipo.B, Nome = "TipoB" }
-                );
+                entity.HasOne(d => d.Pessoa).WithMany(p => p.Alunos)
+                    .HasForeignKey(d => d.Pessoa_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Aluno_Pessoa");
 
-                #region VIEW DECLARATION
-
-                /* 
-                 * Declaring a view with modelBuilder DOES NOT CREATE a view in the database
-                 * However, it communicates the CLI that it should not create a regular table for the view.
-                 * Which makes sense because a view is just a 'stored query'
-                 * Code-first approach problems =)
-                 * 
-                 * The view still needs to be created so the options are:
-                 * 1. Create the view manually on the database (drop the database = create views all over again)
-                 * 2. Create the view through raw SQL execution (hardcoded for safety, but adds more things to maintain)
-                 */
-
-                modelBuilder.Entity<AccountList>()
-                    .ToView("AccountList")
-                    .HasKey(accList => accList.Id);
-
-                modelBuilder.Entity<LogList>()
-                    .ToView("LogList")
-                    .HasKey(logList => logList.Id);
-
-                modelBuilder.Entity<TurmaList>()
-                    .ToView("TurmaList")
-                    .HasKey(turmaList => turmaList.Id);
-
-                #endregion
+                entity.HasOne(d => d.Turma).WithMany(p => p.Alunos)
+                    .HasForeignKey(d => d.Turma_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Aluno_Turma");
             });
+
+            modelBuilder.Entity<Log>(entity => {
+                entity.ToTable("Log");
+
+                entity.HasIndex(e => e.Account_Id, "IX_Log_Account_Id");
+
+                entity.Property(e => e.Account_Id).HasColumnName("Account_Id");
+
+                entity.HasOne(d => d.Account).WithMany(p => p.Logs).HasForeignKey(d => d.Account_Id);
+            });
+
+            modelBuilder.Entity<LogError>(entity => {
+                entity.ToTable("LogError");
+            });
+
+            modelBuilder.Entity<LogList>(entity => {
+                entity
+                    .HasNoKey()
+                    .ToView("LogList");
+
+                entity.Property(e => e.Account_Id).HasColumnName("Account_Id");
+            });
+
+            modelBuilder.Entity<Pessoa>(entity => {
+                entity.ToTable("Pessoa");
+
+                entity.Property(e => e.DataNascimento).HasColumnType("date");
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Turma>(entity => {
+                entity.ToTable("Turma");
+
+                entity.Property(e => e.Professor_Id).HasColumnName("Professor_Id");
+                entity.Property(e => e.Turma_Tipo_Id).HasColumnName("Turma_Tipo_Id");
+
+                entity.HasOne(d => d.Turma_Tipo).WithMany(p => p.Turmas)
+                    .HasForeignKey(d => d.Turma_Tipo_Id)
+                    .HasConstraintName("FK_Turma_Turma_Tipo");
+            });
+
+            modelBuilder.Entity<TurmaAula>(entity => {
+                entity.ToTable("Turma_Aula");
+
+                entity.Property(e => e.Data).HasColumnType("date");
+                entity.Property(e => e.Professor_Id).HasColumnName("Professor_Id");
+                entity.Property(e => e.TurmaId).HasColumnName("Turma_Id");
+
+                entity.HasOne(d => d.Turma).WithMany(p => p.Turma_Aulas)
+                    .HasForeignKey(d => d.TurmaId)
+                    .HasConstraintName("FK_Turma_Aula_Turma");
+            });
+
+            modelBuilder.Entity<TurmaAulaAluno>(entity => {
+                entity.ToTable("Turma_Aula_Aluno");
+
+                entity.Property(e => e.Ah).HasColumnName("AH");
+                entity.Property(e => e.AlunoId).HasColumnName("Aluno_Id");
+                entity.Property(e => e.NumeroPaginaAh).HasColumnName("NumeroPaginaAH");
+                entity.Property(e => e.Turma_Aula_Id).HasColumnName("Turma_Aula_Id");
+
+                entity.HasOne(d => d.Aluno).WithMany(p => p.Turma_Aula_Alunos)
+                    .HasForeignKey(d => d.AlunoId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Turma_Aula_Aluno_Aluno");
+
+                entity.HasOne(d => d.Turma_Aula).WithMany(p => p.Turma_Aula_Alunos)
+                    .HasForeignKey(d => d.Turma_Aula_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Turma_Aula_Aluno_Turma_Aula");
+            });
+
+            modelBuilder.Entity<TurmaList>(entity => {
+                entity
+                    .HasNoKey()
+                    .ToView("TurmaList");
+
+                entity.Property(e => e.Professor_Id).HasColumnName("Professor_Id");
+                entity.Property(e => e.Turma_Tipo)
+                    .HasMaxLength(50)
+                    .IsUnicode(false)
+                    .HasColumnName("Turma_Tipo");
+            });
+
+            modelBuilder.Entity<TurmaTipo>(entity => {
+                entity.ToTable("Turma_Tipo");
+
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
+            OnModelCreatingPartial(modelBuilder);
         }
+
+        partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
     }
 }

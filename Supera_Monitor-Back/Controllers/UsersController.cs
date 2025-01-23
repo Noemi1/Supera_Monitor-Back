@@ -25,11 +25,11 @@ namespace Supera_Monitor_Back.Controllers {
             _logger = logService;
         }
 
-        [HttpGet("all/{accountId}")]
-        public ActionResult GetAll(int accountId)
+        [HttpGet("all")]
+        public ActionResult GetAll()
         {
             try {
-                var response = _userService.GetAll(accountId);
+                var response = _userService.GetAll();
 
                 return Ok(response);
             } catch (Exception e) {

@@ -1,6 +1,6 @@
 ﻿namespace Supera_Monitor_Back.Models.Turma {
     public class CreateTurmaRequest {
-        public TimeSpan Horario;
+        public TimeSpan? Horario;
         public int DiaSemana;
 
         public int? Turma_Tipo_Id;

@@ -1,9 +1,9 @@
 ﻿using Supera_Monitor_Back.Helpers;
 
 namespace Supera_Monitor_Back.Entities {
-    public class AccountRefreshToken {
+    public partial class AccountRefreshToken {
         public int Id { get; set; }
-        public int Account_Id { get; set; }
+        public int AccountId { get; set; }
         public string Token { get; set; } = string.Empty;
         public DateTime Expires { get; set; }
         public bool IsExpired => TimeFunctions.HoraAtualBR() >= Expires;
@@ -13,6 +13,6 @@ namespace Supera_Monitor_Back.Entities {
         public string? RevokedByIp { get; set; }
         public string? ReplacedByToken { get; set; }
         public bool IsActive => Revoked == null && !IsExpired;
-        public Account Account { get; set; }
+        public virtual Account Account { get; set; } = null!;
     }
 }

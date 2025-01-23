@@ -1,12 +1,17 @@
-﻿namespace Supera_Monitor_Back.Entities {
-    public class Turma {
-        public int Id { get; set; }
-        public int DiaSemana { get; set; }
-        public TimeSpan Horario { get; set; }
+﻿namespace Supera_Monitor_Back.Entities;
 
-        public int? Professor_Id { get; set; }
+public partial class Turma {
+    public int Id { get; set; }
 
-        public int? Turma_Tipo_Id { get; set; }
-        public Turma_Tipo? Turma_Tipo { get; set; } = null;
-    }
+    public int DiaSemana { get; set; }
+
+    public TimeSpan? Horario { get; set; }
+
+    public int? Professor_Id { get; set; }
+
+    public int? Turma_Tipo_Id { get; set; }
+    public virtual TurmaTipo? Turma_Tipo { get; set; }
+
+    public virtual ICollection<Aluno> Alunos { get; set; } = new HashSet<Aluno>();
+    public virtual ICollection<TurmaAula> Turma_Aulas { get; set; } = new HashSet<TurmaAula>();
 }

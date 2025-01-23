@@ -11,7 +11,7 @@ using Supera_Monitor_Back.Services.Email.Models;
 namespace Supera_Monitor_Back.Services {
     public interface IUserService {
         AccountResponse Get(int accountId);
-        List<AccountList> GetAll(int accountId);
+        List<AccountList> GetAll();
         List<AccountRoleModel> GetRoles();
         ResponseModel Insert(CreateAccountRequest model, string origin);
         ResponseModel Update(UpdateAccountRequest model/*, string ip*/);
@@ -46,8 +46,8 @@ namespace Supera_Monitor_Back.Services {
 
         public AccountResponse Get(int accountId)
         {
-            Account? account = _db.Account
-                .Include(acc => acc.AccountRole)
+            Account? account = _db.Accounts
+                .Include(acc => acc.Account_Role)
                 .FirstOrDefault(acc => acc.Id == accountId);
 
             if (account == null) {
@@ -59,25 +59,23 @@ namespace Supera_Monitor_Back.Services {
             return response;
         }
 
-        public List<AccountList> GetAll(int accountId)
+        public List<AccountList> GetAll()
         {
-            List<AccountList> accounts = _db.AccountList
-                .Where(accList => accList.Id == accountId)
-                .ToList();
+            List<AccountList> accounts = _db.AccountList.ToList();
 
             return accounts;
         }
 
         public List<AccountRoleModel> GetRoles()
         {
-            List<AccountRole> roles = _db.AccountRole.ToList();
+            List<AccountRole> roles = _db.AccountRoles.ToList();
 
             return _mapper.Map<List<AccountRoleModel>>(roles);
         }
 
         public ResponseModel Insert(CreateAccountRequest model, string origin)
         {
-            Account? account = _db.Account.FirstOrDefault(acc => acc.Email == model.Email);
+            Account? account = _db.Accounts.FirstOrDefault(acc => acc.Email == model.Email);
 
             if (account != null) {
                 return new ResponseModel { Message = "This e-mail has already been registered." };
@@ -95,7 +93,7 @@ namespace Supera_Monitor_Back.Services {
             (string randomPassword, string passwordHash) = Utils.GenerateRandomHashedPassword();
             account.PasswordHash = passwordHash;
 
-            _db.Account.Add(account);
+            _db.Accounts.Add(account);
             _db.SaveChanges();
 
             SendVerificationEmail(account, origin, randomPassword);
@@ -103,19 +101,19 @@ namespace Supera_Monitor_Back.Services {
             return new ResponseModel {
                 Message = "Conta cadastrada com sucesso!",
                 Success = true,
-                Object = _db.AccountList.Find(account.Id),
+                Object = _db.AccountList.AsNoTracking().FirstOrDefault(accList => accList.Id == account.Id),
             };
         }
 
         public ResponseModel Update(UpdateAccountRequest model)
         {
-            Account? account = _db.Account.Find(model.Id);
+            Account? account = _db.Accounts.Find(model.Id);
 
             if (account == null) {
                 return new ResponseModel { Message = "Account not found." };
             }
 
-            var emailIsAlreadyTaken = _db.Account.Any(acc => acc.Email == model.Email && acc.Id != model.Id);
+            var emailIsAlreadyTaken = _db.Accounts.Any(acc => acc.Email == model.Email && acc.Id != model.Id);
 
             if (emailIsAlreadyTaken) {
                 return new ResponseModel { Message = "This e-mail has already been registered." };
@@ -141,11 +139,9 @@ namespace Supera_Monitor_Back.Services {
                 _httpContextAccessor.HttpContext.Items["Account"] = account;
             }
 
-            AccountList? old = _db.AccountList
-                .AsNoTracking()
-                .FirstOrDefault(accList => accList.Id == account.Id);
+            AccountList? old = _db.AccountList.AsNoTracking().FirstOrDefault(accList => accList.Id == account.Id);
 
-            _db.Account.Update(account);
+            _db.Accounts.Update(account);
             _db.SaveChanges();
 
             return new ResponseModel {
@@ -158,9 +154,9 @@ namespace Supera_Monitor_Back.Services {
 
         public ResponseModel Delete(int accountId)
         {
-            Account? account = _db.Account
+            Account? account = _db.Accounts
                 .Include(acc => acc.AccountRefreshToken)
-                .Include(acc => acc.AccountRole)
+                .Include(acc => acc.Account_Role)
                 .FirstOrDefault(acc => acc.Id == accountId);
 
             if (account == null) {
@@ -179,9 +175,9 @@ namespace Supera_Monitor_Back.Services {
 
             AccountList? logObject = _db.AccountList.Find(account.Id);
 
-            _db.AccountRefreshToken.RemoveRange(account.AccountRefreshToken);
+            _db.AccountRefreshTokens.RemoveRange(account.AccountRefreshToken);
 
-            _db.Account.Remove(account);
+            _db.Accounts.Remove(account);
             _db.SaveChanges();
 
             return new ResponseModel {
@@ -206,8 +202,8 @@ namespace Supera_Monitor_Back.Services {
 
         public ResponseModel ResetPassword(int accountId)
         {
-            Account? account = _db.Account
-                 .Include(x => x.AccountRole)
+            Account? account = _db.Accounts
+                 .Include(x => x.Account_Role)
                  .FirstOrDefault(x => x.Id == accountId);
 
             if (account == null) {
@@ -222,7 +218,7 @@ namespace Supera_Monitor_Back.Services {
             account.PasswordHash = passwordHash;
             account.PasswordReset = TimeFunctions.HoraAtualBR();
 
-            _db.Account.Update(account);
+            _db.Accounts.Update(account);
             _db.SaveChanges();
 
             _emailService.SendEmail(
@@ -233,13 +229,13 @@ namespace Supera_Monitor_Back.Services {
             return new ResponseModel {
                 Message = "Email de recuperação de senha enviado!",
                 Success = true,
-                Object = _db.AccountList.Find(account.Id)
+                Object = _db.AccountList.AsNoTracking().FirstOrDefault(accList => accList.Id == account.Id)
             };
         }
 
         public ResponseModel Deactivated(int accountId, bool activate, string ipAddress)
         {
-            Account? account = _db.Account
+            Account? account = _db.Accounts
                             .Include(acc => acc.AccountRefreshToken)
                             .FirstOrDefault(acc => acc.Id == accountId);
 
@@ -257,11 +253,11 @@ namespace Supera_Monitor_Back.Services {
 
             account.Deactivated = activate ? null : TimeFunctions.HoraAtualBR();
 
-            _db.Account.Update(account);
+            _db.Accounts.Update(account);
             _db.SaveChanges();
 
-            account.AccountRefreshToken = _db.AccountRefreshToken
-                .Where(x => x.Account_Id == accountId)
+            account.AccountRefreshToken = _db.AccountRefreshTokens
+                .Where(x => x.AccountId == accountId)
                 .ToList();
 
             // If user is editing his own account
@@ -279,7 +275,7 @@ namespace Supera_Monitor_Back.Services {
 
             return new ResponseModel {
                 Success = true,
-                Object = _db.AccountList.Find(account.Id),
+                Object = _db.AccountList.AsNoTracking().FirstOrDefault(accList => accList.Id == account.Id),
             };
         }
 
