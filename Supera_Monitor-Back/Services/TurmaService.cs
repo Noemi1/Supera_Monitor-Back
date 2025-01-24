@@ -15,8 +15,11 @@ namespace Supera_Monitor_Back.Services {
         ResponseModel Update(UpdateTurmaRequest model/*, string ip*/);
         ResponseModel Delete(int turmaId);
 
-        List<TurmaAula> GetAllAulas();
-        ResponseModel RegisterAula(RegisterAulaRequest model);
+        List<TurmaAula> GetAllAulasByTurma(int turmaId);
+        List<AlunoList> GetAllAlunosByTurma(int turmaId);
+
+        ResponseModel InsertAula(InsertAulaRequest model);
+
         ResponseModel RegisterPresenca(RegisterPresencaRequest model);
     }
 
@@ -143,7 +146,7 @@ namespace Supera_Monitor_Back.Services {
             };
         }
 
-        public ResponseModel RegisterAula(RegisterAulaRequest model)
+        public ResponseModel InsertAula(InsertAulaRequest model)
         {
             // Não devo poder registrar uma aula colocando uma turma que não existe
             bool TurmaExists = _db.Turmas.Any(t => t.Id == model.Turma_Id);
@@ -172,13 +175,21 @@ namespace Supera_Monitor_Back.Services {
             };
         }
 
-        public List<TurmaAula> GetAllAulas()
+        public List<TurmaAula> GetAllAulasByTurma(int turmaId)
         {
             List<TurmaAula> aulas = _db.TurmaAulas
+                .Where(t => t.Turma_Id == turmaId)
                 .Include(t => t.Turma_Aula_Alunos)
                 .ToList();
 
             return aulas;
+        }
+
+        public List<AlunoList> GetAllAlunosByTurma(int turmaId)
+        {
+            List<AlunoList> alunos = _db.AlunoList.Where(a => a.Turma_Id == turmaId).ToList();
+
+            return alunos;
         }
 
         public ResponseModel RegisterPresenca(RegisterPresencaRequest model)

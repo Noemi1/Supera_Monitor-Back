@@ -13,6 +13,8 @@ namespace Supera_Monitor_Back.Services {
         ResponseModel Insert(CreateAlunoRequest model);
         ResponseModel Update(UpdateAlunoRequest model/*, string ip*/);
         ResponseModel Delete(int alunoId);
+
+        List<Pessoa> GetAllPessoas();
     }
 
     public class AlunoService : IAlunoService {
@@ -73,7 +75,6 @@ namespace Supera_Monitor_Back.Services {
                 pessoa = _db.Pessoas.AsNoTracking().FirstOrDefault(p => p.Id == model.Pessoa_Id);
             }
 
-
             if (pessoa == null) {
                 return new ResponseModel {
                     Message = "Ocorreu algum erro ao criar a pessoa."
@@ -98,12 +99,50 @@ namespace Supera_Monitor_Back.Services {
 
         public ResponseModel Update(UpdateAlunoRequest model)
         {
-            throw new NotImplementedException();
+            Aluno? aluno = _db.Alunos.Include(a => a.Pessoa).FirstOrDefault(aluno => aluno.Id == model.Id);
+
+            if (aluno == null) {
+                return new ResponseModel { Message = "Aluno não encontrado" };
+            }
+
+            Pessoa? pessoa = _db.Pessoas.FirstOrDefault(pessoa => pessoa.Id == aluno.Pessoa_Id);
+
+            if (pessoa == null) {
+                return new ResponseModel { Message = "Pessoa não encontrada" };
+            }
+
+            if (string.IsNullOrEmpty(model.Nome)) {
+                return new ResponseModel { Message = "Nome Inválido" };
+            }
+
+            // Validations passed
+
+            AlunoList? old = _db.AlunoList.AsNoTracking().FirstOrDefault(t => t.Id == model.Id);
+
+            pessoa.Nome = model.Nome;
+            pessoa.DataNascimento = model.DataNascimento;
+
+            _db.Pessoas.Update(pessoa);
+            _db.SaveChanges();
+
+            return new ResponseModel {
+                Message = "Turma atualizada com sucesso",
+                Object = _db.AlunoList.AsNoTracking().FirstOrDefault(x => x.Id == model.Id),
+                Success = true,
+                OldObject = old
+            };
         }
 
         public ResponseModel Delete(int alunoId)
         {
             throw new NotImplementedException();
+        }
+
+        public List<Pessoa> GetAllPessoas()
+        {
+            List<Pessoa> pessoas = _db.Pessoas.ToList();
+
+            return pessoas;
         }
     }
 }

@@ -43,11 +43,41 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
+        [HttpGet("pessoas/all")]
+        public ActionResult GetAllPessoas()
+        {
+            try {
+                var response = _alunoService.GetAllPessoas();
+
+                return Ok(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
+
         [HttpPost()]
         public ActionResult Insert(CreateAlunoRequest model)
         {
             try {
                 var response = _alunoService.Insert(model);
+
+                if (response.Success == false) {
+                    return BadRequest(response.Message);
+                }
+
+                return Ok(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
+
+        [HttpPut()]
+        public ActionResult Update(UpdateAlunoRequest model)
+        {
+            try {
+                var response = _alunoService.Update(model);
 
                 return Ok(response);
             } catch (Exception e) {

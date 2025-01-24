@@ -97,10 +97,10 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPost("aulas")]
-        public ActionResult RegisterAula(RegisterAulaRequest model)
+        public ActionResult InsertAula(InsertAulaRequest model)
         {
             try {
-                var response = _turmaService.RegisterAula(model);
+                var response = _turmaService.InsertAula(model);
 
                 return Ok(response);
             } catch (Exception e) {
@@ -109,11 +109,24 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
-        [HttpGet("aulas")]
-        public ActionResult GetAllAulas()
+        [HttpGet("{turmaId}/aulas")]
+        public ActionResult GetAllAulasByTurma(int turmaId)
         {
             try {
-                var response = _turmaService.GetAllAulas();
+                var response = _turmaService.GetAllAulasByTurma(turmaId);
+
+                return Ok(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
+
+        [HttpGet("{turmaId}/alunos")]
+        public ActionResult GetAllAlunosByTurma(int turmaId)
+        {
+            try {
+                var response = _turmaService.GetAllAlunosByTurma(turmaId);
 
                 return Ok(response);
             } catch (Exception e) {
