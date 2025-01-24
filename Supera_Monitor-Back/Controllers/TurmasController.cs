@@ -62,7 +62,11 @@ namespace Supera_Monitor_Back.Controllers {
             try {
                 var response = _turmaService.Insert(model);
 
-                return Ok(response);
+                if (response.Success) {
+                    return Created($"/turmas/all", response);
+                }
+
+                return BadRequest(response);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
@@ -75,7 +79,11 @@ namespace Supera_Monitor_Back.Controllers {
             try {
                 var response = _turmaService.Update(model);
 
-                return Ok(response);
+                if (response.Success) {
+                    return Ok(response);
+                }
+
+                return BadRequest(response);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
@@ -89,7 +97,11 @@ namespace Supera_Monitor_Back.Controllers {
             try {
                 var response = _turmaService.Delete(turmaId);
 
-                return Ok(response);
+                if (response.Success) {
+                    return Ok(response);
+                }
+
+                return BadRequest(response.Message);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
@@ -102,7 +114,11 @@ namespace Supera_Monitor_Back.Controllers {
             try {
                 var response = _turmaService.InsertAula(model);
 
-                return Ok(response);
+                if (response.Success) {
+                    return Created($"/turmas/{model.Turma_Id}/aulas", response);
+                }
+
+                return BadRequest(response);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
@@ -136,12 +152,16 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpGet("aulas/presenca")]
-        public ActionResult RegisterPresenca(RegisterPresencaRequest model)
+        public ActionResult InsertPresenca(RegisterPresencaRequest model)
         {
             try {
                 var response = _turmaService.InsertPresenca(model);
 
-                return Ok(response);
+                if (response.Success) {
+                    return Ok(response);
+                }
+
+                return BadRequest(response);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);

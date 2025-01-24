@@ -83,8 +83,8 @@ namespace Supera_Monitor_Back.Services {
                 _db.Turmas.Add(turma);
                 _db.SaveChanges();
 
-                response.Object = _db.TurmaList.Find(turma.Id);
                 response.Message = "Turma cadastrada com sucesso";
+                response.Object = turma;
                 response.Success = true;
             } catch (Exception ex) {
                 response.Message = "Falha ao inserir nova turma: " + ex.ToString();
@@ -127,7 +127,7 @@ namespace Supera_Monitor_Back.Services {
                 _db.SaveChanges();
 
                 response.Message = "Turma atualizada com sucesso";
-                response.Object = _db.TurmaList.Find(model.Id);
+                response.Object = turma;
                 response.Success = true;
             } catch (Exception ex) {
                 response.Message = "Falha ao atualizar a turma: " + ex.ToString();
@@ -247,7 +247,7 @@ namespace Supera_Monitor_Back.Services {
                     a.Aluno_Id == model.Aluno_Id);
 
                 if (AlunoAlreadyPresent) {
-                    return new ResponseModel { Message = "Presença já registrada" };
+                    return new ResponseModel { Message = "Presença do aluno já foi registrada para nesta aula" };
                 }
 
                 // Validations passed
