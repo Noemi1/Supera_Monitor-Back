@@ -139,7 +139,7 @@ namespace Supera_Monitor_Back.Controllers {
         public ActionResult RegisterPresenca(RegisterPresencaRequest model)
         {
             try {
-                var response = _turmaService.RegisterPresenca(model);
+                var response = _turmaService.InsertPresenca(model);
 
                 return Ok(response);
             } catch (Exception e) {
