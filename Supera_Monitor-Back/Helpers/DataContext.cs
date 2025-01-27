@@ -45,7 +45,7 @@ namespace Supera_Monitor_Back.Helpers {
                 .AddJsonFile("AppSettings.json")
                 .Build();
 
-            var connectionString = configuration.GetConnectionString("ConnectionStringLocal");
+            var connectionString = configuration.GetConnectionString("ConnectionString");
             optionsBuilder.UseSqlServer(connectionString);
         }
 

@@ -24,7 +24,7 @@ builder.Services.AddHttpContextAccessor();
 
 #region SQL
 builder.Services.AddDbContext<DataContext>(options => {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("ConnectionStringLocal")
+    options.UseSqlServer(builder.Configuration.GetConnectionString("ConnectionString")
         , options => {
             options.CommandTimeout(1200); // 20 minutos
             options.EnableRetryOnFailure(
@@ -50,6 +50,7 @@ builder.Services.AddScoped<IEmailTemplateFactory, EmailTemplateFactory>();
 
 builder.Services.AddScoped<ITurmaService, TurmaService>();
 builder.Services.AddScoped<IAlunoService, AlunoService>();
+builder.Services.AddScoped<IProfessorService, ProfessorService>();
 
 #endregion
 
