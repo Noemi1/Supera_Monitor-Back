@@ -11,7 +11,7 @@ namespace Supera_Monitor_Back.Services {
         AlunoResponse Get(int alunoId);
         List<AlunoList> GetAll();
         ResponseModel Insert(CreateAlunoRequest model);
-        ResponseModel Update(UpdateAlunoRequest model/*, string ip*/);
+        ResponseModel Update(UpdateAlunoRequest model);
         ResponseModel Delete(int alunoId);
 
         List<Pessoa> GetAllPessoas();
@@ -52,89 +52,93 @@ namespace Supera_Monitor_Back.Services {
             return alunos;
         }
 
-
         public ResponseModel Insert(CreateAlunoRequest model)
         {
-            // Validations passed
+            ResponseModel response = new() { Success = false };
 
-            // Se não foi passada uma pessoa especifica, criar uma e salvá-la no banco
-            Pessoa? pessoa;
+            try {
+                Pessoa? pessoa;
 
-            if (model.Pessoa_Id == null) {
-                pessoa = new() {
-                    DataNascimento = model.DataNascimento,
-                    Nome = model.Nome,
+                // Se foi passado um Pessoa_Id no request, busca a pessoa no banco, senão cria uma e salva no banco
+                if (model.Pessoa_Id == null) {
+                    pessoa = new() {
+                        DataNascimento = model.DataNascimento,
+                        Nome = model.Nome,
+                    };
+
+                    _db.Pessoas.Add(pessoa);
+                    _db.SaveChanges();
+                } else {
+                    pessoa = _db.Pessoas.AsNoTracking().FirstOrDefault(p => p.Id == model.Pessoa_Id);
+                }
+
+                if (pessoa == null) {
+                    return new ResponseModel { Message = "Ocorreu algum erro ao criar a pessoa." };
+                }
+
+                Aluno aluno = new() {
+                    Pessoa_Id = pessoa.Id,
+                    Turma_Id = model.Turma_Id,
                 };
 
-                _db.Pessoas.Add(pessoa);
+                _db.Alunos.Add(aluno);
                 _db.SaveChanges();
 
-                pessoa = _db.Pessoas.AsNoTracking().FirstOrDefault(p => p.Nome == model.Nome && p.DataNascimento == model.DataNascimento);
-            } else {
-                // Se foi passada uma pessoa especifica, buscá-la no banco
-                pessoa = _db.Pessoas.AsNoTracking().FirstOrDefault(p => p.Id == model.Pessoa_Id);
+                response.Message = "Aluno cadastrado com sucesso";
+                response.Object = aluno;
+                response.Success = true;
+            } catch (Exception ex) {
+                response.Message = "Falha ao registrar aluno: " + ex.ToString();
             }
 
-            if (pessoa == null) {
-                return new ResponseModel {
-                    Message = "Ocorreu algum erro ao criar a pessoa."
-                };
-            }
-
-            // Criar um aluno com o ID da pessoa
-            Aluno aluno = new() {
-                Pessoa_Id = pessoa.Id,
-                Turma_Id = model.Turma_Id
-            };
-
-            _db.Alunos.Add(aluno);
-            _db.SaveChanges();
-
-            return new ResponseModel {
-                Message = "Aluno cadastrado com sucesso",
-                Object = _db.AlunoList.AsNoTracking().FirstOrDefault(a => a.Id == aluno.Id),
-                Success = true,
-            };
+            return response;
         }
 
         public ResponseModel Update(UpdateAlunoRequest model)
         {
-            Aluno? aluno = _db.Alunos.Include(a => a.Pessoa).FirstOrDefault(aluno => aluno.Id == model.Id);
+            ResponseModel response = new() { Success = false };
 
-            if (aluno == null) {
-                return new ResponseModel { Message = "Aluno não encontrado" };
+            try {
+                Aluno? aluno = _db.Alunos.Include(a => a.Pessoa).FirstOrDefault(a => a.Id == model.Id);
+
+                if (aluno == null) {
+                    return new ResponseModel { Message = "Aluno não encontrado" };
+                }
+
+                Pessoa? pessoa = _db.Pessoas.FirstOrDefault(pessoa => pessoa.Id == aluno.Pessoa_Id);
+
+                if (pessoa == null) {
+                    return new ResponseModel { Message = "Pessoa não encontrada" };
+                }
+
+                if (string.IsNullOrEmpty(model.Nome)) {
+                    return new ResponseModel { Message = "Nome Inválido" };
+                }
+
+                // Validations passed
+
+                AlunoList? old = _db.AlunoList.AsNoTracking().FirstOrDefault(a => a.Id == model.Id);
+
+                pessoa.Nome = model.Nome;
+                pessoa.DataNascimento = model.DataNascimento;
+
+                _db.Pessoas.Update(pessoa);
+                _db.SaveChanges();
+
+                response.Message = "Aluno atualizado com sucesso";
+                response.Object = _db.AlunoList.AsNoTracking().FirstOrDefault(aluno => aluno.Id == model.Id);
+                response.Success = true;
+                response.OldObject = old;
+            } catch (Exception ex) {
+                response.Message = "Falha ao atualizar aluno: " + ex.ToString();
             }
 
-            Pessoa? pessoa = _db.Pessoas.FirstOrDefault(pessoa => pessoa.Id == aluno.Pessoa_Id);
-
-            if (pessoa == null) {
-                return new ResponseModel { Message = "Pessoa não encontrada" };
-            }
-
-            if (string.IsNullOrEmpty(model.Nome)) {
-                return new ResponseModel { Message = "Nome Inválido" };
-            }
-
-            // Validations passed
-
-            AlunoList? old = _db.AlunoList.AsNoTracking().FirstOrDefault(t => t.Id == model.Id);
-
-            pessoa.Nome = model.Nome;
-            pessoa.DataNascimento = model.DataNascimento;
-
-            _db.Pessoas.Update(pessoa);
-            _db.SaveChanges();
-
-            return new ResponseModel {
-                Message = "Turma atualizada com sucesso",
-                Object = _db.AlunoList.AsNoTracking().FirstOrDefault(x => x.Id == model.Id),
-                Success = true,
-                OldObject = old
-            };
+            return response;
         }
 
         public ResponseModel Delete(int alunoId)
         {
+            // Como lidar com o delete?
             throw new NotImplementedException();
         }
 
