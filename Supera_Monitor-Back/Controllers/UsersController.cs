@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Accounts;
 using Supera_Monitor_Back.Services;
@@ -26,7 +27,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpGet("all")]
-        public ActionResult GetAll()
+        public ActionResult<List<AccountList>> GetAll()
         {
             try {
                 var response = _userService.GetAll();
@@ -39,7 +40,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpGet("{accountId}")]
-        public ActionResult Get(int accountId)
+        public ActionResult<AccountResponse> Get(int accountId)
         {
             try {
                 var response = _userService.Get(accountId);
@@ -65,7 +66,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPost()]
-        public ActionResult Insert(CreateAccountRequest model)
+        public ActionResult<ResponseModel> Insert(CreateAccountRequest model)
         {
             try {
                 string origin = Request.Headers["origin"].ToString();
@@ -102,7 +103,7 @@ namespace Supera_Monitor_Back.Controllers {
 
         [HttpDelete("{accountId}")]
         [Authorize(Entities.Role.Admin)]
-        public ActionResult<AccountResponse> Delete(int accountId)
+        public ActionResult<ResponseModel> Delete(int accountId)
         {
             try {
                 ResponseModel response = _userService.Delete(accountId);
@@ -119,7 +120,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPatch("reset-password/{accountId}")]
-        public ActionResult ResetPassword(int accountId)
+        public ActionResult<ResponseModel> ResetPassword(int accountId)
         {
             try {
                 ResponseModel response = _userService.ResetPassword(accountId);

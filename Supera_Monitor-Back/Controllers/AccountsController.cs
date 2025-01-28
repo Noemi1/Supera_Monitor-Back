@@ -106,7 +106,7 @@ namespace Supera_Monitor_Back.Controllers {
 
         [Authorize]
         [HttpPost("revoke-token")]
-        public ActionResult RevokeToken()
+        public ActionResult<ResponseModel> RevokeToken()
         {
             try {
                 var token = Request.Cookies["refreshToken"];
@@ -127,9 +127,15 @@ namespace Supera_Monitor_Back.Controllers {
                     return Unauthorized(new { message = $"Unauthorized, can't revoke token {token}" });
                 }
 
-                _accountService.RevokeToken(token, GetIpAddressFromHeaders());
+                // Auth validations passed
 
-                return Ok(new { message = "Token revoked" });
+                var response = _accountService.RevokeToken(token, GetIpAddressFromHeaders());
+
+                if (response.Success) {
+                    return Ok(response);
+                }
+
+                return BadRequest(response);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
@@ -137,7 +143,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPost("forgot-password")]
-        public ActionResult ForgotPassword(ForgotPasswordRequest model)
+        public ActionResult<ResponseModel> ForgotPassword(ForgotPasswordRequest model)
         {
             try {
                 ResponseModel response = _accountService.ForgotPassword(model, Request.Headers["origin"]);
@@ -162,7 +168,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPost("reset-password")]
-        public ActionResult ResetPassword([FromBody] ResetPasswordRequest model)
+        public ActionResult<ResponseModel> ResetPassword([FromBody] ResetPasswordRequest model)
         {
             try {
                 ResponseModel response = _accountService.ResetPassword(model);
@@ -180,13 +186,13 @@ namespace Supera_Monitor_Back.Controllers {
 
         [Authorize]
         [HttpPost("change-password")]
-        public ActionResult ChangePassword(ChangePasswordRequest model)
+        public ActionResult<ResponseModel> ChangePassword(ChangePasswordRequest model)
         {
             try {
                 ResponseModel response = _accountService.ChangePassword(model);
 
                 if (response.Success) {
-                    _logger.Log("Change Password", "Account", response, response.Object.Id);
+                    _logger.Log("Change Password", "Account", response, response.Object!.Id);
                 }
 
                 return Ok(response);
@@ -204,7 +210,7 @@ namespace Supera_Monitor_Back.Controllers {
                 ResponseModel response = _accountService.UpdateAccount(model);
 
                 if (response.Success) {
-                    _logger.Log("Update", "Account", response, response.Object.Id);
+                    _logger.Log("Update", "Account", response, response.Object!.Id);
                 }
 
                 return Ok(response);
@@ -215,13 +221,13 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPost("verify-email")]
-        public ActionResult VerifyEmail(VerifyEmailRequest model)
+        public ActionResult<ResponseModel> VerifyEmail(VerifyEmailRequest model)
         {
             try {
                 ResponseModel response = _accountService.VerifyEmail(model.Token);
 
                 if (response.Success) {
-                    _logger.Log("Verification", "Account", response, response.Object.Id);
+                    _logger.Log("Verification", "Account", response, response.Object!.Id);
                 }
 
                 return Ok(response);

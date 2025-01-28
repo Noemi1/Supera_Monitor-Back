@@ -23,10 +23,10 @@ namespace Supera_Monitor_Back.Services {
         ResponseModel ForgotPassword(ForgotPasswordRequest model, string origin);
         ResponseModel ChangePassword(ChangePasswordRequest model);
         ResponseModel ResetPassword(ResetPasswordRequest model);
+        ResponseModel RevokeToken(string token, string ipAddress);
 
         public string Hash(string toHash);
         void ValidateResetToken(ValidateResetTokenRequest model);
-        void RevokeToken(string token, string ipAddress);
     }
 
     public class AccountService : IAccountService {
@@ -129,15 +129,26 @@ namespace Supera_Monitor_Back.Services {
             return response;
         }
 
-        public void RevokeToken(string token, string ipAddress)
+        public ResponseModel RevokeToken(string token, string ipAddress)
         {
-            var (refreshToken, _) = GetRefreshToken(token);
+            ResponseModel response = new() { Success = false };
 
-            refreshToken.Revoked = TimeFunctions.HoraAtualBR();
-            refreshToken.RevokedByIp = ipAddress;
+            try {
+                var (refreshToken, _) = GetRefreshToken(token);
 
-            _db.AccountRefreshTokens.Update(refreshToken);
-            _db.SaveChanges();
+                refreshToken.Revoked = TimeFunctions.HoraAtualBR();
+                refreshToken.RevokedByIp = ipAddress;
+
+                _db.AccountRefreshTokens.Update(refreshToken);
+                _db.SaveChanges();
+
+                response.Success = true;
+                response.Message = "Token anulado com sucesso";
+            } catch (Exception ex) {
+                response.Message = "Falha ao anular token: " + ex.ToString();
+            }
+
+            return response;
         }
 
         public ResponseModel UpdateAccount(UpdateAccountRequest model)
