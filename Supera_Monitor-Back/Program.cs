@@ -51,6 +51,7 @@ builder.Services.AddScoped<IEmailTemplateFactory, EmailTemplateFactory>();
 builder.Services.AddScoped<ITurmaService, TurmaService>();
 builder.Services.AddScoped<IAlunoService, AlunoService>();
 builder.Services.AddScoped<IProfessorService, ProfessorService>();
+builder.Services.AddScoped<IProfessorService, ProfessorService>();
 
 #endregion
 
@@ -67,6 +68,15 @@ if (app.Environment.IsDevelopment()) {
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors(option => option
+    .SetIsOriginAllowed(x => true)
+    .WithOrigins("http://localhost:4200")
+    .AllowAnyMethod()
+    .AllowAnyHeader()
+    .AllowCredentials()
+    .WithExposedHeaders("Content-Disposition")
+);
 
 app.UseAuthorization();
 

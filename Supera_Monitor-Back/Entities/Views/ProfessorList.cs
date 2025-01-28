@@ -1,10 +1,20 @@
 namespace Supera_Monitor_Back.Entities.Views {
-    public class ProfessorList {
+    public partial class ProfessorList {
         public int Id { get; set; }
-        public string Nome { get; set; } = string.Empty;
-        public string Telefone { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
 
-        public int Account_Id { get; set; }
+        public string Nome { get; set; } = null!;
+
+        public string Telefone { get; set; } = null!;
+
+        public string Email { get; set; } = null!;
+
+        public DateTime DataInicio { get; set; }
+
+        public int? NivelAbaco { get; set; }
+
+        public int? NivelAh { get; set; }
+
+        public int AccountId { get; set; }
     }
+
 }

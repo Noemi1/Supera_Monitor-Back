@@ -3,6 +3,7 @@ using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Accounts;
 using Supera_Monitor_Back.Models.Aluno;
+using Supera_Monitor_Back.Models.Professor;
 using Supera_Monitor_Back.Models.Turma;
 
 namespace Supera_Monitor_Back.Helpers {
@@ -30,6 +31,8 @@ namespace Supera_Monitor_Back.Helpers {
             CreateMap<Aluno, AlunoResponse>()
                 .ForMember(dest => dest.Nome, source => source.MapFrom(orig => (orig.Pessoa.Nome) ?? ""))
                 .ForMember(dest => dest.DataNascimento, source => source.MapFrom(orig => (orig.Pessoa.DataNascimento) ?? null));
+            CreateMap<Professor, ProfessorResponse>();
+            CreateMap<CreateProfessorRequest, Professor>();
         }
     }
 }

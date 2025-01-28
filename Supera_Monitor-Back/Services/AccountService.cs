@@ -307,6 +307,7 @@ namespace Supera_Monitor_Back.Services {
         private (AccountRefreshToken, Account) GetRefreshToken(string token)
         {
             var accounts = _db.Accounts
+                .Include(x => x.Account_Role)
                 .Include(x => x.AccountRefreshToken)
                 .ToList();
 

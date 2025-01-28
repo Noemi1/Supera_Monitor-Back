@@ -22,7 +22,8 @@ namespace Supera_Monitor_Back.Controllers {
         {
             try {
                 var response = _professorService.Get(professorId);
-                throw new NotImplementedException();
+
+                return Ok(response);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, $"Unexpected error: {e.Message}");
@@ -34,7 +35,8 @@ namespace Supera_Monitor_Back.Controllers {
         {
             try {
                 var response = _professorService.GetAll();
-                throw new NotImplementedException();
+
+                return Ok(response);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, $"Unexpected error: {e.Message}");
@@ -46,7 +48,13 @@ namespace Supera_Monitor_Back.Controllers {
         {
             try {
                 var response = _professorService.Insert(model);
-                throw new NotImplementedException();
+
+                if (response.Success) {
+                    var professorId = response.Object!.Id;
+                    return Created($"/professor/{professorId}", professorId);
+                }
+
+                return BadRequest(response.Message);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, $"Unexpected error: {e.Message}");
@@ -58,7 +66,12 @@ namespace Supera_Monitor_Back.Controllers {
         {
             try {
                 var response = _professorService.Update(model);
-                throw new NotImplementedException();
+
+                if (response.Success) {
+                    return Ok(response);
+                }
+
+                return BadRequest(response.Message);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, $"Unexpected error: {e.Message}");
@@ -70,7 +83,12 @@ namespace Supera_Monitor_Back.Controllers {
         {
             try {
                 var response = _professorService.Delete(professorId);
-                throw new NotImplementedException();
+
+                if (response.Success) {
+                    return Ok(response);
+                }
+
+                return BadRequest(response.Message);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, $"Unexpected error: {e.Message}");

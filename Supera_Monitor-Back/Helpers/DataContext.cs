@@ -24,6 +24,8 @@ namespace Supera_Monitor_Back.Helpers {
 
         public virtual DbSet<Pessoa> Pessoas { get; set; }
 
+        public virtual DbSet<Professor> Professors { get; set; }
+
         public virtual DbSet<Turma> Turmas { get; set; }
 
         public virtual DbSet<TurmaAula> TurmaAulas { get; set; }
@@ -37,6 +39,8 @@ namespace Supera_Monitor_Back.Helpers {
         public virtual DbSet<AlunoList> AlunoList { get; set; }
 
         public virtual DbSet<AulaList> AulaList { get; set; }
+
+        public virtual DbSet<ProfessorList> ProfessorList { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -140,11 +144,36 @@ namespace Supera_Monitor_Back.Helpers {
                     .IsUnicode(false);
             });
 
+            modelBuilder.Entity<Professor>(entity => {
+                entity.ToTable("Professor");
+
+                entity.Property(e => e.Account_Id).HasColumnName("Account_Id");
+                entity.Property(e => e.NivelAh).HasColumnName("NivelAH");
+
+                entity.HasOne(d => d.Account).WithMany(p => p.Professors)
+                    .HasForeignKey(d => d.Account_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Professor_Account");
+            });
+
+            modelBuilder.Entity<ProfessorList>(entity => {
+                entity
+                    .HasNoKey()
+                    .ToView("ProfessorList");
+
+                entity.Property(e => e.AccountId).HasColumnName("Account_Id");
+                entity.Property(e => e.NivelAh).HasColumnName("NivelAH");
+            });
+
             modelBuilder.Entity<Turma>(entity => {
                 entity.ToTable("Turma");
 
                 entity.Property(e => e.Professor_Id).HasColumnName("Professor_Id");
                 entity.Property(e => e.Turma_Tipo_Id).HasColumnName("Turma_Tipo_Id");
+
+                entity.HasOne(d => d.Professor).WithMany(p => p.Turmas)
+                    .HasForeignKey(d => d.Professor_Id)
+                    .HasConstraintName("FK_Turma_Professor");
 
                 entity.HasOne(d => d.Turma_Tipo).WithMany(p => p.Turmas)
                     .HasForeignKey(d => d.Turma_Tipo_Id)
@@ -157,6 +186,11 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.Property(e => e.Data).HasColumnType("date");
                 entity.Property(e => e.Professor_Id).HasColumnName("Professor_Id");
                 entity.Property(e => e.Turma_Id).HasColumnName("Turma_Id");
+
+                entity.HasOne(d => d.Professor).WithMany(p => p.Turma_Aulas)
+                    .HasForeignKey(d => d.Professor_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Turma_Aula_Professor");
 
                 entity.HasOne(d => d.Turma).WithMany(p => p.Turma_Aulas)
                     .HasForeignKey(d => d.Turma_Id)
