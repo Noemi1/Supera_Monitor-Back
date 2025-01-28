@@ -142,9 +142,16 @@ namespace Supera_Monitor_Back.Controllers {
             try {
                 ResponseModel response = _accountService.ForgotPassword(model, Request.Headers["origin"]);
 
+                // Email was not registered nor sent, but the response should still show success, to avoid email fishing
+                if (!response.Success) {
+                    response.Success = true;
+                    return Ok(response);
+                }
 
+                // Log and clear object, to avoid sending sensitive data to the client
                 if (response.Success) {
                     _logger.Log("Forgot Password", "Account", response, response.Object?.Id);
+                    response.Object = null;
                 }
 
                 return Ok(response);
