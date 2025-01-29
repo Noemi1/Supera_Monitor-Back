@@ -161,15 +161,25 @@ namespace Supera_Monitor_Back.Helpers {
                     .HasNoKey()
                     .ToView("ProfessorList");
 
-                entity.Property(e => e.AccountId).HasColumnName("Account_Id");
+                entity.Property(e => e.Account_Created).HasColumnName("Account_Created");
+                entity.Property(e => e.Account_Created_Id).HasColumnName("Account_Created_Id");
+                entity.Property(e => e.Account_Id).HasColumnName("Account_Id");
+                entity.Property(e => e.DataInicio).HasColumnType("date");
                 entity.Property(e => e.NivelAh).HasColumnName("NivelAH");
+                entity.Property(e => e.Role_Id).HasColumnName("Role_Id");
             });
 
             modelBuilder.Entity<Turma>(entity => {
                 entity.ToTable("Turma");
 
+                entity.Property(e => e.Account_Created_Id).HasColumnName("Account_Created_Id");
                 entity.Property(e => e.Professor_Id).HasColumnName("Professor_Id");
                 entity.Property(e => e.Turma_Tipo_Id).HasColumnName("Turma_Tipo_Id");
+
+                entity.HasOne(d => d.Account_Created).WithMany(p => p.Turmas)
+                    .HasForeignKey(d => d.Account_Created_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Turma_Account");
 
                 entity.HasOne(d => d.Professor).WithMany(p => p.Turmas)
                     .HasForeignKey(d => d.Professor_Id)
@@ -221,11 +231,17 @@ namespace Supera_Monitor_Back.Helpers {
                     .HasNoKey()
                     .ToView("TurmaList");
 
+                entity.Property(e => e.Account_Created).HasColumnName("Account_Created");
+                entity.Property(e => e.Account_Created_Id).HasColumnName("Account_Created_Id");
+                entity.Property(e => e.Email_Professor).HasColumnName("Email_Professor");
+                entity.Property(e => e.Nome_Professor).HasColumnName("Nome_Professor");
                 entity.Property(e => e.Professor_Id).HasColumnName("Professor_Id");
+                entity.Property(e => e.Telefone_Professor).HasColumnName("Telefone_Professor");
                 entity.Property(e => e.Turma_Tipo)
                     .HasMaxLength(50)
                     .IsUnicode(false)
                     .HasColumnName("Turma_Tipo");
+                entity.Property(e => e.Turma_Tipo_Id).HasColumnName("Turma_Tipo_Id");
             });
 
             modelBuilder.Entity<AlunoList>(entity => {

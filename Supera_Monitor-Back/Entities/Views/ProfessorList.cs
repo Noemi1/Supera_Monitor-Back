@@ -1,5 +1,5 @@
 namespace Supera_Monitor_Back.Entities.Views {
-    public partial class ProfessorList {
+    public partial class ProfessorList : BaseList {
         public int Id { get; set; }
 
         public string Nome { get; set; } = null!;
@@ -14,7 +14,10 @@ namespace Supera_Monitor_Back.Entities.Views {
 
         public int? NivelAh { get; set; }
 
-        public int AccountId { get; set; }
-    }
+        public int Account_Id { get; set; }
 
+        public int Role_Id { get; set; }
+
+        public string? Role { get; set; }
+    }
 }

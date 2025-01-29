@@ -111,22 +111,5 @@ namespace Supera_Monitor_Back.Controllers {
                 return StatusCode(500, e);
             }
         }
-
-        //[HttpGet("aulas/presenca")]
-        //public ActionResult InsertPresenca(RegisterPresencaRequest model)
-        //{
-        //    try {
-        //        var response = _turmaService.InsertPresenca(model);
-
-        //        if (response.Success) {
-        //            return Ok(response);
-        //        }
-
-        //        return BadRequest(response);
-        //    } catch (Exception e) {
-        //        _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-        //        return StatusCode(500, e);
-        //    }
-        //}
     }
 }

@@ -16,7 +16,12 @@
         public int Role_Id { get; set; }
         public virtual AccountRole Account_Role { get; set; } = null!;
 
+        #region Created
+
         public virtual ICollection<Professor> Professors { get; set; } = new List<Professor>();
+        public virtual ICollection<Turma> Turmas { get; set; } = new List<Turma>();
+
+        #endregion
 
         public virtual ICollection<Account> Created_Account { get; set; } = new HashSet<Account>();
         public virtual ICollection<AccountRefreshToken> AccountRefreshToken { get; set; } = new HashSet<AccountRefreshToken>();

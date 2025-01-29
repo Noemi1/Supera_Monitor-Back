@@ -49,14 +49,16 @@ namespace Supera_Monitor_Back.Controllers {
         public ActionResult<ResponseModel> Insert(CreateProfessorRequest model)
         {
             try {
-                var response = _professorService.Insert(model);
+                string origin = Request.Headers["origin"].ToString();
+
+                var response = _professorService.Insert(model, origin);
 
                 if (response.Success) {
                     var professorId = response.Object!.Id;
-                    return Created($"/professor/{professorId}", professorId);
+                    return Created($"/professor/{professorId}", response);
                 }
 
-                return BadRequest(response.Message);
+                return BadRequest(response);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, $"Unexpected error: {e.Message}");
@@ -70,7 +72,7 @@ namespace Supera_Monitor_Back.Controllers {
                 var response = _professorService.Update(model);
 
                 if (response.Success) {
-                    return Ok(response);
+                    return Accepted(response);
                 }
 
                 return BadRequest(response.Message);

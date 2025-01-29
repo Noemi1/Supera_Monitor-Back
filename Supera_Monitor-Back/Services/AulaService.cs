@@ -90,7 +90,7 @@ namespace Supera_Monitor_Back.Services {
                 _db.SaveChanges();
 
                 response.Message = "Aula registrada com sucesso";
-                response.Object = _db.AulaList.Find(aula.Id);
+                response.Object = _db.AulaList.FirstOrDefault(a => a.Id == aula.Id);
                 response.Success = true;
             } catch (Exception ex) {
                 response.Message = "Falha ao registrar aula: " + ex.ToString();
@@ -120,7 +120,7 @@ namespace Supera_Monitor_Back.Services {
 
                 // Validations passed
 
-                response.OldObject = _db.AulaList.Find(model.Id);
+                response.OldObject = _db.AulaList.FirstOrDefault(a => a.Id == model.Id);
 
 
                 aula.Professor_Id = model.Professor_Id;

@@ -1,6 +1,6 @@
 ﻿namespace Supera_Monitor_Back.Entities;
 
-public partial class Turma {
+public partial class Turma : _BaseEntity {
     public int Id { get; set; }
 
     public int DiaSemana { get; set; }

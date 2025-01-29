@@ -21,11 +21,13 @@ namespace Supera_Monitor_Back.Services {
     public class TurmaService : ITurmaService {
         private readonly DataContext _db;
         private readonly IMapper _mapper;
+        private readonly Account? _account;
 
-        public TurmaService(DataContext db, IMapper mapper)
+        public TurmaService(DataContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor)
         {
             _db = db;
             _mapper = mapper;
+            _account = ( Account? )httpContextAccessor.HttpContext?.Items["Account"];
         }
 
         public TurmaResponse Get(int turmaId)
@@ -69,17 +71,37 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Este tipo de turma não existe." };
                 }
 
-                // Futuro: Não devo poder criar turma com um professor que não existe
+                // Não devo poder criar turma com um professor que não existe
+                Professor? professor = _db.Professors
+                    .Include(p => p.Account)
+                    .FirstOrDefault(p => p.Id == model.Professor_Id);
+
+                if (professor == null) {
+                    return new ResponseModel { Message = "Professor não encontrado" };
+                }
+
+                // Não devo poder criar turma com um professor desativado
+                if (professor.Account.Deactivated != null) {
+                    return new ResponseModel { Message = "Não é possível criar uma turma com um professor desativado." };
+                }
 
                 // Validations passed
 
-                Turma turma = _mapper.Map<Turma>(model);
+                Turma turma = new() {
+                    Horario = model.Horario,
+                    DiaSemana = model.DiaSemana,
+                    Professor_Id = model.Professor_Id,
+                    Turma_Tipo_Id = model.Turma_Tipo_Id,
+
+                    Created = TimeFunctions.HoraAtualBR(),
+                    Account_Created_Id = _account.Id
+                };
 
                 _db.Turmas.Add(turma);
                 _db.SaveChanges();
 
                 response.Message = "Turma cadastrada com sucesso";
-                response.Object = turma;
+                response.Object = _db.TurmaList.FirstOrDefault(t => t.Id == turma.Id);
                 response.Success = true;
             } catch (Exception ex) {
                 response.Message = "Falha ao inserir nova turma: " + ex.ToString();
@@ -107,22 +129,35 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Este tipo de turma não existe." };
                 }
 
-                // Futuro: Não devo poder atualizar turma com um professor que não existe
+                // Não devo poder atualizar turma com um professor que não existe
+                Professor? professor = _db.Professors
+                    .Include(p => p.Account)
+                    .FirstOrDefault(p => p.Id == model.Professor_Id);
+
+                if (professor == null) {
+                    return new ResponseModel { Message = "Professor não encontrado" };
+                }
+
+                // Não devo poder criar turma com um professor desativado
+                if (professor.Account.Deactivated != null) {
+                    return new ResponseModel { Message = "Não é possível criar uma turma com um professor desativado." };
+                }
 
                 // Validations passed
 
-                response.OldObject = _db.TurmaList.Find(model.Id);
+                response.OldObject = _db.TurmaList.FirstOrDefault(t => t.Id == model.Id);
 
                 turma.DiaSemana = model.DiaSemana;
                 turma.Horario = model.Horario;
                 turma.Professor_Id = model.Professor_Id;
                 turma.Turma_Tipo_Id = model.Turma_Tipo_Id;
+                turma.LastUpdated = TimeFunctions.HoraAtualBR();
 
                 _db.Turmas.Update(turma);
                 _db.SaveChanges();
 
                 response.Message = "Turma atualizada com sucesso";
-                response.Object = turma;
+                response.Object = _db.TurmaList.FirstOrDefault(t => t.Id == turma.Id);
                 response.Success = true;
             } catch (Exception ex) {
                 response.Message = "Falha ao atualizar a turma: " + ex.ToString();
@@ -144,7 +179,7 @@ namespace Supera_Monitor_Back.Services {
 
                 // Validations passed
 
-                response.Object = _db.TurmaList.Find(turmaId);
+                response.Object = _db.TurmaList.FirstOrDefault(t => t.Id == turmaId);
 
                 _db.Turmas.Remove(turma);
                 _db.SaveChanges();
