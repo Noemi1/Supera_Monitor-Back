@@ -63,6 +63,7 @@ namespace Supera_Monitor_Back.Controllers {
                 var response = _turmaService.Insert(model);
 
                 if (response.Success) {
+                    _logger.Log("Insert", "Turma", response, Account?.Id);
                     return Created($"/turmas/all", response);
                 }
 
@@ -80,6 +81,7 @@ namespace Supera_Monitor_Back.Controllers {
                 var response = _turmaService.Update(model);
 
                 if (response.Success) {
+                    _logger.Log("Update", "Turma", response, Account?.Id);
                     return Ok(response);
                 }
 
@@ -108,64 +110,21 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
-        [HttpPost("aulas")]
-        public ActionResult InsertAula(InsertAulaRequest model)
-        {
-            try {
-                var response = _turmaService.InsertAula(model);
+        //[HttpGet("aulas/presenca")]
+        //public ActionResult InsertPresenca(RegisterPresencaRequest model)
+        //{
+        //    try {
+        //        var response = _turmaService.InsertPresenca(model);
 
-                if (response.Success) {
-                    return Created($"/turmas/{model.Turma_Id}/aulas", response);
-                }
+        //        if (response.Success) {
+        //            return Ok(response);
+        //        }
 
-                return BadRequest(response);
-            } catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-                return StatusCode(500, e);
-            }
-        }
-
-        [HttpGet("{turmaId}/aulas")]
-        public ActionResult GetAllAulasByTurma(int turmaId)
-        {
-            try {
-                var response = _turmaService.GetAllAulasByTurma(turmaId);
-
-                return Ok(response);
-            } catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-                return StatusCode(500, e);
-            }
-        }
-
-        [HttpGet("{turmaId}/alunos")]
-        public ActionResult GetAllAlunosByTurma(int turmaId)
-        {
-            try {
-                var response = _turmaService.GetAllAlunosByTurma(turmaId);
-
-                return Ok(response);
-            } catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-                return StatusCode(500, e);
-            }
-        }
-
-        [HttpGet("aulas/presenca")]
-        public ActionResult InsertPresenca(RegisterPresencaRequest model)
-        {
-            try {
-                var response = _turmaService.InsertPresenca(model);
-
-                if (response.Success) {
-                    return Ok(response);
-                }
-
-                return BadRequest(response);
-            } catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-                return StatusCode(500, e);
-            }
-        }
+        //        return BadRequest(response);
+        //    } catch (Exception e) {
+        //        _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+        //        return StatusCode(500, e);
+        //    }
+        //}
     }
 }

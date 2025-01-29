@@ -294,7 +294,7 @@ namespace Supera_Monitor_Back.Services {
             _db.SaveChanges();
 
             return new ResponseModel {
-                Object = _db.AccountList.Find(account.Id),
+                Object = _db.AccountList.Include(acc => acc.Role).FirstOrDefault(acc => acc.Id == account.Id),
                 Success = true,
                 Message = "Verification completed successfully. Please, login."
             };

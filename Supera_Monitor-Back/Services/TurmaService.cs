@@ -15,12 +15,7 @@ namespace Supera_Monitor_Back.Services {
         List<TurmaList> GetAll();
         List<TurmaTipoModel> GetTypes();
 
-        List<TurmaAula> GetAllAulasByTurma(int turmaId);
         List<AlunoList> GetAllAlunosByTurma(int turmaId);
-
-        ResponseModel InsertAula(InsertAulaRequest model);
-
-        ResponseModel InsertPresenca(RegisterPresencaRequest model);
     }
 
     public class TurmaService : ITurmaService {
@@ -163,51 +158,6 @@ namespace Supera_Monitor_Back.Services {
             return response;
         }
 
-        public ResponseModel InsertAula(InsertAulaRequest model)
-        {
-            ResponseModel response = new() { Success = false };
-
-            try {
-                // Não devo poder registrar uma aula em uma turma que não existe
-                bool TurmaExists = _db.Turmas.Any(t => t.Id == model.Turma_Id);
-
-                if (!TurmaExists) {
-                    return new ResponseModel { Message = "Turma não encontrada" };
-                }
-
-                // Futuro: Não devo poder registrar uma aula com um professor que não existe
-
-                // Validations passed
-
-                TurmaAula aula = new() {
-                    Turma_Id = model.Turma_Id,
-                    Professor_Id = model.Professor_Id,
-                    Data = model.Data
-                };
-
-                _db.TurmaAulas.Add(aula);
-                _db.SaveChanges();
-
-                response.Message = "Aula registrada com sucesso";
-                response.Object = _db.AulaList.Find(aula.Id);
-                response.Success = true;
-            } catch (Exception ex) {
-                response.Message = "Falha ao registrar aula: " + ex.ToString();
-            }
-
-            return response;
-        }
-
-        public List<TurmaAula> GetAllAulasByTurma(int turmaId)
-        {
-            List<TurmaAula> aulas = _db.TurmaAulas
-                .Where(t => t.Turma_Id == turmaId)
-                .Include(t => t.Turma_Aula_Alunos)
-                .ToList();
-
-            return aulas;
-        }
-
         public List<AlunoList> GetAllAlunosByTurma(int turmaId)
         {
             List<AlunoList> alunos = _db.AlunoList.Where(a => a.Turma_Id == turmaId).ToList();
@@ -215,65 +165,65 @@ namespace Supera_Monitor_Back.Services {
             return alunos;
         }
 
-        public ResponseModel InsertPresenca(RegisterPresencaRequest model)
-        {
-            ResponseModel response = new() { Success = false };
+        //public ResponseModel InsertPresenca(RegisterPresencaRequest model)
+        //{
+        //    ResponseModel response = new() { Success = false };
 
-            try {
-                // Não devo poder registrar presença em uma aula que não existe
-                TurmaAula? aula = _db.TurmaAulas.Find(model.Turma_Aula_Id);
+        //    try {
+        //        // Não devo poder registrar presença em uma aula que não existe
+        //        TurmaAula? aula = _db.TurmaAulas.Find(model.Turma_Aula_Id);
 
-                if (aula == null) {
-                    return new ResponseModel { Message = "Aula não encontrada" };
-                }
+        //        if (aula == null) {
+        //            return new ResponseModel { Message = "Aula não encontrada" };
+        //        }
 
-                // Não devo poder registrar presença de um aluno que não existe
-                Aluno? aluno = _db.Alunos.Find(model.Aluno_Id);
+        //        // Não devo poder registrar presença de um aluno que não existe
+        //        Aluno? aluno = _db.Alunos.Find(model.Aluno_Id);
 
-                if (aluno == null) {
-                    return new ResponseModel { Message = "Aluno não encontrado" };
-                }
+        //        if (aluno == null) {
+        //            return new ResponseModel { Message = "Aluno não encontrado" };
+        //        }
 
-                // Não devo poder registrar presença de um aluno que não pertence a essa turma
-                bool AlunoBelongsToTurma = aluno.Turma_Id == aula.Turma_Id;
+        //        // Não devo poder registrar presença de um aluno que não pertence a essa turma
+        //        bool AlunoBelongsToTurma = aluno.Turma_Id == aula.Turma_Id;
 
-                if (!AlunoBelongsToTurma) {
-                    return new ResponseModel { Message = "Aluno não pertence à turma" };
-                }
+        //        if (!AlunoBelongsToTurma) {
+        //            return new ResponseModel { Message = "Aluno não pertence à turma" };
+        //        }
 
-                // Não devo poder registrar mais de uma presença para o mesmo aluno na mesma aula
-                bool AlunoAlreadyPresent = _db.TurmaAulaAlunos.Any(a =>
-                    a.Turma_Aula_Id == model.Turma_Aula_Id &&
-                    a.Aluno_Id == model.Aluno_Id);
+        //        // Não devo poder registrar mais de uma presença para o mesmo aluno na mesma aula
+        //        bool AlunoAlreadyPresent = _db.TurmaAulaAlunos.Any(a =>
+        //            a.Turma_Aula_Id == model.Turma_Aula_Id &&
+        //            a.Aluno_Id == model.Aluno_Id);
 
-                if (AlunoAlreadyPresent) {
-                    return new ResponseModel { Message = "Presença do aluno já foi registrada para nesta aula" };
-                }
+        //        if (AlunoAlreadyPresent) {
+        //            return new ResponseModel { Message = "Presença do aluno já foi registrada para nesta aula" };
+        //        }
 
-                // Validations passed
+        //        // Validations passed
 
-                TurmaAulaAluno presenca = new() {
-                    Presente = model.Presente,
-                    Ah = model.Ah,
-                    ApostilaAbaco = model.ApostilaAbaco,
-                    NumeroPaginaAbaco = model.NumeroPaginaAbaco,
-                    NumeroPaginaAh = model.NumeroPaginaAH,
+        //        TurmaAulaAluno presenca = new() {
+        //            Presente = model.Presente,
+        //            Ah = model.Ah,
+        //            ApostilaAbaco = model.ApostilaAbaco,
+        //            NumeroPaginaAbaco = model.NumeroPaginaAbaco,
+        //            NumeroPaginaAh = model.NumeroPaginaAH,
 
-                    Turma_Aula_Id = model.Turma_Aula_Id,
-                    Aluno_Id = model.Aluno_Id,
-                };
+        //            Turma_Aula_Id = model.Turma_Aula_Id,
+        //            Aluno_Id = model.Aluno_Id,
+        //        };
 
-                _db.TurmaAulaAlunos.Add(presenca);
-                _db.SaveChanges();
+        //        _db.TurmaAulaAlunos.Add(presenca);
+        //        _db.SaveChanges();
 
-                response.Message = "Presença registrada com sucesso";
-                response.Object = presenca;
-                response.Success = true;
-            } catch (Exception ex) {
-                response.Message = "Não foi possível inserir a presença" + ex.ToString();
-            }
+        //        response.Message = "Presença registrada com sucesso";
+        //        response.Object = presenca;
+        //        response.Success = true;
+        //    } catch (Exception ex) {
+        //        response.Message = "Não foi possível inserir a presença" + ex.ToString();
+        //    }
 
-            return response;
-        }
+        //    return response;
+        //}
     }
 }

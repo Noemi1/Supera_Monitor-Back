@@ -1,19 +1,125 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Supera_Monitor_Back.Entities.Views;
+using Supera_Monitor_Back.Models;
+using Supera_Monitor_Back.Models.Aula;
 using Supera_Monitor_Back.Services;
+using System.Reflection;
 
 namespace Supera_Monitor_Back.Controllers {
     public class AulasController : _BaseController {
         private readonly IAulaService _aulaService;
+        private readonly ILogService _logger;
 
-        public AulasController(IAulaService aulaService)
+        public AulasController(IAulaService aulaService, ILogService logger)
         {
             _aulaService = aulaService;
+            _logger = logger;
         }
 
-        [HttpGet()]
-        public ActionResult Get()
+        [HttpGet("{aulaId}")]
+        public ActionResult<AulaResponse> Get(int aulaId)
         {
-            throw new NotImplementedException();
+            try {
+                var response = _aulaService.Get(aulaId);
+
+                return Ok(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
+
+        [HttpGet("all")]
+        public ActionResult<List<AulaList>> GetAll()
+        {
+            try {
+                var response = _aulaService.GetAll();
+
+                return Ok(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
+
+        [HttpGet("all/professor/{professorId}")]
+        public ActionResult<List<AulaList>> GetAllByProfessorId(int professorId)
+        {
+            try {
+                var response = _aulaService.GetAllByProfessorId(professorId);
+
+                return Ok(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
+
+        [HttpGet("all/turma/{turmaId}")]
+        public ActionResult<List<AulaList>> GetAllByTurmaId(int turmaId)
+        {
+            try {
+                var response = _aulaService.GetAllByTurmaId(turmaId);
+
+                return Ok(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
+
+        [HttpPost()]
+        public ActionResult<ResponseModel> Insert(CreateAulaRequest model)
+        {
+            try {
+                var response = _aulaService.Insert(model);
+
+                if (response.Success) {
+                    _logger.Log("Insert", "TurmaAula", response, Account?.Id);
+                    return Ok(response);
+                }
+
+                return BadRequest(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
+
+        [HttpPut()]
+        public ActionResult<ResponseModel> Update(UpdateAulaRequest model)
+        {
+            try {
+                var response = _aulaService.Update(model);
+
+                if (response.Success) {
+                    _logger.Log("Update", "TurmaAula", response, Account?.Id);
+                    return Ok(response);
+                }
+
+                return BadRequest(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
+
+        [HttpDelete("{aulaId}")]
+        public ActionResult<ResponseModel> Delete(int aulaId)
+        {
+            try {
+                var response = _aulaService.Delete(aulaId);
+
+                if (response.Success) {
+                    _logger.Log("Delete", "TurmaAula", response, Account?.Id);
+                    return Ok(response);
+                }
+
+                return BadRequest(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
         }
     }
 }
