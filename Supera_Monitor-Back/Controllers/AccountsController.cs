@@ -27,6 +27,10 @@ namespace Supera_Monitor_Back.Controllers {
 
         #region TEST ROUTES
 
+        /*
+         * Tests database connection
+         * Should be disabled in production
+         */
         [HttpGet("dbcheck")]
         public async Task<ActionResult> CheckConnection()
         {
@@ -92,7 +96,7 @@ namespace Supera_Monitor_Back.Controllers {
                 var refreshToken = Request.Cookies["refreshToken"];
 
                 if (string.IsNullOrEmpty(refreshToken)) {
-                    return Unauthorized(new { message = "Token is required." });
+                    return Unauthorized(new { message = "Token não encontrado." });
                 }
 
                 var response = _accountService.RefreshToken(refreshToken, GetIpAddressFromHeaders());
@@ -100,7 +104,7 @@ namespace Supera_Monitor_Back.Controllers {
                 return Ok(response);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-                return StatusCode(500, $"Unexpected error: {e.Message}");
+                return StatusCode(500, $"Ocorreu um erro inesperado: {e.Message}");
             }
         }
 
@@ -112,7 +116,7 @@ namespace Supera_Monitor_Back.Controllers {
                 var token = Request.Cookies["refreshToken"];
 
                 if (string.IsNullOrEmpty(token)) {
-                    return Unauthorized(new { message = "Token is required." });
+                    return Unauthorized(new { message = "Token não encontrado." });
                 }
 
                 Account? account = _db.Accounts.Find(Account.Id);
@@ -124,7 +128,7 @@ namespace Supera_Monitor_Back.Controllers {
 
                 // Users can only revoke their own tokens and admins can revoke any token
                 if (!ownsToken && Account.Role_Id != ( int )Role.Admin) {
-                    return Unauthorized(new { message = $"Unauthorized, can't revoke token {token}" });
+                    return Unauthorized(new { message = $"Não autorizado, não foi possível anular o token {token}" });
                 }
 
                 // Auth validations passed

@@ -24,12 +24,12 @@ namespace Supera_Monitor_Back.Middlewares {
             var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
 
             if (token != null)
-                await attachAccountToContext(context, dataContext, token);
+                await AttachAccountToContext(context, dataContext, token);
 
             await _next(context);
         }
 
-        private async Task attachAccountToContext(HttpContext context, DataContext dataContext, string token)
+        private async Task AttachAccountToContext(HttpContext context, DataContext dataContext, string token)
         {
             try {
                 var tokenHandler = new JwtSecurityTokenHandler();

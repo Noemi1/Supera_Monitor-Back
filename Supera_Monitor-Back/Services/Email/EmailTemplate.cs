@@ -9,11 +9,11 @@ namespace Supera_Monitor_Back.Services.Email {
     public class EmailConstants {
         public const string PASSWORD_DISCLAIMER =
             $@"<br>
-               <p>Your password is personal and non-transferable and must be kept confidential and in a secure environment. Do not share your password.</p>";
+               <p>Sua senha é pessoal e intransferível, devendo ser mantida em sigilo e em um ambiente seguro. Não compartilhe sua senha.</p>";
 
         public const string CONFIDENTIAL_DISCLAIMER =
             $@"<br>
-               <p> Warning: This automatic message is intended exclusively for the person(s) to whom it is addressed, and may contain confidential and legally protected information. If you are not the intended recipient of this Message, you are hereby notified to refrain from disclosing, copying, distributing, examining or, in any way, using the information contained in this Message, as it is illegal. If you have received this Message by mistake, please reply to this Message informing us of what happened.</p>";
+               <p> Aviso: Esta mensagem automática é destinada exclusivamente à(s) pessoa(s) a quem foi endereçada e pode conter informações confidenciais e protegidas por leis. Se você não for o destinatário pretendido desta mensagem, fica notificado a se abster de divulgar, copiar, distribuir, examinar ou, de qualquer forma, usar as informações contidas nesta mensagem, pois isso é ilegal. Se você recebeu esta mensagem por engano, por favor, responda a esta mensagem informando-nos sobre o ocorrido.</p>";
     }
 
     public class WelcomeEmailTemplate : IEmailTemplate {
@@ -26,20 +26,20 @@ namespace Supera_Monitor_Back.Services.Email {
     }
 
     public class VerificationEmailTemplate : IEmailTemplate {
-        public string Subject => "Supera - Account Verification";
+        public string Subject => "Supera - Verificação de conta";
 
         public string GenerateBody(object model)
         {
             var data = model as VerificationEmailModel ?? throw new ArgumentException("Invalid model");
             var verifyUrl = $"{data.Url}/accounts/verify-email?token={data.VerificationToken}";
 
-            string message = $@"<p>A registration was made on Supera_Back with your email.</p>
-                            <p>Please click the link below to verify your account.:</p>
+            string message = $@"<p>Foi realizado um registro na plataforma Supera com seu e-mail.</p>
+                            <p>Por favor, clique no link abaixo para verificar sua conta.:</p>
                             <p><a href='{verifyUrl}'>{verifyUrl}</a></p>
-                            <p>To login, enter your e-mail ({data.Email}) and password ({data.RandomPassword})</p>
-                            <p>If this was a mistake, please disregard this message.</p>";
+                            <p>Para realizar o login, insira seu e-mail ({data.Email}) e senha ({data.RandomPassword})</p>
+                            <p>Se isso foi um erro, por favor, desconsidere esta mensagem.</p>";
 
-            return $@"<h4>Account Registration</h4>
+            return $@"<h4>Registro de conta</h4>
                     {message}
                     {EmailConstants.PASSWORD_DISCLAIMER}
                     {EmailConstants.CONFIDENTIAL_DISCLAIMER}";
@@ -47,16 +47,16 @@ namespace Supera_Monitor_Back.Services.Email {
     }
 
     public class ForgotPasswordEmailTemplate : IEmailTemplate {
-        public string Subject => "Supera - Forgot password";
+        public string Subject => "Supera - Esqueci minha senha";
 
         public string GenerateBody(object model)
         {
             var data = model as ForgotPasswordModel ?? throw new ArgumentException("Invalid model");
             var resetUrl = $"{data.Url}/accounts/reset-password?token={data.ResetToken}";
 
-            string message = $" <p>Please, follow link below to reset password:</p>"
+            string message = $" <p>Por favor, siga o link abaixo para redefinir a senha:</p>"
              + $"<p><a href='{resetUrl}'>{resetUrl}</a></p>"
-             + $"<p style='color: red'>Obs.: The link is valid for 1 day.</p>";
+             + $"<p style='color: red'>Obs.: O link é válido por 1 dia.</p>";
 
             return $@"<h4>Password Reset Email.</h4> 
                     {message}
@@ -66,17 +66,17 @@ namespace Supera_Monitor_Back.Services.Email {
     }
 
     public class PasswordResetEmailTemplate : IEmailTemplate {
-        public string Subject => "Supera - Password Reset";
+        public string Subject => "Supera - Senha resetada";
 
         public string GenerateBody(object model)
         {
             var data = model as PasswordResetModel ?? throw new ArgumentException("Invalid model");
 
-            var message = $"<p>Your password has been reseted by an admin.</p>"
-                        + $"<p>Use your new password below to login.</p>"
-                        + $"<p>New password: <b> {data.RandomPassword} </b></p>";
+            var message = $"<p>Sua senha foi resetada por um administrador.</p>"
+                        + $"<p>Use sua nova senha abaixo para realizar o login.</p>"
+                        + $"<p>Nova senha: <b> {data.RandomPassword} </b></p>";
 
-            return @$"<h4>Password reset e-mail</h4>
+            return @$"<h4>E-mail para reset de senha</h4>
                     {message}
                     {EmailConstants.PASSWORD_DISCLAIMER}
                     {EmailConstants.CONFIDENTIAL_DISCLAIMER}";

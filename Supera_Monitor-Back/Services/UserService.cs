@@ -51,7 +51,7 @@ namespace Supera_Monitor_Back.Services {
                 .FirstOrDefault(acc => acc.Id == accountId);
 
             if (account == null) {
-                throw new Exception("Account not found.");
+                throw new Exception("Conta não encontrada.");
             }
 
             AccountResponse response = _mapper.Map<AccountResponse>(account);
@@ -78,11 +78,11 @@ namespace Supera_Monitor_Back.Services {
             Account? account = _db.Accounts.FirstOrDefault(acc => acc.Email == model.Email);
 
             if (account != null) {
-                return new ResponseModel { Message = "This e-mail has already been registered." };
+                return new ResponseModel { Message = "Este e-mail já está em uso." };
             }
 
             if (_account.Deactivated != null) {
-                return new ResponseModel { Message = "This account has been deactivated." };
+                return new ResponseModel { Message = "Esta conta foi desativada." };
             }
 
             // Validations passed
@@ -110,21 +110,21 @@ namespace Supera_Monitor_Back.Services {
             Account? account = _db.Accounts.Find(model.Id);
 
             if (account == null) {
-                return new ResponseModel { Message = "Account not found." };
+                return new ResponseModel { Message = "Conta não encontrada." };
             }
 
             var emailIsAlreadyTaken = _db.Accounts.Any(acc => acc.Email == model.Email && acc.Id != model.Id);
 
             if (emailIsAlreadyTaken) {
-                return new ResponseModel { Message = "This e-mail has already been registered." };
+                return new ResponseModel { Message = "Este e-mail já está em uso." };
             }
 
             if (account.Deactivated != null) {
-                return new ResponseModel { Message = "You cannot update an account if it is deactivated." };
+                return new ResponseModel { Message = "Você não pode atualizar uma conta desativada." };
             }
 
             if (_account.Role_Id != ( int )Role.Admin && _account.Id != account.Id) {
-                return new ResponseModel { Message = "You are not allowed to perform this action." };
+                return new ResponseModel { Message = "Você não está autorizado a realizar esta ação." };
             }
 
             // Validations passed
@@ -160,15 +160,15 @@ namespace Supera_Monitor_Back.Services {
                 .FirstOrDefault(acc => acc.Id == accountId);
 
             if (account == null) {
-                return new ResponseModel { Message = "Account not found." };
+                return new ResponseModel { Message = "Conta não encontrada." };
             }
 
             if (account.Deactivated != null) {
-                return new ResponseModel { Message = "You cannot update an existing account if it is deactivated." };
+                return new ResponseModel { Message = "Você não pode atualizar uma conta desativada." };
             }
 
             if (_account == null || _account.Role_Id != ( int )Role.Admin && _account.Id != account.Id) {
-                return new ResponseModel { Message = "You are not allowed to perform this action." };
+                return new ResponseModel { Message = "Você não está autorizado a realizar esta ação." };
             }
 
             // Validations passed
@@ -207,11 +207,11 @@ namespace Supera_Monitor_Back.Services {
                  .FirstOrDefault(x => x.Id == accountId);
 
             if (account == null) {
-                return new ResponseModel { Message = "Account not found." };
+                return new ResponseModel { Message = "Conta não encontrada." };
             }
 
             if (account.Deactivated != null) {
-                return new ResponseModel { Message = "You cannot reset password from a deactivated account." };
+                return new ResponseModel { Message = "Você não pode resetar a senha de uma conta desativada." };
             }
 
             (string randomPassword, string passwordHash) = Utils.GenerateRandomHashedPassword();
@@ -240,15 +240,15 @@ namespace Supera_Monitor_Back.Services {
                             .FirstOrDefault(acc => acc.Id == accountId);
 
             if (account == null) {
-                return new ResponseModel { Message = "Account not found." };
+                return new ResponseModel { Message = "Conta não encontrada." };
             }
 
             if (account.Deactivated != null && activate) {
-                return new ResponseModel { Message = "You cannot enable a deactivated account." };
+                return new ResponseModel { Message = "Você não pode habilitar uma conta desativada." };
             }
 
             if (_account.Role_Id < account.Role_Id) {
-                return new ResponseModel { Message = "You are not allowed to perform this action." };
+                return new ResponseModel { Message = "Você não está autorizado a realizar esta ação." };
             }
 
             account.Deactivated = activate ? null : TimeFunctions.HoraAtualBR();

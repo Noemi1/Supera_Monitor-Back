@@ -73,13 +73,13 @@ namespace Supera_Monitor_Back.Services {
                 .SingleOrDefault(e => e.Email == model.Email);
 
             if (account == null || !BC.Verify(model.Password, account.PasswordHash))
-                throw new Exception("E-mail or password is incorrect.");
+                throw new Exception("E-mail e/ou senha incorreto(s).");
 
             if (account == null || !account.IsVerified)
-                throw new Exception("Your account has not been verified. Please check your email to activate your account.");
+                throw new Exception("Sua conta ainda não foi verificada. Por favor verifique seu email para ativar sua conta.");
 
             if (account == null || account.Deactivated.HasValue)
-                throw new Exception("Your account is disabled. Please contact your administrator.");
+                throw new Exception("Sua conta está desabilitada. Por favor, contate um administrador.");
 
             RemoveOldRefreshTokens(account);
 
@@ -156,11 +156,11 @@ namespace Supera_Monitor_Back.Services {
             Account? account = _db.Accounts.FirstOrDefault(acc => acc.Email == model.Email);
 
             if (account == null) {
-                return new ResponseModel { Message = "Account not found." };
+                return new ResponseModel { Message = "Conta não encontrada." };
             }
 
             if (account.Email != _account!.Email) {
-                return new ResponseModel { Message = "Invalid attempt." };
+                return new ResponseModel { Message = "Tentativa inválida." };
             }
 
             AccountList oldObj = _db.AccountList.AsNoTracking()
@@ -174,7 +174,7 @@ namespace Supera_Monitor_Back.Services {
 
             return new ResponseModel {
                 Success = true,
-                Message = "Account updated successfully.",
+                Message = "Conta atualizada com sucesso.",
                 Object = _db.AccountList.AsNoTracking().FirstOrDefault(acc => acc.Id == account.Id),
                 OldObject = oldObj,
             };
@@ -205,7 +205,7 @@ namespace Supera_Monitor_Back.Services {
                     .FirstOrDefault(acc => acc.Id == account.Id)!;
             }
 
-            response.Message = @"Please, check your inbox e-mail (" + model.Email + ") for password recovery instructions.";
+            response.Message = @"Por favor, verifique sua caixa de e-mail (" + model.Email + ") para mais instruções sobre a recuperação de senha.";
 
             return response;
         }
@@ -215,23 +215,23 @@ namespace Supera_Monitor_Back.Services {
             Account? account = _db.Accounts.FirstOrDefault(acc => acc.Email == _account.Email);
 
             if (account == null) {
-                return new ResponseModel { Message = "Account not found." };
+                return new ResponseModel { Message = "Conta não encontrada." };
             }
 
             var IsValidPassword = BC.Verify(model.CurrentPassword, account.PasswordHash);
 
             if (!IsValidPassword) {
-                return new ResponseModel { Message = "Current Password is invalid." };
+                return new ResponseModel { Message = "Senha inválida." };
             }
 
             if (model.NewPassword != model.ConfirmPassword) {
-                return new ResponseModel { Message = "Password does not match Confirm Password." };
+                return new ResponseModel { Message = "As senhas informadas não coincidem." };
             }
 
             var IsTheSamePassword = BC.Verify(model.NewPassword, account.PasswordHash);
 
             if (IsTheSamePassword) {
-                return new ResponseModel { Message = "New password cannot match Current Password." };
+                return new ResponseModel { Message = "A nova senha deve ser diferente da senha anterior." };
             }
 
             // Validations passed, hash new password, clear reset token and save
@@ -246,7 +246,7 @@ namespace Supera_Monitor_Back.Services {
             return new ResponseModel {
                 Object = _db.AccountList.Find(account.Id),
                 Success = true,
-                Message = "Password changed successfully."
+                Message = "Senha foi trocada com sucesso."
             };
         }
 
@@ -259,7 +259,7 @@ namespace Supera_Monitor_Back.Services {
                 x.ResetTokenExpires >= now);
 
             if (account == null) {
-                return new ResponseModel { Message = "Invalid token." };
+                return new ResponseModel { Message = "Token inválido." };
             }
 
             // Update password and remove reset token
@@ -274,7 +274,7 @@ namespace Supera_Monitor_Back.Services {
             return new ResponseModel {
                 Success = true,
                 Object = _db.AccountList.Find(account.Id),
-                Message = "Password updated successfully. Please, login."
+                Message = "Senha atualizada com sucesso. Por favor, faça o login."
             };
         }
 
@@ -283,7 +283,7 @@ namespace Supera_Monitor_Back.Services {
             Account? account = _db.Accounts.FirstOrDefault(acc => acc.VerificationToken == token);
 
             if (account == null) {
-                return new ResponseModel { Message = "Verification failed." };
+                return new ResponseModel { Message = "Verificação falhou." };
             }
 
             // Set account as verified and invalidate the token
@@ -294,9 +294,9 @@ namespace Supera_Monitor_Back.Services {
             _db.SaveChanges();
 
             return new ResponseModel {
-                Object = _db.AccountList.Include(acc => acc.Role).FirstOrDefault(acc => acc.Id == account.Id),
+                Object = _db.AccountList.FirstOrDefault(acc => acc.Id == account.Id),
                 Success = true,
-                Message = "Verification completed successfully. Please, login."
+                Message = "Verificação foi realizada com sucesso. Por favor, faça o login."
             };
         }
 
@@ -307,7 +307,7 @@ namespace Supera_Monitor_Back.Services {
                 acc.ResetTokenExpires > TimeFunctions.HoraAtualBR());
 
             if (account == null) {
-                throw new Exception("Invalid token.");
+                throw new Exception("Token inválido.");
             }
         }
 

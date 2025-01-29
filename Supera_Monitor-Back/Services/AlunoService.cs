@@ -35,7 +35,7 @@ namespace Supera_Monitor_Back.Services {
                 .FirstOrDefault(a => a.Id == alunoId);
 
             if (aluno == null) {
-                throw new Exception("Aluno not found.");
+                throw new Exception("Aluno não encontrado.");
             }
 
             // Validations passed

@@ -33,7 +33,7 @@ namespace Supera_Monitor_Back.Services {
             Turma? turma = _db.Turmas.Include(t => t.Turma_Tipo).FirstOrDefault(t => t.Id == turmaId);
 
             if (turma == null) {
-                throw new Exception("Turma not found.");
+                throw new Exception("Turma não encontrada.");
             }
 
             // Validations passed

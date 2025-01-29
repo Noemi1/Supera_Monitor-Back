@@ -25,7 +25,7 @@ namespace Supera_Monitor_Back.Services.Email {
             try {
                 // Create and populate message instance
                 MailMessage email = new MailMessage();
-                email.From = new MailAddress(_appSettings.SmtpUser);
+                email.From = new MailAddress(_appSettings.EmailFrom);
                 email.To.Add(to);
                 email.Subject = subject;
                 email.Body = html;
@@ -62,7 +62,7 @@ namespace Supera_Monitor_Back.Services.Email {
                 string body = template.GenerateBody(model);
 
                 MailMessage email = new() {
-                    From = new MailAddress(_appSettings.SmtpUser),
+                    From = new MailAddress(_appSettings.EmailFrom),
                     Subject = subject,
                     Body = body,
                     IsBodyHtml = true,
