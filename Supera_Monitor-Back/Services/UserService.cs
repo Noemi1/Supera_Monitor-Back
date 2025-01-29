@@ -243,10 +243,6 @@ namespace Supera_Monitor_Back.Services {
                 return new ResponseModel { Message = "Conta não encontrada." };
             }
 
-            if (account.Deactivated != null && activate) {
-                return new ResponseModel { Message = "Você não pode habilitar uma conta desativada." };
-            }
-
             if (_account.Role_Id < account.Role_Id) {
                 return new ResponseModel { Message = "Você não está autorizado a realizar esta ação." };
             }
