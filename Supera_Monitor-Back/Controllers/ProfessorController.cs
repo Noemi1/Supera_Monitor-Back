@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Supera_Monitor_Back.Entities.Views;
+using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Professor;
 using Supera_Monitor_Back.Services;
 using System.Reflection;
@@ -18,7 +20,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpGet("{professorId}")]
-        public ActionResult Get(int professorId)
+        public ActionResult<ProfessorResponse> Get(int professorId)
         {
             try {
                 var response = _professorService.Get(professorId);
@@ -31,7 +33,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpGet("all")]
-        public ActionResult GetAll()
+        public ActionResult<List<ProfessorList>> GetAll()
         {
             try {
                 var response = _professorService.GetAll();
@@ -44,7 +46,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPost()]
-        public ActionResult Insert(CreateProfessorRequest model)
+        public ActionResult<ResponseModel> Insert(CreateProfessorRequest model)
         {
             try {
                 var response = _professorService.Insert(model);
@@ -62,7 +64,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPut()]
-        public ActionResult Update(UpdateProfessorRequest model)
+        public ActionResult<ResponseModel> Update(UpdateProfessorRequest model)
         {
             try {
                 var response = _professorService.Update(model);
@@ -79,7 +81,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpDelete("{professorId}")]
-        public ActionResult Delete(int professorId)
+        public ActionResult<ResponseModel> Delete(int professorId)
         {
             try {
                 var response = _professorService.Delete(professorId);

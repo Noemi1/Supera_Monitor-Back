@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Supera_Monitor_Back.Entities.Views;
+using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Turma;
 using Supera_Monitor_Back.Services;
 using System.Reflection;
@@ -31,7 +33,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpGet("all")]
-        public ActionResult GetAll()
+        public ActionResult<List<TurmaList>> GetAll()
         {
             try {
                 var response = _turmaService.GetAll();
@@ -57,7 +59,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPost()]
-        public ActionResult Insert(CreateTurmaRequest model)
+        public ActionResult<ResponseModel> Insert(CreateTurmaRequest model)
         {
             try {
                 var response = _turmaService.Insert(model);
@@ -75,7 +77,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPut()]
-        public ActionResult Update(UpdateTurmaRequest model)
+        public ActionResult<ResponseModel> Update(UpdateTurmaRequest model)
         {
             try {
                 var response = _turmaService.Update(model);
@@ -94,7 +96,7 @@ namespace Supera_Monitor_Back.Controllers {
 
         [Authorize(Entities.Role.Admin)]
         [HttpDelete("{turmaId}")]
-        public ActionResult Delete(int turmaId)
+        public ActionResult<ResponseModel> Delete(int turmaId)
         {
             try {
                 var response = _turmaService.Delete(turmaId);
