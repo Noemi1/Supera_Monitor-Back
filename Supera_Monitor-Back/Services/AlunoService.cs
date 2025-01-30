@@ -8,7 +8,7 @@ using Supera_Monitor_Back.Models.Aluno;
 
 namespace Supera_Monitor_Back.Services {
     public interface IAlunoService {
-        AlunoResponse Get(int alunoId);
+        AlunoList Get(int alunoId);
         List<AlunoList> GetAll();
         ResponseModel Insert(CreateAlunoRequest model);
         ResponseModel Update(UpdateAlunoRequest model);
@@ -27,22 +27,15 @@ namespace Supera_Monitor_Back.Services {
             _mapper = mapper;
         }
 
-        public AlunoResponse Get(int alunoId)
+        public AlunoList Get(int alunoId)
         {
-            Aluno? aluno = _db.Alunos
-                .Include(t => t.Turma)
-                .Include(p => p.Pessoa)
-                .FirstOrDefault(a => a.Id == alunoId);
+            AlunoList? aluno = _db.AlunoList.FirstOrDefault(a => a.Id == alunoId);
 
             if (aluno == null) {
                 throw new Exception("Aluno não encontrado.");
             }
 
-            // Validations passed
-
-            AlunoResponse response = _mapper.Map<AlunoResponse>(aluno);
-
-            return response;
+            return aluno;
         }
 
         public List<AlunoList> GetAll()

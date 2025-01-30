@@ -7,7 +7,7 @@ using Supera_Monitor_Back.Models.Professor;
 
 namespace Supera_Monitor_Back.Services {
     public interface IProfessorService {
-        ProfessorResponse Get(int professorId);
+        ProfessorList Get(int professorId);
         ResponseModel Insert(CreateProfessorRequest model, string ipAddress);
         ResponseModel Update(UpdateProfessorRequest model);
         ResponseModel Delete(int professorId);
@@ -27,11 +27,15 @@ namespace Supera_Monitor_Back.Services {
             _userService = userService;
         }
 
-        public ProfessorResponse Get(int professorId)
+        public ProfessorList Get(int professorId)
         {
-            var professor = _db.Professors.Find(professorId);
+            ProfessorList? professor = _db.ProfessorList.FirstOrDefault(p => p.Id == professorId);
 
-            return _mapper.Map<ProfessorResponse>(professor);
+            if (professor == null) {
+                throw new Exception("Professor não encontrado.");
+            }
+
+            return professor;
         }
 
         public List<ProfessorList> GetAll()
@@ -46,24 +50,47 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                var accountResponse = _userService.Insert(new() {
-                    Name = model.Name,
-                    Phone = model.Phone,
-                    Email = model.Email,
-                    Role_Id = ( int )Role.Teacher,
-                }, ipAddress);
-
-                if (accountResponse.Success == false) {
-                    return accountResponse;
-                }
-
                 Professor professor = new() {
-                    Account_Id = accountResponse.Object!.Id,
-
                     DataInicio = model.DataInicio,
                     NivelAbaco = model.NivelAbaco,
                     NivelAh = model.NivelAH
                 };
+
+                // Se for passado um Account_Id no request, busca a conta no banco, senão cria uma e salva
+                if (model.Account_Id != null) {
+                    Account? accountToAssign = _db.Accounts.Find(model.Account_Id);
+
+                    if (accountToAssign == null) {
+                        return new ResponseModel { Message = "Conta não encontrada" };
+                    }
+
+                    bool UserIsAlreadyAssigned = _db.ProfessorList.Any(p => p.Account_Id == model.Account_Id);
+
+                    if (UserIsAlreadyAssigned == true) {
+                        return new ResponseModel { Message = "Usuário já está associado a um professor" };
+                    }
+
+                    // Associa um usuário existente ao professor
+                    professor.Account_Id = accountToAssign.Id;
+                } else {
+                    // Cria um novo usuário para o professor
+                    ResponseModel createdAccountResponse = _userService.Insert(new() {
+                        Name = model.Name,
+                        Phone = model.Phone,
+                        Email = model.Email,
+                        Role_Id = ( int )Role.Teacher,
+                    }, ipAddress);
+
+                    if (createdAccountResponse.Success == false) {
+                        return createdAccountResponse;
+                    }
+
+                    professor.Account_Id = createdAccountResponse.Object!.Id;
+                }
+
+                if (professor == null) {
+                    return new ResponseModel { Message = "Ocorreu algum erro ao criar o professor" };
+                }
 
                 _db.Professors.Add(professor);
                 _db.SaveChanges();

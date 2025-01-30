@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Microsoft.EntityFrameworkCore;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
@@ -8,7 +7,7 @@ using Supera_Monitor_Back.Models.Aula;
 
 namespace Supera_Monitor_Back.Services {
     public interface IAulaService {
-        AulaResponse Get(int aulaId);
+        AulaList Get(int aulaId);
         ResponseModel Insert(CreateAulaRequest model);
         ResponseModel Update(UpdateAulaRequest model);
         ResponseModel Delete(int aulaId);
@@ -28,14 +27,15 @@ namespace Supera_Monitor_Back.Services {
             _mapper = mapper;
         }
 
-        public AulaResponse Get(int aulaId)
+        public AulaList Get(int aulaId)
         {
-            TurmaAula? aula = _db.TurmaAulas
-                .Include(a => a.Professor)
-                .Include(a => a.Turma_Aula_Alunos)
-                .FirstOrDefault(a => a.Id == aulaId);
+            AulaList? aula = _db.AulaList.FirstOrDefault(a => a.Id == aulaId);
 
-            return _mapper.Map<AulaResponse>(aula);
+            if (aula == null) {
+                throw new Exception("Aula não encontrada");
+            }
+
+            return aula;
         }
 
         public List<AulaList> GetAll()

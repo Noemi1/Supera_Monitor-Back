@@ -20,7 +20,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpGet("{professorId}")]
-        public ActionResult<ProfessorResponse> Get(int professorId)
+        public ActionResult<ProfessorList> Get(int professorId)
         {
             try {
                 var response = _professorService.Get(professorId);
