@@ -113,7 +113,7 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
-        [HttpPatch("{Id}/toggle-active")]
+        [HttpPatch("toggle-active/{Id}")]
         public ActionResult<ResponseModel> ToggleDeactivate(int Id)
         {
             try {

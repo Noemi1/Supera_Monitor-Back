@@ -273,7 +273,7 @@ namespace Supera_Monitor_Back.Services {
 
             return new ResponseModel {
                 Success = true,
-                Object = _db.AccountList.Find(account.Id),
+                Object = _db.AccountList.FirstOrDefault(acc => acc.Id == account.Id),
                 Message = "Senha atualizada com sucesso. Por favor, faça o login."
             };
         }
