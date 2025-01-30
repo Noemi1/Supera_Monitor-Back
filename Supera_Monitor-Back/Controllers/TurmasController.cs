@@ -20,7 +20,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpGet("{turmaId}")]
-        public ActionResult<TurmaResponse> Get(int turmaId)
+        public ActionResult<TurmaList> Get(int turmaId)
         {
             try {
                 var response = _turmaService.Get(turmaId);
@@ -102,10 +102,30 @@ namespace Supera_Monitor_Back.Controllers {
                 var response = _turmaService.Delete(turmaId);
 
                 if (response.Success) {
+                    _logger.Log("Delete", "Turma", response, Account?.Id);
                     return Ok(response);
                 }
 
                 return BadRequest(response.Message);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
+
+        [HttpPatch("{Id}/toggle-active")]
+        public ActionResult<ResponseModel> ToggleDeactivate(int Id)
+        {
+            try {
+                ResponseModel response = _turmaService.ToggleDeactivate(Id, GetIpAddressFromHeaders());
+
+                if (response.Success) {
+                    string action = response.Object!.Active ? "Enable" : "Disable";
+                    _logger.Log(action, "Turma", response, Account?.Id);
+                    return Ok(response);
+                }
+
+                return BadRequest(response);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);

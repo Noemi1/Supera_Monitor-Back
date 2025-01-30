@@ -17,7 +17,7 @@ namespace Supera_Monitor_Back.Services {
         ResponseModel Update(UpdateAccountRequest model/*, string ip*/);
         ResponseModel Delete(int accountId);
         ResponseModel ResetPassword(int accountId);
-        ResponseModel Deactivated(int accountId, bool activate, string ipAddress);
+        ResponseModel ToggleDeactivate(int accountId, string ipAddress);
     }
 
     public class UserService : IUserService {
@@ -233,7 +233,7 @@ namespace Supera_Monitor_Back.Services {
             };
         }
 
-        public ResponseModel Deactivated(int accountId, bool activate, string ipAddress)
+        public ResponseModel ToggleDeactivate(int accountId, string ipAddress)
         {
             Account? account = _db.Accounts
                             .Include(acc => acc.AccountRefreshToken)
@@ -243,25 +243,30 @@ namespace Supera_Monitor_Back.Services {
                 return new ResponseModel { Message = "Conta não encontrada." };
             }
 
+            if (_account == null) {
+                return new ResponseModel { Message = "Não foi possível completar a ação. Autenticação do autor não encontrada." };
+            }
+
             if (_account.Role_Id < account.Role_Id) {
                 return new ResponseModel { Message = "Você não está autorizado a realizar esta ação." };
             }
 
-            account.Deactivated = activate ? null : TimeFunctions.HoraAtualBR();
+            // Validations passed
+
+            bool IsAccountActive = account.Deactivated == null;
+
+            account.Deactivated = IsAccountActive ? TimeFunctions.HoraAtualBR() : null;
 
             _db.Accounts.Update(account);
             _db.SaveChanges();
-
-            account.AccountRefreshToken = _db.AccountRefreshTokens
-                .Where(x => x.AccountId == accountId)
-                .ToList();
 
             // If user is editing his own account
             if (account.Id == _account!.Id) {
                 _httpContextAccessor.HttpContext.Items["Account"] = account;
             }
 
-            if (!activate) {
+            // If account is being deactivated, revoke all its active tokens
+            if (account.Deactivated != null) {
                 var tokens = account.AccountRefreshToken.Where(tok => tok.IsActive).ToList();
 
                 foreach (var refreshToken in tokens) {

@@ -6,6 +6,9 @@ using Supera_Monitor_Back.Services;
 using System.Reflection;
 
 namespace Supera_Monitor_Back.Controllers {
+    [Authorize(Entities.Role.Admin, Entities.Role.Teacher, Entities.Role.Assistant)]
+    [ApiController]
+    [Route("back/[controller]")]
     public class AulasController : _BaseController {
         private readonly IAulaService _aulaService;
         private readonly ILogService _logger;

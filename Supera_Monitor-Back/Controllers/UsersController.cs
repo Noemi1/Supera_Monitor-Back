@@ -136,15 +136,14 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
-        [HttpPatch("{Id}/{Active}")]
-        public ActionResult<ResponseModel> Deactivate(int Id, bool Active)
+        [HttpPatch("{Id}/toggle-active")]
+        public ActionResult<ResponseModel> ToggleDeactivate(int Id)
         {
             try {
-                string action = Active ? "Enable" : "Disable";
-
-                ResponseModel response = _userService.Deactivated(Id, Active, GetIpAddressFromHeaders());
+                ResponseModel response = _userService.ToggleDeactivate(Id, GetIpAddressFromHeaders());
 
                 if (response.Success) {
+                    string action = response.Object!.Active ? "Enable" : "Disable";
                     _logger.Log(action, "Account", response, Account?.Id);
                 }
 

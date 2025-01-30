@@ -8,10 +8,12 @@ using Supera_Monitor_Back.Models.Turma;
 
 namespace Supera_Monitor_Back.Services {
     public interface ITurmaService {
-        TurmaResponse Get(int turmaId);
+        TurmaList Get(int turmaId);
         ResponseModel Insert(CreateTurmaRequest model);
         ResponseModel Update(UpdateTurmaRequest model);
         ResponseModel Delete(int turmaId);
+        ResponseModel ToggleDeactivate(int turmaId, string ipAddress);
+
         List<TurmaList> GetAll();
         List<TurmaTipoModel> GetTypes();
 
@@ -30,9 +32,9 @@ namespace Supera_Monitor_Back.Services {
             _account = ( Account? )httpContextAccessor.HttpContext?.Items["Account"];
         }
 
-        public TurmaResponse Get(int turmaId)
+        public TurmaList Get(int turmaId)
         {
-            Turma? turma = _db.Turmas.Include(t => t.Turma_Tipo).FirstOrDefault(t => t.Id == turmaId);
+            TurmaList? turma = _db.TurmaList.AsNoTracking().FirstOrDefault(t => t.Id == turmaId);
 
             if (turma == null) {
                 throw new Exception("Turma não encontrada.");
@@ -40,9 +42,7 @@ namespace Supera_Monitor_Back.Services {
 
             // Validations passed
 
-            TurmaResponse response = _mapper.Map<TurmaResponse>(turma);
-
-            return response;
+            return turma;
         }
 
         public List<TurmaList> GetAll()
@@ -198,6 +198,33 @@ namespace Supera_Monitor_Back.Services {
             List<AlunoList> alunos = _db.AlunoList.Where(a => a.Turma_Id == turmaId).ToList();
 
             return alunos;
+        }
+
+        public ResponseModel ToggleDeactivate(int turmaId, string ipAddress)
+        {
+            Turma? turma = _db.Turmas.Find(turmaId);
+
+            if (turma == null) {
+                return new ResponseModel { Message = "Turma não encontrada." };
+            }
+
+            if (_account == null) {
+                return new ResponseModel { Message = "Não foi possível completar a ação. Autenticação do autor não encontrada." };
+            }
+
+            // Validations passed
+
+            bool IsTurmaActive = turma.Deactivated == null;
+
+            turma.Deactivated = IsTurmaActive ? TimeFunctions.HoraAtualBR() : null;
+
+            _db.Turmas.Update(turma);
+            _db.SaveChanges();
+
+            return new ResponseModel {
+                Success = true,
+                Object = _db.TurmaList.AsNoTracking().FirstOrDefault(t => t.Id == turma.Id),
+            };
         }
 
         //public ResponseModel InsertPresenca(RegisterPresencaRequest model)

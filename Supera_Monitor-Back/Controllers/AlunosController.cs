@@ -66,7 +66,7 @@ namespace Supera_Monitor_Back.Controllers {
                 var response = _alunoService.Insert(model);
 
                 if (response.Success == false) {
-                    return BadRequest(response.Message);
+                    return BadRequest(response);
                 }
 
                 return Ok(response);

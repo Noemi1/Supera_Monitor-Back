@@ -249,14 +249,10 @@ namespace Supera_Monitor_Back.Helpers {
                     .HasNoKey()
                     .ToView("AlunoList");
 
-                entity.Property(e => e.Pessoa_Id).HasColumnName("Pessoa_Id");
-                entity.Property(e => e.Turma_Id).HasColumnName("Turma_Id");
+                entity.Property(e => e.DataNascimento).HasColumnType("date");
                 entity.Property(e => e.Nome)
                     .HasMaxLength(50)
-                    .IsUnicode(false)
-                    .HasColumnName("Nome");
-                entity.Property(e => e.DataNascimento)
-                    .HasColumnName("DataNascimento");
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<AulaList>(entity => {
@@ -264,18 +260,10 @@ namespace Supera_Monitor_Back.Helpers {
                     .HasNoKey()
                     .ToView("AulaList");
 
-                entity.Property(e => e.Aluno_Id).HasColumnName("Aluno_Id");
-                entity.Property(e => e.Aluno_Nome)
-                    .HasMaxLength(50)
-                    .IsUnicode(false)
-                    .HasColumnName("Aluno_Nome");
                 entity.Property(e => e.Data).HasColumnType("date");
-                entity.Property(e => e.Professor_Id).HasColumnName("Professor_Id");
-                entity.Property(e => e.Turma_Id).HasColumnName("Turma_Id");
                 entity.Property(e => e.Turma_Tipo)
                     .HasMaxLength(50)
-                    .IsUnicode(false)
-                    .HasColumnName("Turma_Tipo");
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<TurmaTipo>(entity => {

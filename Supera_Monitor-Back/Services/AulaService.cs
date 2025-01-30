@@ -68,7 +68,7 @@ namespace Supera_Monitor_Back.Services {
                 bool TurmaExists = _db.Turmas.Any(t => t.Id == model.Turma_Id);
 
                 if (!TurmaExists) {
-                    return new ResponseModel { Message = "Aula não encontrada" };
+                    return new ResponseModel { Message = "Turma não encontrada" };
                 }
 
                 // Não devo poder registrar uma aula com um professor que não existe

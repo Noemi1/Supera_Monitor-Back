@@ -52,6 +52,7 @@ builder.Services.AddScoped<ITurmaService, TurmaService>();
 builder.Services.AddScoped<IAlunoService, AlunoService>();
 builder.Services.AddScoped<IProfessorService, ProfessorService>();
 builder.Services.AddScoped<IProfessorService, ProfessorService>();
+builder.Services.AddScoped<IAulaService, AulaService>();
 
 #endregion
 
