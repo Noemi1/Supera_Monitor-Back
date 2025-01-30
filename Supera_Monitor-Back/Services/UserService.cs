@@ -173,7 +173,7 @@ namespace Supera_Monitor_Back.Services {
 
             // Validations passed
 
-            AccountList? logObject = _db.AccountList.Find(account.Id);
+            AccountList? logObject = _db.AccountList.FirstOrDefault(acc => acc.Id == account.Id);
 
             _db.AccountRefreshTokens.RemoveRange(account.AccountRefreshToken);
 
