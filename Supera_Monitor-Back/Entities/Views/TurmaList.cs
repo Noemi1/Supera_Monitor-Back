@@ -6,13 +6,9 @@
 
         public TimeSpan? Horario { get; set; }
 
-        public int? Professor_Id { get; set; }
+        public int Professor_Id { get; set; }
 
-        public string Nome_Professor { get; set; } = null!;
-
-        public string Email_Professor { get; set; } = null!;
-
-        public string Telefone_Professor { get; set; } = null!;
+        public string Professor { get; set; } = null!;
 
         public int? Turma_Tipo_Id { get; set; }
 
