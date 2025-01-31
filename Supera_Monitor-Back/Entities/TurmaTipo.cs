@@ -9,7 +9,9 @@ namespace Supera_Monitor_Back.Entities {
     }
 
     public enum Tipo {
-        A = 1,
-        B = 2,
+        Crianças = 1,
+        Adolescentes = 2,
+        Adultos = 3,
+        TerceiraIdade = 4
     }
 }
