@@ -57,21 +57,11 @@ namespace Supera_Monitor_Back.Services {
                 // Procurar os níveis passados no request, se existirem, colocar Nivel_Id no professor, senão nular
                 bool NivelAbacoExists = _db.Professor_NivelAbaco.Any(nv => nv.Id == model.Professor_NivelAbaco_Id);
 
-                if (NivelAbacoExists == false) {
-                    professor.Professor_NivelAbaco_Id = null;
-                    //return new ResponseModel { Message = "Nível Abaco informado não foi encontrado" };
-                } else {
-                    professor.Professor_NivelAbaco_Id = model.Professor_NivelAbaco_Id;
-                }
+                professor.Professor_NivelAbaco_Id = NivelAbacoExists ? model.Professor_NivelAbaco_Id : null;
 
                 bool NivelAHExists = _db.Professor_NivelAH.Any(nv => nv.Id == model.Professor_NivelAH_Id);
 
-                if (NivelAHExists == false) {
-                    professor.Professor_NivelAH_Id = null;
-                    //return new ResponseModel { Message = "O Nível AH informado não foi encontrado" };
-                } else {
-                    professor.Professor_NivelAH_Id = model.Professor_NivelAH_Id;
-                }
+                professor.Professor_NivelAH_Id = NivelAHExists ? model.Professor_NivelAH_Id : null;
 
                 // Se for passado um Account_Id no request, busca a conta no banco, senão cria uma e salva
                 if (model.Account_Id != null) {
@@ -155,21 +145,11 @@ namespace Supera_Monitor_Back.Services {
                 // Procurar os níveis passados no request, se existirem, colocar Nivel_Id no professor, senão nular
                 bool NivelAbacoExists = _db.Professor_NivelAbaco.Any(nv => nv.Id == model.Professor_NivelAbaco_Id);
 
-                if (NivelAbacoExists == false) {
-                    professor.Professor_NivelAbaco_Id = null;
-                    //return new ResponseModel { Message = "Nível Abaco informado não foi encontrado" };
-                } else {
-                    professor.Professor_NivelAbaco_Id = model.Professor_NivelAbaco_Id;
-                }
+                professor.Professor_NivelAbaco_Id = NivelAbacoExists ? model.Professor_NivelAbaco_Id : null;
 
                 bool NivelAHExists = _db.Professor_NivelAH.Any(nv => nv.Id == model.Professor_NivelAH_Id);
 
-                if (NivelAHExists == false) {
-                    professor.Professor_NivelAH_Id = null;
-                    //return new ResponseModel { Message = "O Nível AH informado não foi encontrado" };
-                } else {
-                    professor.Professor_NivelAH_Id = model.Professor_NivelAH_Id;
-                }
+                professor.Professor_NivelAH_Id = NivelAHExists ? model.Professor_NivelAH_Id : null;
 
                 account.Name = model.Nome;
                 account.Phone = model.Telefone;
