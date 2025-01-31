@@ -260,6 +260,10 @@ namespace Supera_Monitor_Back.Helpers {
                     .HasNoKey()
                     .ToView("TurmaList");
 
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
+
                 entity.Property(e => e.Turma_Tipo)
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -282,8 +286,8 @@ namespace Supera_Monitor_Back.Helpers {
                     .ToView("AulaList");
 
                 entity.Property(e => e.Data).HasColumnType("date");
-                entity.Property(e => e.Turma_Tipo)
-                    .HasMaxLength(50)
+                entity.Property(e => e.Turma)
+                    .HasMaxLength(100)
                     .IsUnicode(false);
             });
 

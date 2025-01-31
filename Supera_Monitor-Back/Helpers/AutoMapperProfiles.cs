@@ -28,6 +28,9 @@ namespace Supera_Monitor_Back.Helpers {
 
             CreateMap<CreateProfessorRequest, Professor>();
 
+            CreateMap<Professor_NivelAH, NivelModel>();
+            CreateMap<Professor_NivelAbaco, NivelModel>();
+
         }
     }
 }

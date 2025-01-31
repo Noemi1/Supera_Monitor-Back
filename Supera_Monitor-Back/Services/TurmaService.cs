@@ -92,6 +92,7 @@ namespace Supera_Monitor_Back.Services {
                     DiaSemana = model.DiaSemana,
                     Professor_Id = model.Professor_Id,
                     Turma_Tipo_Id = model.Turma_Tipo_Id,
+                    Nome = model.Nome,
 
                     Created = TimeFunctions.HoraAtualBR(),
                     Account_Created_Id = _account.Id
@@ -147,6 +148,7 @@ namespace Supera_Monitor_Back.Services {
 
                 response.OldObject = _db.TurmaList.FirstOrDefault(t => t.Id == model.Id);
 
+                turma.Nome = model.Nome;
                 turma.DiaSemana = model.DiaSemana;
                 turma.Horario = model.Horario;
                 turma.Professor_Id = model.Professor_Id;

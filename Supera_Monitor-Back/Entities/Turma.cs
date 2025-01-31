@@ -3,6 +3,8 @@
 public partial class Turma : _BaseEntity {
     public int Id { get; set; }
 
+    public string? Nome { get; set; }
+
     public int DiaSemana { get; set; }
 
     public TimeSpan? Horario { get; set; }

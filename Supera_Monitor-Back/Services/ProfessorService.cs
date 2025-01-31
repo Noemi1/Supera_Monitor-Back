@@ -13,6 +13,8 @@ namespace Supera_Monitor_Back.Services {
         ResponseModel Delete(int professorId);
 
         List<ProfessorList> GetAll();
+        List<NivelModel> GetAllNiveisAh();
+        List<NivelModel> GetAllNiveisAbaco();
     }
 
     public class ProfessorService : IProfessorService {
@@ -198,6 +200,20 @@ namespace Supera_Monitor_Back.Services {
             }
 
             return response;
+        }
+
+        public List<NivelModel> GetAllNiveisAh()
+        {
+            List<Professor_NivelAH> niveis = _db.Professor_NivelAH.ToList();
+
+            return _mapper.Map<List<NivelModel>>(niveis);
+        }
+
+        public List<NivelModel> GetAllNiveisAbaco()
+        {
+            List<Professor_NivelAbaco> niveis = _db.Professor_NivelAbaco.ToList();
+
+            return _mapper.Map<List<NivelModel>>(niveis);
         }
     }
 }
