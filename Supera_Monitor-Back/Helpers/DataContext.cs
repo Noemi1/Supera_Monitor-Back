@@ -42,6 +42,10 @@ namespace Supera_Monitor_Back.Helpers {
 
         public virtual DbSet<ProfessorList> ProfessorList { get; set; }
 
+        public virtual DbSet<Professor_NivelAH> Professor_NivelAH { get; set; }
+
+        public virtual DbSet<Professor_NivelAbaco> Professor_NivelAbaco { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             var configuration = new ConfigurationBuilder()
@@ -148,12 +152,20 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.ToTable("Professor");
 
                 entity.Property(e => e.Account_Id).HasColumnName("Account_Id");
-                entity.Property(e => e.NivelAh).HasColumnName("NivelAH");
+                entity.Property(e => e.DataInicio).HasColumnType("date");
 
                 entity.HasOne(d => d.Account).WithMany(p => p.Professors)
                     .HasForeignKey(d => d.Account_Id)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Professor_Account");
+
+                entity.HasOne(d => d.Professor_NivelAH).WithMany(p => p.Professors)
+                    .HasForeignKey(d => d.Professor_NivelAH_Id)
+                    .HasConstraintName("FK_Professor_Professor_NivelAH");
+
+                entity.HasOne(d => d.Professor_NivelAbaco).WithMany(p => p.Professors)
+                    .HasForeignKey(d => d.Professor_NivelAbaco_Id)
+                    .HasConstraintName("FK_Professor_Professor_NivelAbaco");
             });
 
             modelBuilder.Entity<ProfessorList>(entity => {
@@ -161,12 +173,29 @@ namespace Supera_Monitor_Back.Helpers {
                     .HasNoKey()
                     .ToView("ProfessorList");
 
-                entity.Property(e => e.Account_Created).HasColumnName("Account_Created");
-                entity.Property(e => e.Account_Created_Id).HasColumnName("Account_Created_Id");
-                entity.Property(e => e.Account_Id).HasColumnName("Account_Id");
                 entity.Property(e => e.DataInicio).HasColumnType("date");
-                entity.Property(e => e.NivelAh).HasColumnName("NivelAH");
-                entity.Property(e => e.Role_Id).HasColumnName("Role_Id");
+                entity.Property(e => e.NivelAH)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
+                entity.Property(e => e.NivelAbaco)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Professor_NivelAH>(entity => {
+                entity.ToTable("Professor_NivelAH");
+
+                entity.Property(e => e.Descricao)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Professor_NivelAbaco>(entity => {
+                entity.ToTable("Professor_NivelAbaco");
+
+                entity.Property(e => e.Descricao)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<Turma>(entity => {
@@ -231,17 +260,9 @@ namespace Supera_Monitor_Back.Helpers {
                     .HasNoKey()
                     .ToView("TurmaList");
 
-                entity.Property(e => e.Account_Created).HasColumnName("Account_Created");
-                entity.Property(e => e.Account_Created_Id).HasColumnName("Account_Created_Id");
-                entity.Property(e => e.Email_Professor).HasColumnName("Email_Professor");
-                entity.Property(e => e.Nome_Professor).HasColumnName("Nome_Professor");
-                entity.Property(e => e.Professor_Id).HasColumnName("Professor_Id");
-                entity.Property(e => e.Telefone_Professor).HasColumnName("Telefone_Professor");
                 entity.Property(e => e.Turma_Tipo)
                     .HasMaxLength(50)
-                    .IsUnicode(false)
-                    .HasColumnName("Turma_Tipo");
-                entity.Property(e => e.Turma_Tipo_Id).HasColumnName("Turma_Tipo_Id");
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<AlunoList>(entity => {

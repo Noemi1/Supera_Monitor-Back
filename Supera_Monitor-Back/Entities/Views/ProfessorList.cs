@@ -10,14 +10,18 @@ namespace Supera_Monitor_Back.Entities.Views {
 
         public DateTime DataInicio { get; set; }
 
-        public int? NivelAbaco { get; set; }
-
-        public int? NivelAh { get; set; }
-
         public int Account_Id { get; set; }
 
         public int Role_Id { get; set; }
 
         public string? Role { get; set; }
+
+        public int? Professor_NivelAbaco_Id { get; set; }
+
+        public string? NivelAbaco { get; set; } = null!;
+
+        public int? Professor_NivelAH_Id { get; set; }
+
+        public string? NivelAH { get; set; } = null!;
     }
 }

@@ -14,10 +14,6 @@
 
         public string Telefone_Professor { get; set; } = null!;
 
-        public int? NivelAbaco { get; set; }
-
-        public int? NivelAH { get; set; }
-
         public int? Turma_Tipo_Id { get; set; }
 
         public string? Turma_Tipo { get; set; }

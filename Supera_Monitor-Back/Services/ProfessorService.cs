@@ -52,9 +52,26 @@ namespace Supera_Monitor_Back.Services {
             try {
                 Professor professor = new() {
                     DataInicio = model.DataInicio,
-                    NivelAbaco = model.NivelAbaco,
-                    NivelAh = model.NivelAH
                 };
+
+                // Procurar os níveis passados no request, se existirem, colocar Nivel_Id no professor, senão nular
+                bool NivelAbacoExists = _db.Professor_NivelAbaco.Any(nv => nv.Id == model.Professor_NivelAbaco_Id);
+
+                if (NivelAbacoExists == false) {
+                    professor.Professor_NivelAbaco_Id = null;
+                    //return new ResponseModel { Message = "Nível Abaco informado não foi encontrado" };
+                } else {
+                    professor.Professor_NivelAbaco_Id = model.Professor_NivelAbaco_Id;
+                }
+
+                bool NivelAHExists = _db.Professor_NivelAH.Any(nv => nv.Id == model.Professor_NivelAH_Id);
+
+                if (NivelAHExists == false) {
+                    professor.Professor_NivelAH_Id = null;
+                    //return new ResponseModel { Message = "O Nível AH informado não foi encontrado" };
+                } else {
+                    professor.Professor_NivelAH_Id = model.Professor_NivelAH_Id;
+                }
 
                 // Se for passado um Account_Id no request, busca a conta no banco, senão cria uma e salva
                 if (model.Account_Id != null) {
@@ -73,10 +90,20 @@ namespace Supera_Monitor_Back.Services {
                     // Associa um usuário existente ao professor
                     professor.Account_Id = accountToAssign.Id;
                 } else {
-                    // Cria um novo usuário para o professor
+
+                    if (string.IsNullOrEmpty(model.Nome)) {
+                        return new ResponseModel { Message = "Nome não deve ser vazio" };
+                    }
+                    if (string.IsNullOrEmpty(model.Telefone)) {
+                        return new ResponseModel { Message = "Telefone não deve ser vazio" };
+                    }
+                    if (string.IsNullOrEmpty(model.Email)) {
+                        return new ResponseModel { Message = "Email não deve ser vazio" };
+                    }
+
                     ResponseModel createdAccountResponse = _userService.Insert(new() {
-                        Name = model.Name,
-                        Phone = model.Phone,
+                        Name = model.Nome,
+                        Phone = model.Telefone,
                         Email = model.Email,
                         Role_Id = ( int )Role.Teacher,
                     }, ipAddress);
@@ -85,6 +112,7 @@ namespace Supera_Monitor_Back.Services {
                         return createdAccountResponse;
                     }
 
+                    // Asssocia o usuário recém criado ao professor
                     professor.Account_Id = createdAccountResponse.Object!.Id;
                 }
 
@@ -112,7 +140,6 @@ namespace Supera_Monitor_Back.Services {
             try {
                 Professor? professor = _db.Professors.Find(model.Id);
 
-                // Não devo poder atualizar um professor que não existe
                 if (professor == null) {
                     return new ResponseModel { Message = "Professor não encontrado" };
                 }
@@ -123,29 +150,44 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Conta não encontrada" };
                 }
 
-                // Validations passed
+                response.OldObject = _db.ProfessorList.SingleOrDefault(p => p.Id == professor.Id);
 
-                response.OldObject = _db.ProfessorList.FirstOrDefault(p => p.Id == professor.Id);
+                // Procurar os níveis passados no request, se existirem, colocar Nivel_Id no professor, senão nular
+                bool NivelAbacoExists = _db.Professor_NivelAbaco.Any(nv => nv.Id == model.Professor_NivelAbaco_Id);
 
-                account.Name = model.Name;
-                account.Phone = model.Phone;
+                if (NivelAbacoExists == false) {
+                    professor.Professor_NivelAbaco_Id = null;
+                    //return new ResponseModel { Message = "Nível Abaco informado não foi encontrado" };
+                } else {
+                    professor.Professor_NivelAbaco_Id = model.Professor_NivelAbaco_Id;
+                }
+
+                bool NivelAHExists = _db.Professor_NivelAH.Any(nv => nv.Id == model.Professor_NivelAH_Id);
+
+                if (NivelAHExists == false) {
+                    professor.Professor_NivelAH_Id = null;
+                    //return new ResponseModel { Message = "O Nível AH informado não foi encontrado" };
+                } else {
+                    professor.Professor_NivelAH_Id = model.Professor_NivelAH_Id;
+                }
+
+                account.Name = model.Nome;
+                account.Phone = model.Telefone;
                 account.LastUpdated = TimeFunctions.HoraAtualBR();
 
                 _db.Accounts.Update(account);
                 _db.SaveChanges();
 
                 professor.DataInicio = model.DataInicio;
-                professor.NivelAh = model.NivelAH;
-                professor.NivelAbaco = model.NivelAbaco;
 
                 _db.Professors.Update(professor);
                 _db.SaveChanges();
 
                 response.Message = "Professor atualizado com sucesso";
-                response.Object = _db.ProfessorList.FirstOrDefault(p => p.Id == professor.Id);
+                response.Object = _db.ProfessorList.SingleOrDefault(p => p.Id == professor.Id);
                 response.Success = true;
             } catch (Exception ex) {
-                response.Message = "Falha ao atualizar professor: " + ex.ToString();
+                response.Message = "Ocorreu um erro ao atualizar professor" + ex.ToString();
             }
 
             return response;
