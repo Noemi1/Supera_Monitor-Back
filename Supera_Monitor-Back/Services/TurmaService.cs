@@ -87,17 +87,12 @@ namespace Supera_Monitor_Back.Services {
 
                 // Validations passed
 
-                Turma turma = new() {
-                    Horario = model.Horario,
-                    DiaSemana = model.DiaSemana,
-                    Professor_Id = model.Professor_Id,
-                    Turma_Tipo_Id = model.Turma_Tipo_Id,
-                    Nome = model.Nome,
-                    CapacidadeMaximaAlunos = model.CapacidadeMaximaAlunos,
+                Turma turma = new();
 
-                    Created = TimeFunctions.HoraAtualBR(),
-                    Account_Created_Id = _account.Id
-                };
+                _mapper.Map<CreateTurmaRequest, Turma>(model, turma);
+
+                turma.Created = TimeFunctions.HoraAtualBR();
+                turma.Account_Created_Id = _account.Id;
 
                 _db.Turmas.Add(turma);
                 _db.SaveChanges();

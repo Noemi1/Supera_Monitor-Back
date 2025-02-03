@@ -10,7 +10,7 @@
 
         public int CapacidadeMaximaAlunos { get; set; }
 
-        public int Professor_Id { get; set; }
+        public int? Professor_Id { get; set; }
 
         public string? Professor { get; set; } = null!;
 

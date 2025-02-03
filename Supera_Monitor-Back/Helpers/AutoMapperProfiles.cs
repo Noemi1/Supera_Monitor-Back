@@ -25,6 +25,7 @@ namespace Supera_Monitor_Back.Helpers {
             CreateMap<CreateAccountRequest, Account>();
 
             CreateMap<CreateTurmaRequest, Turma>();
+            CreateMap<UpdateTurmaRequest, Turma>();
 
             CreateMap<CreateProfessorRequest, Professor>();
 
