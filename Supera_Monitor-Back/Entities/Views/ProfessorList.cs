@@ -10,6 +10,8 @@ namespace Supera_Monitor_Back.Entities.Views {
 
         public DateTime DataInicio { get; set; }
 
+        public int CorLegenda { get; set; }
+
         public int Account_Id { get; set; }
 
         public int Role_Id { get; set; }

@@ -5,6 +5,7 @@
         public string Nome { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Telefone { get; set; } = string.Empty;
+        public int CorLegenda { get; set; }
 
         public int Professor_NivelAH_Id { get; set; }
         public int Professor_NivelAbaco_Id { get; set; }

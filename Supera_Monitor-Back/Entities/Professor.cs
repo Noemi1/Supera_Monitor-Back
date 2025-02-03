@@ -5,6 +5,8 @@ public partial class Professor {
 
     public DateTime DataInicio { get; set; }
 
+    public int CorLegenda { get; set; }
+
     public int Account_Id { get; set; }
 
     public virtual Account Account { get; set; } = null!;

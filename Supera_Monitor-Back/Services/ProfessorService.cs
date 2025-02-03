@@ -54,6 +54,7 @@ namespace Supera_Monitor_Back.Services {
             try {
                 Professor professor = new() {
                     DataInicio = model.DataInicio,
+                    CorLegenda = model.CorLegenda
                 };
 
                 // Procurar os níveis passados no request, se existirem, colocar Nivel_Id no professor, senão nular
@@ -161,6 +162,7 @@ namespace Supera_Monitor_Back.Services {
                 _db.SaveChanges();
 
                 professor.DataInicio = model.DataInicio;
+                professor.CorLegenda = model.CorLegenda;
 
                 _db.Professors.Update(professor);
                 _db.SaveChanges();

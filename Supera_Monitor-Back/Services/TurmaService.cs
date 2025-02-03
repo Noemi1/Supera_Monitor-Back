@@ -93,6 +93,7 @@ namespace Supera_Monitor_Back.Services {
                     Professor_Id = model.Professor_Id,
                     Turma_Tipo_Id = model.Turma_Tipo_Id,
                     Nome = model.Nome,
+                    CapacidadeMaximaAlunos = model.CapacidadeMaximaAlunos,
 
                     Created = TimeFunctions.HoraAtualBR(),
                     Account_Created_Id = _account.Id
@@ -154,6 +155,7 @@ namespace Supera_Monitor_Back.Services {
                 turma.Professor_Id = model.Professor_Id;
                 turma.Turma_Tipo_Id = model.Turma_Tipo_Id;
                 turma.LastUpdated = TimeFunctions.HoraAtualBR();
+                turma.CapacidadeMaximaAlunos = model.CapacidadeMaximaAlunos;
 
                 _db.Turmas.Update(turma);
                 _db.SaveChanges();
