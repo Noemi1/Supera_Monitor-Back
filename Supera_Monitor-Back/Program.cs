@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Middlewares;
@@ -23,18 +22,10 @@ builder.Services.AddControllers()
 builder.Services.AddHttpContextAccessor();
 
 #region SQL
-builder.Services.AddDbContext<DataContext>(options => {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("ConnectionString")
-        , options => {
-            options.CommandTimeout(1200); // 20 minutos
-            options.EnableRetryOnFailure(
-                maxRetryCount: 3,
-                maxRetryDelay: TimeSpan.FromSeconds(30),
-                errorNumbersToAdd: null
-            );
-        }
-    );
-});
+
+builder.Services.AddDbContext<DataContext>();
+builder.Services.AddDbContext<CrmContext>();
+
 #endregion
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());

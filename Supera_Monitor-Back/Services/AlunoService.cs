@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Supera_Monitor_Back.Entities;
+using Supera_Monitor_Back.Entities.CRM;
 using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
@@ -13,26 +14,26 @@ namespace Supera_Monitor_Back.Services {
         ResponseModel Insert(CreateAlunoRequest model);
         ResponseModel Update(UpdateAlunoRequest model);
         ResponseModel Delete(int alunoId);
-
-        List<Pessoa> GetAllPessoas();
     }
 
     public class AlunoService : IAlunoService {
         private readonly DataContext _db;
+        private readonly CrmContext _crm;
         private readonly IMapper _mapper;
 
-        public AlunoService(DataContext db, IMapper mapper)
+        public AlunoService(DataContext db, CrmContext crm, IMapper mapper)
         {
             _db = db;
+            _crm = crm;
             _mapper = mapper;
         }
 
         public AlunoList Get(int alunoId)
         {
-            AlunoList? aluno = _db.AlunoList.FirstOrDefault(a => a.Id == alunoId);
+            AlunoList? aluno = _db.AlunoList.AsNoTracking().SingleOrDefault(a => a.Id == alunoId);
 
-            if (aluno == null) {
-                throw new Exception("Aluno não encontrado.");
+            if (aluno is null) {
+                throw new Exception("Aluno não encontrado");
             }
 
             return aluno;
@@ -50,29 +51,39 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Pessoa? pessoa;
+                Pessoa? pessoa = _crm.Pessoas.Find(model.Pessoa_Id);
 
-                // Se foi passado um Pessoa_Id no request, busca a pessoa no banco, senão cria uma e salva no banco
-                if (model.Pessoa_Id == null) {
-                    pessoa = new() {
-                        DataNascimento = model.DataNascimento,
-                        Nome = model.Nome,
-                    };
-
-                    _db.Pessoas.Add(pessoa);
-                    _db.SaveChanges();
-                } else {
-                    pessoa = _db.Pessoas.AsNoTracking().FirstOrDefault(p => p.Id == model.Pessoa_Id);
-                }
-
+                // Aluno só pode ser cadastrado se a pessoa existir no CRM
                 if (pessoa == null) {
-                    return new ResponseModel { Message = "Ocorreu algum erro ao criar a pessoa." };
+                    return new ResponseModel { Message = "Pessoa não encontrada" };
                 }
 
-                Aluno aluno = new() {
-                    Pessoa_Id = pessoa.Id,
-                    Turma_Id = model.Turma_Id,
-                };
+                // Aluno só pode ser cadastrado se tiver status matriculado
+                if (pessoa.Pessoa_Status_Id != ( int )PessoaStatus.Matriculado) {
+                    return new ResponseModel { Message = "Pessoa não está matriculada" };
+                }
+
+                // Aluno só pode ser cadastrado se tiver Unidade_Id = 1 (dev)
+                if (pessoa.Unidade_Id != 1) {
+                    return new ResponseModel { Message = "Pessoa não tem Unidade_Id = 1" };
+                }
+
+                // Só pode ser cadastrado um aluno por pessoa
+                bool AlunoAlreadyRegistered = _db.Alunos.Any(a => a.Pessoa_Id == model.Pessoa_Id);
+
+                if (AlunoAlreadyRegistered) {
+                    return new ResponseModel { Message = "Pessoa já tem um aluno cadastrado em seu nome" };
+                }
+
+                // Aluno só pode ser cadastrado em uma turma válida
+                bool TurmaExists = _db.Turmas.Any(t => t.Id == model.Turma_Id);
+
+                if (!TurmaExists) {
+                    return new ResponseModel { Message = "Turma não encontrada" };
+                }
+
+                // Validations passed
+                Aluno aluno = _mapper.Map<Aluno>(model);
 
                 _db.Alunos.Add(aluno);
                 _db.SaveChanges();
@@ -92,31 +103,49 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Aluno? aluno = _db.Alunos.Include(a => a.Pessoa).FirstOrDefault(a => a.Id == model.Id);
+                Aluno? aluno = _db.Alunos.Find(model.Id);
 
+                // Aluno só pode ser atualizado se existir
                 if (aluno == null) {
                     return new ResponseModel { Message = "Aluno não encontrado" };
                 }
 
-                Pessoa? pessoa = _db.Pessoas.FirstOrDefault(pessoa => pessoa.Id == aluno.Pessoa_Id);
+                Pessoa? pessoa = _crm.Pessoas.Find(aluno.Pessoa_Id);
 
+                // Pessoa só pode ser atualizada se existir no CRM
                 if (pessoa == null) {
                     return new ResponseModel { Message = "Pessoa não encontrada" };
                 }
 
+                // Pessoa não pode ter um nome vazio
                 if (string.IsNullOrEmpty(model.Nome)) {
-                    return new ResponseModel { Message = "Nome Inválido" };
+                    return new ResponseModel { Message = "Nome não pode ser nulo/vazio" };
+                }
+
+                // Aluno só pode ser trocado de turma se for uma turma válida
+                bool TurmaExists = _db.Turmas.Any(t => t.Id == model.Turma_Id);
+
+                if (!TurmaExists) {
+                    return new ResponseModel { Message = "Turma não encontrada" };
                 }
 
                 // Validations passed
 
                 AlunoList? old = _db.AlunoList.AsNoTracking().FirstOrDefault(a => a.Id == model.Id);
 
-                pessoa.Nome = model.Nome;
-                pessoa.DataNascimento = model.DataNascimento;
-
-                _db.Pessoas.Update(pessoa);
+                aluno.Turma_Id = model.Turma_Id;
+                _db.Alunos.Update(aluno);
                 _db.SaveChanges();
+
+                // WARNING: Sending null values in the request will always override existing fields in Pessoa
+                // If you'd like null values to be ignored do:
+                // pessoa.CPF = model.CPF ?? pessoa.CPF;
+                // However, this approach doesn't allow null, so you'd have to send an empty string
+                // Else be careful with your requests
+                _mapper.Map<Pessoa>(model);
+
+                _crm.Pessoas.Update(pessoa);
+                _crm.SaveChanges();
 
                 response.Message = "Aluno atualizado com sucesso";
                 response.Object = _db.AlunoList.AsNoTracking().FirstOrDefault(aluno => aluno.Id == model.Id);
@@ -131,15 +160,7 @@ namespace Supera_Monitor_Back.Services {
 
         public ResponseModel Delete(int alunoId)
         {
-            // Como lidar com o delete?
             throw new NotImplementedException();
-        }
-
-        public List<Pessoa> GetAllPessoas()
-        {
-            List<Pessoa> pessoas = _db.Pessoas.ToList();
-
-            return pessoas;
         }
     }
 }

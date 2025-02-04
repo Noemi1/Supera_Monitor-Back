@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
 using Supera_Monitor_Back.Entities;
+using Supera_Monitor_Back.Entities.CRM;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Accounts;
+using Supera_Monitor_Back.Models.Aluno;
 using Supera_Monitor_Back.Models.Professor;
 using Supera_Monitor_Back.Models.Turma;
 
@@ -28,6 +30,10 @@ namespace Supera_Monitor_Back.Helpers {
             CreateMap<UpdateTurmaRequest, Turma>();
 
             CreateMap<CreateProfessorRequest, Professor>();
+
+            CreateMap<CreateAlunoRequest, Aluno>();
+            CreateMap<UpdateAlunoRequest, Aluno>();
+            CreateMap<UpdateAlunoRequest, Pessoa>();
 
             CreateMap<Professor_NivelAH, NivelModel>();
             CreateMap<Professor_NivelAbaco, NivelModel>();

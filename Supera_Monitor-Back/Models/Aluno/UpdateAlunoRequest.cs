@@ -2,8 +2,20 @@
     public class UpdateAlunoRequest {
         public int Id { get; set; }
 
-        public string? Nome { get; set; }
+        // Alterar dados da entidade Aluno
+        public int Turma_Id { get; set; }
 
-        public DateTime? DataNascimento { get; set; }
+        // Alterar dados da entidade Pessoa
+        public string? Nome { get; set; } = string.Empty;
+        public string? Email { get; set; } = string.Empty;
+        public string? Endereco { get; set; } = string.Empty;
+        public string? Observacao { get; set; } = string.Empty;
+        public string? Telefone { get; set; } = string.Empty;
+        public string? Celular { get; set; } = string.Empty;
+        public string? RG { get; set; } = string.Empty;
+        public string? CPF { get; set; } = string.Empty;
+        public string? DataNascimento { get; set; } = string.Empty;
+        public int? Pessoa_Sexo_Id { get; set; }
+        public int? Pessoa_Faixa_Etaria_Id { get; set; }
     }
 }

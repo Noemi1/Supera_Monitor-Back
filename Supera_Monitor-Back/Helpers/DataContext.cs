@@ -22,8 +22,6 @@ namespace Supera_Monitor_Back.Helpers {
 
         public virtual DbSet<LogList> LogList { get; set; }
 
-        public virtual DbSet<Pessoa> Pessoas { get; set; }
-
         public virtual DbSet<Professor> Professors { get; set; }
 
         public virtual DbSet<Turma> Turmas { get; set; }
@@ -54,7 +52,15 @@ namespace Supera_Monitor_Back.Helpers {
                 .Build();
 
             var connectionString = configuration.GetConnectionString("ConnectionString");
-            optionsBuilder.UseSqlServer(connectionString);
+
+            optionsBuilder.UseSqlServer(connectionString, options => {
+                options.CommandTimeout(1200); // 20 minutos
+                options.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromSeconds(30),
+                    errorNumbersToAdd: null
+                );
+            });
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -106,11 +112,6 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.Property(e => e.Pessoa_Id).HasColumnName("Pessoa_Id");
                 entity.Property(e => e.Turma_Id).HasColumnName("Turma_Id");
 
-                entity.HasOne(d => d.Pessoa).WithMany(p => p.Alunos)
-                    .HasForeignKey(d => d.Pessoa_Id)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Aluno_Pessoa");
-
                 entity.HasOne(d => d.Turma).WithMany(p => p.Alunos)
                     .HasForeignKey(d => d.Turma_Id)
                     .OnDelete(DeleteBehavior.ClientSetNull)
@@ -137,15 +138,6 @@ namespace Supera_Monitor_Back.Helpers {
                     .ToView("LogList");
 
                 entity.Property(e => e.Account_Id).HasColumnName("Account_Id");
-            });
-
-            modelBuilder.Entity<Pessoa>(entity => {
-                entity.ToTable("Pessoa");
-
-                entity.Property(e => e.DataNascimento).HasColumnType("date");
-                entity.Property(e => e.Nome)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<Professor>(entity => {
@@ -273,11 +265,6 @@ namespace Supera_Monitor_Back.Helpers {
                 entity
                     .HasNoKey()
                     .ToView("AlunoList");
-
-                entity.Property(e => e.DataNascimento).HasColumnType("date");
-                entity.Property(e => e.Nome)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<AulaList>(entity => {

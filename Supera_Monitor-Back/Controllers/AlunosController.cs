@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Aluno;
@@ -46,18 +45,6 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
-        [HttpGet("pessoas/all")]
-        public ActionResult<List<Pessoa>> GetAllPessoas()
-        {
-            try {
-                var response = _alunoService.GetAllPessoas();
-
-                return Ok(response);
-            } catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-                return StatusCode(500, e);
-            }
-        }
 
         [HttpPost()]
         public ActionResult<ResponseModel> Insert(CreateAlunoRequest model)

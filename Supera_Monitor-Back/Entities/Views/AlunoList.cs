@@ -4,10 +4,6 @@
 
         public int Pessoa_Id { get; set; }
 
-        public string? Nome { get; set; }
-
-        public DateTime? DataNascimento { get; set; }
-
         public int Turma_Id { get; set; }
 
         public int DiaSemana { get; set; }
