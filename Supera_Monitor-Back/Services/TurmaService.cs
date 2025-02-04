@@ -151,6 +151,7 @@ namespace Supera_Monitor_Back.Services {
                 turma.Turma_Tipo_Id = model.Turma_Tipo_Id;
                 turma.LastUpdated = TimeFunctions.HoraAtualBR();
                 turma.CapacidadeMaximaAlunos = model.CapacidadeMaximaAlunos;
+                turma.Unidade_Id = model.Unidade_Id;
 
                 _db.Turmas.Update(turma);
                 _db.SaveChanges();

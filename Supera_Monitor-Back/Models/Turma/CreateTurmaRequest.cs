@@ -5,6 +5,7 @@
         public TimeSpan? Horario { get; set; }
         public int CapacidadeMaximaAlunos { get; set; }
 
+        public int? Unidade_Id { get; set; }
         public int? Turma_Tipo_Id { get; set; }
         public int? Professor_Id { get; set; }
     }

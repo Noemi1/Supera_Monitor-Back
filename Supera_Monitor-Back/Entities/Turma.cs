@@ -11,6 +11,8 @@ public partial class Turma : _BaseEntity {
 
     public int CapacidadeMaximaAlunos { get; set; }
 
+    public int? Unidade_Id { get; set; }
+
     public int? Professor_Id { get; set; }
     public virtual Professor? Professor { get; set; }
 
