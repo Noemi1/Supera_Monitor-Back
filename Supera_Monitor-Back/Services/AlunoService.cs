@@ -5,6 +5,7 @@ using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Aluno;
+using Supera_Monitor_Back.Models.Pessoa;
 using static Supera_Monitor_Back.Entities.Pessoa_Status;
 
 namespace Supera_Monitor_Back.Services {
@@ -19,11 +20,13 @@ namespace Supera_Monitor_Back.Services {
     public class AlunoService : IAlunoService {
         private readonly DataContext _db;
         private readonly IMapper _mapper;
+        private readonly IPessoaService _pessoaService;
 
-        public AlunoService(DataContext db, IMapper mapper)
+        public AlunoService(DataContext db, IMapper mapper, IPessoaService pessoaService)
         {
             _db = db;
             _mapper = mapper;
+            _pessoaService = pessoaService;
         }
 
         public AlunoList Get(int alunoId)
@@ -108,18 +111,6 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Aluno não encontrado" };
                 }
 
-                Pessoa? pessoa = _db.Pessoas.Find(aluno.Pessoa_Id);
-
-                // Pessoa só pode ser atualizada se existir no CRM
-                if (pessoa == null) {
-                    return new ResponseModel { Message = "Pessoa não encontrada" };
-                }
-
-                // Pessoa não pode ter um nome vazio
-                if (string.IsNullOrEmpty(model.Nome)) {
-                    return new ResponseModel { Message = "Nome não pode ser nulo/vazio" };
-                }
-
                 // Aluno só pode ser trocado de turma se for uma turma válida
                 bool TurmaExists = _db.Turmas.Any(t => t.Id == model.Turma_Id);
 
@@ -127,22 +118,21 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Turma não encontrada" };
                 }
 
-                // Validations passed
-
                 AlunoList? old = _db.AlunoList.AsNoTracking().FirstOrDefault(a => a.Id == model.Id);
 
+                UpdatePessoaRequest pessoaModel = _mapper.Map<UpdatePessoaRequest>(model);
+                pessoaModel.Pessoa_Id = aluno.Pessoa_Id;
+
+                ResponseModel pessoaResponse = _pessoaService.Update(pessoaModel);
+
+                // Caso não tenha passado nas validações de Pessoa
+                if (pessoaResponse.Success == false) {
+                    return pessoaResponse;
+                }
+
                 aluno.Turma_Id = model.Turma_Id;
+
                 _db.Alunos.Update(aluno);
-                _db.SaveChanges();
-
-                // WARNING: Sending null values in the request will always override existing fields in Pessoa
-                // If you'd like null values to be ignored do:
-                // pessoa.CPF = model.CPF ?? pessoa.CPF;
-                // However, this approach doesn't allow null, so you'd have to send an empty string
-                // Else be careful with your requests
-                _mapper.Map<Pessoa>(model);
-
-                _db.Pessoas.Update(pessoa);
                 _db.SaveChanges();
 
                 response.Message = "Aluno atualizado com sucesso";

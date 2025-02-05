@@ -33,7 +33,9 @@ namespace Supera_Monitor_Back.Helpers {
 
             CreateMap<CreateAlunoRequest, Aluno>();
             CreateMap<UpdateAlunoRequest, Aluno>();
-            CreateMap<UpdateAlunoRequest, Pessoa>();
+            CreateMap<UpdateAlunoRequest, UpdatePessoaRequest>();
+            CreateMap<UpdatePessoaRequest, Pessoa>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Pessoa_Id));
 
             CreateMap<Professor_NivelAH, NivelModel>();
             CreateMap<Professor_NivelAbaco, NivelModel>();

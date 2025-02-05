@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Helpers;
+using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Pessoa;
 
 namespace Supera_Monitor_Back.Services {
@@ -9,6 +11,8 @@ namespace Supera_Monitor_Back.Services {
         List<PessoaGeracaoModel> GetAllGeracoes();
         List<PessoaSexoModel> GetAllSexos();
         List<PessoaStatusModel> GetAllStatus();
+
+        ResponseModel Update(UpdatePessoaRequest model);
     }
 
     public class PessoaService : IPessoaService {
@@ -48,6 +52,42 @@ namespace Supera_Monitor_Back.Services {
             List<Pessoa_Status> status = _db.Pessoa_Statuses.ToList();
 
             return _mapper.Map<List<PessoaStatusModel>>(status);
+        }
+
+        public ResponseModel Update(UpdatePessoaRequest model)
+        {
+            ResponseModel response = new() { Success = false };
+
+            try {
+                Pessoa? pessoa = _db.Pessoas.Find(model.Pessoa_Id);
+
+                if (pessoa == null) {
+                    return new ResponseModel { Message = "Pessoa não encontrada" };
+                }
+
+                // Pessoa não pode ter um nome vazio
+                if (string.IsNullOrEmpty(model.Nome)) {
+                    return new ResponseModel { Message = "Nome não pode ser nulo/vazio" };
+                }
+
+                // WARNING: Sending null values in the request will always override existing fields in Pessoa
+                // If you'd like null values to be ignored do:
+                // pessoa.CPF = model.CPF ?? pessoa.CPF;
+                // However, this approach doesn't allow null, so you'd have to send an empty string
+                // Else be careful with your requests
+                _mapper.Map(model, pessoa);
+
+                _db.Pessoas.Update(pessoa);
+                _db.SaveChanges();
+
+                response.Message = "Pessoa atualizada com sucesso";
+                response.Object = _db.AlunoList.AsNoTracking().FirstOrDefault(a => a.Pessoa_Id == model.Pessoa_Id);
+                response.Success = true;
+            } catch (Exception ex) {
+                response.Message = "Falha ao atualizar pessoa: " + ex.ToString();
+            }
+
+            return response;
         }
     }
 }
