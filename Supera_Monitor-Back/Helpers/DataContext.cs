@@ -48,7 +48,7 @@ namespace Supera_Monitor_Back.Helpers {
 
         public virtual DbSet<Pessoa_FaixaEtaria> Pessoa_FaixaEtaria { get; set; }
 
-        public virtual DbSet<Pessoa_Geracao> Pessoa_Geracaos { get; set; }
+        public virtual DbSet<Pessoa_Geracao> Pessoa_Geracoes { get; set; }
 
         public virtual DbSet<Pessoa_Origem> Pessoa_Origems { get; set; }
 
@@ -283,6 +283,55 @@ namespace Supera_Monitor_Back.Helpers {
                 entity
                     .HasNoKey()
                     .ToView("AlunoList");
+
+                entity.Property(e => e.CPF)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
+                entity.Property(e => e.Celular)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.DataCadastro).HasColumnType("datetime");
+                entity.Property(e => e.DataEntrada).HasColumnType("datetime");
+                entity.Property(e => e.DataNascimento).HasColumnType("date");
+                entity.Property(e => e.Email)
+                    .HasMaxLength(250)
+                    .IsUnicode(false);
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(250)
+                    .IsUnicode(false);
+                entity.Property(e => e.Observacao)
+                    .HasMaxLength(8000)
+                    .IsUnicode(false);
+                entity.Property(e => e.Pessoa_FaixaEtaria)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.Pessoa_Geracao)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.Pessoa_Indicou)
+                    .HasMaxLength(250)
+                    .IsUnicode(false);
+                entity.Property(e => e.Pessoa_Origem)
+                    .HasMaxLength(250)
+                    .IsUnicode(false);
+                entity.Property(e => e.Pessoa_Origem_Canal)
+                    .HasMaxLength(500)
+                    .IsUnicode(false);
+                entity.Property(e => e.Pessoa_Sexo)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.Pessoa_Status)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.RG)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
+                entity.Property(e => e.Telefone)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.Turma)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<AulaList>(entity => {

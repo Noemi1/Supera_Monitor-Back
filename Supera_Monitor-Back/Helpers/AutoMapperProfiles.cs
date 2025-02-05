@@ -3,6 +3,7 @@ using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Accounts;
 using Supera_Monitor_Back.Models.Aluno;
+using Supera_Monitor_Back.Models.Pessoa;
 using Supera_Monitor_Back.Models.Professor;
 using Supera_Monitor_Back.Models.Turma;
 
@@ -37,6 +38,10 @@ namespace Supera_Monitor_Back.Helpers {
             CreateMap<Professor_NivelAH, NivelModel>();
             CreateMap<Professor_NivelAbaco, NivelModel>();
 
+            CreateMap<Pessoa_FaixaEtaria, PessoaFaixaEtariaModel>();
+            CreateMap<Pessoa_Geracao, PessoaGeracaoModel>();
+            CreateMap<Pessoa_Status, PessoaStatusModel>();
+            CreateMap<Pessoa_Sexo, PessoaSexoModel>();
         }
     }
 }

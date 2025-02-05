@@ -7,7 +7,6 @@ namespace Supera_Monitor_Back.Controllers {
         // Returns the current authenticated account, else returns null (not logged in)
         public Account? Account => ( Account? )HttpContext.Items["Account"];
 
-        // TODO: Null checks? For now I've overridden with '!'
         protected string GetIpAddressFromHeaders()
         {
             if (Request.Headers.ContainsKey("X-Forwarded-For")) {
