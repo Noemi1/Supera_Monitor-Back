@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using Supera_Monitor_Back.Entities;
-using Supera_Monitor_Back.Entities.CRM;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Accounts;
 using Supera_Monitor_Back.Models.Aluno;

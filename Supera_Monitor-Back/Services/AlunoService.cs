@@ -1,11 +1,11 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Supera_Monitor_Back.Entities;
-using Supera_Monitor_Back.Entities.CRM;
 using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Aluno;
+using static Supera_Monitor_Back.Entities.Pessoa_Status;
 
 namespace Supera_Monitor_Back.Services {
     public interface IAlunoService {
@@ -18,13 +18,11 @@ namespace Supera_Monitor_Back.Services {
 
     public class AlunoService : IAlunoService {
         private readonly DataContext _db;
-        private readonly CrmContext _crm;
         private readonly IMapper _mapper;
 
-        public AlunoService(DataContext db, CrmContext crm, IMapper mapper)
+        public AlunoService(DataContext db, IMapper mapper)
         {
             _db = db;
-            _crm = crm;
             _mapper = mapper;
         }
 
@@ -51,7 +49,7 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Pessoa? pessoa = _crm.Pessoas.Find(model.Pessoa_Id);
+                Pessoa? pessoa = _db.Pessoas.Find(model.Pessoa_Id);
 
                 // Aluno só pode ser cadastrado se a pessoa existir no CRM
                 if (pessoa == null) {
@@ -110,7 +108,7 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Aluno não encontrado" };
                 }
 
-                Pessoa? pessoa = _crm.Pessoas.Find(aluno.Pessoa_Id);
+                Pessoa? pessoa = _db.Pessoas.Find(aluno.Pessoa_Id);
 
                 // Pessoa só pode ser atualizada se existir no CRM
                 if (pessoa == null) {
@@ -144,8 +142,8 @@ namespace Supera_Monitor_Back.Services {
                 // Else be careful with your requests
                 _mapper.Map<Pessoa>(model);
 
-                _crm.Pessoas.Update(pessoa);
-                _crm.SaveChanges();
+                _db.Pessoas.Update(pessoa);
+                _db.SaveChanges();
 
                 response.Message = "Aluno atualizado com sucesso";
                 response.Object = _db.AlunoList.AsNoTracking().FirstOrDefault(aluno => aluno.Id == model.Id);

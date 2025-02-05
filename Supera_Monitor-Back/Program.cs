@@ -24,7 +24,6 @@ builder.Services.AddHttpContextAccessor();
 #region SQL
 
 builder.Services.AddDbContext<DataContext>();
-builder.Services.AddDbContext<CrmContext>();
 
 #endregion
 

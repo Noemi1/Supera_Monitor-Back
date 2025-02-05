@@ -44,6 +44,24 @@ namespace Supera_Monitor_Back.Helpers {
 
         public virtual DbSet<Professor_NivelAbaco> Professor_NivelAbaco { get; set; }
 
+        public virtual DbSet<Pessoa> Pessoas { get; set; }
+
+        public virtual DbSet<Pessoa_FaixaEtaria> Pessoa_FaixaEtaria { get; set; }
+
+        public virtual DbSet<Pessoa_Geracao> Pessoa_Geracaos { get; set; }
+
+        public virtual DbSet<Pessoa_Origem> Pessoa_Origems { get; set; }
+
+        public virtual DbSet<Pessoa_Origem_Canal> Pessoa_Origem_Canals { get; set; }
+
+        public virtual DbSet<Pessoa_Origem_Categoria> Pessoa_Origem_Categoria { get; set; }
+
+        public virtual DbSet<Pessoa_Origem_Investimento> Pessoa_Origem_Investimentos { get; set; }
+
+        public virtual DbSet<Pessoa_Sexo> Pessoa_Sexos { get; set; }
+
+        public virtual DbSet<Pessoa_Status> Pessoa_Statuses { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             var configuration = new ConfigurationBuilder()
@@ -280,6 +298,133 @@ namespace Supera_Monitor_Back.Helpers {
 
             modelBuilder.Entity<TurmaTipo>(entity => {
                 entity.ToTable("Turma_Tipo");
+
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Pessoa>(entity => {
+                entity.ToTable("Pessoa");
+
+                entity.Property(e => e.CPF)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
+                entity.Property(e => e.Celular)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.DataCadastro).HasColumnType("datetime");
+                entity.Property(e => e.DataEntrada).HasColumnType("datetime");
+                entity.Property(e => e.DataNascimento).HasColumnType("date");
+                entity.Property(e => e.Email)
+                    .HasMaxLength(250)
+                    .IsUnicode(false);
+                entity.Property(e => e.Endereco)
+                    .HasMaxLength(250)
+                    .IsUnicode(false);
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(250)
+                    .IsUnicode(false);
+                entity.Property(e => e.Observacao)
+                    .HasMaxLength(8000)
+                    .IsUnicode(false);
+                entity.Property(e => e.RG)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
+                entity.Property(e => e.Telefone)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.aspnetusers_Id)
+                    .HasMaxLength(128)
+                    .IsUnicode(false);
+
+                entity.HasOne(d => d.Pessoa_FaixaEtaria).WithMany(p => p.Pessoas)
+                    .HasForeignKey(d => d.Pessoa_FaixaEtaria_Id)
+                    .HasConstraintName("FK_Pessoa_Pessoa_FaixaEtaria");
+
+                entity.HasOne(d => d.Pessoa_Geracao).WithMany(p => p.Pessoas)
+                    .HasForeignKey(d => d.Pessoa_Geracao_Id)
+                    .HasConstraintName("FK_Pessoa_Pessoa_Geracao");
+
+                entity.HasOne(d => d.Pessoa_Origem).WithMany(p => p.Pessoas)
+                    .HasForeignKey(d => d.Pessoa_Origem_Id)
+                    .HasConstraintName("FK_Pessoa_Pessoa_Origem");
+
+                entity.HasOne(d => d.Pessoa_Sexo).WithMany(p => p.Pessoas)
+                    .HasForeignKey(d => d.Pessoa_Sexo_Id)
+                    .HasConstraintName("FK_Pessoa_Pessoa_Sexo");
+
+                entity.HasOne(d => d.Pessoa_Status).WithMany(p => p.Pessoas)
+                    .HasForeignKey(d => d.Pessoa_Status_Id)
+                    .HasConstraintName("FK_Pessoa_Pessoa_Status");
+            });
+
+            modelBuilder.Entity<Pessoa_FaixaEtaria>(entity => {
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Pessoa_Geracao>(entity => {
+                entity.ToTable("Pessoa_Geracao");
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Pessoa_Origem>(entity => {
+                entity.ToTable("Pessoa_Origem");
+
+                entity.Property(e => e.Descricao)
+                    .HasMaxLength(8000)
+                    .IsUnicode(false);
+                entity.Property(e => e.Investimento).HasColumnType("decimal(18, 2)");
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(250)
+                    .IsUnicode(false);
+
+                entity.HasOne(d => d.Pessoa_Origem_Categoria).WithMany(p => p.Pessoa_Origem)
+                    .HasForeignKey(d => d.Pessoa_Origem_Categoria_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Pessoa_Origem_Pessoa_Origem_Categoria");
+            });
+
+            modelBuilder.Entity<Pessoa_Origem_Canal>(entity => {
+                entity.ToTable("Pessoa_Origem_Canal");
+
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(500)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Pessoa_Origem_Categoria>(entity => {
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Pessoa_Origem_Investimento>(entity => {
+                entity.ToTable("Pessoa_Origem_Investimento");
+
+                entity.Property(e => e.Fee).HasColumnType("decimal(18, 2)");
+                entity.Property(e => e.Investimento).HasColumnType("decimal(18, 2)");
+                entity.Property(e => e.InvestimentoEquipeComercial).HasColumnType("decimal(18, 2)");
+                entity.Property(e => e.InvestimentoOutrasMidias).HasColumnType("decimal(18, 2)");
+                entity.Property(e => e.OutrosInvestimentos).HasColumnType("decimal(18, 2)");
+            });
+
+            modelBuilder.Entity<Pessoa_Sexo>(entity => {
+                entity.ToTable("Pessoa_Sexo");
+
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Pessoa_Status>(entity => {
+                entity.ToTable("Pessoa_Status");
 
                 entity.Property(e => e.Nome)
                     .HasMaxLength(50)
