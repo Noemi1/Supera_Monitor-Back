@@ -125,5 +125,18 @@ namespace Supera_Monitor_Back.Controllers {
                 return StatusCode(500, $"Unexpected error: {e.Message}");
             }
         }
+
+        [HttpGet("apostilas/all")]
+        public ActionResult<List<Professor_NivelAH>> GetAllApostilas()
+        {
+            try {
+                var response = _professorService.GetAllApostilas();
+
+                return Ok(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, $"Unexpected error: {e.Message}");
+            }
+        }
     }
 }

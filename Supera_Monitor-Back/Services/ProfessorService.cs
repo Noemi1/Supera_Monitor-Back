@@ -15,6 +15,7 @@ namespace Supera_Monitor_Back.Services {
         List<ProfessorList> GetAll();
         List<NivelModel> GetAllNiveisAh();
         List<NivelModel> GetAllNiveisAbaco();
+        List<Apostila> GetAllApostilas();
     }
 
     public class ProfessorService : IProfessorService {
@@ -216,6 +217,13 @@ namespace Supera_Monitor_Back.Services {
             List<Professor_NivelAbaco> niveis = _db.Professor_NivelAbaco.ToList();
 
             return _mapper.Map<List<NivelModel>>(niveis);
+        }
+
+        public List<Apostila> GetAllApostilas()
+        {
+            List<Apostila> apostilas = _db.Apostilas.ToList();
+
+            return apostilas;
         }
     }
 }

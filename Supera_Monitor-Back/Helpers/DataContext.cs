@@ -16,6 +16,8 @@ namespace Supera_Monitor_Back.Helpers {
 
         public virtual DbSet<Aluno> Alunos { get; set; }
 
+        public virtual DbSet<Apostila> Apostilas { get; set; }
+
         public virtual DbSet<Log> Logs { get; set; }
 
         public virtual DbSet<LogError> LogErrors { get; set; }
@@ -134,6 +136,14 @@ namespace Supera_Monitor_Back.Helpers {
                     .HasForeignKey(d => d.Turma_Id)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Aluno_Turma");
+            });
+
+            modelBuilder.Entity<Apostila>(entity => {
+                entity.ToTable("Apostila");
+
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(250)
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<Log>(entity => {
