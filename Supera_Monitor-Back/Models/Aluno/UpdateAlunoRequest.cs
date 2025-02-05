@@ -4,6 +4,7 @@
 
         // Alterar dados da entidade Aluno
         public int Turma_Id { get; set; }
+        public string? Aluno_Foto { get; set; }
 
         // Alterar dados da entidade Pessoa
         public string? Nome { get; set; } = string.Empty;

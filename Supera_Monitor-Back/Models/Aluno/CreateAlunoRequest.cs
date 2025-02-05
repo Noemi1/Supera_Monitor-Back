@@ -2,5 +2,6 @@
     public class CreateAlunoRequest {
         public int Pessoa_Id { get; set; }
         public int Turma_Id { get; set; }
+        public string? Aluno_Foto { get; set; }
     }
 }

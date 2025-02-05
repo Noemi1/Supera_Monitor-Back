@@ -24,6 +24,8 @@
 
         public string? Observacao { get; set; }
 
+        public string? Aluno_Foto { get; set; }
+
         public string? Endereco { get; set; }
 
         public int Unidade_Id { get; set; }

@@ -126,11 +126,11 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.ToTable("AccountRole");
             });
 
+
             modelBuilder.Entity<Aluno>(entity => {
                 entity.ToTable("Aluno");
 
-                entity.Property(e => e.Pessoa_Id).HasColumnName("Pessoa_Id");
-                entity.Property(e => e.Turma_Id).HasColumnName("Turma_Id");
+                entity.Property(e => e.Aluno_Foto).IsUnicode(false);
 
                 entity.HasOne(d => d.Turma).WithMany(p => p.Alunos)
                     .HasForeignKey(d => d.Turma_Id)
@@ -294,6 +294,7 @@ namespace Supera_Monitor_Back.Helpers {
                     .HasNoKey()
                     .ToView("AlunoList");
 
+                entity.Property(e => e.Aluno_Foto).IsUnicode(false);
                 entity.Property(e => e.CPF)
                     .HasMaxLength(20)
                     .IsUnicode(false);
@@ -304,6 +305,9 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.Property(e => e.DataEntrada).HasColumnType("datetime");
                 entity.Property(e => e.DataNascimento).HasColumnType("date");
                 entity.Property(e => e.Email)
+                    .HasMaxLength(250)
+                    .IsUnicode(false);
+                entity.Property(e => e.Endereco)
                     .HasMaxLength(250)
                     .IsUnicode(false);
                 entity.Property(e => e.Nome)

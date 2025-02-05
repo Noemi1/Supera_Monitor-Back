@@ -7,6 +7,8 @@ public partial class Aluno {
 
     public int Turma_Id { get; set; }
 
+    public string? Aluno_Foto { get; set; }
+
     public virtual Turma Turma { get; set; } = null!;
 
     public virtual ICollection<TurmaAulaAluno> Turma_Aula_Alunos { get; set; } = new List<TurmaAulaAluno>();
