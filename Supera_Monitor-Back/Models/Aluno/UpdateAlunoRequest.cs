@@ -13,10 +13,8 @@
         public string? Observacao { get; set; } = string.Empty;
         public string? Telefone { get; set; } = string.Empty;
         public string? Celular { get; set; } = string.Empty;
-        public string? RG { get; set; } = string.Empty;
-        public string? CPF { get; set; } = string.Empty;
         public string? DataNascimento { get; set; } = string.Empty;
+
         public int? Pessoa_Sexo_Id { get; set; }
-        public int? Pessoa_Faixa_Etaria_Id { get; set; }
     }
 }

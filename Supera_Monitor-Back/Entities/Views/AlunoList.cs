@@ -26,8 +26,6 @@
 
         public string? Aluno_Foto { get; set; }
 
-        public string? Endereco { get; set; }
-
         public int Unidade_Id { get; set; }
 
         public int Turma_Id { get; set; }
@@ -65,5 +63,15 @@
         public int? Pessoa_Status_Id { get; set; }
 
         public string? Pessoa_Status { get; set; }
+
+        public string? Endereco { get; set; }
+
+        public DateTime Created { get; set; }
+
+        public DateTime? LastUpdated { get; set; }
+
+        public DateTime? Deactivated { get; set; }
+
+        public int AspNetUsers_Created_Id { get; set; }
     }
 }

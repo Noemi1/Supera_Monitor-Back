@@ -72,7 +72,7 @@ namespace Supera_Monitor_Back.Services {
 
                 // WARNING: Sending null values in the request will always override existing fields in Pessoa
                 // If you'd like null values to be ignored do:
-                // pessoa.CPF = model.CPF ?? pessoa.CPF;
+                // pessoa.Celular = model.Celular ?? pessoa.Celular;
                 // However, this approach doesn't allow null, so you'd have to send an empty string
                 // Else be careful with your requests
                 _mapper.Map(model, pessoa);

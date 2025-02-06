@@ -14,19 +14,23 @@ namespace Supera_Monitor_Back.Services {
         List<AlunoList> GetAll();
         ResponseModel Insert(CreateAlunoRequest model);
         ResponseModel Update(UpdateAlunoRequest model);
-        ResponseModel Delete(int alunoId);
+        ResponseModel ToggleDeactivate(int alunoId);
     }
 
     public class AlunoService : IAlunoService {
         private readonly DataContext _db;
         private readonly IMapper _mapper;
+        private readonly Account? _account;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IPessoaService _pessoaService;
 
-        public AlunoService(DataContext db, IMapper mapper, IPessoaService pessoaService)
+        public AlunoService(DataContext db, IMapper mapper, IPessoaService pessoaService, IHttpContextAccessor httpContextAccessor)
         {
             _db = db;
             _mapper = mapper;
             _pessoaService = pessoaService;
+            _httpContextAccessor = httpContextAccessor;
+            _account = ( Account? )httpContextAccessor?.HttpContext?.Items["Account"];
         }
 
         public AlunoList Get(int alunoId)
@@ -86,6 +90,9 @@ namespace Supera_Monitor_Back.Services {
                 // Validations passed
                 Aluno aluno = _mapper.Map<Aluno>(model);
 
+                aluno.Created = TimeFunctions.HoraAtualBR();
+                aluno.Deactivated = null;
+
                 _db.Alunos.Add(aluno);
                 _db.SaveChanges();
 
@@ -131,6 +138,7 @@ namespace Supera_Monitor_Back.Services {
                 }
 
                 aluno.Turma_Id = model.Turma_Id;
+                aluno.LastUpdated = TimeFunctions.HoraAtualBR();
 
                 _db.Alunos.Update(aluno);
                 _db.SaveChanges();
@@ -146,9 +154,37 @@ namespace Supera_Monitor_Back.Services {
             return response;
         }
 
-        public ResponseModel Delete(int alunoId)
+        public ResponseModel ToggleDeactivate(int alunoId)
         {
-            throw new NotImplementedException();
+            ResponseModel response = new() { Success = false };
+
+            try {
+                Aluno? aluno = _db.Alunos.Find(alunoId);
+
+                if (aluno == null) {
+                    return new ResponseModel { Message = "Aluno não encontrado." };
+                }
+
+                if (_account == null) {
+                    return new ResponseModel { Message = "Não foi possível completar a ação. Autenticação do autor não encontrada." };
+                }
+
+                // Validations passed
+
+                bool IsAlunoActive = aluno.Deactivated == null;
+
+                aluno.Deactivated = IsAlunoActive ? TimeFunctions.HoraAtualBR() : null;
+
+                _db.Alunos.Update(aluno);
+                _db.SaveChanges();
+
+                response.Success = true;
+                response.Object = _db.AlunoList.AsNoTracking().FirstOrDefault(a => a.Id == aluno.Id);
+            } catch (Exception ex) {
+                response.Message = "Falha ao ativar/desativar aluno: " + ex.ToString();
+            }
+
+            return response;
         }
     }
 }

@@ -40,8 +40,6 @@ namespace Supera_Monitor_Back.Services {
                 throw new Exception("Turma não encontrada.");
             }
 
-            // Validations passed
-
             return turma;
         }
 

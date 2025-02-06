@@ -82,5 +82,25 @@ namespace Supera_Monitor_Back.Controllers {
                 return StatusCode(500, e);
             }
         }
+
+        [HttpPatch("toggle-active/{alunoId}")]
+        public ActionResult<ResponseModel> ToggleDeactivate(int alunoId)
+        {
+            try {
+                ResponseModel response = _alunoService.ToggleDeactivate(alunoId);
+
+                if (response.Success) {
+                    string action = response.Object!.Deactivated is null ? "Enable" : "Disable";
+
+                    _logger.Log(action, "Alunos", response, Account?.Id);
+                    return Ok(response);
+                }
+
+                return BadRequest(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
     }
 }
