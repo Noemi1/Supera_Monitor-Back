@@ -55,7 +55,8 @@ namespace Supera_Monitor_Back.Controllers {
                 var response = _professorService.Insert(model, origin);
 
                 if (response.Success) {
-                    var professorId = response.Object!.Id;
+                    string professorId = response.Object!.Id;
+                    _logger.Log("Insert", "Professor", response, Account?.Id);
                     return Created($"/professor/{professorId}", response);
                 }
 
@@ -73,7 +74,8 @@ namespace Supera_Monitor_Back.Controllers {
                 var response = _professorService.Update(model);
 
                 if (response.Success) {
-                    return Accepted(response);
+                    _logger.Log("Update", "Professor", response, Account?.Id);
+                    return Ok(response);
                 }
 
                 return BadRequest(response.Message);
@@ -90,6 +92,7 @@ namespace Supera_Monitor_Back.Controllers {
                 var response = _professorService.Delete(professorId);
 
                 if (response.Success) {
+                    _logger.Log("Delete", "Professor", response, Account?.Id);
                     return Ok(response);
                 }
 

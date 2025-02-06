@@ -158,7 +158,7 @@ namespace Supera_Monitor_Back.Controllers {
                     return Ok(response);
                 }
 
-                // Log and clear object, to avoid sending sensitive data to the client
+                // Email was sent. Log and clear object, to avoid sending sensitive data to the client
                 if (response.Success) {
                     _logger.Log("Forgot Password", "Account", response, response.Object?.Id);
                     response.Object = null;

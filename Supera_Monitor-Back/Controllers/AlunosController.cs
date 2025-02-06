@@ -52,11 +52,13 @@ namespace Supera_Monitor_Back.Controllers {
             try {
                 var response = _alunoService.Insert(model);
 
-                if (response.Success == false) {
-                    return BadRequest(response);
+                if (response.Success) {
+                    string alunoId = response.Object!.Id;
+                    _logger.Log("Insert", "Alunos", response, Account?.Id);
+                    return Created(@$"/alunos/{alunoId}", response);
                 }
 
-                return Ok(response);
+                return BadRequest(response);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
@@ -69,7 +71,12 @@ namespace Supera_Monitor_Back.Controllers {
             try {
                 var response = _alunoService.Update(model);
 
-                return Ok(response);
+                if (response.Success) {
+                    _logger.Log("Update", "Alunos", response, Account?.Id);
+                    return Ok(response);
+                }
+
+                return BadRequest(response);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);

@@ -75,9 +75,10 @@ namespace Supera_Monitor_Back.Controllers {
 
                 if (response.Success) {
                     _logger.Log("Insert", "Account", response, Account?.Id);
+                    return Created($"/users/{Account?.Id}", response);
                 }
 
-                return StatusCode(201, response);
+                return BadRequest(response);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
@@ -92,9 +93,10 @@ namespace Supera_Monitor_Back.Controllers {
 
                 if (response.Success) {
                     _logger.Log("Update", "Account", response, Account?.Id);
+                    return Ok(response);
                 }
 
-                return Ok(response);
+                return BadRequest(response);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
@@ -109,7 +111,7 @@ namespace Supera_Monitor_Back.Controllers {
                 ResponseModel response = _userService.Delete(accountId);
 
                 if (response.Success) {
-                    _logger.Log("Delete", "Account", response.Object, Account?.Id);
+                    _logger.Log("Delete", "Account", response, Account?.Id);
                 }
 
                 return Ok(response);
@@ -127,9 +129,10 @@ namespace Supera_Monitor_Back.Controllers {
 
                 if (response.Success) {
                     _logger.Log("Reset Password", "Account", response, Account?.Id);
+                    return Ok(response);
                 }
 
-                return Ok(response);
+                return BadRequest(response);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
@@ -145,9 +148,10 @@ namespace Supera_Monitor_Back.Controllers {
                 if (response.Success) {
                     string action = response.Object!.Active ? "Enable" : "Disable";
                     _logger.Log(action, "Account", response, Account?.Id);
+                    return Ok(response);
                 }
 
-                return Ok(response);
+                return BadRequest(response);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
