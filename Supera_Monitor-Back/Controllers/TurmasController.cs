@@ -132,5 +132,18 @@ namespace Supera_Monitor_Back.Controllers {
                 return StatusCode(500, e);
             }
         }
+
+        [HttpPost("{turmaId}/aulas/all-possibilities")]
+        public ActionResult<List<AulaVisualizationModel>> GetAllPossibleAulasByTurma(int turmaId, [FromBody] AulaPossibilitiesRequest model)
+        {
+            try {
+                var response = _turmaService.GetAllPossibleAulasByTurma(turmaId, model.DateReference);
+
+                return Ok(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
     }
 }

@@ -18,6 +18,9 @@ namespace Supera_Monitor_Back.Services {
         List<TurmaTipoModel> GetTypes();
 
         List<AlunoList> GetAllAlunosByTurma(int turmaId);
+
+        List<AulaVisualizationModel> GetAllPossibleAulasByTurma(int turmaId, DateTime dateReference);
+
     }
 
     public class TurmaService : ITurmaService {
@@ -225,65 +228,46 @@ namespace Supera_Monitor_Back.Services {
             };
         }
 
-        //public ResponseModel InsertPresenca(RegisterPresencaRequest model)
-        //{
-        //    ResponseModel response = new() { Success = false };
+        public List<AulaVisualizationModel> GetAllPossibleAulasByTurma(int turmaId, DateTime dateReference)
+        {
+            try {
+                Turma? turma = _db.Turmas.Find(turmaId);
 
-        //    try {
-        //        // Não devo poder registrar presença em uma aula que não existe
-        //        TurmaAula? aula = _db.TurmaAulas.Find(model.Turma_Aula_Id);
+                if (turma == null) {
+                    throw new Exception("Turma não encontrada.");
+                }
 
-        //        if (aula == null) {
-        //            return new ResponseModel { Message = "Aula não encontrada" };
-        //        }
+                // Busca todas as aulas existentes para a turma no mês de referência
+                List<AulaList> aulas = _db.AulaList
+                    .Where(a => a.Turma_Id == turmaId && a.Data.Month == dateReference.Month)
+                    .ToList();
 
-        //        // Não devo poder registrar presença de um aluno que não existe
-        //        Aluno? aluno = _db.Alunos.Find(model.Aluno_Id);
+                DateTime monthStart = new(dateReference.Year, dateReference.Month, 1);
+                DateTime monthEnd = monthStart.AddMonths(1).AddDays(-1);
 
-        //        if (aluno == null) {
-        //            return new ResponseModel { Message = "Aluno não encontrado" };
-        //        }
+                DayOfWeek diaSemana = ( DayOfWeek )turma.DiaSemana;
+                TimeSpan horario = turma.Horario ?? throw new Exception("Turma não tem um horário definido.");
 
-        //        // Não devo poder registrar presença de um aluno que não pertence a essa turma
-        //        bool AlunoBelongsToTurma = aluno.Turma_Id == aula.Turma_Id;
+                List<AulaVisualizationModel> aulasPossiveis = new();
 
-        //        if (!AlunoBelongsToTurma) {
-        //            return new ResponseModel { Message = "Aluno não pertence à turma" };
-        //        }
+                // Calcula todas aulas no mês de referência, se existir uma aula insere o aulaId, senão é uma pseudo-aula, deixando nulo
+                for (DateTime date = monthStart ; date <= monthEnd ; date = date.AddDays(1)) {
+                    if (date.DayOfWeek == diaSemana) {
+                        DateTime aulaDate = date + horario;
 
-        //        // Não devo poder registrar mais de uma presença para o mesmo aluno na mesma aula
-        //        bool AlunoAlreadyPresent = _db.TurmaAulaAlunos.Any(a =>
-        //            a.Turma_Aula_Id == model.Turma_Aula_Id &&
-        //            a.Aluno_Id == model.Aluno_Id);
+                        AulaList? aulaExistente = aulas.FirstOrDefault(a => a.Data.Date == aulaDate.Date);
 
-        //        if (AlunoAlreadyPresent) {
-        //            return new ResponseModel { Message = "Presença do aluno já foi registrada para nesta aula" };
-        //        }
+                        aulasPossiveis.Add(new AulaVisualizationModel {
+                            Aula_Id = aulaExistente?.Id,
+                            Data = aulaDate,
+                        });
+                    }
+                }
 
-        //        // Validations passed
-
-        //        TurmaAulaAluno presenca = new() {
-        //            Presente = model.Presente,
-        //            Ah = model.Ah,
-        //            ApostilaAbaco = model.ApostilaAbaco,
-        //            NumeroPaginaAbaco = model.NumeroPaginaAbaco,
-        //            NumeroPaginaAh = model.NumeroPaginaAH,
-
-        //            Turma_Aula_Id = model.Turma_Aula_Id,
-        //            Aluno_Id = model.Aluno_Id,
-        //        };
-
-        //        _db.TurmaAulaAlunos.Add(presenca);
-        //        _db.SaveChanges();
-
-        //        response.Message = "Presença registrada com sucesso";
-        //        response.Object = presenca;
-        //        response.Success = true;
-        //    } catch (Exception ex) {
-        //        response.Message = "Não foi possível inserir a presença" + ex.ToString();
-        //    }
-
-        //    return response;
-        //}
+                return aulasPossiveis;
+            } catch (Exception ex) {
+                throw new Exception("Falha ao buscar todas possíveis aulas: " + ex.ToString());
+            }
+        }
     }
 }

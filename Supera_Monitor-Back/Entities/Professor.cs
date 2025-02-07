@@ -5,7 +5,7 @@ public partial class Professor {
 
     public DateTime DataInicio { get; set; }
 
-    public int CorLegenda { get; set; }
+    public string CorLegenda { get; set; } = string.Empty;
 
     public int Account_Id { get; set; }
 

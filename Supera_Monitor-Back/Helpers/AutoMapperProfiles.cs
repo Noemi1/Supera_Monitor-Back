@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Supera_Monitor_Back.Entities;
+using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Accounts;
 using Supera_Monitor_Back.Models.Aluno;
@@ -28,6 +29,7 @@ namespace Supera_Monitor_Back.Helpers {
 
             CreateMap<CreateTurmaRequest, Turma>();
             CreateMap<UpdateTurmaRequest, Turma>();
+            CreateMap<AulaList, AulaVisualizationModel>();
 
             CreateMap<CreateProfessorRequest, Professor>();
 
