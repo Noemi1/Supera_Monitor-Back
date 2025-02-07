@@ -90,6 +90,7 @@ namespace Supera_Monitor_Back.Services {
                 // Validations passed
                 Aluno aluno = _mapper.Map<Aluno>(model);
 
+                aluno.Aluno_Foto = model.Aluno_Foto;
                 aluno.Created = TimeFunctions.HoraAtualBR();
                 aluno.Deactivated = null;
 
@@ -137,6 +138,7 @@ namespace Supera_Monitor_Back.Services {
                     return pessoaResponse;
                 }
 
+                aluno.Aluno_Foto = model.Aluno_Foto;
                 aluno.Turma_Id = model.Turma_Id;
                 aluno.LastUpdated = TimeFunctions.HoraAtualBR();
 

@@ -53,7 +53,7 @@ namespace Supera_Monitor_Back.Controllers {
                 var response = _alunoService.Insert(model);
 
                 if (response.Success) {
-                    string alunoId = response.Object!.Id;
+                    int alunoId = response.Object!.Id;
                     _logger.Log("Insert", "Alunos", response, Account?.Id);
                     return Created(@$"/alunos/{alunoId}", response);
                 }
