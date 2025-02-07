@@ -15,10 +15,11 @@ public partial class Aluno {
 
     public DateTime? Deactivated { get; set; }
 
-    public int AspNetUsers_Created_Id { get; set; }
-
+    public string AspNetUsers_Created_Id { get; set; } = string.Empty;
 
     public virtual Turma Turma { get; set; } = null!;
 
     public virtual ICollection<TurmaAulaAluno> Turma_Aula_Alunos { get; set; } = new List<TurmaAulaAluno>();
+
+    public bool Active => !Deactivated.HasValue;
 }

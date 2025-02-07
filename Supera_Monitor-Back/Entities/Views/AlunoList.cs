@@ -72,6 +72,8 @@
 
         public DateTime? Deactivated { get; set; }
 
-        public int AspNetUsers_Created_Id { get; set; }
+        public string AspNetUsers_Created_Id { get; set; } = string.Empty;
+
+        public bool Active => !Deactivated.HasValue;
     }
 }

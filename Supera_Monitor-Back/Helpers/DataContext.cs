@@ -134,6 +134,9 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.Property(e => e.Created).HasColumnType("datetime");
                 entity.Property(e => e.Deactivated).HasColumnType("datetime");
                 entity.Property(e => e.LastUpdated).HasColumnType("datetime");
+                entity.Property(e => e.AspNetUsers_Created_Id)
+                    .HasMaxLength(128)
+                    .IsUnicode(false);
 
                 entity.HasOne(d => d.Turma).WithMany(p => p.Alunos)
                     .HasForeignKey(d => d.Turma_Id)
