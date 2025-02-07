@@ -98,7 +98,7 @@ namespace Supera_Monitor_Back.Services {
                 _db.SaveChanges();
 
                 response.Message = "Aluno cadastrado com sucesso";
-                response.Object = aluno;
+                response.Object = _db.AlunoList.AsNoTracking().FirstOrDefault(a => a.Id == aluno.Id);
                 response.Success = true;
             } catch (Exception ex) {
                 response.Message = "Falha ao registrar aluno: " + ex.ToString();

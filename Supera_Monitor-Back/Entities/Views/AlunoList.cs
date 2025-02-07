@@ -74,6 +74,8 @@
 
         public string AspNetUsers_Created_Id { get; set; } = string.Empty;
 
+        public string? AspNetUsers_Created { get; set; }
+
         public bool Active => !Deactivated.HasValue;
     }
 }

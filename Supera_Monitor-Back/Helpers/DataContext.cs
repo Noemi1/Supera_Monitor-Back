@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
+using Supera_Monitor_Back.Scaffold;
 
 namespace Supera_Monitor_Back.Helpers {
     public partial class DataContext : DbContext {
@@ -17,6 +18,8 @@ namespace Supera_Monitor_Back.Helpers {
         public virtual DbSet<Aluno> Alunos { get; set; }
 
         public virtual DbSet<Apostila> Apostilas { get; set; }
+
+        public virtual DbSet<AspNetUser> AspNetUsers { get; set; }
 
         public virtual DbSet<Log> Logs { get; set; }
 
@@ -301,6 +304,12 @@ namespace Supera_Monitor_Back.Helpers {
                     .ToView("AlunoList");
 
                 entity.Property(e => e.Aluno_Foto).IsUnicode(false);
+                entity.Property(e => e.AspNetUsers_Created)
+                    .HasMaxLength(45)
+                    .IsUnicode(false);
+                entity.Property(e => e.AspNetUsers_Created_Id)
+                    .HasMaxLength(128)
+                    .IsUnicode(false);
                 entity.Property(e => e.CPF)
                     .HasMaxLength(20)
                     .IsUnicode(false);
@@ -365,6 +374,34 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.Property(e => e.Data).HasColumnType("date");
                 entity.Property(e => e.Turma)
                     .HasMaxLength(100)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<AspNetUser>(entity => {
+                entity.Property(e => e.Id)
+                    .HasMaxLength(128)
+                    .IsUnicode(false);
+                entity.Property(e => e.Email)
+                    .HasMaxLength(256)
+                    .IsUnicode(false);
+                entity.Property(e => e.EmailSenha)
+                    .HasMaxLength(45)
+                    .IsUnicode(false);
+                entity.Property(e => e.LockoutEndDateUtc).HasColumnType("datetime");
+                entity.Property(e => e.Name)
+                    .HasMaxLength(45)
+                    .IsUnicode(false);
+                entity.Property(e => e.PasswordHash)
+                    .HasMaxLength(256)
+                    .IsUnicode(false);
+                entity.Property(e => e.PhoneNumber)
+                    .HasMaxLength(256)
+                    .IsUnicode(false);
+                entity.Property(e => e.SecurityStamp)
+                    .HasMaxLength(256)
+                    .IsUnicode(false);
+                entity.Property(e => e.UserName)
+                    .HasMaxLength(256)
                     .IsUnicode(false);
             });
 
