@@ -87,6 +87,21 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Turma não encontrada" };
                 }
 
+                // Aluno só pode ser inserido em uma turma válida
+                Turma? turmaDestino = _db.Turmas.FirstOrDefault(t => t.Id == model.Turma_Id);
+
+                if (turmaDestino is null) {
+                    return new ResponseModel { Message = "Turma não encontrada" };
+                }
+
+                // Aluno só pode ser inserido em uma turma que não está cheia
+
+                int AmountOfAlunosInTurma = _db.AlunoList.Count(a => a.Turma_Id == turmaDestino.Id);
+
+                if (AmountOfAlunosInTurma >= turmaDestino.CapacidadeMaximaAlunos) {
+                    return new ResponseModel { Message = "Turma já está em sua capacidade máxima" };
+                }
+
                 // Validations passed
                 Aluno aluno = _mapper.Map<Aluno>(model);
 
@@ -95,6 +110,37 @@ namespace Supera_Monitor_Back.Services {
                 aluno.Deactivated = null;
 
                 _db.Alunos.Add(aluno);
+
+                // Coleta a lista das aulas futuras desta turma
+                List<TurmaAula> aulas = _db.TurmaAulas
+                    .Where(x =>
+                        x.Turma_Id == aluno.Turma_Id &&
+                        x.Data >= DateTime.Now)
+                    .Include(x => x.Turma)
+                    .ToList();
+
+                // Registrar o aluno nas futuras aulas (aulas que já existem)
+                foreach (TurmaAula aula in aulas) {
+                    // Não devo conseguir inserir o aluno em uma aula se esta estiver cheia, tanto de reposição quanto de alunos registrados normalmente
+                    if (aula.Turma is not null) {
+                        // Contar todos os registrados na aula em questão
+                        int AmountOfAlunosInAula = _db.TurmaAulaAlunos.Count(a => a.Turma_Aula_Id == aula.Id);
+
+                        // TODO: Se a quantidade de alunos registrados for além do limite, fazer algo (?) - Por enquanto só ignora e continua
+                        if (AmountOfAlunosInAula >= aula.Turma.CapacidadeMaximaAlunos) {
+                            continue;
+                        }
+                    }
+
+                    TurmaAulaAluno registro = new() {
+                        Aluno_Id = aluno.Id,
+                        Turma_Aula_Id = aula.Id,
+                        Presente = null,
+                    };
+
+                    _db.TurmaAulaAlunos.Add(registro);
+                }
+
                 _db.SaveChanges();
 
                 response.Message = "Aluno cadastrado com sucesso";
@@ -119,14 +165,29 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Aluno não encontrado" };
                 }
 
-                // Aluno só pode ser trocado de turma se for uma turma válida
-                bool TurmaExists = _db.Turmas.Any(t => t.Id == model.Turma_Id);
+                // Aluno só pode ser operado em atualizações ou troca de turma se for uma turma válida
+                Turma? turmaDestino = _db.Turmas.FirstOrDefault(t => t.Id == model.Turma_Id);
 
-                if (!TurmaExists) {
+                if (turmaDestino is null) {
                     return new ResponseModel { Message = "Turma não encontrada" };
                 }
 
+                bool isSwitchingTurma = aluno.Turma_Id != model.Turma_Id;
+
+                // Se aluno estiver trocando de turma, deve-se garantir que a turma destino tem espaço disponível
+                if (isSwitchingTurma) {
+                    int AmountOfAlunosInAula = _db.AlunoList.Count(a => a.Turma_Id == turmaDestino.Id);
+
+                    if (AmountOfAlunosInAula >= turmaDestino.CapacidadeMaximaAlunos) {
+                        return new ResponseModel { Message = "Turma já está em sua capacidade máxima" };
+                    }
+                }
+
                 AlunoList? old = _db.AlunoList.AsNoTracking().FirstOrDefault(a => a.Id == model.Id);
+
+                if (old is null) {
+                    return new ResponseModel { Message = "Aluno original não encontrado" };
+                }
 
                 UpdatePessoaRequest pessoaModel = _mapper.Map<UpdatePessoaRequest>(model);
                 pessoaModel.Pessoa_Id = aluno.Pessoa_Id;
@@ -143,6 +204,47 @@ namespace Supera_Monitor_Back.Services {
                 aluno.LastUpdated = TimeFunctions.HoraAtualBR();
 
                 _db.Alunos.Update(aluno);
+
+                /*
+                 * Se o aluno trocou de turma:
+                 * 1. Remover seu registro nas próximas aulas da turma original
+                 * 2. Adicionar seu registro nas próximas aulas da turma destino
+                */
+                if (isSwitchingTurma) {
+                    List<TurmaAula> originalTurmaAulas = _db.TurmaAulas
+                        .Where(x =>
+                            x.Turma_Id == old.Turma_Id &&
+                            x.Data >= DateTime.Now)
+                        .ToList();
+
+                    // Remover registros da aula original
+                    foreach (TurmaAula aula in originalTurmaAulas) {
+                        TurmaAulaAluno registro = _db.TurmaAulaAlunos
+                            .First(x =>
+                                x.Turma_Aula_Id == aula.Turma_Id &&
+                                x.Aluno_Id == aluno.Id);
+
+                        _db.TurmaAulaAlunos.Remove(registro);
+                    }
+
+                    var destinoTurmaAulas = _db.TurmaAulas
+                        .Where(x =>
+                            x.Turma_Id == aluno.Turma_Id &&
+                            x.Data >= DateTime.Now)
+                        .ToList();
+
+                    // Adicionar registros na aula destino
+                    foreach (TurmaAula aula in destinoTurmaAulas) {
+                        TurmaAulaAluno registro = new() {
+                            Presente = null,
+                            Aluno_Id = aluno.Id,
+                            Turma_Aula_Id = aula.Id,
+                        };
+
+                        _db.TurmaAulaAlunos.Add(registro);
+                    }
+                }
+
                 _db.SaveChanges();
 
                 response.Message = "Aluno atualizado com sucesso";

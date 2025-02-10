@@ -13,6 +13,5 @@
         public int? NumeroPaginaAbaco { get; set; }
         public int? NumeroPaginaAH { get; set; }
         public bool FlagAlunoNovo => false;
-        public string? Observacao { get; set; }
     }
 }

@@ -160,12 +160,12 @@ namespace Supera_Monitor_Back.Services {
                 account.LastUpdated = TimeFunctions.HoraAtualBR();
 
                 _db.Accounts.Update(account);
-                _db.SaveChanges();
 
                 professor.DataInicio = model.DataInicio;
                 professor.CorLegenda = model.CorLegenda;
 
                 _db.Professors.Update(professor);
+
                 _db.SaveChanges();
 
                 response.Message = "Professor atualizado com sucesso";

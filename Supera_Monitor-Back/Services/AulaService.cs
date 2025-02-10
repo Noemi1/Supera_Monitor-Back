@@ -210,6 +210,8 @@ namespace Supera_Monitor_Back.Services {
                             Professor_Id = turma.Professor_Id,
                             Professor = turma.Professor ?? "Professor Indefinido",
                             CorLegenda = turma.CorLegenda ?? "#000",
+                            Observacao = ""
+
                         };
 
                         alunos = _db.AlunoList.Where(
@@ -224,7 +226,6 @@ namespace Supera_Monitor_Back.Services {
                                     Aluno_Foto = x.Aluno_Foto,
                                     Turma_Id = x.Turma_Id,
                                     Turma = x.Turma,
-                                    Observacao = ""
                                 };
                             })
                             .ToList();
