@@ -292,6 +292,7 @@ namespace Supera_Monitor_Back.Services {
 
             entity.Account_Created_Id = _account.Id;
             entity.Created = TimeFunctions.HoraAtualBR();
+            entity.Role_Id = ( int )Role.Assistant;
 
             return entity;
         }
