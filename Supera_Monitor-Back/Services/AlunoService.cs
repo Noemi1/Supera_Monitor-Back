@@ -110,6 +110,7 @@ namespace Supera_Monitor_Back.Services {
                 aluno.Deactivated = null;
 
                 _db.Alunos.Add(aluno);
+                _db.SaveChanges();
 
                 // Coleta a lista das aulas futuras desta turma
                 List<TurmaAula> aulas = _db.TurmaAulas
@@ -204,6 +205,7 @@ namespace Supera_Monitor_Back.Services {
                 aluno.LastUpdated = TimeFunctions.HoraAtualBR();
 
                 _db.Alunos.Update(aluno);
+                _db.SaveChanges();
 
                 /*
                  * Se o aluno trocou de turma:
@@ -217,14 +219,19 @@ namespace Supera_Monitor_Back.Services {
                             x.Data >= DateTime.Now)
                         .ToList();
 
-                    // Remover registros da aula original
+                    // Remover registros futuros das aulas originais
                     foreach (TurmaAula aula in originalTurmaAulas) {
-                        TurmaAulaAluno registro = _db.TurmaAulaAlunos
-                            .First(x =>
-                                x.Turma_Aula_Id == aula.Turma_Id &&
+                        TurmaAulaAluno? registro = _db.TurmaAulaAlunos
+                            .FirstOrDefault(x =>
+                                x.Turma_Aula_Id == aula.Id &&
                                 x.Aluno_Id == aluno.Id);
 
+                        if (registro is null) {
+                            continue;
+                        }
+
                         _db.TurmaAulaAlunos.Remove(registro);
+
                     }
 
                     var destinoTurmaAulas = _db.TurmaAulas
