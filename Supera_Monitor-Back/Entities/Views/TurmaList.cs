@@ -16,6 +16,8 @@
 
         public string? Professor { get; set; } = null!;
 
+        public string? CorLegenda { get; set; } = null!;
+
         public int? Turma_Tipo_Id { get; set; }
 
         public string? Turma_Tipo { get; set; }

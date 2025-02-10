@@ -543,17 +543,8 @@ namespace Supera_Monitor_Back.Helpers {
             });
 
             modelBuilder.Entity<CalendarioAlunoList>(entity => {
-                entity
-                    .HasNoKey()
+                entity.HasNoKey()
                     .ToView("CalendarioAlunoList");
-
-                entity.Property(e => e.Aluno)
-                    .HasMaxLength(250)
-                    .IsUnicode(false);
-                entity.Property(e => e.Aluno_Foto).IsUnicode(false);
-                entity.Property(e => e.Turma)
-                    .HasMaxLength(100)
-                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<CalendarioList>(entity => {
@@ -565,9 +556,6 @@ namespace Supera_Monitor_Back.Helpers {
                     .HasMaxLength(20)
                     .IsUnicode(false);
                 entity.Property(e => e.Data).HasColumnType("date");
-                entity.Property(e => e.Observacao)
-                    .HasMaxLength(10)
-                    .IsFixedLength();
                 entity.Property(e => e.Turma)
                     .HasMaxLength(100)
                     .IsUnicode(false);

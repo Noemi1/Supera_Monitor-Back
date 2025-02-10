@@ -15,6 +15,8 @@ namespace Supera_Monitor_Back.Services {
         List<AulaList> GetAll();
         List<AulaList> GetAllByTurmaId(int turmaId);
         List<AulaList> GetAllByProfessorId(int professorId);
+
+        List<CalendarioResponse> Calendario(CalendarioRequest request);
     }
 
     public class AulaService : IAulaService {
@@ -144,6 +146,104 @@ namespace Supera_Monitor_Back.Services {
         public ResponseModel Delete(int aulaId)
         {
             throw new NotImplementedException();
+        }
+
+        public List<CalendarioResponse> Calendario(CalendarioRequest request)
+        {
+            // Se não passar data inicio, considera a segunda-feira da semana atual
+            if (!request.IntervaloDe.HasValue) {
+                request.IntervaloDe = DateTime.Now.AddDays(1 - ( int )DateTime.Now.DayOfWeek);
+            }
+
+            // Se não passar data fim, considera o sábado da semana da data inicio
+            if (!request.IntervaloAte.HasValue) {
+                request.IntervaloAte = request.IntervaloDe.Value.AddDays(6 - ( int )request.IntervaloDe.Value.DayOfWeek);
+            }
+
+            // Listar turmas com horários já definidos
+            List<TurmaList> turmas = _db.TurmaList.Where(x => x.Horario != null).ToList();
+
+            // Filtro de Turma
+            if (request.Turma_Id.HasValue) {
+                turmas = turmas.Where(x => x.Id == request.Turma_Id.Value).ToList();
+            }
+
+            // Filtro de Professor
+            if (request.Professor_Id.HasValue) {
+                turmas = turmas.Where(x => x.Professor_Id == request.Professor_Id.Value).ToList();
+            }
+
+            // Filtro de Aluno
+            if (request.Aluno_Id.HasValue) {
+                AlunoList aluno = _db.AlunoList.FirstOrDefault(x => x.Id == request.Aluno_Id.Value)!;
+                turmas = turmas.Where(x => x.Id == aluno.Turma_Id).ToList();
+            }
+
+
+            DateTime data = request.IntervaloDe.Value;
+            List<CalendarioResponse> list = new();
+
+            // Adiciona no calendario cada item do dia do intervalo
+            do {
+                // Coleta as turmas tem aula no mesmo dia da semana que a data de referência
+                List<TurmaList> turmasDoDia = turmas.Where(x => x.DiaSemana == ( int )data.DayOfWeek).ToList();
+
+                foreach (TurmaList turma in turmasDoDia) {
+
+                    // Seleciona a aula daquela turma com o mesmo dia e o mesmo horário
+                    CalendarioList? aula = _db.CalendarioList.FirstOrDefault(x => x.Turma_Id == turma.Id
+                                                    && x.Data.TimeOfDay == turma.Horario!.Value
+                                                    && x.Data.Date == data.Date);
+
+
+                    List<CalendarioAlunoList> alunos = new List<CalendarioAlunoList>() { };
+
+                    // Se a aula não estiver cadastrada ainda, retorna uma lista de alunos originalmente cadastrados na turma
+                    // Senão, a aula já existe, a lista de alunos será composta pelos alunos da turma + alunos de reposição  
+                    if (aula == null) {
+                        aula = new CalendarioList {
+                            Aula_Id = null,
+                            Data = data + turma.Horario!.Value,
+                            Turma_Id = turma.Id,
+                            Turma = turma.Nome,
+                            CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
+                            Professor_Id = turma.Professor_Id,
+                            Professor = turma.Professor ?? "Professor Indefinido",
+                            CorLegenda = turma.CorLegenda ?? "#000",
+                        };
+
+                        alunos = _db.AlunoList.Where(
+                            x => x.Turma_Id == turma.Id &&
+                            (request.Aluno_Id.HasValue ? request.Aluno_Id.Value == x.Id : true))
+                            .ToList()
+                            .Select(x => {
+                                return new CalendarioAlunoList() {
+                                    Id = null,
+                                    Aluno_Id = x.Id,
+                                    Nome = x.Nome,
+                                    Aluno_Foto = x.Aluno_Foto,
+                                    Turma_Id = x.Turma_Id,
+                                    Turma = x.Turma,
+                                    Observacao = ""
+                                };
+                            })
+                            .ToList();
+                    } else {
+                        alunos = _db.CalendarioAlunoList.Where(x => x.Turma_Id == turma.Id).ToList();
+                    }
+
+                    CalendarioResponse calendario = _mapper.Map<CalendarioResponse>(aula);
+                    calendario.Alunos = alunos;
+
+                    list.Add(calendario);
+                }
+
+                // Incrementa data para próxima
+                data = data.AddDays(1);
+            } while (data < request.IntervaloAte);
+
+
+            return list;
         }
     }
 }

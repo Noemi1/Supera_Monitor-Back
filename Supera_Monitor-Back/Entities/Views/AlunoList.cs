@@ -72,9 +72,17 @@
 
         public DateTime? Deactivated { get; set; }
 
-        public string AspNetUsers_Created_Id { get; set; } = string.Empty;
+        public string AspNetUsers_Created_Id { get; set; } = null!;
 
         public string? AspNetUsers_Created { get; set; }
+
+        public int? ApostilaAbaco { get; set; }
+
+        public int? AH { get; set; }
+
+        public int? NumeroPaginaAbaco { get; set; }
+
+        public int? NumeroPaginaAH { get; set; }
 
         public bool Active => !Deactivated.HasValue;
     }

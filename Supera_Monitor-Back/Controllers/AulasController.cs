@@ -125,5 +125,18 @@ namespace Supera_Monitor_Back.Controllers {
                 return StatusCode(500, e);
             }
         }
+
+        [HttpPost("calendario")]
+        public ActionResult<List<CalendarioResponse>> Calendario(CalendarioRequest request)
+        {
+            try {
+                List<CalendarioResponse> response = _aulaService.Calendario(request);
+
+                return Ok(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
     }
 }
