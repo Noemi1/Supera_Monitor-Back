@@ -83,7 +83,8 @@ namespace Supera_Monitor_Back.Services {
                 TurmaAula aula = new() {
                     Turma_Id = model.Turma_Id,
                     Professor_Id = model.Professor_Id,
-                    Data = model.Data
+                    Data = model.Data,
+                    Observacao = model.Observacao,
                 };
 
                 _db.TurmaAulas.Add(aula);
@@ -125,6 +126,7 @@ namespace Supera_Monitor_Back.Services {
 
                 aula.Professor_Id = model.Professor_Id;
                 aula.Data = model.Data;
+                aula.Observacao = model.Observacao;
 
                 _db.TurmaAulas.Update(aula);
                 _db.SaveChanges();

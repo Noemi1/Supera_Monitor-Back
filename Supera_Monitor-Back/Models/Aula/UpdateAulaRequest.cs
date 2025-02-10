@@ -4,5 +4,6 @@
 
         public DateTime Data { get; set; }
         public int Professor_Id { get; set; }
+        public string? Observacao { get; set; }
     }
 }

@@ -21,6 +21,10 @@ namespace Supera_Monitor_Back.Helpers {
 
         public virtual DbSet<AspNetUser> AspNetUsers { get; set; }
 
+        public virtual DbSet<CalendarioAlunoList> CalendarioAlunoList { get; set; }
+
+        public virtual DbSet<CalendarioList> CalendarioList { get; set; }
+
         public virtual DbSet<Log> Logs { get; set; }
 
         public virtual DbSet<LogError> LogErrors { get; set; }
@@ -252,14 +256,17 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.ToTable("Turma_Aula");
 
                 entity.Property(e => e.Data).HasColumnType("date");
-                entity.Property(e => e.Professor_Id).HasColumnName("Professor_Id");
-                entity.Property(e => e.Turma_Id).HasColumnName("Turma_Id");
+                entity.Property(e => e.Observacao)
+                    .HasMaxLength(10)
+                    .IsFixedLength();
 
+                entity.Property(e => e.Professor_Id).HasColumnName("Professor_Id");
                 entity.HasOne(d => d.Professor).WithMany(p => p.Turma_Aulas)
                     .HasForeignKey(d => d.Professor_Id)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Turma_Aula_Professor");
 
+                entity.Property(e => e.Turma_Id).HasColumnName("Turma_Id");
                 entity.HasOne(d => d.Turma).WithMany(p => p.Turma_Aulas)
                     .HasForeignKey(d => d.Turma_Id)
                     .HasConstraintName("FK_Turma_Aula_Turma");
@@ -267,11 +274,6 @@ namespace Supera_Monitor_Back.Helpers {
 
             modelBuilder.Entity<TurmaAulaAluno>(entity => {
                 entity.ToTable("Turma_Aula_Aluno");
-
-                entity.Property(e => e.Ah).HasColumnName("AH");
-                entity.Property(e => e.Aluno_Id).HasColumnName("Aluno_Id");
-                entity.Property(e => e.NumeroPaginaAh).HasColumnName("NumeroPaginaAH");
-                entity.Property(e => e.Turma_Aula_Id).HasColumnName("Turma_Aula_Id");
 
                 entity.HasOne(d => d.Aluno).WithMany(p => p.Turma_Aula_Alunos)
                     .HasForeignKey(d => d.Aluno_Id)
@@ -537,6 +539,37 @@ namespace Supera_Monitor_Back.Helpers {
 
                 entity.Property(e => e.Nome)
                     .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<CalendarioAlunoList>(entity => {
+                entity
+                    .HasNoKey()
+                    .ToView("CalendarioAlunoList");
+
+                entity.Property(e => e.Aluno)
+                    .HasMaxLength(250)
+                    .IsUnicode(false);
+                entity.Property(e => e.Aluno_Foto).IsUnicode(false);
+                entity.Property(e => e.Turma)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<CalendarioList>(entity => {
+                entity
+                    .HasNoKey()
+                    .ToView("CalendarioList");
+
+                entity.Property(e => e.CorLegenda)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
+                entity.Property(e => e.Data).HasColumnType("date");
+                entity.Property(e => e.Observacao)
+                    .HasMaxLength(10)
+                    .IsFixedLength();
+                entity.Property(e => e.Turma)
+                    .HasMaxLength(100)
                     .IsUnicode(false);
             });
 
