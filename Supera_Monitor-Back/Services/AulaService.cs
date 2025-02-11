@@ -231,7 +231,7 @@ namespace Supera_Monitor_Back.Services {
                                 return new CalendarioAlunoList() {
                                     Aluno_Id = x.Id,
                                     Aluno = x.Nome,
-                                    Aluno_Foto = x.Aluno_Foto,
+                                    //Aluno_Foto = x.Aluno_Foto,
                                     Turma_Id = x.Turma_Id,
                                     Turma = x.Turma,
                                 };
