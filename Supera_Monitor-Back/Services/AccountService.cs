@@ -92,8 +92,11 @@ namespace Supera_Monitor_Back.Services {
             _db.Update(account);
             _db.SaveChanges();
 
+            var relatedProfessor = _db.Professors.FirstOrDefault(p => p.Account_Id == account.Id);
+
             AuthenticateResponse response = _mapper.Map<AuthenticateResponse>(account);
             response.Role = account.Account_Role.Role;
+            response.Professor_Id = relatedProfessor?.Id;
 
             response.JwtToken = jwtToken;
             response.RefreshToken = refreshToken.Token;

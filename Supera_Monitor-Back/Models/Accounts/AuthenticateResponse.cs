@@ -11,6 +11,8 @@ namespace Supera_Monitor_Back.Models.Accounts {
         public DateTime? PasswordReset { get; set; }
         public string JwtToken { get; set; } = string.Empty;
 
+        public int? Professor_Id { get; set; }
+
         [JsonIgnore]
         public string RefreshToken { get; set; } = string.Empty;
     }
