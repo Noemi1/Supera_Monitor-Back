@@ -150,14 +150,24 @@ namespace Supera_Monitor_Back.Services {
 
         public List<CalendarioResponse> Calendario(CalendarioRequest request)
         {
+            DateTime now = TimeFunctions.HoraAtualBR();
+
             // Se não passar data inicio, considera a segunda-feira da semana atual
             if (!request.IntervaloDe.HasValue) {
-                request.IntervaloDe = DateTime.Now.AddDays(1 - ( int )DateTime.Now.DayOfWeek);
+                // Retorna para o início da semana
+                request.IntervaloDe = now.AddDays(-( int )now.DayOfWeek);
+
+                // Adiciona um dia para obter segunda-feira
+                request.IntervaloDe = request.IntervaloDe.Value.AddDays(1);
             }
 
             // Se não passar data fim, considera o sábado da semana da data inicio
             if (!request.IntervaloAte.HasValue) {
-                request.IntervaloAte = request.IntervaloDe.Value.AddDays(6 - ( int )request.IntervaloDe.Value.DayOfWeek);
+                // Retorna para o início da semana
+                request.IntervaloAte = request.IntervaloDe.Value.AddDays(-( int )request.IntervaloDe.Value.DayOfWeek);
+
+                // Adiciona seis dias para obter sábado
+                request.IntervaloAte = request.IntervaloDe.Value.AddDays(6);
             }
 
             // Listar turmas com horários já definidos
@@ -195,15 +205,15 @@ namespace Supera_Monitor_Back.Services {
                                                     && x.Data.TimeOfDay == turma.Horario!.Value
                                                     && x.Data.Date == data.Date);
 
-
                     List<CalendarioAlunoList> alunos = new List<CalendarioAlunoList>() { };
 
                     // Se a aula não estiver cadastrada ainda, retorna uma lista de alunos originalmente cadastrados na turma
                     // Senão, a aula já existe, a lista de alunos será composta pelos alunos da turma + alunos de reposição  
                     if (aula == null) {
+                        var horario = turma.Horario!.Value;
                         aula = new CalendarioList {
                             Aula_Id = null,
-                            Data = data + turma.Horario!.Value,
+                            Data = new DateTime(data.Year, data.Month, data.Day, horario.Hours, horario.Minutes, horario.Seconds),
                             Turma_Id = turma.Id,
                             Turma = turma.Nome,
                             CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
@@ -211,7 +221,6 @@ namespace Supera_Monitor_Back.Services {
                             Professor = turma.Professor ?? "Professor Indefinido",
                             CorLegenda = turma.CorLegenda ?? "#000",
                             Observacao = ""
-
                         };
 
                         alunos = _db.AlunoList.Where(
@@ -220,9 +229,8 @@ namespace Supera_Monitor_Back.Services {
                             .ToList()
                             .Select(x => {
                                 return new CalendarioAlunoList() {
-                                    Id = null,
                                     Aluno_Id = x.Id,
-                                    Nome = x.Nome,
+                                    Aluno = x.Nome,
                                     Aluno_Foto = x.Aluno_Foto,
                                     Turma_Id = x.Turma_Id,
                                     Turma = x.Turma,
@@ -239,10 +247,8 @@ namespace Supera_Monitor_Back.Services {
                     list.Add(calendario);
                 }
 
-                // Incrementa data para próxima
                 data = data.AddDays(1);
             } while (data < request.IntervaloAte);
-
 
             return list;
         }

@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
-using Supera_Monitor_Back.Scaffold;
 
 namespace Supera_Monitor_Back.Helpers {
     public partial class DataContext : DbContext {

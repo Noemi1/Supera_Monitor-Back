@@ -2,6 +2,6 @@
 
 namespace Supera_Monitor_Back.Models.Aula {
     public class CalendarioResponse : CalendarioList {
-        public List<CalendarioAlunoList> Alunos { get; set; }
+        public List<CalendarioAlunoList> Alunos { get; set; } = new List<CalendarioAlunoList>();
     }
 }

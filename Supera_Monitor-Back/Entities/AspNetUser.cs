@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Supera_Monitor_Back.Scaffold;
-
-public partial class AspNetUser
-{
+﻿
+public partial class AspNetUser {
     public string Id { get; set; } = null!;
 
     public string? Email { get; set; }
