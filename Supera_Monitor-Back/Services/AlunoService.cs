@@ -5,6 +5,7 @@ using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Aluno;
+using Supera_Monitor_Back.Models.Aula;
 using Supera_Monitor_Back.Models.Pessoa;
 using static Supera_Monitor_Back.Entities.Pessoa_Status;
 
@@ -19,6 +20,8 @@ namespace Supera_Monitor_Back.Services {
         ResponseModel GetProfileImage(int alunoId);
         //Task<ResponseModel> UploadProfileImage();
         //Task<ResponseModel> UploadImage(int alunoId, byte[] BinaryImage);
+
+        ResponseModel InsertReposicao(CreateReposicaoRequest model);
     }
 
     public class AlunoService : IAlunoService {
@@ -27,12 +30,14 @@ namespace Supera_Monitor_Back.Services {
         private readonly Account? _account;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IPessoaService _pessoaService;
+        private readonly IAulaService _aulaService;
 
-        public AlunoService(DataContext db, IMapper mapper, IPessoaService pessoaService, IHttpContextAccessor httpContextAccessor)
+        public AlunoService(DataContext db, IMapper mapper, IPessoaService pessoaService, IAulaService aulaService, IHttpContextAccessor httpContextAccessor)
         {
             _db = db;
             _mapper = mapper;
             _pessoaService = pessoaService;
+            _aulaService = aulaService;
             _httpContextAccessor = httpContextAccessor;
             _account = ( Account? )httpContextAccessor?.HttpContext?.Items["Account"];
         }
@@ -318,6 +323,144 @@ namespace Supera_Monitor_Back.Services {
                 response.Object = aluno.Aluno_Foto;
             } catch (Exception ex) {
                 response.Message = "Falha ao resgatar imagem de perfil do aluno: " + ex.ToString();
+            }
+
+            return response;
+        }
+
+        public ResponseModel InsertReposicao(CreateReposicaoRequest model)
+        {
+            ResponseModel response = new() { Success = false };
+
+            try {
+                AulaList? aulaSource = _db.AulaList.FirstOrDefault(a => a.Id == model.Source_Aula_Id);
+                TurmaAulaAluno? registroSource = null;
+
+                // Se aulaSource existe, remover o registro do aluno desta aula
+                if (aulaSource is not null) {
+                    registroSource = _db.TurmaAulaAlunos.FirstOrDefault(a => a.Turma_Aula_Id == aulaSource.Id);
+
+                    if (registroSource is null) {
+                        return new ResponseModel { Message = "Aluno não está cadastrado na aula de origem" };
+                    }
+                }
+
+                // Se aulaSource não existe, criá-la
+                if (aulaSource is null) {
+                    if (model.Source_Turma_Id is null) {
+                        return new ResponseModel { Message = "Turma inválida" };
+                    }
+
+                    if (model.Source_Data is null) {
+                        return new ResponseModel { Message = "Turma inválida" };
+                    }
+
+                    if (model.Source_Professor_Id is null) {
+                        return new ResponseModel { Message = "Turma inválida" };
+                    }
+
+                    CreateAulaRequest createAulaRequest = new() {
+                        Turma_Id = ( int )model.Source_Turma_Id,
+                        Data = ( DateTime )model.Source_Data,
+                        Professor_Id = ( int )model.Source_Professor_Id,
+                        Observacao = "",
+                    };
+
+                    ResponseModel createAulaResponse = _aulaService.Insert(createAulaRequest);
+
+                    if (createAulaResponse.Success == false) {
+                        return createAulaResponse;
+                    }
+
+                    int createdAulaId = createAulaResponse.Object!.Id;
+
+                    registroSource = _db.TurmaAulaAlunos.FirstOrDefault(a => a.Turma_Aula_Id == createdAulaId);
+
+                    if (registroSource is null) {
+                        return new ResponseModel { Message = "Aluno não está cadastrado na aula original recém criada." };
+                    }
+                }
+
+                if (registroSource is null) {
+                    return new ResponseModel { Message = "Ocorreu algum erro ao coletar o registro original do aluno" };
+                }
+
+                _db.TurmaAulaAlunos.Remove(registroSource);
+                _db.SaveChanges();
+
+                AulaList? aulaDest = _db.AulaList.FirstOrDefault(a => a.Id == model.Dest_Aula_Id);
+                TurmaAulaAluno? registroDest = null;
+
+                // Se aula destino existe, colocar o aluno nela
+                if (aulaDest is not null) {
+                    Turma? TurmaDestino = _db.Turmas.Find(aulaDest.Turma_Id);
+
+                    if (TurmaDestino is null) {
+                        return new ResponseModel { Message = "Turma destino não encontrada" };
+                    }
+
+                    // Se aula estiver cheia, não deve ser possível registrar o aluno nela
+                    int AlunosInAulaDest = _db.CalendarioAlunoList.Count(a => a.Aula_Id == aulaDest.Id);
+
+                    if (AlunosInAulaDest >= TurmaDestino.CapacidadeMaximaAlunos) {
+                        return new ResponseModel { Message = "Aula já está em sua capacidade máxima" };
+                    }
+
+                    registroDest = new() {
+                        Turma_Aula_Id = aulaDest.Id,
+                        Aluno_Id = model.Aluno_Id,
+                        Presente = null,
+                    };
+                }
+
+                // Se aula destino não existe, criá-la
+                if (aulaDest is null) {
+                    if (model.Dest_Turma_Id is null) {
+                        return new ResponseModel { Message = "Turma inválida" };
+                    }
+
+                    if (model.Dest_Data is null) {
+                        return new ResponseModel { Message = "Turma inválida" };
+                    }
+
+                    if (model.Dest_Professor_Id is null) {
+                        return new ResponseModel { Message = "Turma inválida" };
+                    }
+
+                    CreateAulaRequest createAulaRequest = new() {
+                        Turma_Id = ( int )model.Dest_Turma_Id,
+                        Data = ( DateTime )model.Dest_Data,
+                        Professor_Id = ( int )model.Dest_Professor_Id,
+                        Observacao = "",
+                    };
+
+                    ResponseModel createAulaResponse = _aulaService.Insert(createAulaRequest);
+
+                    if (createAulaResponse.Success == false) {
+                        return createAulaResponse;
+                    }
+
+                    int createdAulaId = createAulaResponse.Object!.Id;
+
+                    registroDest = _db.TurmaAulaAlunos.FirstOrDefault(a => a.Turma_Aula_Id == createdAulaId);
+
+                    if (registroDest is null) {
+                        return new ResponseModel { Message = "Aluno não está cadastrado na aula destino recém criada." };
+                    }
+                }
+
+                if (registroDest is null) {
+                    return new ResponseModel { Message = "Ocorreu algum erro ao coletar o registro destino do aluno" };
+                }
+
+                _db.TurmaAulaAlunos.Add(registroDest);
+                _db.SaveChanges();
+
+                response.Success = true;
+                response.Message = "Reposição marcada com sucesso";
+                response.Object = registroDest;
+            } catch (Exception ex) {
+                response.Message = "Falha ao inserir reposição de aula do aluno: " + ex.ToString();
             }
 
             return response;
