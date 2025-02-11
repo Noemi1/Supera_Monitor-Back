@@ -102,5 +102,34 @@ namespace Supera_Monitor_Back.Controllers {
                 return StatusCode(500, e);
             }
         }
+
+        [HttpGet("{alunoId}/image")]
+        public ActionResult<ResponseModel> GetProfileImage(int alunoId)
+        {
+            try {
+                ResponseModel response = _alunoService.GetProfileImage(alunoId);
+
+                if (response.Success) {
+                    return Ok(response);
+                }
+
+                return BadRequest(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
+
+        //[HttpPost("{alunoId}/image")]
+        //public async Task<ActionResult<ResponseModel>> UploadImage(int alunoId, [FromBody] UploadImageRequest request)
+        //{
+        //    if (request.BinaryImage == null || request.BinaryImage.Length == 0) {
+        //        return new ResponseModel { Success = false, Message = "Arquivo inválido." };
+        //    }
+
+        //    ResponseModel response = await _alunoService.UploadImage(alunoId, request.BinaryImage);
+
+        //    return Ok(response);
+        //}
     }
 }

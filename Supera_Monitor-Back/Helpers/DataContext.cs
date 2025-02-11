@@ -304,7 +304,7 @@ namespace Supera_Monitor_Back.Helpers {
                     .HasNoKey()
                     .ToView("AlunoList");
 
-                entity.Property(e => e.Aluno_Foto).IsUnicode(false);
+                //entity.Property(e => e.Aluno_Foto).IsUnicode(false);
                 entity.Property(e => e.AspNetUsers_Created)
                     .HasMaxLength(45)
                     .IsUnicode(false);

@@ -15,6 +15,10 @@ namespace Supera_Monitor_Back.Services {
         ResponseModel Insert(CreateAlunoRequest model);
         ResponseModel Update(UpdateAlunoRequest model);
         ResponseModel ToggleDeactivate(int alunoId);
+
+        ResponseModel GetProfileImage(int alunoId);
+        //Task<ResponseModel> UploadProfileImage();
+        //Task<ResponseModel> UploadImage(int alunoId, byte[] BinaryImage);
     }
 
     public class AlunoService : IAlunoService {
@@ -297,5 +301,68 @@ namespace Supera_Monitor_Back.Services {
 
             return response;
         }
+
+        public ResponseModel GetProfileImage(int alunoId)
+        {
+            ResponseModel response = new() { Success = false };
+
+            try {
+                Aluno? aluno = _db.Alunos.Find(alunoId);
+
+                if (aluno is null) {
+                    return new ResponseModel { Message = "Aluno não encontrado" };
+                }
+
+                response.Success = true;
+                response.Message = "Imagem de perfil encontrada";
+                response.Object = aluno.Aluno_Foto;
+            } catch (Exception ex) {
+                response.Message = "Falha ao resgatar imagem de perfil do aluno: " + ex.ToString();
+            }
+
+            return response;
+        }
+
+        //    public async Task<ResponseModel> UploadImage(int alunoId, byte[] BinaryImage)
+        //    {
+        //        ResponseModel response = new() { Success = false };
+        //        Console.WriteLine("Entrei no service");
+        //        try {
+        //            Aluno? aluno = _db.Alunos.Find(alunoId);
+
+        //            if (aluno is null) {
+        //                return new ResponseModel { Message = "Aluno não encontrado" };
+        //            }
+
+        //            var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/Images");
+        //            Directory.CreateDirectory(imagesFolder); // Garante que a pasta existe
+
+        //            string fileName = @$"aluno{alunoId}_{TimeFunctions.HoraAtualBR():yyyy_dd_M_HH_mm_ss}";
+        //            var filePath = Path.Combine(imagesFolder, fileName);
+
+        //            Image image = new() {
+        //                Name = filePath,
+        //                Path = $"/Images/{fileName}"
+        //            };
+
+        //            // Keyword 'using' should automatically release resources when it is done
+        //            using var stream = new FileStream(filePath, FileMode.Create);
+        //            stream.Write(BinaryImage);
+
+        //            aluno.Aluno_Foto = image.Path;
+
+        //            _db.Alunos.Update(aluno);
+        //            await _db.SaveChangesAsync();
+
+        //            response.Success = true;
+        //            response.Object = aluno;
+        //            response.Message = "Foto do aluno resgatada com sucesso";
+        //        } catch (Exception ex) {
+        //            response.Message = "Falha no upload de imagem do aluno: " + ex.ToString();
+        //        }
+
+        //        return response;
+        //    }
+        //}
     }
 }

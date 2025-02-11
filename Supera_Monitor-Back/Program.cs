@@ -60,6 +60,7 @@ if (app.Environment.IsDevelopment()) {
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 
 app.UseCors(option => option
     .SetIsOriginAllowed(x => true)
