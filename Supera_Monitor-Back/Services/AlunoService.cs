@@ -126,7 +126,7 @@ namespace Supera_Monitor_Back.Services {
                 List<TurmaAula> aulas = _db.TurmaAulas
                     .Where(x =>
                         x.Turma_Id == aluno.Turma_Id &&
-                        x.Data >= DateTime.Now)
+                        x.Data >= TimeFunctions.HoraAtualBR())
                     .Include(x => x.Turma)
                     .ToList();
 
@@ -226,7 +226,7 @@ namespace Supera_Monitor_Back.Services {
                     List<TurmaAula> originalTurmaAulas = _db.TurmaAulas
                         .Where(x =>
                             x.Turma_Id == old.Turma_Id &&
-                            x.Data >= DateTime.Now)
+                            x.Data >= TimeFunctions.HoraAtualBR())
                         .ToList();
 
                     // Remover registros futuros das aulas originais
@@ -247,7 +247,7 @@ namespace Supera_Monitor_Back.Services {
                     var destinoTurmaAulas = _db.TurmaAulas
                         .Where(x =>
                             x.Turma_Id == aluno.Turma_Id &&
-                            x.Data >= DateTime.Now)
+                            x.Data >= TimeFunctions.HoraAtualBR())
                         .ToList();
 
                     // Adicionar registros na aula destino
@@ -360,7 +360,9 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Não é possível repor aulas em uma turma de outro tipo" };
                 }
 
-                TurmaAulaAluno? registroSource = _db.TurmaAulaAlunos.FirstOrDefault(r => r.Turma_Aula_Id == aulaSource.Id);
+                TurmaAulaAluno? registroSource = _db.TurmaAulaAlunos.FirstOrDefault(r =>
+                    r.Aluno_Id == model.Aluno_Id &&
+                    r.Turma_Aula_Id == model.Source_Aula_Id);
 
                 if (registroSource is null) {
                     return new ResponseModel { Message = "Registro do aluno não foi encontrado na aula original" };
@@ -390,8 +392,13 @@ namespace Supera_Monitor_Back.Services {
                 _db.TurmaAulaAlunos.Add(registroDest);
                 _db.SaveChanges();
 
-                _db.TurmaAulaAlunos.Remove(registroSource);
-                _db.SaveChanges();
+                try {
+                    _db.TurmaAulaAlunos.Remove(registroSource);
+                    _db.SaveChanges();
+                } catch (Exception ex) {
+                    return new ResponseModel { Message = "VIREI SAUDADE PA CARALHO" + ex.ToString() };
+                }
+
 
                 response.Success = true;
                 response.Object = _db.CalendarioAlunoList.FirstOrDefault(r => r.Id == registroDest.Id);

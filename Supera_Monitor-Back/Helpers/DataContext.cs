@@ -251,7 +251,7 @@ namespace Supera_Monitor_Back.Helpers {
             modelBuilder.Entity<TurmaAula>(entity => {
                 entity.ToTable("Turma_Aula");
 
-                entity.Property(e => e.Data).HasColumnType("date");
+                entity.Property(e => e.Data).HasColumnType("datetime");
                 entity.Property(e => e.Observacao)
                     .HasMaxLength(10)
                     .IsFixedLength();
