@@ -441,11 +441,12 @@ namespace Supera_Monitor_Back.Services {
 
                     int createdAulaId = createAulaResponse.Object!.Id;
 
-                    registroDest = _db.TurmaAulaAlunos.FirstOrDefault(a => a.Turma_Aula_Id == createdAulaId);
-
-                    if (registroDest is null) {
-                        return new ResponseModel { Message = "Aluno não está cadastrado na aula destino recém criada." };
-                    }
+                    registroDest = new() {
+                        Turma_Aula_Id = createdAulaId,
+                        Aluno_Id = model.Aluno_Id,
+                        Presente = null,
+                        Reposicao = true,
+                    };
                 }
 
                 if (registroDest is null) {
