@@ -78,7 +78,7 @@ namespace Supera_Monitor_Back.Controllers {
                 var response = _aulaService.Insert(model);
 
                 if (response.Success) {
-                    string aulaId = response.Object!.Id;
+                    int aulaId = response.Object!.Id;
                     _logger.Log("Insert", "TurmaAula", response, Account?.Id);
                     return Accepted(@$"/aulas/{aulaId}", response);
                 }
