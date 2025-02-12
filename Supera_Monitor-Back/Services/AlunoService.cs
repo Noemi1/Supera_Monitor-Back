@@ -408,6 +408,7 @@ namespace Supera_Monitor_Back.Services {
                         Turma_Aula_Id = aulaDest.Id,
                         Aluno_Id = model.Aluno_Id,
                         Presente = null,
+                        Reposicao = true,
                     };
                 }
 
@@ -457,7 +458,7 @@ namespace Supera_Monitor_Back.Services {
 
                 response.Success = true;
                 response.Message = "Reposição marcada com sucesso";
-                response.Object = registroDest;
+                response.Object = _db.CalendarioAlunoList.FirstOrDefault(a => a.Id == registroDest.Id);
             } catch (Exception ex) {
                 response.Message = "Falha ao inserir reposição de aula do aluno: " + ex.ToString();
             }

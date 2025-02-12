@@ -98,10 +98,7 @@ namespace Supera_Monitor_Back.Helpers {
 
                 entity.HasIndex(e => e.Role_Id, "IX_Account_Role_Id");
 
-                entity.Property(e => e.Account_Created_Id).HasColumnName("Account_Created_Id");
-                entity.Property(e => e.Role_Id)
-                    .HasDefaultValueSql("((1))")
-                    .HasColumnName("Role_Id");
+                entity.Property(e => e.Role_Id).HasDefaultValueSql("((1))");
 
                 entity.HasOne(d => d.Account_Created).WithMany(p => p.Created_Account).HasForeignKey(d => d.Account_Created_Id);
 
@@ -112,10 +109,6 @@ namespace Supera_Monitor_Back.Helpers {
                 entity
                     .HasNoKey()
                     .ToView("AccountList");
-
-                entity.Property(e => e.Account_Created).HasColumnName("Account_Created");
-                entity.Property(e => e.Account_Created_Id).HasColumnName("Account_Created_Id");
-                entity.Property(e => e.Role_Id).HasColumnName("Role_Id");
             });
 
             modelBuilder.Entity<AccountRefreshToken>(entity => {
@@ -184,6 +177,10 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.ToTable("Professor");
 
                 entity.Property(e => e.Account_Id).HasColumnName("Account_Id");
+
+                entity.Property(e => e.CorLegenda)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
                 entity.Property(e => e.DataInicio).HasColumnType("date");
 
                 entity.HasOne(d => d.Account).WithMany(p => p.Professors)
