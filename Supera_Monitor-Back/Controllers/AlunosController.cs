@@ -109,11 +109,7 @@ namespace Supera_Monitor_Back.Controllers {
             try {
                 ResponseModel response = _alunoService.GetProfileImage(alunoId);
 
-                if (response.Success) {
-                    return Ok(response);
-                }
-
-                return BadRequest(response);
+                return Ok(response);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
