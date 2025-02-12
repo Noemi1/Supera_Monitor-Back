@@ -120,7 +120,7 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
-        [HttpGet("reposicao/{alunoId}")]
+        [HttpPost("reposicao")]
         public ActionResult<ResponseModel> InsertReposicao(CreateReposicaoRequest model)
         {
             try {

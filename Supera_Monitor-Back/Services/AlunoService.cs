@@ -385,8 +385,6 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Ocorreu algum erro ao coletar o registro original do aluno" };
                 }
 
-                _db.TurmaAulaAlunos.Remove(registroSource);
-                _db.SaveChanges();
 
                 AulaList? aulaDest = _db.AulaList.FirstOrDefault(a => a.Id == model.Dest_Aula_Id);
                 TurmaAulaAluno? registroDest = null;
@@ -453,6 +451,7 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Ocorreu algum erro ao coletar o registro destino do aluno" };
                 }
 
+                _db.TurmaAulaAlunos.Remove(registroSource);
                 _db.TurmaAulaAlunos.Add(registroDest);
                 _db.SaveChanges();
 
