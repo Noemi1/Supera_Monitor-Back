@@ -178,6 +178,11 @@ namespace Supera_Monitor_Back.Services {
                 turmas = turmas.Where(x => x.Id == request.Turma_Id.Value).ToList();
             }
 
+            // Filtro de Turma Tipo
+            if (request.Turma_Tipo_Id.HasValue) {
+                turmas = turmas.Where(x => x.Turma_Tipo_Id == request.Turma_Tipo_Id.Value).ToList();
+            }
+
             // Filtro de Professor
             if (request.Professor_Id.HasValue) {
                 turmas = turmas.Where(x => x.Professor_Id == request.Professor_Id.Value).ToList();
@@ -188,7 +193,6 @@ namespace Supera_Monitor_Back.Services {
                 AlunoList aluno = _db.AlunoList.FirstOrDefault(x => x.Id == request.Aluno_Id.Value)!;
                 turmas = turmas.Where(x => x.Id == aluno.Turma_Id).ToList();
             }
-
 
             DateTime data = request.IntervaloDe.Value;
             List<CalendarioResponse> list = new();

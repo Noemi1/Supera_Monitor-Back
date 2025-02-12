@@ -5,5 +5,6 @@
         public int? Turma_Id { get; set; }
         public int? Professor_Id { get; set; }
         public int? Aluno_Id { get; set; }
+        public int? Turma_Tipo_Id { get; set; }
     }
 }

@@ -9,5 +9,8 @@
         public string? Professor { get; set; }
         public string? CorLegenda { get; set; }
         public string? Observacao { get; set; }
+
+        public int Turma_Tipo_Id { get; set; }
+        public string Turma_Tipo { get; set; } = string.Empty;
     }
 }
