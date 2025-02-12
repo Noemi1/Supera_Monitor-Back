@@ -22,6 +22,7 @@ namespace Supera_Monitor_Back.Services {
         //Task<ResponseModel> UploadImage(int alunoId, byte[] BinaryImage);
 
         ResponseModel InsertReposicao(CreateReposicaoRequest model);
+        ResponseModel NewReposicao(NewReposicaoRequest model);
     }
 
     public class AlunoService : IAlunoService {
@@ -327,6 +328,81 @@ namespace Supera_Monitor_Back.Services {
 
             return response;
         }
+
+        public ResponseModel NewReposicao(NewReposicaoRequest model)
+        {
+            ResponseModel response = new() { Success = false };
+
+            try {
+                TurmaAula? aulaSource = _db.TurmaAulas.Find(model.Source_Aula_Id);
+                TurmaAula? aulaDest = _db.TurmaAulas.Find(model.Dest_Aula_Id);
+
+                if (aulaSource is null) {
+                    return new ResponseModel { Message = "Aula original não encontrada" };
+                }
+
+                if (aulaDest is null) {
+                    return new ResponseModel { Message = "Aula destino não encontrada" };
+                }
+
+                Turma? turmaSource = _db.Turmas.Find(aulaSource.Turma_Id);
+                Turma? turmaDest = _db.Turmas.Find(aulaDest.Turma_Id);
+
+                if (turmaSource is null) {
+                    return new ResponseModel { Message = "Turma original não encontrada" };
+                }
+
+                if (turmaDest is null) {
+                    return new ResponseModel { Message = "Turma destino não encontrada" };
+                }
+
+                if (turmaSource.Turma_Tipo_Id != turmaDest.Turma_Tipo_Id) {
+                    return new ResponseModel { Message = "Não é possível repor aulas em uma turma de outro tipo" };
+                }
+
+                TurmaAulaAluno? registroSource = _db.TurmaAulaAlunos.FirstOrDefault(r => r.Turma_Aula_Id == aulaSource.Id);
+
+                if (registroSource is null) {
+                    return new ResponseModel { Message = "Registro do aluno não foi encontrado na aula original" };
+                }
+
+                List<CalendarioAlunoList> registros = _db.CalendarioAlunoList.Where(r => r.Aula_Id == model.Dest_Aula_Id).ToList();
+
+                bool ReposicaoAlreadyExists = registros.Any(r => r.Aluno_Id == model.Aluno_Id);
+
+                if (ReposicaoAlreadyExists) {
+                    return new ResponseModel { Message = "Aluno já está cadastrado para reposição nesta aula" };
+                }
+
+                if (registros.Count >= turmaDest.CapacidadeMaximaAlunos) {
+                    return new ResponseModel { Message = "Essa aula já está em sua capacidade máxima" };
+                }
+
+                // Validations passed
+
+                TurmaAulaAluno registroDest = new() {
+                    Aluno_Id = model.Aluno_Id,
+                    Turma_Aula_Id = model.Dest_Aula_Id,
+                    Presente = null,
+                    Reposicao = true,
+                };
+
+                _db.TurmaAulaAlunos.Add(registroDest);
+                _db.SaveChanges();
+
+                _db.TurmaAulaAlunos.Remove(registroSource);
+                _db.SaveChanges();
+
+                response.Success = true;
+                response.Object = _db.CalendarioAlunoList.FirstOrDefault(r => r.Id == registroDest.Id);
+                response.Message = "Reposição agendada com sucesso";
+            } catch (Exception ex) {
+                response.Message = "Falha ao inserir reposição de aula do aluno: " + ex.ToString();
+            }
+
+            return response;
+        }
+
 
         public ResponseModel InsertReposicao(CreateReposicaoRequest model)
         {

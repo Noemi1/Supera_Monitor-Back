@@ -117,10 +117,10 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPost("reposicao")]
-        public ActionResult<ResponseModel> InsertReposicao(CreateReposicaoRequest model)
+        public ActionResult<ResponseModel> NewReposicao(NewReposicaoRequest model)
         {
             try {
-                ResponseModel response = _alunoService.InsertReposicao(model);
+                ResponseModel response = _alunoService.NewReposicao(model);
 
                 if (response.Success) {
                     return Ok(response);
@@ -132,6 +132,23 @@ namespace Supera_Monitor_Back.Controllers {
                 return StatusCode(500, e);
             }
         }
+
+        //[HttpPost("reposicao")]
+        //public ActionResult<ResponseModel> InsertReposicao(CreateReposicaoRequest model)
+        //{
+        //    try {
+        //        ResponseModel response = _alunoService.InsertReposicao(model);
+
+        //        if (response.Success) {
+        //            return Ok(response);
+        //        }
+
+        //        return BadRequest(response);
+        //    } catch (Exception e) {
+        //        _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+        //        return StatusCode(500, e);
+        //    }
+        //}
 
         //[HttpPost("{alunoId}/image")]
         //public async Task<ActionResult<ResponseModel>> UploadImage(int alunoId, [FromBody] UploadImageRequest request)
