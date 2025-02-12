@@ -103,7 +103,7 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
-        [HttpGet("{alunoId}/image")]
+        [HttpGet("image/{alunoId}")]
         public ActionResult<ResponseModel> GetProfileImage(int alunoId)
         {
             try {
