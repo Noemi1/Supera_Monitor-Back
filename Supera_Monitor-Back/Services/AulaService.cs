@@ -224,7 +224,9 @@ namespace Supera_Monitor_Back.Services {
                             Professor_Id = turma.Professor_Id,
                             Professor = turma.Professor ?? "Professor Indefinido",
                             CorLegenda = turma.CorLegenda ?? "#000",
-                            Observacao = ""
+                            Observacao = "",
+                            Turma_Tipo_Id = ( int )turma.Turma_Tipo_Id,
+                            Turma_Tipo = turma.Turma_Tipo
                         };
 
                         alunos = _db.AlunoList.Where(
