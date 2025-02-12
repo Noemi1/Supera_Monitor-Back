@@ -92,6 +92,21 @@ namespace Supera_Monitor_Back.Services {
                 _db.TurmaAulas.Add(aula);
                 _db.SaveChanges();
 
+                // Inserir os registros dos alunos originais na aula recém criada
+                List<AlunoList> alunos = _db.AlunoList.Where(a => a.Turma_Id == aula.Turma_Id).ToList();
+
+                foreach (AlunoList aluno in alunos) {
+                    TurmaAulaAluno registro = new() {
+                        Turma_Aula_Id = aula.Id,
+                        Aluno_Id = aluno.Id,
+                        Presente = null,
+                    };
+
+                    _db.TurmaAulaAlunos.Add(registro);
+                }
+
+                _db.SaveChanges();
+
                 response.Message = "Aula registrada com sucesso";
                 response.Object = _db.AulaList.FirstOrDefault(a => a.Id == aula.Id);
                 response.Success = true;
