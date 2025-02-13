@@ -186,7 +186,11 @@ namespace Supera_Monitor_Back.Services {
             }
 
             // Listar turmas com horários já definidos
-            List<TurmaList> turmas = _db.TurmaList.Where(x => x.Horario != null).ToList();
+            List<TurmaList> turmas = _db.TurmaList
+                .Where(
+                    x => x.Horario != null &&
+                    x.Deactivated == null) // Não exibir aulas de turmas inativas
+                .ToList();
 
             // Filtro de Turma
             if (request.Turma_Id.HasValue) {
@@ -214,7 +218,7 @@ namespace Supera_Monitor_Back.Services {
 
             // Adiciona no calendario cada item do dia do intervalo
             do {
-                // Coleta as turmas tem aula no mesmo dia da semana que a data de referência
+                // Coleta as turmas que tem aula no mesmo dia da semana que a data de referência
                 List<TurmaList> turmasDoDia = turmas.Where(x => x.DiaSemana == ( int )data.DayOfWeek).ToList();
 
                 foreach (TurmaList turma in turmasDoDia) {
@@ -229,6 +233,13 @@ namespace Supera_Monitor_Back.Services {
                     // Se a aula não estiver cadastrada ainda, retorna uma lista de alunos originalmente cadastrados na turma
                     // Senão, a aula já existe, a lista de alunos será composta pelos alunos da turma + alunos de reposição  
                     if (aula == null) {
+                        ProfessorList? professor = _db.ProfessorList.FirstOrDefault(p => p.Id == turma.Professor_Id);
+
+                        // Não exibir aulas de professores inativos (porém, > exibir professores nulos <)
+                        if (professor?.Active == false) {
+                            continue;
+                        }
+
                         var horario = turma.Horario!.Value;
                         aula = new CalendarioList {
                             Aula_Id = null,
@@ -246,7 +257,8 @@ namespace Supera_Monitor_Back.Services {
 
                         alunos = _db.AlunoList.Where(
                             x => x.Turma_Id == turma.Id &&
-                            (request.Aluno_Id.HasValue ? request.Aluno_Id.Value == x.Id : true))
+                            (request.Aluno_Id.HasValue ? request.Aluno_Id.Value == x.Id : true) &&
+                            x.Deactivated == null) // Não exibir alunos inativos na pseudo-aula
                             .ToList()
                             .Select(x => {
                                 return new CalendarioAlunoList() {
@@ -259,7 +271,11 @@ namespace Supera_Monitor_Back.Services {
                             })
                             .ToList();
                     } else {
-                        alunos = _db.CalendarioAlunoList.Where(x => x.Aula_Id == aula.Aula_Id).ToList();
+                        alunos = _db.CalendarioAlunoList
+                            .Where(x =>
+                                x.Aula_Id == aula.Aula_Id &&
+                                _db.AlunoList.Any(a => a.Id == x.Aluno_Id && a.Deactivated == null)) // Não exibir alunos inativos na lista de CalendarioAlunoList
+                            .ToList();
                     }
 
                     CalendarioResponse calendario = _mapper.Map<CalendarioResponse>(aula);
