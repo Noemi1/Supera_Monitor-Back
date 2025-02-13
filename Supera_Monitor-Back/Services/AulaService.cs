@@ -259,7 +259,7 @@ namespace Supera_Monitor_Back.Services {
                             })
                             .ToList();
                     } else {
-                        alunos = _db.CalendarioAlunoList.Where(x => x.Turma_Id == turma.Id).ToList();
+                        alunos = _db.CalendarioAlunoList.Where(x => x.Aula_Id == aula.Aula_Id).ToList();
                     }
 
                     CalendarioResponse calendario = _mapper.Map<CalendarioResponse>(aula);
