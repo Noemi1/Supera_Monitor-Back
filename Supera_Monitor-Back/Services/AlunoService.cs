@@ -327,6 +327,16 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
+                Aluno? aluno = _db.Alunos.Find(model.Aluno_Id);
+
+                if (aluno is null) {
+                    return new ResponseModel { Message = "Aluno não encontrado" };
+                }
+
+                if (aluno.Active == false) {
+                    return new ResponseModel { Message = "Não é possível marcar reposição para um aluno inativo" };
+                }
+
                 TurmaAula? aulaSource = _db.TurmaAulas.Find(model.Source_Aula_Id);
                 TurmaAula? aulaDest = _db.TurmaAulas.Find(model.Dest_Aula_Id);
 
@@ -336,6 +346,18 @@ namespace Supera_Monitor_Back.Services {
 
                 if (aulaDest is null) {
                     return new ResponseModel { Message = "Aula destino não encontrada" };
+                }
+
+                if (model.Source_Aula_Id == model.Dest_Aula_Id) {
+                    return new ResponseModel { Message = "Aula original e aula destino não podem ser iguais" };
+                }
+
+                if (aulaDest.Data < TimeFunctions.HoraAtualBR()) {
+                    return new ResponseModel { Message = "Não é possível marcar reposição para uma aula que já ocorreu no passado" };
+                }
+
+                if (Math.Abs((aulaDest.Data - aulaSource.Data).TotalDays) > 30) {
+                    return new ResponseModel { Message = "A data da aula destino não pode ultrapassar 30 dias de diferença da aula original" };
                 }
 
                 Turma? turmaSource = _db.Turmas.Find(aulaSource.Turma_Id);
