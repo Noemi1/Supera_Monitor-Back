@@ -49,6 +49,7 @@ namespace Supera_Monitor_Back.Middlewares {
                 // attach account to context on successful jwt validation
                 context.Items["Account"] = await dataContext.Accounts.FindAsync(accountId);
             } catch (Exception ex) {
+                Console.WriteLine("AttachAccountToContext triggered an exception " + ex.ToString());
                 //_logger.Add(ex, MethodBase.GetCurrentMethod().DeclaringType.Name.ToString() + "." + MethodBase.GetCurrentMethod().ToString());
                 // do nothing if jwt validation fails
                 // account is not attached to context so request won't have access to secure routes

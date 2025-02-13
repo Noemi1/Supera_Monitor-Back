@@ -98,7 +98,7 @@ namespace Supera_Monitor_Back.Services {
                 }
 
                 // Aluno só pode ser inserido em uma turma que não está cheia
-
+                // Não considera reposição, pois não estamos olhando para uma aula específica
                 int AmountOfAlunosInTurma = _db.AlunoList.Count(a => a.Turma_Id == turmaDestino.Id);
 
                 if (AmountOfAlunosInTurma >= turmaDestino.CapacidadeMaximaAlunos) {
@@ -115,25 +115,19 @@ namespace Supera_Monitor_Back.Services {
                 _db.Alunos.Add(aluno);
                 _db.SaveChanges();
 
-                // Coleta a lista das aulas futuras desta turma
-                List<TurmaAula> aulas = _db.TurmaAulas
+                List<TurmaAula> aulasTurmaDestino = _db.TurmaAulas
                     .Where(x =>
                         x.Turma_Id == aluno.Turma_Id &&
                         x.Data >= TimeFunctions.HoraAtualBR())
-                    .Include(x => x.Turma)
                     .ToList();
 
-                // Registrar o aluno nas futuras aulas (aulas que já existem)
-                foreach (TurmaAula aula in aulas) {
-                    // Não devo conseguir inserir o aluno em uma aula se esta estiver cheia, tanto de reposição quanto de alunos registrados normalmente
-                    if (aula.Turma is not null) {
-                        // Contar todos os registrados na aula em questão
-                        int AmountOfAlunosInAula = _db.TurmaAulaAlunos.Count(a => a.Turma_Aula_Id == aula.Id);
+                // Inserir novos registros deste aluno nas aulas futuras da turma destino
+                foreach (TurmaAula aula in aulasTurmaDestino) {
+                    // Aula não deve registrar aluno se estiver em sua capacidade máxima e nesse caso, -> considera os alunos de reposição <-
+                    int AmountOfAlunosInAula = _db.CalendarioAlunoList.Count(a => a.Aula_Id == aula.Id);
 
-                        // TODO: Se a quantidade de alunos registrados for além do limite, fazer algo (?) - Por enquanto só ignora e continua
-                        if (AmountOfAlunosInAula >= aula.Turma.CapacidadeMaximaAlunos) {
-                            continue;
-                        }
+                    if (AmountOfAlunosInAula >= turmaDestino.CapacidadeMaximaAlunos) {
+                        continue;
                     }
 
                     TurmaAulaAluno registro = new() {
@@ -176,13 +170,14 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Turma não encontrada" };
                 }
 
-                bool isSwitchingTurma = aluno.Turma_Id != model.Turma_Id;
+                bool isSwitchingTurma = aluno.Turma_Id != turmaDestino.Id;
 
                 // Se aluno estiver trocando de turma, deve-se garantir que a turma destino tem espaço disponível
+                // Não considera reposição, pois não estamos olhando para uma aula específica
                 if (isSwitchingTurma) {
-                    int AmountOfAlunosInAula = _db.AlunoList.Count(a => a.Turma_Id == turmaDestino.Id);
+                    int AmountOfAlunosInTurma = _db.AlunoList.Count(a => a.Turma_Id == turmaDestino.Id);
 
-                    if (AmountOfAlunosInAula >= turmaDestino.CapacidadeMaximaAlunos) {
+                    if (AmountOfAlunosInTurma >= turmaDestino.CapacidadeMaximaAlunos) {
                         return new ResponseModel { Message = "Turma já está em sua capacidade máxima" };
                     }
                 }
@@ -193,12 +188,11 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Aluno original não encontrado" };
                 }
 
-                UpdatePessoaRequest pessoaModel = _mapper.Map<UpdatePessoaRequest>(model);
-                pessoaModel.Pessoa_Id = aluno.Pessoa_Id;
+                UpdatePessoaRequest updatePessoaModel = _mapper.Map<UpdatePessoaRequest>(model);
+                updatePessoaModel.Pessoa_Id = aluno.Pessoa_Id;
 
-                ResponseModel pessoaResponse = _pessoaService.Update(pessoaModel);
+                ResponseModel pessoaResponse = _pessoaService.Update(updatePessoaModel);
 
-                // Caso não tenha passado nas validações de Pessoa
                 if (pessoaResponse.Success == false) {
                     return pessoaResponse;
                 }
@@ -216,40 +210,46 @@ namespace Supera_Monitor_Back.Services {
                  * 2. Adicionar seu registro nas próximas aulas da turma destino
                 */
                 if (isSwitchingTurma) {
-                    List<TurmaAula> originalTurmaAulas = _db.TurmaAulas
-                        .Where(x =>
-                            x.Turma_Id == old.Turma_Id &&
-                            x.Data >= TimeFunctions.HoraAtualBR())
+                    List<TurmaAula> aulasTurmaOriginal = _db.TurmaAulas
+                        .Where(a =>
+                            a.Turma_Id == old.Turma_Id &&
+                            a.Data >= TimeFunctions.HoraAtualBR())
                         .ToList();
 
-                    // Remover registros futuros das aulas originais
-                    foreach (TurmaAula aula in originalTurmaAulas) {
+                    // Para cada aula da turma original, remover os registros do aluno sendo trocado, se existirem
+                    foreach (TurmaAula aula in aulasTurmaOriginal) {
                         TurmaAulaAluno? registro = _db.TurmaAulaAlunos
-                            .FirstOrDefault(x =>
-                                x.Turma_Aula_Id == aula.Id &&
-                                x.Aluno_Id == aluno.Id);
+                            .FirstOrDefault(a =>
+                                a.Turma_Aula_Id == aula.Id &&
+                                a.Aluno_Id == aluno.Id);
 
                         if (registro is null) {
                             continue;
                         }
 
                         _db.TurmaAulaAlunos.Remove(registro);
-
                     }
 
-                    var destinoTurmaAulas = _db.TurmaAulas
+                    List<TurmaAula> aulasTurmaDestino = _db.TurmaAulas
                         .Where(x =>
                             x.Turma_Id == aluno.Turma_Id &&
                             x.Data >= TimeFunctions.HoraAtualBR())
                         .ToList();
 
-                    // Adicionar registros na aula destino
-                    foreach (TurmaAula aula in destinoTurmaAulas) {
+                    // Inserir novos registros deste aluno nas aulas futuras da turma destino
+                    foreach (TurmaAula aula in aulasTurmaDestino) {
                         TurmaAulaAluno registro = new() {
                             Presente = null,
                             Aluno_Id = aluno.Id,
                             Turma_Aula_Id = aula.Id,
                         };
+
+                        // Aula não deve registrar aluno se estiver em sua capacidade máxima e nesse caso, -> considera os alunos de reposição <-
+                        int AmountOfAlunosInAula = _db.CalendarioAlunoList.Count(a => a.Aula_Id == aula.Id);
+
+                        if (AmountOfAlunosInAula >= turmaDestino.CapacidadeMaximaAlunos) {
+                            continue;
+                        }
 
                         _db.TurmaAulaAlunos.Add(registro);
                     }
@@ -258,9 +258,9 @@ namespace Supera_Monitor_Back.Services {
                 _db.SaveChanges();
 
                 response.Message = "Aluno atualizado com sucesso";
+                response.OldObject = old;
                 response.Object = _db.AlunoList.AsNoTracking().FirstOrDefault(aluno => aluno.Id == model.Id);
                 response.Success = true;
-                response.OldObject = old;
             } catch (Exception ex) {
                 response.Message = "Falha ao atualizar aluno: " + ex.ToString();
             }
