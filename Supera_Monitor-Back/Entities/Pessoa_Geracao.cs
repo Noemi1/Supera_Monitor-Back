@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Supera_Monitor_Back.Entities;
+﻿namespace Supera_Monitor_Back.Entities;
 
 public partial class Pessoa_Geracao {
     public int Id { get; set; }

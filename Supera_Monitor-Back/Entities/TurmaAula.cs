@@ -5,6 +5,8 @@ public partial class TurmaAula {
     public DateTime Data { get; set; }
     public string? Observacao { get; set; }
 
+    public bool? Finalizada { get; set; }
+
     public int Professor_Id { get; set; }
     public virtual Professor Professor { get; set; } = null!;
 

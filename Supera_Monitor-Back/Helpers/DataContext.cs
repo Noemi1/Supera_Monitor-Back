@@ -16,7 +16,17 @@ namespace Supera_Monitor_Back.Helpers {
 
         public virtual DbSet<Aluno> Alunos { get; set; }
 
-        public virtual DbSet<Apostila> Apostilas { get; set; }
+        public virtual DbSet<ApostilaList> ApostilaList { get; set; }
+
+        public virtual DbSet<Apostila_AH> Apostila_AH { get; set; }
+
+        public virtual DbSet<Apostila_AH_Kit> Apostila_AH_Kits { get; set; }
+
+        public virtual DbSet<Apostila_Abaco> Apostila_Abaco { get; set; }
+
+        public virtual DbSet<Apostila_Abaco_Kit> Apostila_Abaco_Kits { get; set; }
+
+        public virtual DbSet<Apostila_Kit> Apostila_Kits { get; set; }
 
         public virtual DbSet<AspNetUser> AspNetUsers { get; set; }
 
@@ -116,8 +126,6 @@ namespace Supera_Monitor_Back.Helpers {
 
                 entity.HasIndex(e => e.AccountId, "IX_AccountRefreshToken_Account_Id");
 
-                entity.Property(e => e.AccountId).HasColumnName("Account_Id");
-
                 entity.HasOne(d => d.Account).WithMany(p => p.AccountRefreshToken).HasForeignKey(d => d.AccountId);
             });
 
@@ -125,17 +133,20 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.ToTable("AccountRole");
             });
 
-
             modelBuilder.Entity<Aluno>(entity => {
                 entity.ToTable("Aluno");
 
                 entity.Property(e => e.Aluno_Foto).IsUnicode(false);
-                entity.Property(e => e.Created).HasColumnType("datetime");
-                entity.Property(e => e.Deactivated).HasColumnType("datetime");
-                entity.Property(e => e.LastUpdated).HasColumnType("datetime");
                 entity.Property(e => e.AspNetUsers_Created_Id)
                     .HasMaxLength(128)
                     .IsUnicode(false);
+                entity.Property(e => e.Created).HasColumnType("datetime");
+                entity.Property(e => e.Deactivated).HasColumnType("datetime");
+                entity.Property(e => e.LastUpdated).HasColumnType("datetime");
+
+                entity.HasOne(d => d.Apostila_Kit).WithMany(p => p.Alunos)
+                    .HasForeignKey(d => d.Apostila_Kit_Id)
+                    .HasConstraintName("FK_Aluno_Apostila_Kit");
 
                 entity.HasOne(d => d.Turma).WithMany(p => p.Alunos)
                     .HasForeignKey(d => d.Turma_Id)
@@ -143,180 +154,27 @@ namespace Supera_Monitor_Back.Helpers {
                     .HasConstraintName("FK_Aluno_Turma");
             });
 
-            modelBuilder.Entity<Apostila>(entity => {
-                entity.ToTable("Apostila");
-
-                entity.Property(e => e.Nome)
-                    .HasMaxLength(250)
-                    .IsUnicode(false);
-            });
-
-            modelBuilder.Entity<Log>(entity => {
-                entity.ToTable("Log");
-
-                entity.HasIndex(e => e.Account_Id, "IX_Log_Account_Id");
-
-                entity.Property(e => e.Account_Id).HasColumnName("Account_Id");
-
-                entity.HasOne(d => d.Account).WithMany(p => p.Logs).HasForeignKey(d => d.Account_Id);
-            });
-
-            modelBuilder.Entity<LogError>(entity => {
-                entity.ToTable("LogError");
-            });
-
-            modelBuilder.Entity<LogList>(entity => {
-                entity
-                    .HasNoKey()
-                    .ToView("LogList");
-
-                entity.Property(e => e.Account_Id).HasColumnName("Account_Id");
-            });
-
-            modelBuilder.Entity<Professor>(entity => {
-                entity.ToTable("Professor");
-
-                entity.Property(e => e.Account_Id).HasColumnName("Account_Id");
-
-                entity.Property(e => e.CorLegenda)
-                    .HasMaxLength(20)
-                    .IsUnicode(false);
-                entity.Property(e => e.DataInicio).HasColumnType("date");
-
-                entity.HasOne(d => d.Account).WithMany(p => p.Professors)
-                    .HasForeignKey(d => d.Account_Id)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Professor_Account");
-
-                entity.HasOne(d => d.Professor_NivelAH).WithMany(p => p.Professors)
-                    .HasForeignKey(d => d.Professor_NivelAH_Id)
-                    .HasConstraintName("FK_Professor_Professor_NivelAH");
-
-                entity.HasOne(d => d.Professor_NivelAbaco).WithMany(p => p.Professors)
-                    .HasForeignKey(d => d.Professor_NivelAbaco_Id)
-                    .HasConstraintName("FK_Professor_Professor_NivelAbaco");
-            });
-
-            modelBuilder.Entity<ProfessorList>(entity => {
-                entity
-                    .HasNoKey()
-                    .ToView("ProfessorList");
-
-                entity.Property(e => e.DataInicio).HasColumnType("date");
-                entity.Property(e => e.NivelAH)
-                    .HasMaxLength(100)
-                    .IsUnicode(false);
-                entity.Property(e => e.NivelAbaco)
-                    .HasMaxLength(100)
-                    .IsUnicode(false);
-            });
-
-            modelBuilder.Entity<Professor_NivelAH>(entity => {
-                entity.ToTable("Professor_NivelAH");
-
-                entity.Property(e => e.Descricao)
-                    .HasMaxLength(100)
-                    .IsUnicode(false);
-            });
-
-            modelBuilder.Entity<Professor_NivelAbaco>(entity => {
-                entity.ToTable("Professor_NivelAbaco");
-
-                entity.Property(e => e.Descricao)
-                    .HasMaxLength(100)
-                    .IsUnicode(false);
-            });
-
-            modelBuilder.Entity<Turma>(entity => {
-                entity.ToTable("Turma");
-
-                entity.Property(e => e.Account_Created_Id).HasColumnName("Account_Created_Id");
-                entity.Property(e => e.Professor_Id).HasColumnName("Professor_Id");
-                entity.Property(e => e.Turma_Tipo_Id).HasColumnName("Turma_Tipo_Id");
-
-                entity.HasOne(d => d.Account_Created).WithMany(p => p.Turmas)
-                    .HasForeignKey(d => d.Account_Created_Id)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Turma_Account");
-
-                entity.HasOne(d => d.Professor).WithMany(p => p.Turmas)
-                    .HasForeignKey(d => d.Professor_Id)
-                    .HasConstraintName("FK_Turma_Professor");
-
-                entity.HasOne(d => d.Turma_Tipo).WithMany(p => p.Turmas)
-                    .HasForeignKey(d => d.Turma_Tipo_Id)
-                    .HasConstraintName("FK_Turma_Turma_Tipo");
-            });
-
-            modelBuilder.Entity<TurmaAula>(entity => {
-                entity.ToTable("Turma_Aula");
-
-                entity.Property(e => e.Data).HasColumnType("datetime");
-                entity.Property(e => e.Observacao)
-                    .HasMaxLength(10)
-                    .IsFixedLength();
-
-                entity.Property(e => e.Professor_Id).HasColumnName("Professor_Id");
-                entity.HasOne(d => d.Professor).WithMany(p => p.Turma_Aulas)
-                    .HasForeignKey(d => d.Professor_Id)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Turma_Aula_Professor");
-
-                entity.Property(e => e.Turma_Id).HasColumnName("Turma_Id");
-                entity.HasOne(d => d.Turma).WithMany(p => p.Turma_Aulas)
-                    .HasForeignKey(d => d.Turma_Id)
-                    .HasConstraintName("FK_Turma_Aula_Turma");
-            });
-
-            modelBuilder.Entity<TurmaAulaAluno>(entity => {
-                entity.ToTable("Turma_Aula_Aluno");
-
-                entity.HasOne(d => d.Aluno).WithMany(p => p.Turma_Aula_Alunos)
-                    .HasForeignKey(d => d.Aluno_Id)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Turma_Aula_Aluno_Aluno");
-
-                entity.HasOne(d => d.Turma_Aula).WithMany(p => p.Turma_Aula_Alunos)
-                    .HasForeignKey(d => d.Turma_Aula_Id)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Turma_Aula_Aluno_Turma_Aula");
-            });
-
-            modelBuilder.Entity<TurmaList>(entity => {
-                entity
-                    .HasNoKey()
-                    .ToView("TurmaList");
-
-                entity.Property(e => e.Nome)
-                    .HasMaxLength(100)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.Turma_Tipo)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-            });
-
             modelBuilder.Entity<AlunoList>(entity => {
                 entity
                     .HasNoKey()
                     .ToView("AlunoList");
 
-                //entity.Property(e => e.Aluno_Foto).IsUnicode(false);
+                entity.Property(e => e.Apostila_AH)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.Apostila_Abaco)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
                 entity.Property(e => e.AspNetUsers_Created)
                     .HasMaxLength(45)
                     .IsUnicode(false);
                 entity.Property(e => e.AspNetUsers_Created_Id)
                     .HasMaxLength(128)
                     .IsUnicode(false);
-                entity.Property(e => e.CPF)
-                    .HasMaxLength(20)
-                    .IsUnicode(false);
                 entity.Property(e => e.Celular)
                     .HasMaxLength(50)
                     .IsUnicode(false);
                 entity.Property(e => e.Created).HasColumnType("datetime");
-                entity.Property(e => e.DataCadastro).HasColumnType("datetime");
-                entity.Property(e => e.DataEntrada).HasColumnType("datetime");
                 entity.Property(e => e.DataNascimento).HasColumnType("date");
                 entity.Property(e => e.Deactivated).HasColumnType("datetime");
                 entity.Property(e => e.Email)
@@ -325,6 +183,9 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.Property(e => e.Endereco)
                     .HasMaxLength(250)
                     .IsUnicode(false);
+                entity.Property(e => e.Kit)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
                 entity.Property(e => e.LastUpdated).HasColumnType("datetime");
                 entity.Property(e => e.Nome)
                     .HasMaxLength(250)
@@ -332,29 +193,8 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.Property(e => e.Observacao)
                     .HasMaxLength(8000)
                     .IsUnicode(false);
-                entity.Property(e => e.Pessoa_FaixaEtaria)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-                entity.Property(e => e.Pessoa_Geracao)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-                entity.Property(e => e.Pessoa_Indicou)
-                    .HasMaxLength(250)
-                    .IsUnicode(false);
-                entity.Property(e => e.Pessoa_Origem)
-                    .HasMaxLength(250)
-                    .IsUnicode(false);
-                entity.Property(e => e.Pessoa_Origem_Canal)
-                    .HasMaxLength(500)
-                    .IsUnicode(false);
                 entity.Property(e => e.Pessoa_Sexo)
                     .HasMaxLength(50)
-                    .IsUnicode(false);
-                entity.Property(e => e.Pessoa_Status)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-                entity.Property(e => e.RG)
-                    .HasMaxLength(20)
                     .IsUnicode(false);
                 entity.Property(e => e.Telefone)
                     .HasMaxLength(50)
@@ -364,14 +204,71 @@ namespace Supera_Monitor_Back.Helpers {
                     .IsUnicode(false);
             });
 
-            modelBuilder.Entity<AulaList>(entity => {
+            modelBuilder.Entity<ApostilaList>(entity => {
                 entity
                     .HasNoKey()
-                    .ToView("AulaList");
+                    .ToView("ApostilaList");
 
-                entity.Property(e => e.Data).HasColumnType("date");
-                entity.Property(e => e.Turma)
-                    .HasMaxLength(100)
+                entity.Property(e => e.Kit)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.Tipo)
+                    .HasMaxLength(5)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Apostila_AH>(entity => {
+                entity.ToTable("Apostila_AH");
+
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Apostila_AH_Kit>(entity => {
+                entity.ToTable("Apostila_AH_Kit");
+
+                entity.HasOne(d => d.Apostila_AH).WithMany(p => p.Apostila_AH_Kits)
+                    .HasForeignKey(d => d.Apostila_AH_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Apostila_AH_Kit_Apostila_AH");
+
+                entity.HasOne(d => d.Apostila_Kit).WithMany(p => p.Apostila_AH_Kits)
+                    .HasForeignKey(d => d.Apostila_Kit_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Apostila_AH_Kit_Apostila_Kit");
+            });
+
+            modelBuilder.Entity<Apostila_Abaco>(entity => {
+                entity.ToTable("Apostila_Abaco");
+
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Apostila_Abaco_Kit>(entity => {
+                entity.ToTable("Apostila_Abaco_Kit");
+
+                entity.HasOne(d => d.Apostila_Abaco).WithMany(p => p.Apostila_Abaco_Kits)
+                    .HasForeignKey(d => d.Apostila_Abaco_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Apostila_Abaco_Kit_Apostila_Abaco");
+
+                entity.HasOne(d => d.Apostila_Kit).WithMany(p => p.Apostila_Abaco_Kits)
+                    .HasForeignKey(d => d.Apostila_Kit_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Apostila_Abaco_Kit_Apostila_Kit");
+            });
+
+            modelBuilder.Entity<Apostila_Kit>(entity => {
+                entity.ToTable("Apostila_Kit");
+
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(50)
                     .IsUnicode(false);
             });
 
@@ -403,12 +300,76 @@ namespace Supera_Monitor_Back.Helpers {
                     .IsUnicode(false);
             });
 
-            modelBuilder.Entity<TurmaTipo>(entity => {
-                entity.ToTable("Turma_Tipo");
+            modelBuilder.Entity<AulaList>(entity => {
+                entity
+                    .HasNoKey()
+                    .ToView("AulaList");
 
-                entity.Property(e => e.Nome)
+                entity.Property(e => e.Data).HasColumnType("date");
+                entity.Property(e => e.Turma)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<CalendarioAlunoList>(entity => {
+                entity
+                    .HasNoKey()
+                    .ToView("CalendarioAlunoList");
+
+                entity.Property(e => e.Aluno)
+                    .HasMaxLength(250)
+                    .IsUnicode(false);
+                entity.Property(e => e.Aluno_Foto).IsUnicode(false);
+                entity.Property(e => e.Apostila_AH)
                     .HasMaxLength(50)
                     .IsUnicode(false);
+                entity.Property(e => e.Apostila_Abaco)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.Kit)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.Turma)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<CalendarioList>(entity => {
+                entity
+                    .HasNoKey()
+                    .ToView("CalendarioList");
+
+                entity.Property(e => e.CorLegenda)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
+                entity.Property(e => e.Data).HasColumnType("datetime");
+                entity.Property(e => e.Observacao)
+                    .HasMaxLength(10)
+                    .IsFixedLength();
+                entity.Property(e => e.Turma)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
+                entity.Property(e => e.Turma_Tipo)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Log>(entity => {
+                entity.ToTable("Log");
+
+                entity.HasIndex(e => e.Account_Id, "IX_Log_Account_Id");
+
+                entity.HasOne(d => d.Account).WithMany(p => p.Logs).HasForeignKey(d => d.Account_Id);
+            });
+
+            modelBuilder.Entity<LogError>(entity => {
+                entity.ToTable("LogError");
+            });
+
+            modelBuilder.Entity<LogList>(entity => {
+                entity
+                    .HasNoKey()
+                    .ToView("LogList");
             });
 
             modelBuilder.Entity<Pessoa>(entity => {
@@ -538,24 +499,139 @@ namespace Supera_Monitor_Back.Helpers {
                     .IsUnicode(false);
             });
 
-            modelBuilder.Entity<CalendarioAlunoList>(entity => {
-                entity.HasNoKey()
-                    .ToView("CalendarioAlunoList");
-            });
-
-            modelBuilder.Entity<CalendarioList>(entity => {
-                entity
-                    .HasNoKey()
-                    .ToView("CalendarioList");
+            modelBuilder.Entity<Professor>(entity => {
+                entity.ToTable("Professor");
 
                 entity.Property(e => e.CorLegenda)
                     .HasMaxLength(20)
                     .IsUnicode(false);
-                entity.Property(e => e.Data).HasColumnType("date");
-                entity.Property(e => e.Turma)
+                entity.Property(e => e.DataInicio).HasColumnType("date");
+
+                entity.HasOne(d => d.Account).WithMany(p => p.Professors)
+                    .HasForeignKey(d => d.Account_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Professor_Account");
+
+                entity.HasOne(d => d.Professor_NivelAH).WithMany(p => p.Professors)
+                    .HasForeignKey(d => d.Professor_NivelAH_Id)
+                    .HasConstraintName("FK_Professor_Professor_NivelAH");
+
+                entity.HasOne(d => d.Professor_NivelAbaco).WithMany(p => p.Professors)
+                    .HasForeignKey(d => d.Professor_NivelAbaco_Id)
+                    .HasConstraintName("FK_Professor_Professor_NivelAbaco");
+            });
+
+            modelBuilder.Entity<ProfessorList>(entity => {
+                entity
+                    .HasNoKey()
+                    .ToView("ProfessorList");
+
+                entity.Property(e => e.DataInicio).HasColumnType("date");
+                entity.Property(e => e.NivelAH)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
+                entity.Property(e => e.NivelAbaco)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Professor_NivelAH>(entity => {
+                entity.ToTable("Professor_NivelAH");
+
+                entity.Property(e => e.Descricao)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Professor_NivelAbaco>(entity => {
+                entity.ToTable("Professor_NivelAbaco");
+
+                entity.Property(e => e.Descricao)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Turma>(entity => {
+                entity.ToTable("Turma");
+
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
+
+                entity.HasOne(d => d.Account_Created).WithMany(p => p.Turmas)
+                    .HasForeignKey(d => d.Account_Created_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Turma_Account");
+
+                entity.HasOne(d => d.Professor).WithMany(p => p.Turmas)
+                    .HasForeignKey(d => d.Professor_Id)
+                    .HasConstraintName("FK_Turma_Professor");
+
+                entity.HasOne(d => d.Turma_Tipo).WithMany(p => p.Turmas)
+                    .HasForeignKey(d => d.Turma_Tipo_Id)
+                    .HasConstraintName("FK_Turma_Turma_Tipo");
+            });
+
+            modelBuilder.Entity<TurmaList>(entity => {
+                entity
+                    .HasNoKey()
+                    .ToView("TurmaList");
+
+                entity.Property(e => e.CorLegenda)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
+                entity.Property(e => e.Nome)
                     .HasMaxLength(100)
                     .IsUnicode(false);
                 entity.Property(e => e.Turma_Tipo)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<TurmaAula>(entity => {
+                entity.ToTable("Turma_Aula");
+
+                entity.Property(e => e.Data).HasColumnType("datetime");
+                entity.Property(e => e.Observacao)
+                    .HasMaxLength(10)
+                    .IsFixedLength();
+
+                entity.HasOne(d => d.Professor).WithMany(p => p.Turma_Aulas)
+                    .HasForeignKey(d => d.Professor_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Turma_Aula_Professor");
+
+                entity.HasOne(d => d.Turma).WithMany(p => p.Turma_Aulas)
+                    .HasForeignKey(d => d.Turma_Id)
+                    .HasConstraintName("FK_Turma_Aula_Turma");
+            });
+
+            modelBuilder.Entity<TurmaAulaAluno>(entity => {
+                entity.ToTable("Turma_Aula_Aluno");
+
+                entity.HasOne(d => d.Aluno).WithMany(p => p.Turma_Aula_Alunos)
+                    .HasForeignKey(d => d.Aluno_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Turma_Aula_Aluno_Aluno");
+
+                entity.HasOne(d => d.Apostila_AH_Kit).WithMany(p => p.Turma_Aula_Alunos)
+                    .HasForeignKey(d => d.Apostila_AH_Kit_Id)
+                    .HasConstraintName("FK_Turma_Aula_Aluno_Apostila_AH_Kit");
+
+                entity.HasOne(d => d.Apostila_Abaco_Kit).WithMany(p => p.Turma_Aula_Alunos)
+                    .HasForeignKey(d => d.Apostila_Abaco_Kit_Id)
+                    .HasConstraintName("FK_Turma_Aula_Aluno_Apostila_Abaco_Kit");
+
+                entity.HasOne(d => d.Turma_Aula).WithMany(p => p.Turma_Aula_Alunos)
+                    .HasForeignKey(d => d.Turma_Aula_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Turma_Aula_Aluno_Turma_Aula");
+            });
+
+            modelBuilder.Entity<TurmaTipo>(entity => {
+                entity.ToTable("Turma_Tipo");
+
+                entity.Property(e => e.Nome)
                     .HasMaxLength(50)
                     .IsUnicode(false);
             });

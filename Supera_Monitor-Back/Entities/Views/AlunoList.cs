@@ -6,15 +6,7 @@
 
         public string? Nome { get; set; }
 
-        public DateTime DataCadastro { get; set; }
-
-        public DateTime DataEntrada { get; set; }
-
         public DateTime? DataNascimento { get; set; }
-
-        public string? CPF { get; set; }
-
-        public string? RG { get; set; }
 
         public string? Celular { get; set; }
 
@@ -23,8 +15,6 @@
         public string? Email { get; set; }
 
         public string? Observacao { get; set; }
-
-        //public string? Aluno_Foto { get; set; }
 
         public int Unidade_Id { get; set; }
 
@@ -36,33 +26,11 @@
 
         public string? Professor { get; set; }
 
-        public int? Pessoa_FaixaEtaria_Id { get; set; }
-
-        public string? Pessoa_FaixaEtaria { get; set; }
-
-        public int? Pessoa_Geracao_Id { get; set; }
-
-        public string? Pessoa_Geracao { get; set; }
-
-        public int? Pessoa_Indicou_Id { get; set; }
-
-        public string? Pessoa_Indicou { get; set; }
-
-        public int? Pessoa_Origem_Canal_Id { get; set; }
-
-        public string? Pessoa_Origem_Canal { get; set; }
-
-        public int? Pessoa_Origem_Id { get; set; }
-
-        public string? Pessoa_Origem { get; set; }
-
         public int? Pessoa_Sexo_Id { get; set; }
 
         public string? Pessoa_Sexo { get; set; }
 
         public int? Pessoa_Status_Id { get; set; }
-
-        public string? Pessoa_Status { get; set; }
 
         public string? Endereco { get; set; }
 
@@ -76,13 +44,25 @@
 
         public string? AspNetUsers_Created { get; set; }
 
-        public int? ApostilaAbaco { get; set; }
+        public string? Kit { get; set; }
 
-        public int? AH { get; set; }
+        public string? Apostila_Abaco { get; set; }
+
+        public int? Apostila_Abaco_Id { get; set; }
 
         public int? NumeroPaginaAbaco { get; set; }
 
+        public int? Apostila_Abaco_Kit_Id { get; set; }
+
+        public string? Apostila_AH { get; set; }
+
+        public int? Apostila_AH_Id { get; set; }
+
+        public int? Apostila_AH_Kit_Id { get; set; }
+
         public int? NumeroPaginaAH { get; set; }
+
+        public int? Apostila_Kit_Id { get; set; }
 
         public bool Active => !Deactivated.HasValue;
     }
