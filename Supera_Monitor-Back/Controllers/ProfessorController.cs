@@ -130,15 +130,12 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpGet("apostilas/all")]
-        public ActionResult<List<Professor_NivelAH>> GetAllApostilas()
+        public ActionResult<List<ApostilaList>> GetAllApostilas()
         {
             try {
-                /*
-                 * TODO: Quebrou
                 var response = _professorService.GetAllApostilas();
+
                 return Ok(response);
-                */
-                return Ok();
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, $"Unexpected error: {e.Message}");
