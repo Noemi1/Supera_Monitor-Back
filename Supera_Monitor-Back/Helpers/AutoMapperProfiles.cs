@@ -49,6 +49,8 @@ namespace Supera_Monitor_Back.Helpers {
             CreateMap<Pessoa_Sexo, PessoaSexoModel>();
 
             CreateMap<CalendarioList, CalendarioResponse>();
+
+            CreateMap<Apostila_Kit, KitResponse>();
         }
     }
 }

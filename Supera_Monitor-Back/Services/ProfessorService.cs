@@ -17,6 +17,8 @@ namespace Supera_Monitor_Back.Services {
         List<NivelModel> GetAllNiveisAbaco();
 
         List<ApostilaList> GetAllApostilas();
+
+        List<KitResponse> GetAllKits();
     }
 
     public class ProfessorService : IProfessorService {
@@ -228,5 +230,21 @@ namespace Supera_Monitor_Back.Services {
             return apostilas;
         }
 
+        public List<KitResponse> GetAllKits()
+        {
+            List<Apostila_Kit> listApostilaKits = _db.Apostila_Kits.ToList();
+
+            List<KitResponse> listKitResponse = _mapper.Map<List<KitResponse>>(listApostilaKits);
+
+            List<ApostilaList> apostilas = GetAllApostilas();
+
+            foreach (var kitResponse in listKitResponse) {
+                kitResponse.Apostilas = apostilas
+                    .Where(a => a.Apostila_Kit_Id == kitResponse.Id)
+                    .ToList();
+            }
+
+            return listKitResponse;
+        }
     }
 }

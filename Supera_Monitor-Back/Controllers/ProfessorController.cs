@@ -141,5 +141,18 @@ namespace Supera_Monitor_Back.Controllers {
                 return StatusCode(500, $"Unexpected error: {e.Message}");
             }
         }
+
+        [HttpGet("kits/all")]
+        public ActionResult<List<KitResponse>> GetAllKits()
+        {
+            try {
+                var response = _professorService.GetAllKits();
+
+                return Ok(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, $"Unexpected error: {e.Message}");
+            }
+        }
     }
 }
