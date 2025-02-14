@@ -123,6 +123,7 @@ namespace Supera_Monitor_Back.Controllers {
                 ResponseModel response = _alunoService.NewReposicao(model);
 
                 if (response.Success) {
+                    _logger.Log("Reposicao", "TurmaAulaAluno", response, Account?.Id);
                     return Ok(response);
                 }
 
@@ -133,33 +134,22 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
-        //[HttpPost("reposicao")]
-        //public ActionResult<ResponseModel> InsertReposicao(CreateReposicaoRequest model)
-        //{
-        //    try {
-        //        ResponseModel response = _alunoService.InsertReposicao(model);
+        [HttpPut("registro")]
+        public ActionResult<ResponseModel> UpdateRegistro(UpdateRegistroRequest model)
+        {
+            try {
+                var response = _alunoService.UpdateRegistro(model);
 
-        //        if (response.Success) {
-        //            return Ok(response);
-        //        }
+                if (response.Success) {
+                    _logger.Log("Update", "TurmaAulaAluno", response, Account?.Id);
+                    return Ok(response);
+                }
 
-        //        return BadRequest(response);
-        //    } catch (Exception e) {
-        //        _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-        //        return StatusCode(500, e);
-        //    }
-        //}
-
-        //[HttpPost("{alunoId}/image")]
-        //public async Task<ActionResult<ResponseModel>> UploadImage(int alunoId, [FromBody] UploadImageRequest request)
-        //{
-        //    if (request.BinaryImage == null || request.BinaryImage.Length == 0) {
-        //        return new ResponseModel { Success = false, Message = "Arquivo inválido." };
-        //    }
-
-        //    ResponseModel response = await _alunoService.UploadImage(alunoId, request.BinaryImage);
-
-        //    return Ok(response);
-        //}
+                return BadRequest(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
     }
 }
