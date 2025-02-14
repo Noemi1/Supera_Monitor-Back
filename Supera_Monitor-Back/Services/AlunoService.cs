@@ -19,7 +19,6 @@ namespace Supera_Monitor_Back.Services {
         ResponseModel GetProfileImage(int alunoId);
 
         ResponseModel NewReposicao(NewReposicaoRequest model);
-        ResponseModel UpdateRegistro(UpdateRegistroRequest model);
     }
 
     public class AlunoService : IAlunoService {
@@ -420,39 +419,6 @@ namespace Supera_Monitor_Back.Services {
             }
 
             return response;
-        }
-
-        public ResponseModel UpdateRegistro(UpdateRegistroRequest model)
-        {
-            {
-                ResponseModel response = new() { Success = false };
-
-                try {
-                    TurmaAulaAluno? registro = _db.TurmaAulaAlunos.Find(model.Turma_Aula_Aluno_Id);
-
-                    if (registro is null) {
-                        return new ResponseModel { Message = "Registro não encontrado" };
-                    }
-
-                    CalendarioAlunoList? old = _db.CalendarioAlunoList.AsNoTracking().FirstOrDefault(a => a.Id == model.Turma_Aula_Aluno_Id);
-
-                    registro.NumeroPaginaAH = model.Numero_Pagina_Ah;
-                    registro.NumeroPaginaAbaco = model.Numero_Pagina_Abaco;
-                    registro.Presente = model.Presente;
-
-                    _db.Update(registro);
-                    _db.SaveChanges();
-
-                    response.Success = true;
-                    response.Message = "Registro atualizado com sucesso";
-                    response.OldObject = old;
-                    response.Object = _db.CalendarioAlunoList.AsNoTracking().FirstOrDefault(a => a.Id == model.Turma_Aula_Aluno_Id);
-                } catch (Exception ex) {
-                    response.Message = "Falha ao registrar aluno: " + ex.ToString();
-                }
-
-                return response;
-            }
         }
     }
 }

@@ -138,5 +138,22 @@ namespace Supera_Monitor_Back.Controllers {
                 return StatusCode(500, e);
             }
         }
+
+        [HttpPost("chamada")]
+        public ActionResult<ResponseModel> Chamada(RegisterChamadaRequest model)
+        {
+            try {
+                ResponseModel response = _aulaService.RegisterChamada(model);
+
+                if (response.Success) {
+                    return Ok(response);
+                }
+
+                return BadRequest(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
     }
 }

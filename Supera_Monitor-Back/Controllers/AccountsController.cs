@@ -121,7 +121,7 @@ namespace Supera_Monitor_Back.Controllers {
 
                 Account? account = _db.Accounts.Find(Account.Id);
                 account!.AccountRefreshToken = _db.AccountRefreshTokens
-                    .Where(x => x.AccountId == account.Id)
+                    .Where(x => x.Account_Id == account.Id)
                     .ToList();
 
                 var ownsToken = Account.OwnsToken(token);

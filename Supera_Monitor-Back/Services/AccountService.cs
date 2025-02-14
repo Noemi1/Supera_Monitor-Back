@@ -86,7 +86,7 @@ namespace Supera_Monitor_Back.Services {
             string jwtToken = GenerateJwtToken(account);
 
             AccountRefreshToken refreshToken = GenerateRefreshToken(ipAddress);
-            refreshToken.AccountId = account.Id;
+            refreshToken.Account_Id = account.Id;
             account.AccountRefreshToken.Add(refreshToken);
 
             _db.Update(account);

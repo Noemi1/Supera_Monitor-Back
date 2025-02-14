@@ -133,23 +133,5 @@ namespace Supera_Monitor_Back.Controllers {
                 return StatusCode(500, e);
             }
         }
-
-        [HttpPut("registro")]
-        public ActionResult<ResponseModel> UpdateRegistro(UpdateRegistroRequest model)
-        {
-            try {
-                var response = _alunoService.UpdateRegistro(model);
-
-                if (response.Success) {
-                    _logger.Log("Update", "TurmaAulaAluno", response, Account?.Id);
-                    return Ok(response);
-                }
-
-                return BadRequest(response);
-            } catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-                return StatusCode(500, e);
-            }
-        }
     }
 }

@@ -3,7 +3,7 @@
 namespace Supera_Monitor_Back.Entities {
     public partial class AccountRefreshToken {
         public int Id { get; set; }
-        public int AccountId { get; set; }
+        public int Account_Id { get; set; }
         public string Token { get; set; } = string.Empty;
         public DateTime Expires { get; set; }
         public bool IsExpired => TimeFunctions.HoraAtualBR() >= Expires;

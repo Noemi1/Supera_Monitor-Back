@@ -124,9 +124,9 @@ namespace Supera_Monitor_Back.Helpers {
             modelBuilder.Entity<AccountRefreshToken>(entity => {
                 entity.ToTable("AccountRefreshToken");
 
-                entity.HasIndex(e => e.AccountId, "IX_AccountRefreshToken_Account_Id");
+                entity.HasIndex(e => e.Account_Id, "IX_AccountRefreshToken_Account_Id");
 
-                entity.HasOne(d => d.Account).WithMany(p => p.AccountRefreshToken).HasForeignKey(d => d.AccountId);
+                entity.HasOne(d => d.Account).WithMany(p => p.AccountRefreshToken).HasForeignKey(d => d.Account_Id);
             });
 
             modelBuilder.Entity<AccountRole>(entity => {
