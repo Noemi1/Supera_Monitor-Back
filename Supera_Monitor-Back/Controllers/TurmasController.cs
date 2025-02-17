@@ -65,7 +65,7 @@ namespace Supera_Monitor_Back.Controllers {
                 var response = _turmaService.Insert(model);
 
                 if (response.Success) {
-                    string turmaId = response.Object!.Id;
+                    int turmaId = response.Object!.Id;
                     _logger.Log("Insert", "Turma", response, Account?.Id);
                     return Created($"/turmas/{turmaId}", response);
                 }

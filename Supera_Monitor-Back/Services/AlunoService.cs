@@ -444,23 +444,43 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Aluno? aluno = _db.Alunos.Find(alunoId);
+                Aluno? aluno = _db.Alunos.AsNoTracking().FirstOrDefault(a => a.Id == alunoId);
 
                 if (aluno is null) {
                     return new ResponseModel { Message = "Aluno não encontrado" };
                 }
 
-                int countFaltas = _db.TurmaAulaAlunos.Count(r => r.Aluno_Id == aluno.Id && r.Presente == false);
-                int countPresencas = _db.TurmaAulaAlunos.Count(r => r.Aluno_Id == aluno.Id && r.Presente == true);
-                int countReposicoes = _db.TurmaAulaAlunos.Count(r => r.Aluno_Id == aluno.Id && r.Reposicao == true);
-                int countAulasFuturas = _db.TurmaAulaAlunos.Count(r => r.Aluno_Id == aluno.Id && r.Presente == null);
+                List<CalendarioAlunoList> faltas = _db.CalendarioAlunoList
+                    .Where(r => r.Aluno_Id == aluno.Id && r.Presente == false)
+                    .ToList();
+
+                List<CalendarioAlunoList> presencas = _db.CalendarioAlunoList
+                    .Where(r => r.Aluno_Id == aluno.Id && r.Presente == true)
+                    .ToList();
+
+                List<CalendarioAlunoList> reposicoes = _db.CalendarioAlunoList
+                    .Where(r => r.Aluno_Id == aluno.Id && r.Reposicao == true)
+                    .ToList();
+
+                List<CalendarioAlunoList> aulasFuturas = _db.CalendarioAlunoList
+                    .Where(r => r.Aluno_Id == aluno.Id && r.Presente == null)
+                    .ToList();
 
                 response.Success = true;
                 response.Object = new SummaryModel {
-                    Presente_Count = countPresencas,
-                    Falta_Count = countFaltas,
-                    Reposicao_Count = countReposicoes,
-                    Aulas_Futuras_Count = countAulasFuturas
+                    Turma_Id = aluno.Turma_Id,
+
+                    Faltas = faltas,
+                    Faltas_Count = faltas.Count,
+
+                    Presencas = presencas,
+                    Presencas_Count = presencas.Count,
+
+                    Reposicoes = reposicoes,
+                    Reposicoes_Count = reposicoes.Count,
+
+                    Aulas_Futuras = aulasFuturas,
+                    Aulas_Futuras_Count = aulasFuturas.Count,
                 };
                 response.Message = "Sumário foi retornado com sucesso";
 
