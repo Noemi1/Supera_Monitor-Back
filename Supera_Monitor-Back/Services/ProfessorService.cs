@@ -13,12 +13,11 @@ namespace Supera_Monitor_Back.Services {
         ResponseModel Delete(int professorId);
 
         List<ProfessorList> GetAll();
-        List<NivelModel> GetAllNiveisAh();
-        List<NivelModel> GetAllNiveisAbaco();
-
-        List<ApostilaList> GetAllApostilas();
 
         List<KitResponse> GetAllKits();
+        List<ApostilaList> GetAllApostilas();
+        List<NivelModel> GetAllNiveisAh();
+        List<NivelModel> GetAllNiveisAbaco();
     }
 
     public class ProfessorService : IProfessorService {
@@ -238,9 +237,9 @@ namespace Supera_Monitor_Back.Services {
 
             List<ApostilaList> apostilas = GetAllApostilas();
 
-            foreach (var kitResponse in listKitResponse) {
-                kitResponse.Apostilas = apostilas
-                    .Where(a => a.Apostila_Kit_Id == kitResponse.Id)
+            foreach (KitResponse kit in listKitResponse) {
+                kit.Apostilas = apostilas
+                    .Where(a => a.Apostila_Kit_Id == kit.Id)
                     .ToList();
             }
 

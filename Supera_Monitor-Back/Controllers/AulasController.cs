@@ -146,6 +146,7 @@ namespace Supera_Monitor_Back.Controllers {
                 ResponseModel response = _aulaService.RegisterChamada(model);
 
                 if (response.Success) {
+                    _logger.Log("Chamada", "TurmaAula", response, Account?.Id);
                     return Ok(response);
                 }
 

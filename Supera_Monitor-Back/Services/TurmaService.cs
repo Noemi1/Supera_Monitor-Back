@@ -15,10 +15,9 @@ namespace Supera_Monitor_Back.Services {
         ResponseModel ToggleDeactivate(int turmaId, string ipAddress);
 
         List<TurmaList> GetAll();
+
         List<TurmaTipoModel> GetTypes();
-
         List<AlunoList> GetAllAlunosByTurma(int turmaId);
-
         List<AulaVisualizationModel> GetAllPossibleAulasByTurma(int turmaId, DateTime dateReference);
 
     }

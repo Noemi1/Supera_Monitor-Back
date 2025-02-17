@@ -382,7 +382,7 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.Property(e => e.Telefone)
                     .HasMaxLength(50)
                     .IsUnicode(false);
-                entity.Property(e => e.aspnetusers_Id)
+                entity.Property(e => e.AspNetUsers_Id)
                     .HasMaxLength(128)
                     .IsUnicode(false);
 

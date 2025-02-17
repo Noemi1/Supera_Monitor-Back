@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
@@ -313,7 +314,6 @@ namespace Supera_Monitor_Back.Services {
                 // Validations passed
 
                 // Buscar registros / alunos / apostilas previamente para reduzir o número de requisições ao banco
-
                 Dictionary<int, TurmaAulaAluno> registros = _db.TurmaAulaAlunos
                     .Where(x => model.Registros.Select(r => r.Turma_Aula_Aluno_Id).Contains(x.Id))
                     .ToDictionary(x => x.Id);
@@ -327,6 +327,7 @@ namespace Supera_Monitor_Back.Services {
 
                 // Coletar previamente todas as apostilas que contenham qualquer dos ids
                 List<Apostila_Kit_Rel> apostilasRel = _db.Apostila_Kit_Rels
+                    .Include(x => x.Apostila)
                     .Where(x => apostilasIds.Contains(x.Apostila_Id))
                     .ToList();
 
@@ -363,6 +364,15 @@ namespace Supera_Monitor_Back.Services {
                         return new ResponseModel { Message = @$"Registro '{item.Turma_Aula_Aluno_Id}' está tentando atualizar a apostila do(a) aluno(a) com um kit AH que ele(a) não possui" };
                     }
 
+                    // Se o número da página passado no request for maior que o número de páginas da apostila
+                    if (item.Numero_Pagina_Abaco > apostilaAbacoRel.Apostila.NumeroTotalPaginas) {
+                        return new ResponseModel { Message = "Número da página passado na requisição é maior que o número de páginas da apostila" };
+                    }
+
+                    if (item.Numero_Pagina_Ah > apostilaAhRel.Apostila.NumeroTotalPaginas) {
+                        return new ResponseModel { Message = "Número da página passado na requisição é maior que o número de páginas da apostila" };
+                    }
+
                     registro.Apostila_Abaco_Id = apostilaAbacoRel.Apostila_Id;
                     registro.Apostila_AH_Id = apostilaAhRel.Apostila_Id;
 
@@ -374,7 +384,9 @@ namespace Supera_Monitor_Back.Services {
                     _db.TurmaAulaAlunos.Update(registro);
                 }
 
+                // TODO: Se professor mudar - o novo professor não pode ter aula no mesmo horário
                 aula.Professor_Id = model.Professor_Id;
+
                 aula.Finalizada = true;
                 _db.TurmaAulas.Update(aula);
 

@@ -27,7 +27,7 @@ public partial class Pessoa {
 
     public string? CPF { get; set; }
 
-    public string? aspnetusers_Id { get; set; }
+    public string? AspNetUsers_Id { get; set; }
 
     public int? Pessoa_Sexo_Id { get; set; }
 
