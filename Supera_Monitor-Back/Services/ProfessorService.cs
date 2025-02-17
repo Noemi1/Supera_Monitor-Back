@@ -171,7 +171,7 @@ namespace Supera_Monitor_Back.Services {
                 _db.SaveChanges();
 
                 response.Message = "Professor atualizado com sucesso";
-                response.Object = _db.ProfessorList.SingleOrDefault(p => p.Id == professor.Id);
+                response.Object = _db.ProfessorList.FirstOrDefault(p => p.Id == professor.Id);
                 response.Success = true;
             } catch (Exception ex) {
                 response.Message = "Ocorreu um erro ao atualizar professor" + ex.ToString();

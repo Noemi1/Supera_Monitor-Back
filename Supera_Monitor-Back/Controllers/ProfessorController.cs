@@ -55,9 +55,9 @@ namespace Supera_Monitor_Back.Controllers {
                 var response = _professorService.Insert(model, origin);
 
                 if (response.Success) {
-                    string professorId = response.Object!.Id;
+                    int professorId = response.Object!.Id;
                     _logger.Log("Insert", "Professor", response, Account?.Id);
-                    return Created($"/professor/{professorId}", response);
+                    return Ok(response);
                 }
 
                 return BadRequest(response);
