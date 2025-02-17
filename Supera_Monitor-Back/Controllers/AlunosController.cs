@@ -133,5 +133,18 @@ namespace Supera_Monitor_Back.Controllers {
                 return StatusCode(500, e);
             }
         }
+
+        [HttpGet("apostilas/{alunoId}")]
+        public ActionResult<List<ApostilaList>> GetApostilasByAluno(int alunoId)
+        {
+            try {
+                var response = _alunoService.GetApostilasByAluno(alunoId);
+
+                return Ok(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
     }
 }

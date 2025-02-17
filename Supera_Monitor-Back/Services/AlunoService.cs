@@ -17,6 +17,7 @@ namespace Supera_Monitor_Back.Services {
         ResponseModel ToggleDeactivate(int alunoId);
 
         ResponseModel GetProfileImage(int alunoId);
+        List<ApostilaList> GetApostilasByAluno(int alunoId);
 
         ResponseModel NewReposicao(NewReposicaoRequest model);
     }
@@ -419,6 +420,21 @@ namespace Supera_Monitor_Back.Services {
             }
 
             return response;
+        }
+
+        public List<ApostilaList> GetApostilasByAluno(int alunoId)
+        {
+            Aluno? aluno = _db.Alunos.Find(alunoId);
+
+            if (aluno is null) {
+                throw new Exception("Aluno não encontrado");
+            }
+
+            List<ApostilaList> apostilas = _db.ApostilaLists
+                .Where(a => a.Apostila_Kit_Id == aluno.Apostila_Kit_Id)
+                .ToList();
+
+            return apostilas;
         }
     }
 }
