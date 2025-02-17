@@ -312,24 +312,46 @@ namespace Supera_Monitor_Back.Services {
 
                 // Validations passed
 
-                foreach (UpdateRegistroRequest item in model.Registros) {
-                    TurmaAulaAluno? registro = _db.TurmaAulaAlunos.Find(item.Turma_Aula_Aluno_Id);
+                // Buscar registros / alunos / apostilas previamente para reduzir o número de requisições ao banco
 
-                    if (registro == null) {
+                Dictionary<int, TurmaAulaAluno> registros = _db.TurmaAulaAlunos
+                    .Where(x => model.Registros.Select(r => r.Turma_Aula_Aluno_Id).Contains(x.Id))
+                    .ToDictionary(x => x.Id);
+
+                Dictionary<int, Aluno> alunos = _db.Alunos
+                    .Where(x => registros.Values.Select(r => r.Aluno_Id).Contains(x.Id))
+                    .ToDictionary(x => x.Id);
+
+                // Agrupar todos ids de apostilas passados nos registros
+                List<int> apostilasIds = model.Registros.SelectMany(r => new[] { r.Apostila_Abaco_Id, r.Apostila_Ah_Id }).Distinct().ToList();
+
+                // Coletar previamente todas as apostilas que contenham qualquer dos ids
+                List<Apostila_Kit_Rel> apostilasRel = _db.Apostila_Kit_Rels
+                    .Where(x => apostilasIds.Contains(x.Apostila_Id))
+                    .ToList();
+
+                // Processar os registros / alunos / apostilas
+                foreach (UpdateRegistroRequest item in model.Registros) {
+                    // Pegar o registro do aluno na aula - Se existir, coloca na variável registro
+                    registros.TryGetValue(item.Turma_Aula_Aluno_Id, out var registro);
+
+                    if (registro is null) {
                         continue;
                     }
 
-                    Aluno? aluno = _db.Alunos.Find(registro.Aluno_Id);
+                    // Se existir, coloca na variável aluno
+                    alunos.TryGetValue(item.Turma_Aula_Aluno_Id, out var aluno);
 
                     if (aluno is null) {
                         continue;
                     }
 
-                    Apostila_Kit_Rel? apostilaAbacoRel = _db.Apostila_Kit_Rels.FirstOrDefault(x =>
+                    // Iterar sobre a lista de apostilas pré-coletadas
+                    Apostila_Kit_Rel? apostilaAbacoRel = apostilasRel.FirstOrDefault(x =>
                         x.Apostila_Id == item.Apostila_Abaco_Id &&
                         x.Apostila_Kit_Id == aluno.Apostila_Kit_Id);
 
-                    Apostila_Kit_Rel? apostilaAhRel = _db.Apostila_Kit_Rels.FirstOrDefault(x =>
+                    Apostila_Kit_Rel? apostilaAhRel = apostilasRel.FirstOrDefault(x =>
                         x.Apostila_Id == item.Apostila_Ah_Id &&
                         x.Apostila_Kit_Id == aluno.Apostila_Kit_Id);
 
@@ -354,7 +376,6 @@ namespace Supera_Monitor_Back.Services {
 
                 aula.Professor_Id = model.Professor_Id;
                 aula.Finalizada = true;
-
                 _db.TurmaAulas.Update(aula);
 
                 _db.SaveChanges();
