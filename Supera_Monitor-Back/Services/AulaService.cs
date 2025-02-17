@@ -143,7 +143,6 @@ namespace Supera_Monitor_Back.Services {
 
                 response.OldObject = _db.AulaList.FirstOrDefault(a => a.Id == model.Id);
 
-
                 aula.Professor_Id = model.Professor_Id;
                 aula.Data = model.Data;
                 aula.Observacao = model.Observacao;
@@ -233,6 +232,8 @@ namespace Supera_Monitor_Back.Services {
 
                     List<CalendarioAlunoList> alunos = new List<CalendarioAlunoList>() { };
 
+                    Console.WriteLine(turma);
+
                     // Se a aula não estiver cadastrada ainda, retorna uma lista de alunos originalmente cadastrados na turma
                     // Senão, a aula já existe, a lista de alunos será composta pelos alunos da turma + alunos de reposição  
                     if (aula == null) {
@@ -263,15 +264,7 @@ namespace Supera_Monitor_Back.Services {
                             (request.Aluno_Id.HasValue ? request.Aluno_Id.Value == x.Id : true) &&
                             x.Deactivated == null) // Não exibir alunos inativos na pseudo-aula
                             .ToList()
-                            .Select(x => {
-                                return new CalendarioAlunoList() {
-                                    Aluno_Id = x.Id,
-                                    Aluno = x.Nome,
-                                    //Aluno_Foto = x.Aluno_Foto,
-                                    Turma_Id = x.Turma_Id,
-                                    Turma = x.Turma,
-                                };
-                            })
+                            .Select(a => _mapper.Map<CalendarioAlunoList>(a))
                             .ToList();
                     } else {
                         alunos = _db.CalendarioAlunoList

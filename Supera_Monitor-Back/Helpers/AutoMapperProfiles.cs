@@ -48,6 +48,9 @@ namespace Supera_Monitor_Back.Helpers {
             CreateMap<Pessoa_Status, PessoaStatusModel>();
             CreateMap<Pessoa_Sexo, PessoaSexoModel>();
 
+            CreateMap<AlunoList, CalendarioAlunoList>()
+                .ForMember(dest => dest.Aluno_Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.Aluno, opt => opt.MapFrom(src => src.Nome));
             CreateMap<CalendarioList, CalendarioResponse>();
 
             CreateMap<Apostila_Kit, KitResponse>();
