@@ -7,7 +7,5 @@ public partial class Apostila_Kit {
 
     public virtual ICollection<Aluno> Alunos { get; set; } = new List<Aluno>();
 
-    public virtual ICollection<Apostila_AH_Kit> Apostila_AH_Kits { get; set; } = new List<Apostila_AH_Kit>();
-
-    public virtual ICollection<Apostila_Abaco_Kit> Apostila_Abaco_Kits { get; set; } = new List<Apostila_Abaco_Kit>();
+    public virtual ICollection<Apostila_Kit_Rel> Apostila_Kit_Rels { get; set; } = new List<Apostila_Kit_Rel>();
 }

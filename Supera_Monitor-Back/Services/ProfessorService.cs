@@ -225,7 +225,7 @@ namespace Supera_Monitor_Back.Services {
 
         public List<ApostilaList> GetAllApostilas()
         {
-            List<ApostilaList> apostilas = _db.ApostilaList.ToList();
+            List<ApostilaList> apostilas = _db.ApostilaLists.ToList();
 
             return apostilas;
         }

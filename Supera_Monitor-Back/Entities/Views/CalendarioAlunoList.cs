@@ -18,7 +18,11 @@
 
         public bool? Presente { get; set; }
 
+        public int? Apostila_Kit_Id { get; set; }
+
         public string? Kit { get; set; }
+
+        public int? Apostila_Kit_Rel_Id { get; set; }
 
         public string? Apostila_Abaco { get; set; }
 
@@ -26,17 +30,11 @@
 
         public int? NumeroPaginaAbaco { get; set; }
 
-        public int? Apostila_Abaco_Kit_Id { get; set; }
-
         public string? Apostila_AH { get; set; }
 
         public int? Apostila_AH_Id { get; set; }
 
-        public int? Apostila_AH_Kit_Id { get; set; }
-
         public int? NumeroPaginaAH { get; set; }
-
-        public int? Apostila_Kit_Id { get; set; }
 
         public bool FlagAlunoNovo => false;
     }

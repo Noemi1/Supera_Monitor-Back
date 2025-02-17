@@ -16,17 +16,15 @@ namespace Supera_Monitor_Back.Helpers {
 
         public virtual DbSet<Aluno> Alunos { get; set; }
 
-        public virtual DbSet<ApostilaList> ApostilaList { get; set; }
+        public virtual DbSet<Apostila> Apostilas { get; set; }
 
-        public virtual DbSet<Apostila_AH> Apostila_AH { get; set; }
-
-        public virtual DbSet<Apostila_AH_Kit> Apostila_AH_Kits { get; set; }
-
-        public virtual DbSet<Apostila_Abaco> Apostila_Abaco { get; set; }
-
-        public virtual DbSet<Apostila_Abaco_Kit> Apostila_Abaco_Kits { get; set; }
+        public virtual DbSet<ApostilaList> ApostilaLists { get; set; }
 
         public virtual DbSet<Apostila_Kit> Apostila_Kits { get; set; }
+
+        public virtual DbSet<Apostila_Kit_Rel> Apostila_Kit_Rels { get; set; }
+
+        public virtual DbSet<Apostila_Tipo> Apostila_Tipos { get; set; }
 
         public virtual DbSet<AspNetUser> AspNetUsers { get; set; }
 
@@ -98,7 +96,6 @@ namespace Supera_Monitor_Back.Helpers {
                 );
             });
         }
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Account>(entity => {
@@ -204,6 +201,14 @@ namespace Supera_Monitor_Back.Helpers {
                     .IsUnicode(false);
             });
 
+            modelBuilder.Entity<Apostila>(entity => {
+                entity.ToTable("Apostila");
+
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
             modelBuilder.Entity<ApostilaList>(entity => {
                 entity
                     .HasNoKey()
@@ -215,57 +220,32 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.Property(e => e.Nome)
                     .HasMaxLength(50)
                     .IsUnicode(false);
-                entity.Property(e => e.Tipo)
-                    .HasMaxLength(5)
-                    .IsUnicode(false);
-            });
-
-            modelBuilder.Entity<Apostila_AH>(entity => {
-                entity.ToTable("Apostila_AH");
-
-                entity.Property(e => e.Nome)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-            });
-
-            modelBuilder.Entity<Apostila_AH_Kit>(entity => {
-                entity.ToTable("Apostila_AH_Kit");
-
-                entity.HasOne(d => d.Apostila_AH).WithMany(p => p.Apostila_AH_Kits)
-                    .HasForeignKey(d => d.Apostila_AH_Id)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Apostila_AH_Kit_Apostila_AH");
-
-                entity.HasOne(d => d.Apostila_Kit).WithMany(p => p.Apostila_AH_Kits)
-                    .HasForeignKey(d => d.Apostila_Kit_Id)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Apostila_AH_Kit_Apostila_Kit");
-            });
-
-            modelBuilder.Entity<Apostila_Abaco>(entity => {
-                entity.ToTable("Apostila_Abaco");
-
-                entity.Property(e => e.Nome)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-            });
-
-            modelBuilder.Entity<Apostila_Abaco_Kit>(entity => {
-                entity.ToTable("Apostila_Abaco_Kit");
-
-                entity.HasOne(d => d.Apostila_Abaco).WithMany(p => p.Apostila_Abaco_Kits)
-                    .HasForeignKey(d => d.Apostila_Abaco_Id)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Apostila_Abaco_Kit_Apostila_Abaco");
-
-                entity.HasOne(d => d.Apostila_Kit).WithMany(p => p.Apostila_Abaco_Kits)
-                    .HasForeignKey(d => d.Apostila_Kit_Id)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Apostila_Abaco_Kit_Apostila_Kit");
             });
 
             modelBuilder.Entity<Apostila_Kit>(entity => {
                 entity.ToTable("Apostila_Kit");
+
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Apostila_Kit_Rel>(entity => {
+                entity.ToTable("Apostila_Kit_Rel");
+
+                entity.HasOne(d => d.Apostila).WithMany(p => p.Apostila_Kit_Rels)
+                    .HasForeignKey(d => d.Apostila_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Apostila_Kit_Rel_Apostila");
+
+                entity.HasOne(d => d.Apostila_Kit).WithMany(p => p.Apostila_Kit_Rels)
+                    .HasForeignKey(d => d.Apostila_Kit_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Apostila_Kit_Rel_Apostila_Kit");
+            });
+
+            modelBuilder.Entity<Apostila_Tipo>(entity => {
+                entity.ToTable("Apostila_Tipo");
 
                 entity.Property(e => e.Nome)
                     .HasMaxLength(50)
@@ -614,13 +594,13 @@ namespace Supera_Monitor_Back.Helpers {
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Turma_Aula_Aluno_Aluno");
 
-                entity.HasOne(d => d.Apostila_AH_Kit).WithMany(p => p.Turma_Aula_Alunos)
-                    .HasForeignKey(d => d.Apostila_AH_Kit_Id)
-                    .HasConstraintName("FK_Turma_Aula_Aluno_Apostila_AH_Kit");
+                entity.HasOne(d => d.Apostila_AH).WithMany(p => p.Turma_Aula_AlunoApostila_AHs)
+                    .HasForeignKey(d => d.Apostila_AH_Id)
+                    .HasConstraintName("FK_Turma_Aula_Aluno_Apostila_AH");
 
-                entity.HasOne(d => d.Apostila_Abaco_Kit).WithMany(p => p.Turma_Aula_Alunos)
-                    .HasForeignKey(d => d.Apostila_Abaco_Kit_Id)
-                    .HasConstraintName("FK_Turma_Aula_Aluno_Apostila_Abaco_Kit");
+                entity.HasOne(d => d.Apostila_Abaco).WithMany(p => p.Turma_Aula_AlunoApostila_Abacos)
+                    .HasForeignKey(d => d.Apostila_Abaco_Id)
+                    .HasConstraintName("FK_Turma_Aula_Aluno_Apostila_Abaco");
 
                 entity.HasOne(d => d.Turma_Aula).WithMany(p => p.Turma_Aula_Alunos)
                     .HasForeignKey(d => d.Turma_Aula_Id)
@@ -638,7 +618,6 @@ namespace Supera_Monitor_Back.Helpers {
 
             OnModelCreatingPartial(modelBuilder);
         }
-
         partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
     }
 }

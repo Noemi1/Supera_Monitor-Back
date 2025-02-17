@@ -249,7 +249,7 @@ namespace Supera_Monitor_Back.Services {
                             Turma_Id = turma.Id,
                             Turma = turma.Nome,
                             CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
-                            Professor_Id = turma.Professor_Id,
+                            Professor_Id = ( int )turma.Professor_Id,
                             Professor = turma.Professor ?? "Professor Indefinido",
                             CorLegenda = turma.CorLegenda ?? "#000",
                             Observacao = "",
@@ -296,86 +296,86 @@ namespace Supera_Monitor_Back.Services {
         {
             ResponseModel response = new() { Success = false };
 
-            try {
-                TurmaAula? aula = _db.TurmaAulas.Find(model.Aula_Id);
+            //try {
+            //    TurmaAula? aula = _db.TurmaAulas.Find(model.Aula_Id);
 
-                // Não devo poder realizar a chamada em uma aula que não existe
-                if (aula == null) {
-                    return new ResponseModel { Message = "Aula não encontrada" };
-                }
+            //    // Não devo poder realizar a chamada em uma aula que não existe
+            //    if (aula == null) {
+            //        return new ResponseModel { Message = "Aula não encontrada" };
+            //    }
 
-                Professor? professor = _db.Professors.Find(model.Professor_Id);
+            //    Professor? professor = _db.Professors.Find(model.Professor_Id);
 
-                if (professor is null) {
-                    return new ResponseModel { Message = "Professor não encontrado" };
-                }
+            //    if (professor is null) {
+            //        return new ResponseModel { Message = "Professor não encontrado" };
+            //    }
 
-                aula.Professor_Id = model.Professor_Id;
+            //    aula.Professor_Id = model.Professor_Id;
 
-                // Validations passed
+            //    // Validations passed
 
-                foreach (UpdateRegistroRequest item in model.Registros) {
-                    TurmaAulaAluno? registro = _db.TurmaAulaAlunos.Find(item.Turma_Aula_Aluno_Id);
+            //    foreach (UpdateRegistroRequest item in model.Registros) {
+            //        TurmaAulaAluno? registro = _db.TurmaAulaAlunos.Find(item.Turma_Aula_Aluno_Id);
 
-                    if (registro == null) {
-                        continue;
-                    }
+            //        if (registro == null) {
+            //            continue;
+            //        }
 
-                    Aluno? aluno = _db.Alunos.Find(registro.Aluno_Id);
+            //        Aluno? aluno = _db.Alunos.Find(registro.Aluno_Id);
 
-                    if (aluno is null) {
-                        continue;
-                    }
+            //        if (aluno is null) {
+            //            continue;
+            //        }
 
-                    Apostila_Abaco_Kit? abacoKit = _db.Apostila_Abaco_Kits.FirstOrDefault(x =>
-                        x.Apostila_Abaco_Id == item.Apostila_Abaco_Id &&
-                        x.Apostila_Kit_Id == aluno.Apostila_Kit_Id);
+            //        Apostila_Abaco_Kit? abacoKit = _db.Apostila_Abaco_Kits.FirstOrDefault(x =>
+            //            x.Apostila_Abaco_Id == item.Apostila_Abaco_Id &&
+            //            x.Apostila_Kit_Id == aluno.Apostila_Kit_Id);
 
-                    Apostila_AH_Kit? ahKit = _db.Apostila_AH_Kits.FirstOrDefault(x =>
-                        x.Apostila_AH_Id == item.Apostila_Ah_Id &&
-                        x.Apostila_Kit_Id == aluno.Apostila_Kit_Id);
+            //        Apostila_AH_Kit? ahKit = _db.Apostila_AH_Kits.FirstOrDefault(x =>
+            //            x.Apostila_AH_Id == item.Apostila_Ah_Id &&
+            //            x.Apostila_Kit_Id == aluno.Apostila_Kit_Id);
 
-                    if (abacoKit is null) {
-                        return new ResponseModel { Message = @$"Registro '{item.Turma_Aula_Aluno_Id}' está tentando atualizar a apostila do(a) aluno(a) com um kit Ábaco que ele(a) não possui" };
-                    }
+            //        if (abacoKit is null) {
+            //            return new ResponseModel { Message = @$"Registro '{item.Turma_Aula_Aluno_Id}' está tentando atualizar a apostila do(a) aluno(a) com um kit Ábaco que ele(a) não possui" };
+            //        }
 
-                    if (ahKit is null) {
-                        return new ResponseModel { Message = @$"Registro '{item.Turma_Aula_Aluno_Id}' está tentando atualizar a apostila do(a) aluno(a) com um kit AH que ele(a) não possui" };
-                    }
+            //        if (ahKit is null) {
+            //            return new ResponseModel { Message = @$"Registro '{item.Turma_Aula_Aluno_Id}' está tentando atualizar a apostila do(a) aluno(a) com um kit AH que ele(a) não possui" };
+            //        }
 
-                    aluno.Apostila_Abaco_Id = abacoKit.Apostila_Abaco_Id;
-                    aluno.Apostila_AH_Id = ahKit.Apostila_AH_Id;
+            //        aluno.Apostila_Abaco_Id = abacoKit.Apostila_Abaco_Id;
+            //        aluno.Apostila_AH_Id = ahKit.Apostila_AH_Id;
 
-                    _db.Alunos.Update(aluno);
+            //        _db.Alunos.Update(aluno);
 
-                    registro.Apostila_Abaco_Kit_Id = abacoKit.Id;
-                    registro.Apostila_AH_Kit_Id = ahKit.Id;
+            //        registro.Apostila_Abaco_Kit_Id = abacoKit.Id;
+            //        registro.Apostila_AH_Kit_Id = ahKit.Id;
 
-                    registro.NumeroPaginaAbaco = item.Numero_Pagina_Abaco;
-                    registro.NumeroPaginaAH = item.Numero_Pagina_Ah;
+            //        registro.NumeroPaginaAbaco = item.Numero_Pagina_Abaco;
+            //        registro.NumeroPaginaAH = item.Numero_Pagina_Ah;
 
-                    registro.Presente = item.Presente;
+            //        registro.Presente = item.Presente;
 
-                    _db.TurmaAulaAlunos.Update(registro);
-                }
+            //        _db.TurmaAulaAlunos.Update(registro);
+            //    }
 
-                aula.Finalizada = true;
-                _db.TurmaAulas.Update(aula);
+            //    aula.Finalizada = true;
+            //    _db.TurmaAulas.Update(aula);
 
-                _db.SaveChanges();
+            //    _db.SaveChanges();
 
-                CalendarioList? aulaToReturn = _db.CalendarioList.FirstOrDefault(x => x.Aula_Id == aula.Id);
-                List<CalendarioAlunoList> alunosToReturn = _db.CalendarioAlunoList.Where(x => x.Aula_Id == aula.Id).ToList();
+            //    CalendarioList? aulaToReturn = _db.CalendarioList.FirstOrDefault(x => x.Aula_Id == aula.Id);
+            //    List<CalendarioAlunoList> alunosToReturn = _db.CalendarioAlunoList.Where(x => x.Aula_Id == aula.Id).ToList();
 
-                CalendarioResponse calendario = _mapper.Map<CalendarioResponse>(aulaToReturn);
-                calendario.Alunos = alunosToReturn;
+            //    CalendarioResponse calendario = _mapper.Map<CalendarioResponse>(aulaToReturn);
+            //    calendario.Alunos = alunosToReturn;
 
-                response.Message = "Chamada realizada com sucesso";
-                response.Object = calendario;
-                response.Success = true;
-            } catch (Exception ex) {
-                response.Message = "Falha ao realizar a chamada: " + ex.ToString();
-            }
+            //    response.Message = "Chamada realizada com sucesso";
+            //    response.Object = calendario;
+            //    response.Success = true;
+            //} catch (Exception ex) {
+            //    response.Message = "Falha ao realizar a chamada: " + ex.ToString();
+            //}
 
             return response;
         }
