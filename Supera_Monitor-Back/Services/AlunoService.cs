@@ -17,9 +17,11 @@ namespace Supera_Monitor_Back.Services {
         ResponseModel ToggleDeactivate(int alunoId);
 
         ResponseModel GetProfileImage(int alunoId);
+        ResponseModel GetSummaryByAluno(int alunoId);
         List<ApostilaList> GetApostilasByAluno(int alunoId);
 
         ResponseModel NewReposicao(NewReposicaoRequest model);
+
     }
 
     public class AlunoService : IAlunoService {
@@ -435,6 +437,38 @@ namespace Supera_Monitor_Back.Services {
                 .ToList();
 
             return apostilas;
+        }
+
+        public ResponseModel GetSummaryByAluno(int alunoId)
+        {
+            ResponseModel response = new() { Success = false };
+
+            try {
+                Aluno? aluno = _db.Alunos.Find(alunoId);
+
+                if (aluno is null) {
+                    return new ResponseModel { Message = "Aluno não encontrado" };
+                }
+
+                int countFaltas = _db.TurmaAulaAlunos.Count(r => r.Aluno_Id == aluno.Id && r.Presente == false);
+                int countPresencas = _db.TurmaAulaAlunos.Count(r => r.Aluno_Id == aluno.Id && r.Presente == true);
+                int countReposicoes = _db.TurmaAulaAlunos.Count(r => r.Aluno_Id == aluno.Id && r.Reposicao == true);
+                int countAulasFuturas = _db.TurmaAulaAlunos.Count(r => r.Aluno_Id == aluno.Id && r.Presente == null);
+
+                response.Success = true;
+                response.Object = new SummaryModel {
+                    Presente_Count = countPresencas,
+                    Falta_Count = countFaltas,
+                    Reposicao_Count = countReposicoes,
+                    Aulas_Futuras_Count = countAulasFuturas
+                };
+                response.Message = "Sumário foi retornado com sucesso";
+
+            } catch (Exception ex) {
+                response.Message = "Falha ao buscar sumário do aluno: " + ex.ToString();
+            }
+
+            return response;
         }
     }
 }
