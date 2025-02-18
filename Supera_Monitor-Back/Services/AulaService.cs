@@ -232,8 +232,6 @@ namespace Supera_Monitor_Back.Services {
 
                     List<CalendarioAlunoList> alunos = new List<CalendarioAlunoList>() { };
 
-                    Console.WriteLine(turma);
-
                     // Se a aula não estiver cadastrada ainda, retorna uma lista de alunos originalmente cadastrados na turma
                     // Senão, a aula já existe, a lista de alunos será composta pelos alunos da turma + alunos de reposição  
                     if (aula == null) {
@@ -302,6 +300,18 @@ namespace Supera_Monitor_Back.Services {
 
                 if (professor is null) {
                     return new ResponseModel { Message = "Professor não encontrado" };
+                }
+
+                // Se indicar uma mudança de professor - o professor sendo alocado não pode ter aula no mesmo horário
+                if (model.Professor_Id != aula.Professor_Id) {
+                    bool ProfessorIsAlreadyOccupied = _db.TurmaAulas.Any(a =>
+                        a.Professor_Id == model.Professor_Id &&
+                        a.Data == aula.Data
+                    );
+
+                    if (ProfessorIsAlreadyOccupied) {
+                        return new ResponseModel { Message = "O professor sendo alocado já tem uma aula nesse horário." };
+                    }
                 }
 
                 // Validations passed
@@ -377,9 +387,8 @@ namespace Supera_Monitor_Back.Services {
                     _db.TurmaAulaAlunos.Update(registro);
                 }
 
-                // TODO: Se professor mudar - o novo professor não pode ter aula no mesmo horário
                 aula.Professor_Id = model.Professor_Id;
-
+                aula.Observacao = model.Observacao;
                 aula.Finalizada = true;
                 _db.TurmaAulas.Update(aula);
 

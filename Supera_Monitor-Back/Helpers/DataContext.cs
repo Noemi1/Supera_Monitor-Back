@@ -323,9 +323,7 @@ namespace Supera_Monitor_Back.Helpers {
                     .HasMaxLength(20)
                     .IsUnicode(false);
                 entity.Property(e => e.Data).HasColumnType("datetime");
-                entity.Property(e => e.Observacao)
-                    .HasMaxLength(10)
-                    .IsFixedLength();
+                entity.Property(e => e.Observacao).IsUnicode(false);
                 entity.Property(e => e.Turma)
                     .HasMaxLength(100)
                     .IsUnicode(false);
@@ -572,9 +570,7 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.ToTable("Turma_Aula");
 
                 entity.Property(e => e.Data).HasColumnType("datetime");
-                entity.Property(e => e.Observacao)
-                    .HasMaxLength(10)
-                    .IsFixedLength();
+                entity.Property(e => e.Observacao).IsUnicode(false);
 
                 entity.HasOne(d => d.Professor).WithMany(p => p.Turma_Aulas)
                     .HasForeignKey(d => d.Professor_Id)
