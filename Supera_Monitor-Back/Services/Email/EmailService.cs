@@ -2,6 +2,7 @@
 using Supera_Monitor_Back.Helpers;
 using System.Net;
 using System.Net.Mail;
+using System.Net.Mime;
 using System.Text;
 
 namespace Supera_Monitor_Back.Services.Email {
@@ -67,10 +68,32 @@ namespace Supera_Monitor_Back.Services.Email {
                     Body = body,
                     IsBodyHtml = true,
                     BodyEncoding = Encoding.UTF8,
-                    SubjectEncoding = Encoding.UTF8
+                    SubjectEncoding = Encoding.UTF8,
                 };
 
                 email.To.Add(to);
+
+                // Inserir imagens no Body
+                AlternateView htmlView = AlternateView.CreateAlternateViewFromString(body, Encoding.UTF8, MediaTypeNames.Text.Html);
+
+                // Simulando a injeção de IWebHostEnvironment (em uma aplicação real, você usaria a injeção de dependência)
+                string wwwRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                string imagePath = Path.Combine(wwwRootPath, "Images", "minhaImagem.png");
+
+                // Criando o recurso vinculado
+                LinkedResource logoImage = new(Path.Combine(wwwRootPath, "Images", "logo-metodo-supera-white.png"), "image/png");
+                LinkedResource phoneIcon = new(Path.Combine(wwwRootPath, "Images", "phone.png"), "image/png");
+                LinkedResource emailIcon = new(Path.Combine(wwwRootPath, "Images", "email.png"), "image/png");
+
+                logoImage.ContentId = "logoImage";
+                phoneIcon.ContentId = "phoneIcon";
+                emailIcon.ContentId = "emailIcon";
+
+                htmlView.LinkedResources.Add(logoImage);
+                htmlView.LinkedResources.Add(phoneIcon);
+                htmlView.LinkedResources.Add(emailIcon);
+
+                email.AlternateViews.Add(htmlView);
 
                 // SMTP Configuration (Ex.: Gmail)
                 string smtpHost = _appSettings.SmtpHost;
