@@ -263,12 +263,14 @@ namespace Supera_Monitor_Back.Services {
                             x.Deactivated == null) // Não exibir alunos inativos na pseudo-aula
                             .ToList()
                             .Select(a => _mapper.Map<CalendarioAlunoList>(a))
+                            .OrderBy(a => a.Aluno)
                             .ToList();
                     } else {
                         alunos = _db.CalendarioAlunoList
                             .Where(x =>
                                 x.Aula_Id == aula.Aula_Id &&
                                 _db.AlunoList.Any(a => a.Id == x.Aluno_Id && a.Deactivated == null)) // Não exibir alunos inativos na lista de CalendarioAlunoList
+                            .OrderBy(a => a.Aluno)
                             .ToList();
                     }
 
