@@ -49,7 +49,7 @@ namespace Supera_Monitor_Back.Services {
 
         public List<TurmaList> GetAll()
         {
-            List<TurmaList> turmas = _db.TurmaList.ToList();
+            List<TurmaList> turmas = _db.TurmaList.OrderBy(t => t.Nome).ToList();
 
             return turmas;
         }

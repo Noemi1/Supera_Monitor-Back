@@ -61,7 +61,7 @@ namespace Supera_Monitor_Back.Services {
 
         public List<AccountList> GetAll()
         {
-            List<AccountList> accounts = _db.AccountList.ToList();
+            List<AccountList> accounts = _db.AccountList.OrderBy(t => t.Name).ToList();
 
             return accounts;
         }

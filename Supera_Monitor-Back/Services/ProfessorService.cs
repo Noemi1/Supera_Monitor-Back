@@ -45,7 +45,7 @@ namespace Supera_Monitor_Back.Services {
 
         public List<ProfessorList> GetAll()
         {
-            List<ProfessorList> professores = _db.ProfessorList.ToList();
+            List<ProfessorList> professores = _db.ProfessorList.OrderBy(p => p.Nome).ToList();
 
             return professores;
         }

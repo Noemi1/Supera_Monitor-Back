@@ -53,7 +53,7 @@ namespace Supera_Monitor_Back.Services {
 
         public List<AlunoList> GetAll()
         {
-            List<AlunoList> alunos = _db.AlunoList.ToList();
+            List<AlunoList> alunos = _db.AlunoList.OrderBy(a => a.Nome).ToList();
 
             return alunos;
         }
