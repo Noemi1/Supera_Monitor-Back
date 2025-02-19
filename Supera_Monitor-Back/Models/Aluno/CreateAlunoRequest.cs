@@ -4,6 +4,8 @@
         public int Turma_Id { get; set; }
         public string? Aluno_Foto { get; set; }
 
+        public int? Apostila_Kit_Id { get; set; }
+
         public string AspNetUsers_Created_Id { get; set; } = string.Empty;
     }
 }

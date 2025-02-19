@@ -31,7 +31,7 @@ namespace Supera_Monitor_Back.Services {
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IPessoaService _pessoaService;
 
-        public AlunoService(DataContext db, IMapper mapper, IPessoaService pessoaService, IAulaService aulaService, IHttpContextAccessor httpContextAccessor)
+        public AlunoService(DataContext db, IMapper mapper, IPessoaService pessoaService, IHttpContextAccessor httpContextAccessor)
         {
             _db = db;
             _mapper = mapper;
@@ -109,9 +109,20 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Turma já está em sua capacidade máxima" };
                 }
 
+                // O aluno só pode receber um kit que esteja cadastrado ou nulo
+                if (model.Apostila_Kit_Id is not null) {
+                    bool apostilaKitExists = _db.Apostila_Kits.Any(k => k.Id == model.Apostila_Kit_Id);
+
+                    if (!apostilaKitExists) {
+                        return new ResponseModel { Message = "Não é possível atualizar um aluno com um kit que não existe" };
+                    }
+                }
+
                 // Validations passed
+
                 Aluno aluno = _mapper.Map<Aluno>(model);
 
+                aluno.Apostila_Kit_Id = model.Apostila_Kit_Id;
                 aluno.Aluno_Foto = model.Aluno_Foto;
                 aluno.Created = TimeFunctions.HoraAtualBR();
                 aluno.Deactivated = null;
@@ -186,6 +197,15 @@ namespace Supera_Monitor_Back.Services {
                     }
                 }
 
+                // O aluno só pode receber um kit que esteja cadastrado ou nulo
+                if (model.Apostila_Kit_Id is not null) {
+                    bool apostilaKitExists = _db.Apostila_Kits.Any(k => k.Id == model.Apostila_Kit_Id);
+
+                    if (!apostilaKitExists) {
+                        return new ResponseModel { Message = "Não é possível atualizar um aluno com um kit que não existe" };
+                    }
+                }
+
                 AlunoList? old = _db.AlunoList.AsNoTracking().FirstOrDefault(a => a.Id == model.Id);
 
                 if (old is null) {
@@ -201,6 +221,7 @@ namespace Supera_Monitor_Back.Services {
                     return pessoaResponse;
                 }
 
+                aluno.Apostila_Kit_Id = model.Apostila_Kit_Id;
                 aluno.Aluno_Foto = model.Aluno_Foto;
                 aluno.Turma_Id = model.Turma_Id;
                 aluno.LastUpdated = TimeFunctions.HoraAtualBR();

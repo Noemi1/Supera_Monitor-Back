@@ -26,12 +26,14 @@ namespace Supera_Monitor_Back.Services {
         private readonly DataContext _db;
         private readonly IMapper _mapper;
         private readonly Account? _account;
+        private readonly IProfessorService _professorService;
 
-        public TurmaService(DataContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor)
+        public TurmaService(DataContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor, IProfessorService professorService)
         {
             _db = db;
             _mapper = mapper;
             _account = ( Account? )httpContextAccessor.HttpContext?.Items["Account"];
+            _professorService = professorService;
         }
 
         public TurmaList Get(int turmaId)
@@ -83,6 +85,25 @@ namespace Supera_Monitor_Back.Services {
                 // Não devo poder criar turma com um professor desativado
                 if (professor.Account.Deactivated != null) {
                     return new ResponseModel { Message = "Não é possível criar uma turma com um professor desativado." };
+                }
+
+                TimeSpan twoHourInterval = TimeSpan.FromHours(2);
+
+                // Não devo criar uma turma com um professor que já está ocupado nesse dia da semana / horário
+                bool professorHasTimeConflicts = _db.Turmas
+                .Where(t =>
+                    t.Deactivated == null &&
+                    t.Professor_Id == professor.Id &&
+                    t.DiaSemana == model.DiaSemana
+                )
+                .AsEnumerable() // Termina a query no banco, passando a responsabilidade do Any para o C#, queries do banco não lidam bem com TimeSpan
+                .Any(t =>
+                    model.Horario > t.Horario - twoHourInterval &&
+                    model.Horario < t.Horario + twoHourInterval
+                );
+
+                if (professorHasTimeConflicts) {
+                    return new ResponseModel { Message = "Não foi possível criar a turma. O professor responsável já tem compromissos no horário indicado." };
                 }
 
                 // Validations passed
@@ -138,6 +159,25 @@ namespace Supera_Monitor_Back.Services {
                 // Não devo poder criar turma com um professor desativado
                 if (professor.Account.Deactivated != null) {
                     return new ResponseModel { Message = "Não é possível criar uma turma com um professor desativado." };
+                }
+
+                TimeSpan twoHourInterval = TimeSpan.FromHours(2);
+
+                // Não devo criar uma turma com um professor que já está ocupado nesse dia da semana / horário
+                bool professorHasTimeConflicts = _db.Turmas
+                .Where(t =>
+                    t.Deactivated == null &&
+                    t.Professor_Id == professor.Id &&
+                    t.DiaSemana == model.DiaSemana
+                )
+                .AsEnumerable() // Termina a query no banco, passando a responsabilidade do Any para o C#, queries do banco não lidam bem com TimeSpan
+                .Any(t =>
+                    model.Horario > t.Horario - twoHourInterval &&
+                    model.Horario < t.Horario + twoHourInterval
+                );
+
+                if (professorHasTimeConflicts) {
+                    return new ResponseModel { Message = "Não foi possível atualizar a turma. O professor responsável já tem compromissos no horário indicado." };
                 }
 
                 // Validations passed
