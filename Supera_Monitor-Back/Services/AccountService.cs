@@ -108,6 +108,8 @@ namespace Supera_Monitor_Back.Services {
         {
             var (refreshToken, account) = GetRefreshToken(token);
 
+            var relatedProfessor = _db.Professors.FirstOrDefault(p => p.Account_Id == account.Id);
+
             // Renew refresh and JWT tokens
             var newRefreshToken = GenerateRefreshToken(ipAddress);
             refreshToken.Revoked = TimeFunctions.HoraAtualBR();
@@ -126,6 +128,7 @@ namespace Supera_Monitor_Back.Services {
 
             AuthenticateResponse response = _mapper.Map<AuthenticateResponse>(account);
 
+            response.Professor_Id = relatedProfessor?.Id;
             response.Role = account.Account_Role.Role;
             response.JwtToken = jwtToken;
             response.RefreshToken = newRefreshToken.Token;

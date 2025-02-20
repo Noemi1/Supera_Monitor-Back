@@ -3,6 +3,7 @@ using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
+using Supera_Monitor_Back.Models.Accounts;
 using Supera_Monitor_Back.Models.Professor;
 
 namespace Supera_Monitor_Back.Services {
@@ -85,6 +86,15 @@ namespace Supera_Monitor_Back.Services {
 
                     // Associa um usuário existente ao professor
                     professor.Account_Id = accountToAssign.Id;
+
+                    // Atualizar o usuário com o Role de professor, mas se for admin, não deve alterar
+                    _userService.Update(new UpdateAccountRequest {
+                        Id = accountToAssign.Id,
+                        Name = accountToAssign.Name,
+                        Email = accountToAssign.Email,
+                        Phone = accountToAssign.Phone,
+                        Role_Id = accountToAssign.Role_Id == ( int )Role.Admin ? ( int )Role.Admin : ( int )Role.Teacher
+                    });
                 } else {
 
                     if (string.IsNullOrEmpty(model.Nome)) {

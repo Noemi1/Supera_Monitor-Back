@@ -171,19 +171,15 @@ namespace Supera_Monitor_Back.Services {
 
             // Se não passar data inicio, considera a segunda-feira da semana atual
             if (!request.IntervaloDe.HasValue) {
-                // Retorna para o início da semana
+                // Retorna para o início da semana (domingo) e adiciona um dia para obter segunda-feira
                 request.IntervaloDe = now.AddDays(-( int )now.DayOfWeek);
-
-                // Adiciona um dia para obter segunda-feira
                 request.IntervaloDe = request.IntervaloDe.Value.AddDays(1);
             }
 
             // Se não passar data fim, considera o sábado da semana da data inicio
             if (!request.IntervaloAte.HasValue) {
-                // Retorna para o início da semana
+                // Retorna para o início da semana (domingo) e adiciona seis dias para obter sábado
                 request.IntervaloAte = request.IntervaloDe.Value.AddDays(-( int )request.IntervaloDe.Value.DayOfWeek);
-
-                // Adiciona seis dias para obter sábado
                 request.IntervaloAte = request.IntervaloDe.Value.AddDays(6);
             }
 
