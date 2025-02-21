@@ -17,8 +17,7 @@ namespace Supera_Monitor_Back.Services {
 
         List<KitResponse> GetAllKits();
         List<ApostilaList> GetAllApostilas();
-        //List<NivelModel> GetAllNiveisAh();
-        //List<NivelModel> GetAllNiveisAbaco();
+        List<NivelCertificacaoModel> GetAllCertificacoes();
     }
 
     public class ProfessorService : IProfessorService {
@@ -58,17 +57,13 @@ namespace Supera_Monitor_Back.Services {
             try {
                 Professor professor = new() {
                     DataInicio = model.DataInicio,
-                    CorLegenda = model.CorLegenda
+                    CorLegenda = model.CorLegenda,
                 };
 
-                // Procurar os níveis passados no request, se existirem, colocar Nivel_Id no professor, senão nular
-                //bool NivelAbacoExists = _db.Professor_NivelAbaco.Any(nv => nv.Id == model.Professor_NivelAbaco_Id);
+                // Só atribuir o nivel de certificacao passado na requisição se este existir, caso contrário, nulo
+                bool NivelCertificacaoExists = _db.Professor_NivelCertificacao.Any(n => n.Id == model.Professor_NivelCertificacao_Id);
 
-                //professor.Professor_NivelAbaco_Id = NivelAbacoExists ? model.Professor_NivelAbaco_Id : null;
-
-                //bool NivelAHExists = _db.Professor_NivelAH.Any(nv => nv.Id == model.Professor_NivelAH_Id);
-
-                //professor.Professor_NivelAH_Id = NivelAHExists ? model.Professor_NivelAH_Id : null;
+                professor.Professor_NivelCertificacao_Id = NivelCertificacaoExists ? model.Professor_NivelCertificacao_Id : null;
 
                 // Se for passado um Account_Id no request, busca a conta no banco, senão cria uma e salva
                 if (model.Account_Id != null) {
@@ -84,19 +79,25 @@ namespace Supera_Monitor_Back.Services {
                         return new ResponseModel { Message = "Usuário já está associado a um professor" };
                     }
 
-                    // Associa um usuário existente ao professor
+                    // Associa a conta encontrada ao professor
                     professor.Account_Id = accountToAssign.Id;
 
-                    // Atualizar o usuário com o Role de professor, mas se for admin, não deve alterar
-                    _userService.Update(new UpdateAccountRequest {
+                    // Atualizar dados do usuário, inserindo Role, mas se for admin, não deve alterar
+                    // Os outros dados são iguais, então só repassá-los
+                    UpdateAccountRequest updateAccountRequest = new() {
                         Id = accountToAssign.Id,
                         Name = accountToAssign.Name,
                         Email = accountToAssign.Email,
                         Phone = accountToAssign.Phone,
                         Role_Id = accountToAssign.Role_Id == ( int )Role.Admin ? ( int )Role.Admin : ( int )Role.Teacher
-                    });
-                } else {
+                    };
 
+                    ResponseModel updateAccountResponse = _userService.Update(updateAccountRequest);
+
+                    if (updateAccountResponse.Success == false) {
+                        return updateAccountResponse;
+                    }
+                } else {
                     if (string.IsNullOrEmpty(model.Nome)) {
                         return new ResponseModel { Message = "Nome não deve ser vazio" };
                     }
@@ -107,19 +108,21 @@ namespace Supera_Monitor_Back.Services {
                         return new ResponseModel { Message = "Email não deve ser vazio" };
                     }
 
-                    ResponseModel createdAccountResponse = _userService.Insert(new() {
+                    CreateAccountRequest createAccountRequest = new() {
                         Name = model.Nome,
                         Phone = model.Telefone,
                         Email = model.Email,
-                        Role_Id = ( int )Role.Teacher,
-                    }, ipAddress);
+                        Role_Id = ( int )Role.Teacher
+                    };
 
-                    if (createdAccountResponse.Success == false) {
-                        return createdAccountResponse;
+                    ResponseModel createAccountResponse = _userService.Insert(createAccountRequest, ipAddress);
+
+                    if (createAccountResponse.Success == false) {
+                        return createAccountResponse;
                     }
 
-                    // Asssocia o usuário recém criado ao professor
-                    professor.Account_Id = createdAccountResponse.Object!.Id;
+                    // Associa o usuário recém criado ao professor
+                    professor.Account_Id = createAccountResponse.Object!.Id;
                 }
 
                 if (professor == null) {
@@ -158,14 +161,10 @@ namespace Supera_Monitor_Back.Services {
 
                 response.OldObject = _db.ProfessorList.SingleOrDefault(p => p.Id == professor.Id);
 
-                // Procurar os níveis passados no request, se existirem, colocar Nivel_Id no professor, senão nular
-                //bool NivelAbacoExists = _db.Professor_NivelAbaco.Any(nv => nv.Id == model.Professor_NivelAbaco_Id);
+                // Só atribuir o nivel de certificacao passado na requisição se este existir, caso contrário, nulo
+                bool NivelCertificacaoExists = _db.Professor_NivelCertificacao.Any(n => n.Id == model.Professor_NivelCertificacao_Id);
 
-                //professor.Professor_NivelAbaco_Id = NivelAbacoExists ? model.Professor_NivelAbaco_Id : null;
-
-                //bool NivelAHExists = _db.Professor_NivelAH.Any(nv => nv.Id == model.Professor_NivelAH_Id);
-
-                //professor.Professor_NivelAH_Id = NivelAHExists ? model.Professor_NivelAH_Id : null;
+                professor.Professor_NivelCertificacao_Id = NivelCertificacaoExists ? model.Professor_NivelCertificacao_Id : null;
 
                 account.Name = model.Nome;
                 account.Phone = model.Telefone;
@@ -254,6 +253,13 @@ namespace Supera_Monitor_Back.Services {
             }
 
             return listKitResponse;
+        }
+
+        public List<NivelCertificacaoModel> GetAllCertificacoes()
+        {
+            List<Professor_NivelCertificacao> certificacoes = _db.Professor_NivelCertificacao.ToList();
+
+            return _mapper.Map<List<NivelCertificacaoModel>>(certificacoes);
         }
     }
 }

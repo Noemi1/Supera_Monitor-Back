@@ -40,8 +40,7 @@ namespace Supera_Monitor_Back.Helpers {
             CreateMap<UpdatePessoaRequest, Pessoa>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Pessoa_Id));
 
-            //CreateMap<Professor_NivelAH, NivelModel>();
-            //CreateMap<Professor_NivelAbaco, NivelModel>();
+            CreateMap<Professor_NivelCertificacao, NivelCertificacaoModel>();
 
             CreateMap<Pessoa_FaixaEtaria, PessoaFaixaEtariaModel>();
             CreateMap<Pessoa_Geracao, PessoaGeracaoModel>();
