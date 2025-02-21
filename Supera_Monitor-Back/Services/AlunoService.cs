@@ -63,7 +63,7 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Pessoa? pessoa = _db.Pessoas.Find(model.Pessoa_Id);
+                Pessoa? pessoa = _db.Pessoa.Find(model.Pessoa_Id);
 
                 // Aluno só pode ser cadastrado se a pessoa existir no CRM
                 if (pessoa == null) {
@@ -81,21 +81,21 @@ namespace Supera_Monitor_Back.Services {
                 }
 
                 // Só pode ser cadastrado um aluno por pessoa
-                bool AlunoAlreadyRegistered = _db.Alunos.Any(a => a.Pessoa_Id == model.Pessoa_Id);
+                bool AlunoAlreadyRegistered = _db.Aluno.Any(a => a.Pessoa_Id == model.Pessoa_Id);
 
                 if (AlunoAlreadyRegistered) {
                     return new ResponseModel { Message = "Pessoa já tem um aluno cadastrado em seu nome" };
                 }
 
                 // Aluno só pode ser cadastrado em uma turma válida
-                bool TurmaExists = _db.Turmas.Any(t => t.Id == model.Turma_Id);
+                bool TurmaExists = _db.Turma.Any(t => t.Id == model.Turma_Id);
 
                 if (!TurmaExists) {
                     return new ResponseModel { Message = "Turma não encontrada" };
                 }
 
                 // Aluno só pode ser inserido em uma turma válida
-                Turma? turmaDestino = _db.Turmas.FirstOrDefault(t => t.Id == model.Turma_Id);
+                Turma? turmaDestino = _db.Turma.FirstOrDefault(t => t.Id == model.Turma_Id);
 
                 if (turmaDestino is null) {
                     return new ResponseModel { Message = "Turma não encontrada" };
@@ -111,7 +111,7 @@ namespace Supera_Monitor_Back.Services {
 
                 // O aluno só pode receber um kit que esteja cadastrado ou nulo
                 if (model.Apostila_Kit_Id is not null) {
-                    bool apostilaKitExists = _db.Apostila_Kits.Any(k => k.Id == model.Apostila_Kit_Id);
+                    bool apostilaKitExists = _db.Apostila_Kit.Any(k => k.Id == model.Apostila_Kit_Id);
 
                     if (!apostilaKitExists) {
                         return new ResponseModel { Message = "Não é possível atualizar um aluno com um kit que não existe" };
@@ -127,17 +127,17 @@ namespace Supera_Monitor_Back.Services {
                 aluno.Created = TimeFunctions.HoraAtualBR();
                 aluno.Deactivated = null;
 
-                _db.Alunos.Add(aluno);
+                _db.Aluno.Add(aluno);
                 _db.SaveChanges();
 
-                List<TurmaAula> aulasTurmaDestino = _db.TurmaAulas
+                List<Aula> aulasTurmaDestino = _db.Aula
                     .Where(x =>
                         x.Turma_Id == aluno.Turma_Id &&
                         x.Data >= TimeFunctions.HoraAtualBR())
                     .ToList();
 
                 // Inserir novos registros deste aluno nas aulas futuras da turma destino
-                foreach (TurmaAula aula in aulasTurmaDestino) {
+                foreach (Aula aula in aulasTurmaDestino) {
                     // Aula não deve registrar aluno se estiver em sua capacidade máxima e nesse caso, -> considera os alunos de reposição <-
                     int AmountOfAlunosInAula = _db.CalendarioAlunoList.Count(a => a.Aula_Id == aula.Id);
 
@@ -145,13 +145,13 @@ namespace Supera_Monitor_Back.Services {
                         continue;
                     }
 
-                    TurmaAulaAluno registro = new() {
+                    Aula_Aluno registro = new() {
                         Aluno_Id = aluno.Id,
-                        Turma_Aula_Id = aula.Id,
+                        Aula_Id = aula.Id,
                         Presente = null,
                     };
 
-                    _db.TurmaAulaAlunos.Add(registro);
+                    _db.Aula_Aluno.Add(registro);
                 }
 
                 _db.SaveChanges();
@@ -171,7 +171,7 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Aluno? aluno = _db.Alunos.Find(model.Id);
+                Aluno? aluno = _db.Aluno.Find(model.Id);
 
                 // Aluno só pode ser atualizado se existir
                 if (aluno == null) {
@@ -179,7 +179,7 @@ namespace Supera_Monitor_Back.Services {
                 }
 
                 // Aluno só pode ser operado em atualizações ou troca de turma se for uma turma válida
-                Turma? turmaDestino = _db.Turmas.FirstOrDefault(t => t.Id == model.Turma_Id);
+                Turma? turmaDestino = _db.Turma.FirstOrDefault(t => t.Id == model.Turma_Id);
 
                 if (turmaDestino is null) {
                     return new ResponseModel { Message = "Turma não encontrada" };
@@ -199,7 +199,7 @@ namespace Supera_Monitor_Back.Services {
 
                 // O aluno só pode receber um kit que esteja cadastrado ou nulo
                 if (model.Apostila_Kit_Id is not null) {
-                    bool apostilaKitExists = _db.Apostila_Kits.Any(k => k.Id == model.Apostila_Kit_Id);
+                    bool apostilaKitExists = _db.Apostila_Kit.Any(k => k.Id == model.Apostila_Kit_Id);
 
                     if (!apostilaKitExists) {
                         return new ResponseModel { Message = "Não é possível atualizar um aluno com um kit que não existe" };
@@ -226,7 +226,7 @@ namespace Supera_Monitor_Back.Services {
                 aluno.Turma_Id = model.Turma_Id;
                 aluno.LastUpdated = TimeFunctions.HoraAtualBR();
 
-                _db.Alunos.Update(aluno);
+                _db.Aluno.Update(aluno);
                 _db.SaveChanges();
 
                 /*
@@ -235,38 +235,38 @@ namespace Supera_Monitor_Back.Services {
                  * 2. Adicionar seu registro nas próximas aulas da turma destino
                 */
                 if (isSwitchingTurma) {
-                    List<TurmaAula> aulasTurmaOriginal = _db.TurmaAulas
+                    List<Aula> aulasTurmaOriginal = _db.Aula
                         .Where(a =>
                             a.Turma_Id == old.Turma_Id &&
                             a.Data >= TimeFunctions.HoraAtualBR())
                         .ToList();
 
                     // Para cada aula da turma original, remover os registros do aluno sendo trocado, se existirem
-                    foreach (TurmaAula aula in aulasTurmaOriginal) {
-                        TurmaAulaAluno? registro = _db.TurmaAulaAlunos
+                    foreach (Aula aula in aulasTurmaOriginal) {
+                        Aula_Aluno? registro = _db.Aula_Aluno
                             .FirstOrDefault(a =>
-                                a.Turma_Aula_Id == aula.Id &&
+                                a.Aula_Id == aula.Id &&
                                 a.Aluno_Id == aluno.Id);
 
                         if (registro is null) {
                             continue;
                         }
 
-                        _db.TurmaAulaAlunos.Remove(registro);
+                        _db.Aula_Aluno.Remove(registro);
                     }
 
-                    List<TurmaAula> aulasTurmaDestino = _db.TurmaAulas
+                    List<Aula> aulasTurmaDestino = _db.Aula
                         .Where(x =>
                             x.Turma_Id == aluno.Turma_Id &&
                             x.Data >= TimeFunctions.HoraAtualBR())
                         .ToList();
 
                     // Inserir novos registros deste aluno nas aulas futuras da turma destino
-                    foreach (TurmaAula aula in aulasTurmaDestino) {
-                        TurmaAulaAluno registro = new() {
+                    foreach (Aula aula in aulasTurmaDestino) {
+                        Aula_Aluno registro = new() {
                             Presente = null,
                             Aluno_Id = aluno.Id,
-                            Turma_Aula_Id = aula.Id,
+                            Aula_Id = aula.Id,
                         };
 
                         // Aula não deve registrar aluno se estiver em sua capacidade máxima e nesse caso, -> considera os alunos de reposição <-
@@ -276,7 +276,7 @@ namespace Supera_Monitor_Back.Services {
                             continue;
                         }
 
-                        _db.TurmaAulaAlunos.Add(registro);
+                        _db.Aula_Aluno.Add(registro);
                     }
                 }
 
@@ -298,7 +298,7 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Aluno? aluno = _db.Alunos.Find(alunoId);
+                Aluno? aluno = _db.Aluno.Find(alunoId);
 
                 if (aluno == null) {
                     return new ResponseModel { Message = "Aluno não encontrado." };
@@ -314,7 +314,7 @@ namespace Supera_Monitor_Back.Services {
 
                 aluno.Deactivated = IsAlunoActive ? TimeFunctions.HoraAtualBR() : null;
 
-                _db.Alunos.Update(aluno);
+                _db.Aluno.Update(aluno);
                 _db.SaveChanges();
 
                 response.Success = true;
@@ -331,7 +331,7 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Aluno? aluno = _db.Alunos.Find(alunoId);
+                Aluno? aluno = _db.Aluno.Find(alunoId);
 
                 if (aluno is null) {
                     return new ResponseModel { Message = "Aluno não encontrado" };
@@ -352,7 +352,7 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Aluno? aluno = _db.Alunos.Find(model.Aluno_Id);
+                Aluno? aluno = _db.Aluno.Find(model.Aluno_Id);
 
                 if (aluno is null) {
                     return new ResponseModel { Message = "Aluno não encontrado" };
@@ -362,8 +362,8 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Não é possível marcar reposição para um aluno inativo" };
                 }
 
-                TurmaAula? aulaSource = _db.TurmaAulas.Find(model.Source_Aula_Id);
-                TurmaAula? aulaDest = _db.TurmaAulas.Find(model.Dest_Aula_Id);
+                Aula? aulaSource = _db.Aula.Find(model.Source_Aula_Id);
+                Aula? aulaDest = _db.Aula.Find(model.Dest_Aula_Id);
 
                 if (aulaSource is null) {
                     return new ResponseModel { Message = "Aula original não encontrada" };
@@ -385,8 +385,8 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "A data da aula destino não pode ultrapassar 30 dias de diferença da aula original" };
                 }
 
-                Turma? turmaSource = _db.Turmas.Find(aulaSource.Turma_Id);
-                Turma? turmaDest = _db.Turmas.Find(aulaDest.Turma_Id);
+                Turma? turmaSource = _db.Turma.Find(aulaSource.Turma_Id);
+                Turma? turmaDest = _db.Turma.Find(aulaDest.Turma_Id);
 
                 if (turmaSource is null) {
                     return new ResponseModel { Message = "Turma original não encontrada" };
@@ -396,13 +396,13 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Turma destino não encontrada" };
                 }
 
-                if (turmaSource.Turma_Tipo_Id != turmaDest.Turma_Tipo_Id) {
-                    return new ResponseModel { Message = "Não é possível repor aulas em uma turma de outro tipo" };
-                }
+                //if (turmaSource.Turma_Tipo_Id != turmaDest.Turma_Tipo_Id) {
+                //    return new ResponseModel { Message = "Não é possível repor aulas em uma turma de outro tipo" };
+                //}
 
-                TurmaAulaAluno? registroSource = _db.TurmaAulaAlunos.FirstOrDefault(r =>
+                Aula_Aluno? registroSource = _db.Aula_Aluno.FirstOrDefault(r =>
                     r.Aluno_Id == model.Aluno_Id &&
-                    r.Turma_Aula_Id == model.Source_Aula_Id);
+                    r.Aula_Id == model.Source_Aula_Id);
 
                 if (registroSource is null) {
                     return new ResponseModel { Message = "Registro do aluno não foi encontrado na aula original" };
@@ -422,17 +422,17 @@ namespace Supera_Monitor_Back.Services {
 
                 // Validations passed
 
-                TurmaAulaAluno registroDest = new() {
+                Aula_Aluno registroDest = new() {
                     Aluno_Id = model.Aluno_Id,
-                    Turma_Aula_Id = model.Dest_Aula_Id,
+                    Aula_Id = model.Dest_Aula_Id,
                     Presente = null,
-                    Reposicao = true,
+                    ReposicaoDe_Aula_Id = model.Source_Aula_Id,
                 };
 
-                _db.TurmaAulaAlunos.Add(registroDest);
+                _db.Aula_Aluno.Add(registroDest);
                 _db.SaveChanges();
 
-                _db.TurmaAulaAlunos.Remove(registroSource);
+                _db.Aula_Aluno.Remove(registroSource);
                 _db.SaveChanges();
 
                 response.Success = true;
@@ -447,13 +447,13 @@ namespace Supera_Monitor_Back.Services {
 
         public List<ApostilaList> GetApostilasByAluno(int alunoId)
         {
-            Aluno? aluno = _db.Alunos.Find(alunoId);
+            Aluno? aluno = _db.Aluno.Find(alunoId);
 
             if (aluno is null) {
                 throw new Exception("Aluno não encontrado");
             }
 
-            List<ApostilaList> apostilas = _db.ApostilaLists
+            List<ApostilaList> apostilas = _db.ApostilaList
                 .Where(a => a.Apostila_Kit_Id == aluno.Apostila_Kit_Id)
                 .ToList();
 
@@ -465,7 +465,7 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Aluno? aluno = _db.Alunos.AsNoTracking().FirstOrDefault(a => a.Id == alunoId);
+                Aluno? aluno = _db.Aluno.AsNoTracking().FirstOrDefault(a => a.Id == alunoId);
 
                 if (aluno is null) {
                     return new ResponseModel { Message = "Aluno não encontrado" };

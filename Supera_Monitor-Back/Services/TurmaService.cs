@@ -16,9 +16,9 @@ namespace Supera_Monitor_Back.Services {
 
         List<TurmaList> GetAll();
 
-        List<TurmaTipoModel> GetTypes();
+        //List<TurmaTipoModel> GetTypes();
         List<AlunoList> GetAllAlunosByTurma(int turmaId);
-        List<AulaVisualizationModel> GetAllPossibleAulasByTurma(int turmaId, DateTime dateReference);
+        //List<AulaVisualizationModel> GetAllPossibleAulasByTurma(int turmaId, DateTime dateReference);
 
     }
 
@@ -54,12 +54,12 @@ namespace Supera_Monitor_Back.Services {
             return turmas;
         }
 
-        public List<TurmaTipoModel> GetTypes()
-        {
-            List<TurmaTipo> types = _db.TurmaTipos.ToList();
+        //public List<TurmaTipoModel> GetTypes()
+        //{
+        //    List<TurmaTipo> types = _db.TurmaTipos.ToList();
 
-            return _mapper.Map<List<TurmaTipoModel>>(types);
-        }
+        //    return _mapper.Map<List<TurmaTipoModel>>(types);
+        //}
 
         public ResponseModel Insert(CreateTurmaRequest model)
         {
@@ -67,14 +67,14 @@ namespace Supera_Monitor_Back.Services {
 
             try {
                 // Não devo poder criar turma com um tipo que não existe
-                bool TurmaTipoExists = _db.TurmaTipos.Any(t => t.Id == model.Turma_Tipo_Id);
+                //bool TurmaTipoExists = _db.TurmaTipos.Any(t => t.Id == model.Turma_Tipo_Id);
 
-                if (!TurmaTipoExists) {
-                    return new ResponseModel { Message = "Este tipo de turma não existe." };
-                }
+                //if (!TurmaTipoExists) {
+                //    return new ResponseModel { Message = "Este tipo de turma não existe." };
+                //}
 
                 // Não devo poder criar turma com um professor que não existe
-                Professor? professor = _db.Professors
+                Professor? professor = _db.Professor
                     .Include(p => p.Account)
                     .FirstOrDefault(p => p.Id == model.Professor_Id);
 
@@ -90,7 +90,7 @@ namespace Supera_Monitor_Back.Services {
                 TimeSpan twoHourInterval = TimeSpan.FromHours(2);
 
                 // Não devo criar uma turma com um professor que já está ocupado nesse dia da semana / horário
-                bool professorHasTimeConflicts = _db.Turmas
+                bool professorHasTimeConflicts = _db.Turma
                 .Where(t =>
                     t.Deactivated == null &&
                     t.Professor_Id == professor.Id &&
@@ -115,7 +115,7 @@ namespace Supera_Monitor_Back.Services {
                 turma.Created = TimeFunctions.HoraAtualBR();
                 turma.Account_Created_Id = _account.Id;
 
-                _db.Turmas.Add(turma);
+                _db.Turma.Add(turma);
                 _db.SaveChanges();
 
                 response.Message = "Turma cadastrada com sucesso";
@@ -133,7 +133,7 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Turma? turma = _db.Turmas.Find(model.Id);
+                Turma? turma = _db.Turma.Find(model.Id);
 
                 // Não devo poder atualizar uma turma que não existe
                 if (turma == null) {
@@ -141,14 +141,14 @@ namespace Supera_Monitor_Back.Services {
                 }
 
                 // Não devo poder atualizar turma com um tipo que não existe
-                bool TurmaTipoExists = _db.TurmaTipos.Any(t => t.Id == model.Turma_Tipo_Id);
+                //bool TurmaTipoExists = _db.TurmaTipos.Any(t => t.Id == model.Turma_Tipo_Id);
 
-                if (!TurmaTipoExists) {
-                    return new ResponseModel { Message = "Este tipo de turma não existe." };
-                }
+                //if (!TurmaTipoExists) {
+                //    return new ResponseModel { Message = "Este tipo de turma não existe." };
+                //}
 
                 // Não devo poder atualizar turma com um professor que não existe
-                Professor? professor = _db.Professors
+                Professor? professor = _db.Professor
                     .Include(p => p.Account)
                     .FirstOrDefault(p => p.Id == model.Professor_Id);
 
@@ -164,7 +164,7 @@ namespace Supera_Monitor_Back.Services {
                 TimeSpan twoHourInterval = TimeSpan.FromHours(2);
 
                 // Não devo criar uma turma com um professor que já está ocupado nesse dia da semana / horário
-                bool professorHasTimeConflicts = _db.Turmas
+                bool professorHasTimeConflicts = _db.Turma
                 .Where(t =>
                     t.Deactivated == null &&
                     t.Professor_Id == professor.Id &&
@@ -188,12 +188,12 @@ namespace Supera_Monitor_Back.Services {
                 turma.DiaSemana = model.DiaSemana;
                 turma.Horario = model.Horario;
                 turma.Professor_Id = model.Professor_Id;
-                turma.Turma_Tipo_Id = model.Turma_Tipo_Id;
+                //turma.Turma_Tipo_Id = model.Turma_Tipo_Id;
                 turma.LastUpdated = TimeFunctions.HoraAtualBR();
                 turma.CapacidadeMaximaAlunos = model.CapacidadeMaximaAlunos;
                 turma.Unidade_Id = model.Unidade_Id;
 
-                _db.Turmas.Update(turma);
+                _db.Turma.Update(turma);
                 _db.SaveChanges();
 
                 response.Message = "Turma atualizada com sucesso";
@@ -211,7 +211,7 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Turma? turma = _db.Turmas.Find(turmaId);
+                Turma? turma = _db.Turma.Find(turmaId);
 
                 if (turma == null) {
                     return new ResponseModel { Message = "Turma não encontrada" };
@@ -221,7 +221,7 @@ namespace Supera_Monitor_Back.Services {
 
                 response.Object = _db.TurmaList.FirstOrDefault(t => t.Id == turmaId);
 
-                _db.Turmas.Remove(turma);
+                _db.Turma.Remove(turma);
                 _db.SaveChanges();
 
                 response.Message = "Turma excluída com sucesso";
@@ -242,7 +242,7 @@ namespace Supera_Monitor_Back.Services {
 
         public ResponseModel ToggleDeactivate(int turmaId, string ipAddress)
         {
-            Turma? turma = _db.Turmas.Find(turmaId);
+            Turma? turma = _db.Turma.Find(turmaId);
 
             if (turma == null) {
                 return new ResponseModel { Message = "Turma não encontrada." };
@@ -258,55 +258,13 @@ namespace Supera_Monitor_Back.Services {
 
             turma.Deactivated = IsTurmaActive ? TimeFunctions.HoraAtualBR() : null;
 
-            _db.Turmas.Update(turma);
+            _db.Turma.Update(turma);
             _db.SaveChanges();
 
             return new ResponseModel {
                 Success = true,
                 Object = _db.TurmaList.AsNoTracking().FirstOrDefault(t => t.Id == turma.Id),
             };
-        }
-
-        public List<AulaVisualizationModel> GetAllPossibleAulasByTurma(int turmaId, DateTime dateReference)
-        {
-            try {
-                Turma? turma = _db.Turmas.Find(turmaId);
-
-                if (turma == null) {
-                    throw new Exception("Turma não encontrada.");
-                }
-
-                // Busca todas as aulas existentes para a turma no mês de referência
-                List<AulaList> aulas = _db.AulaList
-                    .Where(a => a.Turma_Id == turmaId && a.Data.Month == dateReference.Month)
-                    .ToList();
-
-                DateTime monthStart = new(dateReference.Year, dateReference.Month, 1);
-                DateTime monthEnd = monthStart.AddMonths(1).AddDays(-1);
-
-                DayOfWeek diaSemana = ( DayOfWeek )turma.DiaSemana;
-                TimeSpan horario = turma.Horario ?? throw new Exception("Turma não tem um horário definido.");
-
-                List<AulaVisualizationModel> aulasPossiveis = new();
-
-                // Calcula todas aulas no mês de referência, se existir uma aula insere o aulaId, senão é uma pseudo-aula, deixando nulo
-                for (DateTime date = monthStart ; date <= monthEnd ; date = date.AddDays(1)) {
-                    if (date.DayOfWeek == diaSemana) {
-                        DateTime aulaDate = date + horario;
-
-                        AulaList? aulaExistente = aulas.FirstOrDefault(a => a.Data.Date == aulaDate.Date);
-
-                        aulasPossiveis.Add(new AulaVisualizationModel {
-                            Aula_Id = aulaExistente?.Id,
-                            Data = aulaDate,
-                        });
-                    }
-                }
-
-                return aulasPossiveis;
-            } catch (Exception ex) {
-                throw new Exception("Falha ao buscar todas possíveis aulas: " + ex.ToString());
-            }
         }
     }
 }

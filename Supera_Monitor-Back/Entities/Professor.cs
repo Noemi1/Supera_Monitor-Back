@@ -3,23 +3,23 @@
 public partial class Professor {
     public int Id { get; set; }
 
+    public int Account_Id { get; set; }
+
+    public int? Professor_NivelCertificacao_Id { get; set; }
+
     public DateTime DataInicio { get; set; }
 
-    public string CorLegenda { get; set; } = string.Empty;
+    public string CorLegenda { get; set; } = null!;
 
-    public int Account_Id { get; set; }
+    public DateTime? DataNascimento { get; set; }
 
     public virtual Account Account { get; set; } = null!;
 
-    public int? Professor_NivelAbaco_Id { get; set; }
+    public virtual ICollection<Aula> Aula { get; set; } = new List<Aula>();
 
-    public virtual Professor_NivelAbaco? Professor_NivelAbaco { get; set; }
+    public virtual ICollection<Professor_AgendaPedagogica_Rel> Professor_AgendaPedagogica_Rel { get; set; } = new List<Professor_AgendaPedagogica_Rel>();
 
-    public int? Professor_NivelAH_Id { get; set; }
+    public virtual Professor_NivelCertificacao? Professor_NivelCertificacao { get; set; }
 
-    public virtual Professor_NivelAH? Professor_NivelAH { get; set; }
-
-    public virtual ICollection<TurmaAula> Turma_Aulas { get; set; } = new List<TurmaAula>();
-
-    public virtual ICollection<Turma> Turmas { get; set; } = new List<Turma>();
+    public virtual ICollection<Turma> Turma { get; set; } = new List<Turma>();
 }

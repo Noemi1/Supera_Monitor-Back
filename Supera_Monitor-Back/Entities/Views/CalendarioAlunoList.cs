@@ -34,6 +34,8 @@
 
         public int? NumeroPaginaAH { get; set; }
 
+        public string? Observacao { get; set; }
+
         public bool FlagAlunoNovo => false;
     }
 }

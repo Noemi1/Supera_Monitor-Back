@@ -46,8 +46,8 @@ namespace Supera_Monitor_Back.Services {
 
         public AccountResponse Get(int accountId)
         {
-            Account? account = _db.Accounts
-                .Include(acc => acc.Account_Role)
+            Account? account = _db.Account
+                .Include(acc => acc.Role)
                 .FirstOrDefault(acc => acc.Id == accountId);
 
             if (account == null) {
@@ -68,14 +68,14 @@ namespace Supera_Monitor_Back.Services {
 
         public List<AccountRoleModel> GetRoles()
         {
-            List<AccountRole> roles = _db.AccountRoles.ToList();
+            List<AccountRole> roles = _db.AccountRole.ToList();
 
             return _mapper.Map<List<AccountRoleModel>>(roles);
         }
 
         public ResponseModel Insert(CreateAccountRequest model, string origin)
         {
-            Account? account = _db.Accounts.FirstOrDefault(acc => acc.Email == model.Email);
+            Account? account = _db.Account.FirstOrDefault(acc => acc.Email == model.Email);
 
             if (account != null) {
                 return new ResponseModel { Message = "Este e-mail já está em uso." };
@@ -93,7 +93,7 @@ namespace Supera_Monitor_Back.Services {
             (string randomPassword, string passwordHash) = Utils.GenerateRandomHashedPassword();
             account.PasswordHash = passwordHash;
 
-            _db.Accounts.Add(account);
+            _db.Account.Add(account);
             _db.SaveChanges();
 
             SendVerificationEmail(account, origin, randomPassword);
@@ -107,13 +107,13 @@ namespace Supera_Monitor_Back.Services {
 
         public ResponseModel Update(UpdateAccountRequest model)
         {
-            Account? account = _db.Accounts.Find(model.Id);
+            Account? account = _db.Account.Find(model.Id);
 
             if (account == null) {
                 return new ResponseModel { Message = "Conta não encontrada." };
             }
 
-            var emailIsAlreadyTaken = _db.Accounts.Any(acc => acc.Email == model.Email && acc.Id != model.Id);
+            var emailIsAlreadyTaken = _db.Account.Any(acc => acc.Email == model.Email && acc.Id != model.Id);
 
             if (emailIsAlreadyTaken) {
                 return new ResponseModel { Message = "Este e-mail já está em uso." };
@@ -141,7 +141,7 @@ namespace Supera_Monitor_Back.Services {
 
             AccountList? old = _db.AccountList.AsNoTracking().FirstOrDefault(accList => accList.Id == account.Id);
 
-            _db.Accounts.Update(account);
+            _db.Account.Update(account);
             _db.SaveChanges();
 
             return new ResponseModel {
@@ -154,9 +154,9 @@ namespace Supera_Monitor_Back.Services {
 
         public ResponseModel Delete(int accountId)
         {
-            Account? account = _db.Accounts
+            Account? account = _db.Account
                 .Include(acc => acc.AccountRefreshToken)
-                .Include(acc => acc.Account_Role)
+                .Include(acc => acc.Role)
                 .FirstOrDefault(acc => acc.Id == accountId);
 
             if (account == null) {
@@ -175,9 +175,9 @@ namespace Supera_Monitor_Back.Services {
 
             AccountList? logObject = _db.AccountList.FirstOrDefault(acc => acc.Id == account.Id);
 
-            _db.AccountRefreshTokens.RemoveRange(account.AccountRefreshToken);
+            _db.AccountRefreshToken.RemoveRange(account.AccountRefreshToken);
 
-            _db.Accounts.Remove(account);
+            _db.Account.Remove(account);
             _db.SaveChanges();
 
             return new ResponseModel {
@@ -202,8 +202,8 @@ namespace Supera_Monitor_Back.Services {
 
         public ResponseModel ResetPassword(int accountId)
         {
-            Account? account = _db.Accounts
-                 .Include(x => x.Account_Role)
+            Account? account = _db.Account
+                 .Include(x => x.Role)
                  .FirstOrDefault(x => x.Id == accountId);
 
             if (account == null) {
@@ -218,7 +218,7 @@ namespace Supera_Monitor_Back.Services {
             account.PasswordHash = passwordHash;
             account.PasswordReset = TimeFunctions.HoraAtualBR();
 
-            _db.Accounts.Update(account);
+            _db.Account.Update(account);
             _db.SaveChanges();
 
             _emailService.SendEmail(
@@ -235,7 +235,7 @@ namespace Supera_Monitor_Back.Services {
 
         public ResponseModel ToggleDeactivate(int accountId, string ipAddress)
         {
-            Account? account = _db.Accounts
+            Account? account = _db.Account
                             .Include(acc => acc.AccountRefreshToken)
                             .FirstOrDefault(acc => acc.Id == accountId);
 
@@ -257,7 +257,7 @@ namespace Supera_Monitor_Back.Services {
 
             account.Deactivated = IsAccountActive ? TimeFunctions.HoraAtualBR() : null;
 
-            _db.Accounts.Update(account);
+            _db.Account.Update(account);
             _db.SaveChanges();
 
             // If user is editing his own account

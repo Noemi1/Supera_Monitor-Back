@@ -1,4 +1,5 @@
-﻿
+﻿namespace Supera_Monitor_Back.Entities;
+
 public partial class AspNetUser {
     public string Id { get; set; } = null!;
 

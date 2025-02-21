@@ -6,77 +6,94 @@ namespace Supera_Monitor_Back.Helpers {
     public partial class DataContext : DbContext {
         public DataContext(DbContextOptions<DataContext> options) : base(options) { }
 
-        public virtual DbSet<Account> Accounts { get; set; }
+        public virtual DbSet<Account> Account { get; set; }
 
         public virtual DbSet<AccountList> AccountList { get; set; }
 
-        public virtual DbSet<AccountRefreshToken> AccountRefreshTokens { get; set; }
+        public virtual DbSet<AccountRefreshToken> AccountRefreshToken { get; set; }
 
-        public virtual DbSet<AccountRole> AccountRoles { get; set; }
+        public virtual DbSet<AccountRole> AccountRole { get; set; }
 
-        public virtual DbSet<Aluno> Alunos { get; set; }
+        public virtual DbSet<Aluno> Aluno { get; set; }
 
-        public virtual DbSet<Apostila> Apostilas { get; set; }
+        public virtual DbSet<AlunoList> AlunoList { get; set; }
 
-        public virtual DbSet<ApostilaList> ApostilaLists { get; set; }
+        public virtual DbSet<Aluno_Restricao> Aluno_Restricao { get; set; }
 
-        public virtual DbSet<Apostila_Kit> Apostila_Kits { get; set; }
+        public virtual DbSet<Aluno_Restricao_Rel> Aluno_Restricao_Rel { get; set; }
 
-        public virtual DbSet<Apostila_Kit_Rel> Apostila_Kit_Rels { get; set; }
+        public virtual DbSet<Apostila> Apostila { get; set; }
 
-        public virtual DbSet<Apostila_Tipo> Apostila_Tipos { get; set; }
+        public virtual DbSet<ApostilaList> ApostilaList { get; set; }
 
-        public virtual DbSet<AspNetUser> AspNetUsers { get; set; }
+        public virtual DbSet<Apostila_Kit> Apostila_Kit { get; set; }
+
+        public virtual DbSet<Apostila_Kit_Rel> Apostila_Kit_Rel { get; set; }
+
+        public virtual DbSet<Apostila_Tipo> Apostila_Tipo { get; set; }
+
+        public virtual DbSet<AspNetUser> AspNetUser { get; set; }
+
+        public virtual DbSet<Aula> Aula { get; set; }
+
+        public virtual DbSet<AulaList> AulaList { get; set; }
+
+        public virtual DbSet<Aula_Aluno> Aula_Aluno { get; set; }
+
+        public virtual DbSet<Aula_ListaEspera> Aula_ListaEspera { get; set; }
 
         public virtual DbSet<CalendarioAlunoList> CalendarioAlunoList { get; set; }
 
         public virtual DbSet<CalendarioList> CalendarioList { get; set; }
 
-        public virtual DbSet<Log> Logs { get; set; }
+        public virtual DbSet<Feriado> Feriado { get; set; }
 
-        public virtual DbSet<LogError> LogErrors { get; set; }
+        public virtual DbSet<Jornada> Jornada { get; set; }
+
+        public virtual DbSet<Log> Log { get; set; }
+
+        public virtual DbSet<LogError> LogError { get; set; }
 
         public virtual DbSet<LogList> LogList { get; set; }
 
-        public virtual DbSet<Professor> Professors { get; set; }
+        public virtual DbSet<PerfilCognitivo> PerfilCognitivo { get; set; }
 
-        public virtual DbSet<Turma> Turmas { get; set; }
-
-        public virtual DbSet<TurmaAula> TurmaAulas { get; set; }
-
-        public virtual DbSet<TurmaAulaAluno> TurmaAulaAlunos { get; set; }
-
-        public virtual DbSet<TurmaList> TurmaList { get; set; }
-
-        public virtual DbSet<TurmaTipo> TurmaTipos { get; set; }
-
-        public virtual DbSet<AlunoList> AlunoList { get; set; }
-
-        public virtual DbSet<AulaList> AulaList { get; set; }
-
-        public virtual DbSet<ProfessorList> ProfessorList { get; set; }
-
-        public virtual DbSet<Professor_NivelAH> Professor_NivelAH { get; set; }
-
-        public virtual DbSet<Professor_NivelAbaco> Professor_NivelAbaco { get; set; }
-
-        public virtual DbSet<Pessoa> Pessoas { get; set; }
+        public virtual DbSet<Pessoa> Pessoa { get; set; }
 
         public virtual DbSet<Pessoa_FaixaEtaria> Pessoa_FaixaEtaria { get; set; }
 
-        public virtual DbSet<Pessoa_Geracao> Pessoa_Geracoes { get; set; }
+        public virtual DbSet<Pessoa_Geracao> Pessoa_Geracao { get; set; }
 
-        public virtual DbSet<Pessoa_Origem> Pessoa_Origems { get; set; }
+        public virtual DbSet<Pessoa_Origem> Pessoa_Origem { get; set; }
 
-        public virtual DbSet<Pessoa_Origem_Canal> Pessoa_Origem_Canals { get; set; }
+        public virtual DbSet<Pessoa_Origem_Canal> Pessoa_Origem_Canal { get; set; }
 
         public virtual DbSet<Pessoa_Origem_Categoria> Pessoa_Origem_Categoria { get; set; }
 
-        public virtual DbSet<Pessoa_Origem_Investimento> Pessoa_Origem_Investimentos { get; set; }
+        public virtual DbSet<Pessoa_Origem_Investimento> Pessoa_Origem_Investimento { get; set; }
 
-        public virtual DbSet<Pessoa_Sexo> Pessoa_Sexos { get; set; }
+        public virtual DbSet<Pessoa_Sexo> Pessoa_Sexo { get; set; }
 
-        public virtual DbSet<Pessoa_Status> Pessoa_Statuses { get; set; }
+        public virtual DbSet<Pessoa_Status> Pessoa_Status { get; set; }
+
+        public virtual DbSet<Professor> Professor { get; set; }
+
+        public virtual DbSet<ProfessorList> ProfessorList { get; set; }
+
+        public virtual DbSet<Professor_AgendaPedagogica> Professor_AgendaPedagogica { get; set; }
+
+        public virtual DbSet<Professor_AgendaPedagogica_Rel> Professor_AgendaPedagogica_Rel { get; set; }
+
+        public virtual DbSet<Professor_NivelCertificacao> Professor_NivelCertificacao { get; set; }
+
+        public virtual DbSet<Sala> Sala { get; set; }
+
+        public virtual DbSet<Turma> Turma { get; set; }
+
+        public virtual DbSet<TurmaList> TurmaList { get; set; }
+
+        public virtual DbSet<Turma_PerfilCognitivo_Rel> Turma_PerfilCognitivo_Rel { get; set; }
+
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -96,6 +113,7 @@ namespace Supera_Monitor_Back.Helpers {
                 );
             });
         }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Account>(entity => {
@@ -109,7 +127,7 @@ namespace Supera_Monitor_Back.Helpers {
 
                 entity.HasOne(d => d.Account_Created).WithMany(p => p.Created_Account).HasForeignKey(d => d.Account_Created_Id);
 
-                entity.HasOne(d => d.Account_Role).WithMany(p => p.Accounts).HasForeignKey(d => d.Role_Id);
+                entity.HasOne(d => d.Role).WithMany(p => p.Accounts).HasForeignKey(d => d.Role_Id);
             });
 
             modelBuilder.Entity<AccountList>(entity => {
@@ -138,6 +156,8 @@ namespace Supera_Monitor_Back.Helpers {
                     .HasMaxLength(128)
                     .IsUnicode(false);
                 entity.Property(e => e.Created).HasColumnType("datetime");
+                entity.Property(e => e.DataFimVigencia).HasColumnType("date");
+                entity.Property(e => e.DataInicioVigencia).HasColumnType("date");
                 entity.Property(e => e.Deactivated).HasColumnType("datetime");
                 entity.Property(e => e.LastUpdated).HasColumnType("datetime");
 
@@ -199,6 +219,28 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.Property(e => e.Turma)
                     .HasMaxLength(100)
                     .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Aluno_Restricao>(entity => {
+                entity.ToTable("Aluno_Restricao");
+
+                entity.Property(e => e.Restricao)
+                    .HasMaxLength(250)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Aluno_Restricao_Rel>(entity => {
+                entity.ToTable("Aluno_Restricao_Rel");
+
+                entity.HasOne(d => d.Aluno).WithMany(p => p.Aluno_Restricao_Rel)
+                    .HasForeignKey(d => d.Aluno_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Aluno_Restricao_Rel_Aluno");
+
+                entity.HasOne(d => d.Restricao).WithMany(p => p.Aluno_Restricao_Rel)
+                    .HasForeignKey(d => d.Restricao_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Aluno_Restricao_Rel_Aluno_Restricao");
             });
 
             modelBuilder.Entity<Apostila>(entity => {
@@ -280,15 +322,98 @@ namespace Supera_Monitor_Back.Helpers {
                     .IsUnicode(false);
             });
 
-            modelBuilder.Entity<AulaList>(entity => {
-                entity
-                    .HasNoKey()
-                    .ToView("AulaList");
+            modelBuilder.Entity<Aula>(entity => {
+                entity.HasKey(e => e.Id).HasName("PK_Turma_Aula");
 
-                entity.Property(e => e.Data).HasColumnType("date");
-                entity.Property(e => e.Turma)
-                    .HasMaxLength(100)
-                    .IsUnicode(false);
+                entity.ToTable("Aula");
+
+                entity.Property(e => e.Created).HasColumnType("datetime");
+                entity.Property(e => e.Data).HasColumnType("datetime");
+                entity.Property(e => e.Deactivated).HasColumnType("datetime");
+                entity.Property(e => e.LastUpdated).HasColumnType("datetime");
+                entity.Property(e => e.Observacao).IsUnicode(false);
+
+                entity.HasOne(d => d.Account_Created).WithMany(p => p.Aula)
+                    .HasForeignKey(d => d.Account_Created_Id)
+                    .HasConstraintName("FK_Aula_Account");
+
+                entity.HasOne(d => d.Professor).WithMany(p => p.Aula)
+                    .HasForeignKey(d => d.Professor_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Aula_Professor");
+
+                entity.HasOne(d => d.ReposicaoDe_Aula).WithMany(p => p.InverseReposicaoDe_Aula)
+                    .HasForeignKey(d => d.ReposicaoDe_Aula_Id)
+                    .HasConstraintName("FK_Aula_ReposicaoDe");
+
+                entity.HasOne(d => d.Sala).WithMany(p => p.Aulas)
+                    .HasForeignKey(d => d.Sala_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Aula_Sala");
+
+                entity.HasOne(d => d.Turma).WithMany(p => p.Aulas)
+                    .HasForeignKey(d => d.Turma_Id)
+                    .HasConstraintName("FK_Aula_Turma");
+            });
+
+            modelBuilder.Entity<Aula_Aluno>(entity => {
+                entity.HasKey(e => e.Id).HasName("PK_Turma_Aula_Aluno");
+
+                entity.ToTable("Aula_Aluno");
+
+                entity.Property(e => e.Observacao).IsUnicode(false);
+
+                entity.HasOne(d => d.Aluno).WithMany(p => p.Aula_Aluno)
+                    .HasForeignKey(d => d.Aluno_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Aula_Aluno_Aluno");
+
+                entity.HasOne(d => d.Apostila_AH).WithMany(p => p.Aula_AlunoApostila_AHs)
+                    .HasForeignKey(d => d.Apostila_AH_Id)
+                    .HasConstraintName("FK_Aula_Aluno_Apostila_AH");
+
+                entity.HasOne(d => d.Apostila_Abaco).WithMany(p => p.Aula_AlunoApostila_Abacos)
+                    .HasForeignKey(d => d.Apostila_Abaco_Id)
+                    .HasConstraintName("FK_Aula_Aluno_Apostila_Abaco");
+
+                entity.HasOne(d => d.ReposicaoDe_Aula).WithMany(p => p.Aula_Aluno)
+                    .HasForeignKey(d => d.ReposicaoDe_Aula_Id)
+                    .HasConstraintName("FK_Aula_Aluno_Aula");
+            });
+
+            modelBuilder.Entity<Aula_ListaEspera>(entity => {
+                entity.ToTable("Aula_ListaEspera");
+
+                entity.Property(e => e.Created).HasColumnType("datetime");
+
+                entity.HasOne(d => d.Account_Created).WithMany(p => p.Aula_ListaEspera)
+                    .HasForeignKey(d => d.Account_Created_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Aula_ListaEspera_AccountCreated");
+
+                entity.HasOne(d => d.Aluno).WithMany(p => p.Aula_ListaEspera)
+                    .HasForeignKey(d => d.Aluno_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Aula_ListaEspera_Aluno");
+
+                entity.HasOne(d => d.Aula).WithMany(p => p.Aula_ListaEspera)
+                    .HasForeignKey(d => d.Aula_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Aula_ListaEspera_Aula");
+            });
+
+            modelBuilder.Entity<Aula_PerfilCognitivo_Rel>(entity => {
+                entity.ToTable("Aula_PerfilCognitivo_Rel");
+
+                entity.HasOne(d => d.Aula).WithMany(p => p.Aula_PerfilCognitivo_Rel)
+                    .HasForeignKey(d => d.Aula_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Aula_PerfilCognitivo_Rel_Aula");
+
+                entity.HasOne(d => d.PerfilCognitivo).WithMany(p => p.Aula_PerfilCognitivo_Rel)
+                    .HasForeignKey(d => d.PerfilCognitivo_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Aula_PerfilCognitivo_Rel_PerfilCognitivo");
             });
 
             modelBuilder.Entity<CalendarioAlunoList>(entity => {
@@ -309,6 +434,7 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.Property(e => e.Kit)
                     .HasMaxLength(50)
                     .IsUnicode(false);
+                entity.Property(e => e.Observacao).IsUnicode(false);
                 entity.Property(e => e.Turma)
                     .HasMaxLength(100)
                     .IsUnicode(false);
@@ -327,8 +453,24 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.Property(e => e.Turma)
                     .HasMaxLength(100)
                     .IsUnicode(false);
-                entity.Property(e => e.Turma_Tipo)
+            });
+
+            modelBuilder.Entity<Feriado>(entity => {
+                entity.ToTable("Feriado");
+
+                entity.Property(e => e.Data).HasColumnType("datetime");
+                entity.Property(e => e.Descricao)
                     .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Jornada>(entity => {
+                entity.HasNoKey();
+
+                entity.Property(e => e.DataFim).HasColumnType("datetime");
+                entity.Property(e => e.DataInicio).HasColumnType("datetime");
+                entity.Property(e => e.Tema)
+                    .HasMaxLength(250)
                     .IsUnicode(false);
             });
 
@@ -337,7 +479,7 @@ namespace Supera_Monitor_Back.Helpers {
 
                 entity.HasIndex(e => e.Account_Id, "IX_Log_Account_Id");
 
-                entity.HasOne(d => d.Account).WithMany(p => p.Logs).HasForeignKey(d => d.Account_Id);
+                entity.HasOne(d => d.Account).WithMany(p => p.Log).HasForeignKey(d => d.Account_Id);
             });
 
             modelBuilder.Entity<LogError>(entity => {
@@ -348,6 +490,14 @@ namespace Supera_Monitor_Back.Helpers {
                 entity
                     .HasNoKey()
                     .ToView("LogList");
+            });
+
+            modelBuilder.Entity<PerfilCognitivo>(entity => {
+                entity.ToTable("PerfilCognitivo");
+
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<Pessoa>(entity => {
@@ -400,7 +550,7 @@ namespace Supera_Monitor_Back.Helpers {
                     .HasForeignKey(d => d.Pessoa_Sexo_Id)
                     .HasConstraintName("FK_Pessoa_Pessoa_Sexo");
 
-                entity.HasOne(d => d.Pessoa_Status).WithMany(p => p.Pessoas)
+                entity.HasOne(d => d.Pessoa_Status).WithMany(p => p.Pessoa)
                     .HasForeignKey(d => d.Pessoa_Status_Id)
                     .HasConstraintName("FK_Pessoa_Pessoa_Status");
             });
@@ -484,19 +634,16 @@ namespace Supera_Monitor_Back.Helpers {
                     .HasMaxLength(20)
                     .IsUnicode(false);
                 entity.Property(e => e.DataInicio).HasColumnType("date");
+                entity.Property(e => e.DataNascimento).HasColumnType("date");
 
-                entity.HasOne(d => d.Account).WithMany(p => p.Professors)
+                entity.HasOne(d => d.Account).WithMany(p => p.Professor)
                     .HasForeignKey(d => d.Account_Id)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Professor_Account");
 
-                entity.HasOne(d => d.Professor_NivelAH).WithMany(p => p.Professors)
-                    .HasForeignKey(d => d.Professor_NivelAH_Id)
-                    .HasConstraintName("FK_Professor_Professor_NivelAH");
-
-                entity.HasOne(d => d.Professor_NivelAbaco).WithMany(p => p.Professors)
-                    .HasForeignKey(d => d.Professor_NivelAbaco_Id)
-                    .HasConstraintName("FK_Professor_Professor_NivelAbaco");
+                entity.HasOne(d => d.Professor_NivelCertificacao).WithMany(p => p.Professor)
+                    .HasForeignKey(d => d.Professor_NivelCertificacao_Id)
+                    .HasConstraintName("FK_Professor_Professor_NivelCertificacao");
             });
 
             modelBuilder.Entity<ProfessorList>(entity => {
@@ -504,29 +651,48 @@ namespace Supera_Monitor_Back.Helpers {
                     .HasNoKey()
                     .ToView("ProfessorList");
 
+                entity.Property(e => e.CorLegenda)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
                 entity.Property(e => e.DataInicio).HasColumnType("date");
-                entity.Property(e => e.NivelAH)
-                    .HasMaxLength(100)
-                    .IsUnicode(false);
-                entity.Property(e => e.NivelAbaco)
-                    .HasMaxLength(100)
+                entity.Property(e => e.DataNascimento).HasColumnType("date");
+            });
+
+            modelBuilder.Entity<Professor_AgendaPedagogica>(entity => {
+                entity.HasKey(e => e.Id).HasName("PK_AgendaPedagogica");
+
+                entity.ToTable("Professor_AgendaPedagogica");
+
+                entity.Property(e => e.Data).HasColumnType("date");
+                entity.Property(e => e.Descricao)
+                    .HasMaxLength(250)
                     .IsUnicode(false);
             });
 
-            modelBuilder.Entity<Professor_NivelAH>(entity => {
-                entity.ToTable("Professor_NivelAH");
+            modelBuilder.Entity<Professor_AgendaPedagogica_Rel>(entity => {
+                entity.ToTable("Professor_AgendaPedagogica_Rel");
+
+                entity.HasOne(d => d.AgendaPedagogica).WithMany(p => p.Professor_AgendaPedagogica_Rel)
+                    .HasForeignKey(d => d.AgendaPedagogica_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Professor_AgendaPedagogica_Rel_Professor_AgendaPedagogica");
+
+                entity.HasOne(d => d.Professor).WithMany(p => p.Professor_AgendaPedagogica_Rel)
+                    .HasForeignKey(d => d.Professor_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Professor_AgendaPedagogica_Rel_Professor");
+            });
+
+            modelBuilder.Entity<Professor_NivelCertificacao>(entity => {
+                entity.ToTable("Professor_NivelCertificacao");
 
                 entity.Property(e => e.Descricao)
                     .HasMaxLength(100)
                     .IsUnicode(false);
             });
 
-            modelBuilder.Entity<Professor_NivelAbaco>(entity => {
-                entity.ToTable("Professor_NivelAbaco");
-
-                entity.Property(e => e.Descricao)
-                    .HasMaxLength(100)
-                    .IsUnicode(false);
+            modelBuilder.Entity<Sala>(entity => {
+                entity.ToTable("Sala");
             });
 
             modelBuilder.Entity<Turma>(entity => {
@@ -536,18 +702,18 @@ namespace Supera_Monitor_Back.Helpers {
                     .HasMaxLength(100)
                     .IsUnicode(false);
 
-                entity.HasOne(d => d.Account_Created).WithMany(p => p.Turmas)
+                entity.HasOne(d => d.Account_Created).WithMany(p => p.Turma)
                     .HasForeignKey(d => d.Account_Created_Id)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Turma_Account");
 
-                entity.HasOne(d => d.Professor).WithMany(p => p.Turmas)
+                entity.HasOne(d => d.Professor).WithMany(p => p.Turma)
                     .HasForeignKey(d => d.Professor_Id)
                     .HasConstraintName("FK_Turma_Professor");
 
-                entity.HasOne(d => d.Turma_Tipo).WithMany(p => p.Turmas)
-                    .HasForeignKey(d => d.Turma_Tipo_Id)
-                    .HasConstraintName("FK_Turma_Turma_Tipo");
+                entity.HasOne(d => d.Sala).WithMany(p => p.Turmas)
+                    .HasForeignKey(d => d.Sala_Id)
+                    .HasConstraintName("FK_Turma_Sala");
             });
 
             modelBuilder.Entity<TurmaList>(entity => {
@@ -561,59 +727,25 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.Property(e => e.Nome)
                     .HasMaxLength(100)
                     .IsUnicode(false);
-                entity.Property(e => e.Turma_Tipo)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
             });
 
-            modelBuilder.Entity<TurmaAula>(entity => {
-                entity.ToTable("Turma_Aula");
+            modelBuilder.Entity<Turma_PerfilCognitivo_Rel>(entity => {
+                entity.ToTable("Turma_PerfilCognitivo_Rel");
 
-                entity.Property(e => e.Data).HasColumnType("datetime");
-                entity.Property(e => e.Observacao).IsUnicode(false);
-
-                entity.HasOne(d => d.Professor).WithMany(p => p.Turma_Aulas)
-                    .HasForeignKey(d => d.Professor_Id)
+                entity.HasOne(d => d.PerfilCognitivo).WithMany(p => p.Turma_PerfilCognitivo_Rel)
+                    .HasForeignKey(d => d.PerfilCognitivo_Id)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Turma_Aula_Professor");
+                    .HasConstraintName("FK_Turma_PerfilCognitivo_Rel_PerfilCognitivo");
 
-                entity.HasOne(d => d.Turma).WithMany(p => p.Turma_Aulas)
+                entity.HasOne(d => d.Turma).WithMany(p => p.Turma_PerfilCognitivo_Rel)
                     .HasForeignKey(d => d.Turma_Id)
-                    .HasConstraintName("FK_Turma_Aula_Turma");
-            });
-
-            modelBuilder.Entity<TurmaAulaAluno>(entity => {
-                entity.ToTable("Turma_Aula_Aluno");
-
-                entity.HasOne(d => d.Aluno).WithMany(p => p.Turma_Aula_Alunos)
-                    .HasForeignKey(d => d.Aluno_Id)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Turma_Aula_Aluno_Aluno");
-
-                entity.HasOne(d => d.Apostila_AH).WithMany(p => p.Turma_Aula_AlunoApostila_AHs)
-                    .HasForeignKey(d => d.Apostila_AH_Id)
-                    .HasConstraintName("FK_Turma_Aula_Aluno_Apostila_AH");
-
-                entity.HasOne(d => d.Apostila_Abaco).WithMany(p => p.Turma_Aula_AlunoApostila_Abacos)
-                    .HasForeignKey(d => d.Apostila_Abaco_Id)
-                    .HasConstraintName("FK_Turma_Aula_Aluno_Apostila_Abaco");
-
-                entity.HasOne(d => d.Turma_Aula).WithMany(p => p.Turma_Aula_Alunos)
-                    .HasForeignKey(d => d.Turma_Aula_Id)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Turma_Aula_Aluno_Turma_Aula");
-            });
-
-            modelBuilder.Entity<TurmaTipo>(entity => {
-                entity.ToTable("Turma_Tipo");
-
-                entity.Property(e => e.Nome)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
+                    .HasConstraintName("FK_Turma_PerfilCognitivo_Rel_Turma");
             });
 
             OnModelCreatingPartial(modelBuilder);
         }
+
         partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
     }
 }

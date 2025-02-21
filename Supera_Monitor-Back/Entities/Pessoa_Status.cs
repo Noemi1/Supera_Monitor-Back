@@ -5,7 +5,7 @@ public partial class Pessoa_Status {
 
     public string Nome { get; set; } = null!;
 
-    public virtual ICollection<Pessoa> Pessoas { get; set; } = new List<Pessoa>();
+    public virtual ICollection<Pessoa> Pessoa { get; set; } = new List<Pessoa>();
 
     public enum PessoaStatus {
         Matriculado = 5

@@ -49,9 +49,11 @@ namespace Supera_Monitor_Back.Controllers {
         public ActionResult<List<TurmaTipoModel>> GetTypes()
         {
             try {
-                var response = _turmaService.GetTypes();
+                throw new NotImplementedException();
 
-                return Ok(response);
+                //var response = _turmaService.GetTypes();
+
+                //return Ok(response);
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e.Message);
@@ -137,9 +139,10 @@ namespace Supera_Monitor_Back.Controllers {
         public ActionResult<List<AulaVisualizationModel>> GetAllPossibleAulasByTurma(int turmaId, [FromBody] AulaPossibilitiesRequest model)
         {
             try {
-                var response = _turmaService.GetAllPossibleAulasByTurma(turmaId, model.DateReference);
+                //var response = _turmaService.GetAllPossibleAulasByTurma(turmaId, model.DateReference);
 
-                return Ok(response);
+                //return Ok(response);
+                throw new NotImplementedException();
             } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);

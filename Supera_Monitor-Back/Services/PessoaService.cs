@@ -35,21 +35,21 @@ namespace Supera_Monitor_Back.Services {
 
         public List<PessoaGeracaoModel> GetAllGeracoes()
         {
-            List<Pessoa_Geracao> geracoes = _db.Pessoa_Geracoes.ToList();
+            List<Pessoa_Geracao> geracoes = _db.Pessoa_Geracao.ToList();
 
             return _mapper.Map<List<PessoaGeracaoModel>>(geracoes);
         }
 
         public List<PessoaSexoModel> GetAllSexos()
         {
-            List<Pessoa_Sexo> sexos = _db.Pessoa_Sexos.ToList();
+            List<Pessoa_Sexo> sexos = _db.Pessoa_Sexo.ToList();
 
             return _mapper.Map<List<PessoaSexoModel>>(sexos);
         }
 
         public List<PessoaStatusModel> GetAllStatus()
         {
-            List<Pessoa_Status> status = _db.Pessoa_Statuses.ToList();
+            List<Pessoa_Status> status = _db.Pessoa_Status.ToList();
 
             return _mapper.Map<List<PessoaStatusModel>>(status);
         }
@@ -59,7 +59,7 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Pessoa? pessoa = _db.Pessoas.Find(model.Pessoa_Id);
+                Pessoa? pessoa = _db.Pessoa.Find(model.Pessoa_Id);
 
                 if (pessoa == null) {
                     return new ResponseModel { Message = "Pessoa não encontrada" };
@@ -77,7 +77,7 @@ namespace Supera_Monitor_Back.Services {
                 // Else be careful with your requests
                 _mapper.Map(model, pessoa);
 
-                _db.Pessoas.Update(pessoa);
+                _db.Pessoa.Update(pessoa);
                 _db.SaveChanges();
 
                 response.Message = "Pessoa atualizada com sucesso";

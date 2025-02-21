@@ -22,7 +22,7 @@ namespace Supera_Monitor_Back.Helpers {
                 .ForMember(dest => dest.AccountName, source => source.MapFrom(orig => (orig.Account == null ? "" : orig.Account.Name)))
                 .ForMember(dest => dest.AccountEmail, source => source.MapFrom(orig => (orig.Account == null ? "" : orig.Account.Email)));
             CreateMap<AccountRole, AccountRoleModel>();
-            CreateMap<TurmaTipo, TurmaTipoModel>();
+            //CreateMap<TurmaTipo, TurmaTipoModel>();
 
             CreateMap<Account, AccountResponse>();
             CreateMap<Account, AuthenticateResponse>();
@@ -40,8 +40,8 @@ namespace Supera_Monitor_Back.Helpers {
             CreateMap<UpdatePessoaRequest, Pessoa>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Pessoa_Id));
 
-            CreateMap<Professor_NivelAH, NivelModel>();
-            CreateMap<Professor_NivelAbaco, NivelModel>();
+            //CreateMap<Professor_NivelAH, NivelModel>();
+            //CreateMap<Professor_NivelAbaco, NivelModel>();
 
             CreateMap<Pessoa_FaixaEtaria, PessoaFaixaEtariaModel>();
             CreateMap<Pessoa_Geracao, PessoaGeracaoModel>();

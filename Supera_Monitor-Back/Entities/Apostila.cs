@@ -13,7 +13,7 @@ public partial class Apostila {
 
     public virtual ICollection<Apostila_Kit_Rel> Apostila_Kit_Rels { get; set; } = new List<Apostila_Kit_Rel>();
 
-    public virtual ICollection<TurmaAulaAluno> Turma_Aula_AlunoApostila_AHs { get; set; } = new List<TurmaAulaAluno>();
+    public virtual ICollection<Aula_Aluno> Aula_AlunoApostila_AHs { get; set; } = new List<Aula_Aluno>();
 
-    public virtual ICollection<TurmaAulaAluno> Turma_Aula_AlunoApostila_Abacos { get; set; } = new List<TurmaAulaAluno>();
+    public virtual ICollection<Aula_Aluno> Aula_AlunoApostila_Abacos { get; set; } = new List<Aula_Aluno>();
 }

@@ -66,7 +66,7 @@ namespace Supera_Monitor_Back.Controllers {
                 Created = DateTime.Now
             };
 
-            _db.Accounts.Add(account);
+            _db.Account.Add(account);
             _db.SaveChanges();
 
             return Ok("Account created manually");
@@ -119,8 +119,8 @@ namespace Supera_Monitor_Back.Controllers {
                     return Unauthorized(new { message = "Token não encontrado." });
                 }
 
-                Account? account = _db.Accounts.Find(Account.Id);
-                account!.AccountRefreshToken = _db.AccountRefreshTokens
+                Account? account = _db.Account.Find(Account.Id);
+                account!.AccountRefreshToken = _db.AccountRefreshToken
                     .Where(x => x.Account_Id == account.Id)
                     .ToList();
 

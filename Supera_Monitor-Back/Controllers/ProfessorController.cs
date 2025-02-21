@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Professor;
@@ -103,31 +102,31 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
-        [HttpGet("nivel/abaco/all")]
-        public ActionResult<List<Professor_NivelAbaco>> GetAllNiveisAbaco()
-        {
-            try {
-                var response = _professorService.GetAllNiveisAbaco();
+        //[HttpGet("nivel/abaco/all")]
+        //public ActionResult<List<Professor_NivelAbaco>> GetAllNiveisAbaco()
+        //{
+        //    try {
+        //        var response = _professorService.GetAllNiveisAbaco();
 
-                return Ok(response);
-            } catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-                return StatusCode(500, $"Unexpected error: {e.Message}");
-            }
-        }
+        //        return Ok(response);
+        //    } catch (Exception e) {
+        //        _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+        //        return StatusCode(500, $"Unexpected error: {e.Message}");
+        //    }
+        //}
 
-        [HttpGet("nivel/ah/all")]
-        public ActionResult<List<Professor_NivelAH>> GetAllNiveisAh()
-        {
-            try {
-                var response = _professorService.GetAllNiveisAh();
+        //[HttpGet("nivel/ah/all")]
+        //public ActionResult<List<Professor_NivelAH>> GetAllNiveisAh()
+        //{
+        //    try {
+        //        var response = _professorService.GetAllNiveisAh();
 
-                return Ok(response);
-            } catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-                return StatusCode(500, $"Unexpected error: {e.Message}");
-            }
-        }
+        //        return Ok(response);
+        //    } catch (Exception e) {
+        //        _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+        //        return StatusCode(500, $"Unexpected error: {e.Message}");
+        //    }
+        //}
 
         [HttpGet("apostilas/all")]
         public ActionResult<List<ApostilaList>> GetAllApostilas()

@@ -17,8 +17,8 @@ namespace Supera_Monitor_Back.Services {
 
         List<KitResponse> GetAllKits();
         List<ApostilaList> GetAllApostilas();
-        List<NivelModel> GetAllNiveisAh();
-        List<NivelModel> GetAllNiveisAbaco();
+        //List<NivelModel> GetAllNiveisAh();
+        //List<NivelModel> GetAllNiveisAbaco();
     }
 
     public class ProfessorService : IProfessorService {
@@ -62,17 +62,17 @@ namespace Supera_Monitor_Back.Services {
                 };
 
                 // Procurar os níveis passados no request, se existirem, colocar Nivel_Id no professor, senão nular
-                bool NivelAbacoExists = _db.Professor_NivelAbaco.Any(nv => nv.Id == model.Professor_NivelAbaco_Id);
+                //bool NivelAbacoExists = _db.Professor_NivelAbaco.Any(nv => nv.Id == model.Professor_NivelAbaco_Id);
 
-                professor.Professor_NivelAbaco_Id = NivelAbacoExists ? model.Professor_NivelAbaco_Id : null;
+                //professor.Professor_NivelAbaco_Id = NivelAbacoExists ? model.Professor_NivelAbaco_Id : null;
 
-                bool NivelAHExists = _db.Professor_NivelAH.Any(nv => nv.Id == model.Professor_NivelAH_Id);
+                //bool NivelAHExists = _db.Professor_NivelAH.Any(nv => nv.Id == model.Professor_NivelAH_Id);
 
-                professor.Professor_NivelAH_Id = NivelAHExists ? model.Professor_NivelAH_Id : null;
+                //professor.Professor_NivelAH_Id = NivelAHExists ? model.Professor_NivelAH_Id : null;
 
                 // Se for passado um Account_Id no request, busca a conta no banco, senão cria uma e salva
                 if (model.Account_Id != null) {
-                    Account? accountToAssign = _db.Accounts.Find(model.Account_Id);
+                    Account? accountToAssign = _db.Account.Find(model.Account_Id);
 
                     if (accountToAssign == null) {
                         return new ResponseModel { Message = "Conta não encontrada" };
@@ -126,7 +126,7 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Ocorreu algum erro ao criar o professor" };
                 }
 
-                _db.Professors.Add(professor);
+                _db.Professor.Add(professor);
                 _db.SaveChanges();
 
                 response.Message = "Professor cadastrado com sucesso";
@@ -144,13 +144,13 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Professor? professor = _db.Professors.Find(model.Id);
+                Professor? professor = _db.Professor.Find(model.Id);
 
                 if (professor == null) {
                     return new ResponseModel { Message = "Professor não encontrado" };
                 }
 
-                Account? account = _db.Accounts.Find(professor.Account_Id);
+                Account? account = _db.Account.Find(professor.Account_Id);
 
                 if (account == null) {
                     return new ResponseModel { Message = "Conta não encontrada" };
@@ -159,24 +159,24 @@ namespace Supera_Monitor_Back.Services {
                 response.OldObject = _db.ProfessorList.SingleOrDefault(p => p.Id == professor.Id);
 
                 // Procurar os níveis passados no request, se existirem, colocar Nivel_Id no professor, senão nular
-                bool NivelAbacoExists = _db.Professor_NivelAbaco.Any(nv => nv.Id == model.Professor_NivelAbaco_Id);
+                //bool NivelAbacoExists = _db.Professor_NivelAbaco.Any(nv => nv.Id == model.Professor_NivelAbaco_Id);
 
-                professor.Professor_NivelAbaco_Id = NivelAbacoExists ? model.Professor_NivelAbaco_Id : null;
+                //professor.Professor_NivelAbaco_Id = NivelAbacoExists ? model.Professor_NivelAbaco_Id : null;
 
-                bool NivelAHExists = _db.Professor_NivelAH.Any(nv => nv.Id == model.Professor_NivelAH_Id);
+                //bool NivelAHExists = _db.Professor_NivelAH.Any(nv => nv.Id == model.Professor_NivelAH_Id);
 
-                professor.Professor_NivelAH_Id = NivelAHExists ? model.Professor_NivelAH_Id : null;
+                //professor.Professor_NivelAH_Id = NivelAHExists ? model.Professor_NivelAH_Id : null;
 
                 account.Name = model.Nome;
                 account.Phone = model.Telefone;
                 account.LastUpdated = TimeFunctions.HoraAtualBR();
 
-                _db.Accounts.Update(account);
+                _db.Account.Update(account);
 
                 professor.DataInicio = model.DataInicio;
                 professor.CorLegenda = model.CorLegenda;
 
-                _db.Professors.Update(professor);
+                _db.Professor.Update(professor);
 
                 _db.SaveChanges();
 
@@ -195,7 +195,7 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Professor? professor = _db.Professors.Find(professorId);
+                Professor? professor = _db.Professor.Find(professorId);
 
                 if (professor == null) {
                     return new ResponseModel { Message = "Professor não encontrado" };
@@ -205,7 +205,7 @@ namespace Supera_Monitor_Back.Services {
 
                 response.Object = _db.ProfessorList.FirstOrDefault(p => p.Id == professorId);
 
-                _db.Professors.Remove(professor);
+                _db.Professor.Remove(professor);
                 _db.SaveChanges();
 
                 response.Message = "Turma excluída com sucesso";
@@ -217,31 +217,31 @@ namespace Supera_Monitor_Back.Services {
             return response;
         }
 
-        public List<NivelModel> GetAllNiveisAh()
-        {
-            List<Professor_NivelAH> niveis = _db.Professor_NivelAH.ToList();
+        //public List<NivelModel> GetAllNiveisAh()
+        //{
+        //    List<Professor_NivelAH> niveis = _db.Professor_NivelAH.ToList();
 
-            return _mapper.Map<List<NivelModel>>(niveis);
-        }
+        //    return _mapper.Map<List<NivelModel>>(niveis);
+        //}
 
-        public List<NivelModel> GetAllNiveisAbaco()
-        {
-            List<Professor_NivelAbaco> niveis = _db.Professor_NivelAbaco.ToList();
+        //public List<NivelModel> GetAllNiveisAbaco()
+        //{
+        //    List<Professor_NivelAbaco> niveis = _db.Professor_NivelAbaco.ToList();
 
-            return _mapper.Map<List<NivelModel>>(niveis);
-        }
+        //    return _mapper.Map<List<NivelModel>>(niveis);
+        //}
 
 
         public List<ApostilaList> GetAllApostilas()
         {
-            List<ApostilaList> apostilas = _db.ApostilaLists.ToList();
+            List<ApostilaList> apostilas = _db.ApostilaList.ToList();
 
             return apostilas;
         }
 
         public List<KitResponse> GetAllKits()
         {
-            List<Apostila_Kit> listApostilaKits = _db.Apostila_Kits.ToList();
+            List<Apostila_Kit> listApostilaKits = _db.Apostila_Kit.ToList();
 
             List<KitResponse> listKitResponse = _mapper.Map<List<KitResponse>>(listApostilaKits);
 

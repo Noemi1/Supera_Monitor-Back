@@ -47,7 +47,7 @@ namespace Supera_Monitor_Back.Middlewares {
                 var accountId = int.Parse(jwtToken.Claims.First(x => x.Type == "id").Value);
 
                 // attach account to context on successful jwt validation
-                context.Items["Account"] = await dataContext.Accounts.FindAsync(accountId);
+                context.Items["Account"] = await dataContext.Account.FindAsync(accountId);
             } catch (Exception ex) {
                 Console.WriteLine("AttachAccountToContext triggered an exception " + ex.ToString());
                 //_logger.Add(ex, MethodBase.GetCurrentMethod().DeclaringType.Name.ToString() + "." + MethodBase.GetCurrentMethod().ToString());

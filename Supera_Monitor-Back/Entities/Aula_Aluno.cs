@@ -1,13 +1,11 @@
 ﻿namespace Supera_Monitor_Back.Entities;
 
-public partial class TurmaAulaAluno {
+public partial class Aula_Aluno {
     public int Id { get; set; }
 
-    public int Turma_Aula_Id { get; set; }
+    public int Aula_Id { get; set; }
 
     public int Aluno_Id { get; set; }
-
-    public bool? Reposicao { get; set; }
 
     public bool? Presente { get; set; }
 
@@ -19,11 +17,17 @@ public partial class TurmaAulaAluno {
 
     public int? Apostila_AH_Id { get; set; }
 
+    public string? Observacao { get; set; }
+
+    public int? ReposicaoDe_Aula_Id { get; set; }
+
     public virtual Aluno Aluno { get; set; } = null!;
 
     public virtual Apostila? Apostila_AH { get; set; }
 
     public virtual Apostila? Apostila_Abaco { get; set; }
 
-    public virtual TurmaAula Turma_Aula { get; set; } = null!;
+    public virtual Aula? ReposicaoDe_Aula { get; set; }
+
+    public bool Reposicao => ReposicaoDe_Aula_Id.HasValue;
 }

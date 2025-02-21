@@ -70,14 +70,14 @@ namespace Supera_Monitor_Back.Services {
 
             try {
                 // Não devo poder registrar uma aula em uma turma que não existe
-                bool TurmaExists = _db.Turmas.Any(t => t.Id == model.Turma_Id);
+                bool TurmaExists = _db.Turma.Any(t => t.Id == model.Turma_Id);
 
                 if (!TurmaExists) {
                     return new ResponseModel { Message = "Turma não encontrada" };
                 }
 
                 // Não devo poder registrar uma aula com um professor que não existe
-                bool ProfessorExists = _db.Professors.Any(p => p.Id == model.Professor_Id);
+                bool ProfessorExists = _db.Professor.Any(p => p.Id == model.Professor_Id);
 
                 if (!ProfessorExists) {
                     return new ResponseModel { Message = "Professor não encontrado" };
@@ -85,27 +85,27 @@ namespace Supera_Monitor_Back.Services {
 
                 // Validations passed
 
-                TurmaAula aula = new() {
+                Aula aula = new() {
                     Turma_Id = model.Turma_Id,
                     Professor_Id = model.Professor_Id,
                     Data = model.Data,
                     Observacao = model.Observacao,
                 };
 
-                _db.TurmaAulas.Add(aula);
+                _db.Aula.Add(aula);
                 _db.SaveChanges();
 
                 // Inserir os registros dos alunos originais na aula recém criada
                 List<AlunoList> alunos = _db.AlunoList.Where(a => a.Turma_Id == aula.Turma_Id).ToList();
 
                 foreach (AlunoList aluno in alunos) {
-                    TurmaAulaAluno registro = new() {
-                        Turma_Aula_Id = aula.Id,
+                    Aula_Aluno registro = new() {
+                        Aula_Id = aula.Id,
                         Aluno_Id = aluno.Id,
                         Presente = null,
                     };
 
-                    _db.TurmaAulaAlunos.Add(registro);
+                    _db.Aula_Aluno.Add(registro);
                 }
 
                 _db.SaveChanges();
@@ -125,7 +125,7 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                TurmaAula? aula = _db.TurmaAulas.Find(model.Id);
+                Aula? aula = _db.Aula.Find(model.Id);
 
                 // Não devo poder atualizar uma aula que não existe
                 if (aula == null) {
@@ -133,7 +133,7 @@ namespace Supera_Monitor_Back.Services {
                 }
 
                 // Não devo poder atualizar turma com um professor que não existe
-                bool ProfessorExists = _db.Professors.Any(p => p.Id == model.Professor_Id);
+                bool ProfessorExists = _db.Professor.Any(p => p.Id == model.Professor_Id);
 
                 if (!ProfessorExists) {
                     return new ResponseModel { Message = "Este tipo de turma não existe." };
@@ -147,7 +147,7 @@ namespace Supera_Monitor_Back.Services {
                 aula.Data = model.Data;
                 aula.Observacao = model.Observacao;
 
-                _db.TurmaAulas.Update(aula);
+                _db.Aula.Update(aula);
                 _db.SaveChanges();
 
                 response.Message = "Aula atualizada com sucesso";
@@ -287,14 +287,14 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                TurmaAula? aula = _db.TurmaAulas.Find(model.Aula_Id);
+                Aula? aula = _db.Aula.Find(model.Aula_Id);
 
                 // Não devo poder realizar a chamada em uma aula que não existe
                 if (aula == null) {
                     return new ResponseModel { Message = "Aula não encontrada" };
                 }
 
-                Professor? professor = _db.Professors.Find(model.Professor_Id);
+                Professor? professor = _db.Professor.Find(model.Professor_Id);
 
                 if (professor is null) {
                     return new ResponseModel { Message = "Professor não encontrado" };
@@ -302,7 +302,7 @@ namespace Supera_Monitor_Back.Services {
 
                 // Se indicar uma mudança de professor - o professor sendo alocado não pode ter aula no mesmo horário
                 if (model.Professor_Id != aula.Professor_Id) {
-                    bool ProfessorIsAlreadyOccupied = _db.TurmaAulas.Any(a =>
+                    bool ProfessorIsAlreadyOccupied = _db.Aula.Any(a =>
                         a.Professor_Id == model.Professor_Id &&
                         a.Data == aula.Data
                     );
@@ -315,11 +315,11 @@ namespace Supera_Monitor_Back.Services {
                 // Validations passed
 
                 // Buscar registros / alunos / apostilas previamente para reduzir o número de requisições ao banco
-                Dictionary<int, TurmaAulaAluno> registros = _db.TurmaAulaAlunos
+                Dictionary<int, Aula_Aluno> registros = _db.Aula_Aluno
                     .Where(x => model.Registros.Select(r => r.Turma_Aula_Aluno_Id).Contains(x.Id))
                     .ToDictionary(x => x.Id);
 
-                Dictionary<int, Aluno> alunos = _db.Alunos
+                Dictionary<int, Aluno> alunos = _db.Aluno
                     .Where(x => registros.Values.Select(r => r.Aluno_Id).Contains(x.Id))
                     .ToDictionary(x => x.Id);
 
@@ -327,7 +327,7 @@ namespace Supera_Monitor_Back.Services {
                 List<int> apostilasIds = model.Registros.SelectMany(r => new[] { r.Apostila_Abaco_Id, r.Apostila_Ah_Id }).Distinct().ToList();
 
                 // Coletar previamente todas as apostilas que contenham qualquer dos ids
-                List<Apostila_Kit_Rel> apostilasRel = _db.Apostila_Kit_Rels
+                List<Apostila_Kit_Rel> apostilasRel = _db.Apostila_Kit_Rel
                     .Include(x => x.Apostila)
                     .Where(x => apostilasIds.Contains(x.Apostila_Id))
                     .ToList();
@@ -382,13 +382,13 @@ namespace Supera_Monitor_Back.Services {
 
                     registro.Presente = item.Presente;
 
-                    _db.TurmaAulaAlunos.Update(registro);
+                    _db.Aula_Aluno.Update(registro);
                 }
 
                 aula.Professor_Id = model.Professor_Id;
                 aula.Observacao = model.Observacao;
                 aula.Finalizada = true;
-                _db.TurmaAulas.Update(aula);
+                _db.Aula.Update(aula);
 
                 _db.SaveChanges();
 

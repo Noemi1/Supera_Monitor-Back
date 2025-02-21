@@ -19,11 +19,21 @@ public partial class Aluno {
 
     public int? Apostila_Kit_Id { get; set; }
 
+    public DateTime? DataInicioVigencia { get; set; }
+
+    public DateTime? DataFimVigencia { get; set; }
+
+    public int? PerfilCognitivo_Id { get; set; }
+
+    public virtual ICollection<Aluno_Restricao_Rel> Aluno_Restricao_Rel { get; set; } = new List<Aluno_Restricao_Rel>();
+
     public virtual Apostila_Kit? Apostila_Kit { get; set; }
 
-    public virtual Turma Turma { get; set; } = null!;
+    public virtual ICollection<Aula_Aluno> Aula_Aluno { get; set; } = new List<Aula_Aluno>();
 
-    public virtual ICollection<TurmaAulaAluno> Turma_Aula_Alunos { get; set; } = new List<TurmaAulaAluno>();
+    public virtual ICollection<Aula_ListaEspera> Aula_ListaEspera { get; set; } = new List<Aula_ListaEspera>();
+
+    public virtual Turma Turma { get; set; } = null!;
 
     public bool Active => !Deactivated.HasValue;
 }
