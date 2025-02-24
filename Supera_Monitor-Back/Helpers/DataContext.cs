@@ -36,8 +36,6 @@ namespace Supera_Monitor_Back.Helpers {
 
         public virtual DbSet<Aula> Aula { get; set; }
 
-        public virtual DbSet<AulaList> AulaList { get; set; }
-
         public virtual DbSet<Aula_Aluno> Aula_Aluno { get; set; }
 
         public virtual DbSet<Aula_ListaEspera> Aula_ListaEspera { get; set; }
@@ -449,6 +447,7 @@ namespace Supera_Monitor_Back.Helpers {
                     .HasMaxLength(20)
                     .IsUnicode(false);
                 entity.Property(e => e.Data).HasColumnType("datetime");
+                entity.Property(e => e.Deactivated).HasColumnType("datetime");
                 entity.Property(e => e.Observacao).IsUnicode(false);
                 entity.Property(e => e.Turma)
                     .HasMaxLength(100)

@@ -30,7 +30,6 @@ namespace Supera_Monitor_Back.Helpers {
 
             CreateMap<CreateTurmaRequest, Turma>();
             CreateMap<UpdateTurmaRequest, Turma>();
-            CreateMap<AulaList, AulaVisualizationModel>();
 
             CreateMap<CreateProfessorRequest, Professor>();
 
@@ -51,6 +50,7 @@ namespace Supera_Monitor_Back.Helpers {
                 .ForMember(dest => dest.Aluno_Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Aluno, opt => opt.MapFrom(src => src.Nome));
             CreateMap<CalendarioList, CalendarioResponse>();
+            CreateMap<CalendarioList, Aula>();
 
             CreateMap<Apostila_Kit, KitResponse>();
         }

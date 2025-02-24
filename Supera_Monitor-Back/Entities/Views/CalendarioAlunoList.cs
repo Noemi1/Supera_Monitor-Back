@@ -14,7 +14,7 @@
 
         public string Turma { get; set; } = null!;
 
-        public bool? Reposicao { get; set; }
+        public int? ReposicaoDe_Aula_Id { get; set; }
 
         public bool? Presente { get; set; }
 

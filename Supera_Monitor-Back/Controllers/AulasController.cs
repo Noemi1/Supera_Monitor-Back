@@ -20,7 +20,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpGet("{aulaId}")]
-        public ActionResult<AulaList> Get(int aulaId)
+        public ActionResult<CalendarioList> Get(int aulaId)
         {
             try {
                 var response = _aulaService.Get(aulaId);
@@ -33,7 +33,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpGet("all")]
-        public ActionResult<List<AulaList>> GetAll()
+        public ActionResult<List<CalendarioList>> GetAll()
         {
             try {
                 var response = _aulaService.GetAll();
@@ -46,7 +46,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpGet("all/professor/{professorId}")]
-        public ActionResult<List<AulaList>> GetAllByProfessorId(int professorId)
+        public ActionResult<List<CalendarioList>> GetAllByProfessorId(int professorId)
         {
             try {
                 var response = _aulaService.GetAllByProfessorId(professorId);
@@ -59,7 +59,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpGet("all/turma/{turmaId}")]
-        public ActionResult<List<AulaList>> GetAllByTurmaId(int turmaId)
+        public ActionResult<List<CalendarioList>> GetAllByTurmaId(int turmaId)
         {
             try {
                 var response = _aulaService.GetAllByTurmaId(turmaId);
@@ -78,9 +78,10 @@ namespace Supera_Monitor_Back.Controllers {
                 var response = _aulaService.Insert(model);
 
                 if (response.Success) {
-                    int aulaId = response.Object!.Id;
-                    _logger.Log("Insert", "TurmaAula", response, Account?.Id);
-                    return Accepted(@$"/aulas/{aulaId}", response);
+                    //int aulaId = response.Object!.Aula_Id;
+                    //_logger.Log("Insert", "Aula", response, Account?.Id);
+                    //return Accepted(@$"/aulas/{aulaId}", response);
+                    return Ok(response);
                 }
 
                 return BadRequest(response);
@@ -97,7 +98,7 @@ namespace Supera_Monitor_Back.Controllers {
                 var response = _aulaService.Update(model);
 
                 if (response.Success) {
-                    _logger.Log("Update", "TurmaAula", response, Account?.Id);
+                    _logger.Log("Update", "Aula", response, Account?.Id);
                     return Ok(response);
                 }
 
@@ -115,7 +116,7 @@ namespace Supera_Monitor_Back.Controllers {
                 var response = _aulaService.Delete(aulaId);
 
                 if (response.Success) {
-                    _logger.Log("Delete", "TurmaAula", response, Account?.Id);
+                    _logger.Log("Delete", "Aula", response, Account?.Id);
                     return Ok(response);
                 }
 
@@ -146,7 +147,25 @@ namespace Supera_Monitor_Back.Controllers {
                 ResponseModel response = _aulaService.RegisterChamada(model);
 
                 if (response.Success) {
-                    _logger.Log("Chamada", "TurmaAula", response, Account?.Id);
+                    _logger.Log("Chamada", "Aula", response, Account?.Id);
+                    return Ok(response);
+                }
+
+                return BadRequest(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
+
+        [HttpPatch("reagendar")]
+        public ActionResult<ResponseModel> ReagendarAula(ReagendarAulaRequest model)
+        {
+            try {
+                ResponseModel response = _aulaService.ReagendarAula(model);
+
+                if (response.Success) {
+                    _logger.Log("Reagendamento", "Aula", response, Account?.Id);
                     return Ok(response);
                 }
 
