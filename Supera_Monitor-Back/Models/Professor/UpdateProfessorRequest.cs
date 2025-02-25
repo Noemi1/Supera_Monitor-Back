@@ -5,6 +5,7 @@
         public string Nome { get; set; } = string.Empty;
         public string Telefone { get; set; } = string.Empty;
         public DateTime DataInicio { get; set; }
+        public DateTime DataNascimento { get; set; }
         public string CorLegenda { get; set; } = string.Empty;
 
         public int Professor_NivelCertificacao_Id { get; set; }
