@@ -10,5 +10,7 @@
 
         public int? Sala_Id { get; set; }
         public int? Professor_Id { get; set; }
+
+        public List<PerfilCognitivoModel> PerfilCognitivo { get; set; } = new List<PerfilCognitivoModel>();
     }
 }

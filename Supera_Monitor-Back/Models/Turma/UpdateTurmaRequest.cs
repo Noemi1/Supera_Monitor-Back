@@ -8,9 +8,10 @@
         public int CapacidadeMaximaAlunos { get; set; }
 
         public int Unidade_Id { get; set; }
-        public int PerfilCognitivo_Id { get; set; }
 
         public int? Sala_Id { get; set; }
         public int? Professor_Id { get; set; }
+
+        public List<PerfilCognitivoModel> PerfilCognitivo { get; set; } = new List<PerfilCognitivoModel>();
     }
 }

@@ -64,13 +64,6 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                // Não devo poder criar turma com um perfil cognitivo que não existe
-                bool perfilCognitivoExists = _db.PerfilCognitivo.Any(p => p.Id == model.PerfilCognitivo_Id);
-
-                if (!perfilCognitivoExists) {
-                    return new ResponseModel { Message = "O perfil cognitivo informado na requisição não existe." };
-                }
-
                 // Não devo poder criar turma com um professor que não existe
                 Professor? professor = _db.Professor
                     .Include(p => p.Account)
@@ -108,6 +101,16 @@ namespace Supera_Monitor_Back.Services {
                     }
                 }
 
+                // Não devo poder atualizar turma com um perfil cognitivo que não existe
+                List<PerfilCognitivo> requestPerfis = _mapper.Map<List<PerfilCognitivo>>(model.PerfilCognitivo);
+                List<int> perfilIds = requestPerfis.Select(p => p.Id).ToList();
+
+                int perfilCognitivoCount = _db.PerfilCognitivo.Count(p => perfilIds.Contains(p.Id));
+
+                if (requestPerfis.Count != perfilCognitivoCount) {
+                    return new ResponseModel { Message = "Algum dos perfis cognitivos informados na requisição não existe." };
+                }
+
                 // Validations passed
 
                 Turma turma = new();
@@ -120,13 +123,14 @@ namespace Supera_Monitor_Back.Services {
                 _db.Turma.Add(turma);
                 _db.SaveChanges();
 
-                Turma_PerfilCognitivo_Rel perfilCognitivoRel = new() {
-                    Turma_Id = turma.Id,
-                    PerfilCognitivo_Id = model.PerfilCognitivo_Id,
-                };
+                foreach (PerfilCognitivo perfil in requestPerfis) {
+                    Turma_PerfilCognitivo_Rel newTurmaPerfilRel = new() {
+                        Turma_Id = turma.Id,
+                        PerfilCognitivo_Id = perfil.Id,
+                    };
 
-                _db.Turma_PerfilCognitivo_Rel.Add(perfilCognitivoRel);
-                _db.SaveChanges();
+                    _db.Turma_PerfilCognitivo_Rel.Add(newTurmaPerfilRel);
+                }
 
                 response.Success = true;
                 response.Message = "Turma cadastrada com sucesso";
@@ -153,13 +157,6 @@ namespace Supera_Monitor_Back.Services {
                 // Não devo poder atualizar uma turma desativada
                 if (turma.Deactivated.HasValue) {
                     return new ResponseModel { Message = "Não é possível atualizar uma turma desativada." };
-                }
-
-                // Não devo poder criar turma com um perfil cognitivo que não existe
-                bool perfilCognitivoExists = _db.PerfilCognitivo.Any(p => p.Id == model.PerfilCognitivo_Id);
-
-                if (!perfilCognitivoExists) {
-                    return new ResponseModel { Message = "O perfil cognitivo informado na requisição não existe." };
                 }
 
                 // Não devo poder atualizar turma com um professor que não existe
@@ -190,6 +187,16 @@ namespace Supera_Monitor_Back.Services {
                     }
                 }
 
+                // Não devo poder atualizar turma com um perfil cognitivo que não existe
+                List<PerfilCognitivo> requestPerfis = _mapper.Map<List<PerfilCognitivo>>(model.PerfilCognitivo);
+                List<int> perfilIds = requestPerfis.Select(p => p.Id).ToList();
+
+                int perfilCognitivoCount = _db.PerfilCognitivo.Count(p => perfilIds.Contains(p.Id));
+
+                if (requestPerfis.Count != perfilCognitivoCount) {
+                    return new ResponseModel { Message = "Algum dos perfis cognitivos informados na requisição não existe." };
+                }
+
                 // Validations passed
 
                 response.OldObject = _db.TurmaList.FirstOrDefault(t => t.Id == model.Id);
@@ -206,19 +213,22 @@ namespace Supera_Monitor_Back.Services {
                 turma.LastUpdated = TimeFunctions.HoraAtualBR();
 
                 _db.Turma.Update(turma);
+                _db.SaveChanges();
 
-                // Por enquanto, uma turma só tem um perfil cognitivo, que pode ser atualizado
-                Turma_PerfilCognitivo_Rel? perfilCognitivoRel = _db.Turma_PerfilCognitivo_Rel.FirstOrDefault(p => p.Turma_Id == turma.Id);
+                // Remove os perfis cognitivos antigos e insere os novos (ineficiente, se os perfis não mudaram, ainda assim remove e adiciona)
+                // se tiver dando problema, peço perdão e prometo que vou melhorar c: depois == nunca => true
+                List<Turma_PerfilCognitivo_Rel> perfisCognitivos = _db.Turma_PerfilCognitivo_Rel.Where(p => p.Turma_Id == turma.Id).ToList();
 
-                // Se não tem perfil cognitivo, cria um novo, senão atualiza
-                if (perfilCognitivoRel is null) {
-                    _db.Turma_PerfilCognitivo_Rel.Add(new() {
+                _db.Turma_PerfilCognitivo_Rel.RemoveRange(perfisCognitivos);
+                _db.SaveChanges();
+
+                foreach (PerfilCognitivo perfil in requestPerfis) {
+                    Turma_PerfilCognitivo_Rel newTurmaPerfilRel = new() {
                         Turma_Id = turma.Id,
-                        PerfilCognitivo_Id = model.PerfilCognitivo_Id,
-                    });
-                } else {
-                    perfilCognitivoRel.PerfilCognitivo_Id = model.PerfilCognitivo_Id;
-                    _db.Turma_PerfilCognitivo_Rel.Update(perfilCognitivoRel);
+                        PerfilCognitivo_Id = perfil.Id,
+                    };
+
+                    _db.Turma_PerfilCognitivo_Rel.Add(newTurmaPerfilRel);
                 }
 
                 _db.SaveChanges();

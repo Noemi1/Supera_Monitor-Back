@@ -24,6 +24,7 @@ namespace Supera_Monitor_Back.Helpers {
             CreateMap<AccountRole, AccountRoleModel>();
 
             CreateMap<PerfilCognitivo, PerfilCognitivoModel>();
+            CreateMap<PerfilCognitivoModel, PerfilCognitivo>();
 
             CreateMap<Account, AccountResponse>();
             CreateMap<Account, AuthenticateResponse>();
