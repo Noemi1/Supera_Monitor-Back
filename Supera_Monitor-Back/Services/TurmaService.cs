@@ -36,11 +36,21 @@ namespace Supera_Monitor_Back.Services {
 
         public TurmaList Get(int turmaId)
         {
-            TurmaList? turma = _db.TurmaList.AsNoTracking().FirstOrDefault(t => t.Id == turmaId);
+            var turma = _db.TurmaList.AsNoTracking().FirstOrDefault(t => t.Id == turmaId);
 
             if (turma == null) {
                 throw new Exception("Turma não encontrada.");
             }
+
+            // Busca os perfis cognitivos necessários diretamente do banco
+            var perfisDaTurma = _db.PerfilCognitivo
+                .Where(p => _db.Turma_PerfilCognitivo_Rel
+                    .Where(tp => tp.Turma_Id == turmaId)
+                    .Select(tp => tp.PerfilCognitivo_Id)
+                    .Contains(p.Id))
+                .ToList();
+
+            turma.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(perfisDaTurma);
 
             return turma;
         }
@@ -48,6 +58,26 @@ namespace Supera_Monitor_Back.Services {
         public List<TurmaList> GetAll()
         {
             List<TurmaList> turmas = _db.TurmaList.OrderBy(t => t.Nome).ToList();
+
+            // Obtém todos os perfis cognitivos do banco de dados
+            var allPerfisCognitivos = _db.PerfilCognitivo.ToList();
+            var perfisCognitivosMap = allPerfisCognitivos.ToDictionary(p => p.Id);
+
+            // Para cada turma, busca e associa os perfis cognitivos correspondentes
+            foreach (var turma in turmas) {
+                var perfilIds = _db.Turma_PerfilCognitivo_Rel
+                    .Where(tp => tp.Turma_Id == turma.Id)
+                    .Select(tp => tp.PerfilCognitivo_Id)
+                    .ToList();
+
+                // Obtém os perfis correspondentes da turma
+                var perfisDaTurma = perfilIds
+                    .Select(id => perfisCognitivosMap.GetValueOrDefault(id))
+                    .Where(p => p != null)
+                    .ToList();
+
+                turma.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(perfisDaTurma);
+            }
 
             return turmas;
         }

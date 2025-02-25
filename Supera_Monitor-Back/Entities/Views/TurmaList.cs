@@ -1,4 +1,6 @@
-﻿namespace Supera_Monitor_Back.Entities.Views {
+﻿using Supera_Monitor_Back.Models.Turma;
+
+namespace Supera_Monitor_Back.Entities.Views {
     public partial class TurmaList : BaseList {
         public int Id { get; set; }
 
@@ -17,5 +19,7 @@
         public string? Professor { get; set; }
 
         public string? CorLegenda { get; set; }
+
+        public List<PerfilCognitivoModel> PerfilCognitivo = new();
     }
 }
