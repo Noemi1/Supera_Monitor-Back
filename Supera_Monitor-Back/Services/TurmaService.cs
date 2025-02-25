@@ -64,12 +64,12 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                // Não devo poder criar turma com um tipo que não existe
-                //bool TurmaTipoExists = _db.TurmaTipos.Any(t => t.Id == model.Turma_Tipo_Id);
+                // Não devo poder criar turma com um perfil cognitivo que não existe
+                bool perfilCognitivoExists = _db.PerfilCognitivo.Any(p => p.Id == model.PerfilCognitivo_Id);
 
-                //if (!TurmaTipoExists) {
-                //    return new ResponseModel { Message = "Este tipo de turma não existe." };
-                //}
+                if (!perfilCognitivoExists) {
+                    return new ResponseModel { Message = "O perfil cognitivo informado na requisição não existe." };
+                }
 
                 // Não devo poder criar turma com um professor que não existe
                 Professor? professor = _db.Professor
@@ -85,23 +85,27 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Não é possível criar uma turma com um professor desativado." };
                 }
 
-                TimeSpan twoHourInterval = TimeSpan.FromHours(2);
+                // Se for passado um horário na requisição
+                // Não devo permitir a criação de turma com um professor que já está ocupado nesse dia da semana / horário
+                if (model.Horario.HasValue) {
+                    bool isProfessorAvailable = _professorService.HasTurmaTimeConflict(
+                        professorId: professor.Id,
+                        DiaSemana: model.DiaSemana,
+                        Horario: model.Horario.Value,
+                        IgnoredTurmaId: null);
 
-                // Não devo criar uma turma com um professor que já está ocupado nesse dia da semana / horário
-                bool professorHasTimeConflicts = _db.Turma
-                .Where(t =>
-                    t.Deactivated == null &&
-                    t.Professor_Id == professor.Id &&
-                    t.DiaSemana == model.DiaSemana
-                )
-                .AsEnumerable() // Termina a query no banco, passando a responsabilidade do Any para o C#, queries do banco não lidam bem com TimeSpan
-                .Any(t =>
-                    model.Horario > t.Horario - twoHourInterval &&
-                    model.Horario < t.Horario + twoHourInterval
-                );
+                    if (!isProfessorAvailable) {
+                        return new ResponseModel { Message = "Não foi possível criar a turma. O professor responsável já tem compromissos no horário indicado." };
+                    }
+                }
 
-                if (professorHasTimeConflicts) {
-                    return new ResponseModel { Message = "Não foi possível criar a turma. O professor responsável já tem compromissos no horário indicado." };
+                // Se for passado um Sala_Id na requisição, não devo permitir a criação de uma turma em uma sala que não existe
+                if (model.Sala_Id.HasValue) {
+                    bool salaExists = _db.Sala.Any(s => s.Id == model.Sala_Id);
+
+                    if (salaExists == false) {
+                        return new ResponseModel { Message = "Sala não encontrada." };
+                    }
                 }
 
                 // Validations passed
@@ -116,9 +120,17 @@ namespace Supera_Monitor_Back.Services {
                 _db.Turma.Add(turma);
                 _db.SaveChanges();
 
+                Turma_PerfilCognitivo_Rel perfilCognitivoRel = new() {
+                    Turma_Id = turma.Id,
+                    PerfilCognitivo_Id = model.PerfilCognitivo_Id,
+                };
+
+                _db.Turma_PerfilCognitivo_Rel.Add(perfilCognitivoRel);
+                _db.SaveChanges();
+
+                response.Success = true;
                 response.Message = "Turma cadastrada com sucesso";
                 response.Object = _db.TurmaList.FirstOrDefault(t => t.Id == turma.Id);
-                response.Success = true;
             } catch (Exception ex) {
                 response.Message = "Falha ao inserir nova turma: " + ex.ToString();
             }
@@ -138,12 +150,17 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Turma não encontrada" };
                 }
 
-                // Não devo poder atualizar turma com um tipo que não existe
-                //bool TurmaTipoExists = _db.TurmaTipos.Any(t => t.Id == model.Turma_Tipo_Id);
+                // Não devo poder atualizar uma turma desativada
+                if (turma.Deactivated.HasValue) {
+                    return new ResponseModel { Message = "Não é possível atualizar uma turma desativada." };
+                }
 
-                //if (!TurmaTipoExists) {
-                //    return new ResponseModel { Message = "Este tipo de turma não existe." };
-                //}
+                // Não devo poder criar turma com um perfil cognitivo que não existe
+                bool perfilCognitivoExists = _db.PerfilCognitivo.Any(p => p.Id == model.PerfilCognitivo_Id);
+
+                if (!perfilCognitivoExists) {
+                    return new ResponseModel { Message = "O perfil cognitivo informado na requisição não existe." };
+                }
 
                 // Não devo poder atualizar turma com um professor que não existe
                 Professor? professor = _db.Professor
@@ -159,23 +176,18 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Não é possível criar uma turma com um professor desativado." };
                 }
 
-                TimeSpan twoHourInterval = TimeSpan.FromHours(2);
+                // Se for passado um horário na requisição
+                // Não devo permitir a atualização de turma com um professor que já está ocupado nesse dia da semana / horário
+                if (model.Horario.HasValue) {
+                    bool isProfessorAvailable = _professorService.HasTurmaTimeConflict(
+                        professorId: professor.Id,
+                        DiaSemana: model.DiaSemana,
+                        Horario: model.Horario.Value,
+                        IgnoredTurmaId: turma.Id);
 
-                // Não devo criar uma turma com um professor que já está ocupado nesse dia da semana / horário
-                bool professorHasTimeConflicts = _db.Turma
-                .Where(t =>
-                    t.Deactivated == null &&
-                    t.Professor_Id == professor.Id &&
-                    t.DiaSemana == model.DiaSemana
-                )
-                .AsEnumerable() // Termina a query no banco, passando a responsabilidade do Any para o C#, queries do banco não lidam bem com TimeSpan
-                .Any(t =>
-                    model.Horario > t.Horario - twoHourInterval &&
-                    model.Horario < t.Horario + twoHourInterval
-                );
-
-                if (professorHasTimeConflicts) {
-                    return new ResponseModel { Message = "Não foi possível atualizar a turma. O professor responsável já tem compromissos no horário indicado." };
+                    if (!isProfessorAvailable) {
+                        return new ResponseModel { Message = "Não foi possível criar a turma. O professor responsável já tem compromissos no horário indicado." };
+                    }
                 }
 
                 // Validations passed
@@ -183,20 +195,37 @@ namespace Supera_Monitor_Back.Services {
                 response.OldObject = _db.TurmaList.FirstOrDefault(t => t.Id == model.Id);
 
                 turma.Nome = model.Nome;
-                turma.DiaSemana = model.DiaSemana;
                 turma.Horario = model.Horario;
-                turma.Professor_Id = model.Professor_Id;
-                //turma.Turma_Tipo_Id = model.Turma_Tipo_Id;
-                turma.LastUpdated = TimeFunctions.HoraAtualBR();
+                turma.DiaSemana = model.DiaSemana;
                 turma.CapacidadeMaximaAlunos = model.CapacidadeMaximaAlunos;
+
+                turma.Sala_Id = model.Sala_Id;
                 turma.Unidade_Id = model.Unidade_Id;
+                turma.Professor_Id = model.Professor_Id;
+
+                turma.LastUpdated = TimeFunctions.HoraAtualBR();
 
                 _db.Turma.Update(turma);
+
+                // Por enquanto, uma turma só tem um perfil cognitivo, que pode ser atualizado
+                Turma_PerfilCognitivo_Rel? perfilCognitivoRel = _db.Turma_PerfilCognitivo_Rel.FirstOrDefault(p => p.Turma_Id == turma.Id);
+
+                // Se não tem perfil cognitivo, cria um novo, senão atualiza
+                if (perfilCognitivoRel is null) {
+                    _db.Turma_PerfilCognitivo_Rel.Add(new() {
+                        Turma_Id = turma.Id,
+                        PerfilCognitivo_Id = model.PerfilCognitivo_Id,
+                    });
+                } else {
+                    perfilCognitivoRel.PerfilCognitivo_Id = model.PerfilCognitivo_Id;
+                    _db.Turma_PerfilCognitivo_Rel.Update(perfilCognitivoRel);
+                }
+
                 _db.SaveChanges();
 
+                response.Success = true;
                 response.Message = "Turma atualizada com sucesso";
                 response.Object = _db.TurmaList.FirstOrDefault(t => t.Id == turma.Id);
-                response.Success = true;
             } catch (Exception ex) {
                 response.Message = "Falha ao atualizar a turma: " + ex.ToString();
             }

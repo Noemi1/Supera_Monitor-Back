@@ -20,6 +20,7 @@ namespace Supera_Monitor_Back.Services {
         List<NivelCertificacaoModel> GetAllCertificacoes();
 
         bool IsProfessorAvailable(int professorId, DateTime date, TimeSpan time, int? IgnoredAulaId);
+        bool HasTurmaTimeConflict(int professorId, int DiaSemana, TimeSpan Horario, int? IgnoredTurmaId);
     }
 
     public class ProfessorService : IProfessorService {
@@ -307,6 +308,37 @@ namespace Supera_Monitor_Back.Services {
                 }
 
                 // Se não possui nenhum conflito de horário, retorna true para a disponibilidade
+                return true;
+            } catch (Exception ex) {
+                throw new Exception("Falha ao resgatar disponibilidade do professor | " + ex.ToString());
+            }
+        }
+
+        public bool HasTurmaTimeConflict(int professorId, int DiaSemana, TimeSpan Horario, int? IgnoredTurmaId = null)
+        {
+            try {
+                Professor professor = _db.Professor.Find(professorId) ?? throw new Exception("IsProfessorAvailable : Professor não pode ser nulo");
+
+                TimeSpan twoHourInterval = TimeSpan.FromHours(2);
+
+                // Verifica se o professor é responsável por uma turma que está ocupando o mesmo dia e horário
+                bool hasTurmaConflict = _db.Turma
+                .Where(t =>
+                    t.Deactivated == null &&
+                    t.Professor_Id == professor.Id &&
+                    t.DiaSemana == DiaSemana &&
+                    t.Id != IgnoredTurmaId // Se estou atualizando uma turma, devo ignorá-la na verificação de conflitos
+                )
+                .AsEnumerable() // Termina a query no banco, passando a responsabilidade do Any para o C#, queries do banco não lidam bem com TimeSpan
+                .Any(t =>
+                    Horario > t.Horario - twoHourInterval &&
+                    Horario < t.Horario + twoHourInterval
+                );
+
+                if (hasTurmaConflict) {
+                    return false;
+                }
+
                 return true;
             } catch (Exception ex) {
                 throw new Exception("Falha ao resgatar disponibilidade do professor | " + ex.ToString());
