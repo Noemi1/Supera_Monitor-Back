@@ -123,7 +123,7 @@ namespace Supera_Monitor_Back.Services {
                 return new ResponseModel { Message = "Você não pode atualizar uma conta desativada." };
             }
 
-            if (_account == null || _account.Role_Id != ( int )Role.Admin && _account.Id != account.Id) {
+            if (_account == null || _account.Role_Id < ( int )Role.Teacher && _account.Id != account.Id) {
                 return new ResponseModel { Message = "Você não está autorizado a realizar esta ação. Apenas administradores ou o próprio titular da conta podem atualizar esta conta." };
             }
 
@@ -167,7 +167,7 @@ namespace Supera_Monitor_Back.Services {
                 return new ResponseModel { Message = "Você não pode atualizar uma conta desativada." };
             }
 
-            if (_account == null || _account.Role_Id != ( int )Role.Admin && _account.Id != account.Id) {
+            if (_account == null || _account.Role_Id < ( int )Role.Teacher && _account.Id != account.Id) {
                 return new ResponseModel { Message = "Você não está autorizado a realizar esta ação. Apenas administradores ou o próprio titular da conta podem deletar esta conta." };
             }
 
