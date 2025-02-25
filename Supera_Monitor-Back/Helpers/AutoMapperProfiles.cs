@@ -22,7 +22,8 @@ namespace Supera_Monitor_Back.Helpers {
                 .ForMember(dest => dest.AccountName, source => source.MapFrom(orig => (orig.Account == null ? "" : orig.Account.Name)))
                 .ForMember(dest => dest.AccountEmail, source => source.MapFrom(orig => (orig.Account == null ? "" : orig.Account.Email)));
             CreateMap<AccountRole, AccountRoleModel>();
-            //CreateMap<TurmaTipo, TurmaTipoModel>();
+
+            CreateMap<PerfilCognitivo, PerfilCognitivoModel>();
 
             CreateMap<Account, AccountResponse>();
             CreateMap<Account, AuthenticateResponse>();

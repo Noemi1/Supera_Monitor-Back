@@ -16,10 +16,8 @@ namespace Supera_Monitor_Back.Services {
 
         List<TurmaList> GetAll();
 
-        //List<TurmaTipoModel> GetTypes();
+        List<PerfilCognitivoModel> GetAllPerfisCognitivos();
         List<AlunoList> GetAllAlunosByTurma(int turmaId);
-        //List<AulaVisualizationModel> GetAllPossibleAulasByTurma(int turmaId, DateTime dateReference);
-
     }
 
     public class TurmaService : ITurmaService {
@@ -54,12 +52,12 @@ namespace Supera_Monitor_Back.Services {
             return turmas;
         }
 
-        //public List<TurmaTipoModel> GetTypes()
-        //{
-        //    List<TurmaTipo> types = _db.TurmaTipos.ToList();
+        public List<PerfilCognitivoModel> GetAllPerfisCognitivos()
+        {
+            List<PerfilCognitivo> profiles = _db.PerfilCognitivo.ToList();
 
-        //    return _mapper.Map<List<TurmaTipoModel>>(types);
-        //}
+            return _mapper.Map<List<PerfilCognitivoModel>>(profiles);
+        }
 
         public ResponseModel Insert(CreateTurmaRequest model)
         {
