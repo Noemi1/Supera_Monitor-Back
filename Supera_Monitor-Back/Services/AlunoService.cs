@@ -21,7 +21,6 @@ namespace Supera_Monitor_Back.Services {
         List<ApostilaList> GetApostilasByAluno(int alunoId);
 
         ResponseModel NewReposicao(NewReposicaoRequest model);
-
     }
 
     public class AlunoService : IAlunoService {
@@ -114,8 +113,15 @@ namespace Supera_Monitor_Back.Services {
                     bool apostilaKitExists = _db.Apostila_Kit.Any(k => k.Id == model.Apostila_Kit_Id);
 
                     if (!apostilaKitExists) {
-                        return new ResponseModel { Message = "Não é possível atualizar um aluno com um kit que não existe" };
+                        return new ResponseModel { Message = "Não é possível inserir um aluno com um kit que não existe" };
                     }
+                }
+
+                // Não deve ser possível inserir um aluno com um perfil cognitivo que não existe
+                bool perfilCognitivoExists = _db.PerfilCognitivo.Any(p => p.Id == model.PerfilCognitivo_Id);
+
+                if (perfilCognitivoExists == false) {
+                    return new ResponseModel { Message = "Não é possível inserir um aluno com um perfil cognitivo que não existe" };
                 }
 
                 // Validations passed
@@ -125,6 +131,9 @@ namespace Supera_Monitor_Back.Services {
                 aluno.Apostila_Kit_Id = model.Apostila_Kit_Id;
                 aluno.Aluno_Foto = model.Aluno_Foto;
                 aluno.Created = TimeFunctions.HoraAtualBR();
+                aluno.DataInicioVigencia = model.DataInicioVigencia;
+                aluno.DataFimVigencia = model.DataFimVigencia;
+                aluno.PerfilCognitivo_Id = model.PerfilCognitivo_Id;
                 aluno.Deactivated = null;
 
                 _db.Aluno.Add(aluno);
@@ -176,6 +185,13 @@ namespace Supera_Monitor_Back.Services {
                 // Aluno só pode ser atualizado se existir
                 if (aluno == null) {
                     return new ResponseModel { Message = "Aluno não encontrado" };
+                }
+
+                // Não deve ser possível atualizar um aluno com um perfil cognitivo que não existe
+                bool perfilCognitivoExists = _db.PerfilCognitivo.Any(p => p.Id == model.PerfilCognitivo_Id);
+
+                if (perfilCognitivoExists == false) {
+                    return new ResponseModel { Message = "Não é possível atualizar um aluno com um perfil cognitivo que não existe" };
                 }
 
                 // Aluno só pode ser operado em atualizações ou troca de turma se for uma turma válida
@@ -381,24 +397,47 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Não é possível marcar reposição para uma aula que já ocorreu no passado" };
                 }
 
+                if (aulaDest.Deactivated != null) {
+                    return new ResponseModel { Message = "Não é possível inserir reposição em uma aula inativa" };
+                }
+
                 if (Math.Abs((aulaDest.Data - aulaSource.Data).TotalDays) > 30) {
                     return new ResponseModel { Message = "A data da aula destino não pode ultrapassar 30 dias de diferença da aula original" };
                 }
 
-                Turma? turmaSource = _db.Turma.Find(aulaSource.Turma_Id);
-                Turma? turmaDest = _db.Turma.Find(aulaDest.Turma_Id);
+                // Se for aula independente (aulaDest.Turma_Id == -1), não há restrições na reposição
+                Turma? turmaDest = _db.Turma
+                    .Include(p => p.Turma_PerfilCognitivo_Rel)
+                    .FirstOrDefault(t => t.Id == aulaDest.Turma_Id);
 
-                if (turmaSource is null) {
-                    return new ResponseModel { Message = "Turma original não encontrada" };
+                // Pega registros da aula destino
+                List<Aula_Aluno> registros = _db.Aula_Aluno
+                    .Where(r => r.Aula_Id == model.Dest_Aula_Id)
+                    .ToList();
+
+                bool RegistroAlreadyExists = registros.Any(r => r.Aluno_Id == model.Aluno_Id);
+
+                if (RegistroAlreadyExists) {
+                    return new ResponseModel { Message = "Aluno já está cadastrado na aula destino" };
                 }
 
-                if (turmaDest is null) {
-                    return new ResponseModel { Message = "Turma destino não encontrada" };
-                }
+                // Se for aula de uma turma
+                if (turmaDest is not null) {
+                    // A turma e o aluno devem compartilhar um perfil cognitivo
+                    bool perfilCognitivoMatches = turmaDest.Turma_PerfilCognitivo_Rel
+                        .Any(tp =>
+                            tp.Turma_Id == turmaDest.Id &&
+                            tp.PerfilCognitivo_Id == aluno.PerfilCognitivo_Id);
 
-                //if (turmaSource.Turma_Tipo_Id != turmaDest.Turma_Tipo_Id) {
-                //    return new ResponseModel { Message = "Não é possível repor aulas em uma turma de outro tipo" };
-                //}
+                    if (perfilCognitivoMatches == false) {
+                        return new ResponseModel { Message = "O perfil cognitivo da turma não é adequado para este aluno" };
+                    }
+
+                    // A aula destino deve ter espaço para comportar o aluno
+                    if (registros.Count >= turmaDest.CapacidadeMaximaAlunos) {
+                        return new ResponseModel { Message = "Essa aula já está em sua capacidade máxima" };
+                    }
+                }
 
                 Aula_Aluno? registroSource = _db.Aula_Aluno.FirstOrDefault(r =>
                     r.Aluno_Id == model.Aluno_Id &&
@@ -406,18 +445,6 @@ namespace Supera_Monitor_Back.Services {
 
                 if (registroSource is null) {
                     return new ResponseModel { Message = "Registro do aluno não foi encontrado na aula original" };
-                }
-
-                List<CalendarioAlunoList> registros = _db.CalendarioAlunoList.Where(r => r.Aula_Id == model.Dest_Aula_Id).ToList();
-
-                bool ReposicaoAlreadyExists = registros.Any(r => r.Aluno_Id == model.Aluno_Id);
-
-                if (ReposicaoAlreadyExists) {
-                    return new ResponseModel { Message = "Aluno já está cadastrado para reposição nesta aula" };
-                }
-
-                if (registros.Count >= turmaDest.CapacidadeMaximaAlunos) {
-                    return new ResponseModel { Message = "Essa aula já está em sua capacidade máxima" };
                 }
 
                 // Validations passed
@@ -430,9 +457,6 @@ namespace Supera_Monitor_Back.Services {
                 };
 
                 _db.Aula_Aluno.Add(registroDest);
-                _db.SaveChanges();
-
-                _db.Aula_Aluno.Remove(registroSource);
                 _db.SaveChanges();
 
                 response.Success = true;

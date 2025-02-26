@@ -4,8 +4,9 @@
 
         // Alterar dados da entidade Aluno
         public int Turma_Id { get; set; }
-        public string? Aluno_Foto { get; set; }
+        public int PerfilCognitivo_Id { get; set; }
 
+        public string? Aluno_Foto { get; set; }
         public int? Apostila_Kit_Id { get; set; }
 
         // Alterar dados da entidade Pessoa

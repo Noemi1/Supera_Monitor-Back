@@ -123,8 +123,6 @@ namespace Supera_Monitor_Back.Services {
                 _db.Aula.Add(aula);
                 _db.SaveChanges();
 
-                Console.WriteLine($"aulaId: {aula.Id}");
-
                 // Inserir os registros dos alunos originais na aula recém criada
                 // Se for uma aula sem Turma, então essa lista é vazia, e por padrão não será inserido nenhum registro de aluno
                 List<Aluno> alunos = _db.Aluno.Where(a => a.Turma_Id == aula.Turma_Id).ToList();
