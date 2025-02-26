@@ -20,6 +20,6 @@ namespace Supera_Monitor_Back.Entities.Views {
 
         public string? CorLegenda { get; set; }
 
-        public List<PerfilCognitivoModel> PerfilCognitivo = new();
+        public List<PerfilCognitivoModel> PerfilCognitivo { get; set; } = new();
     }
 }
