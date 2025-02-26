@@ -1,4 +1,6 @@
-﻿namespace Supera_Monitor_Back.Entities;
+﻿using Supera_Monitor_Back.Helpers;
+
+namespace Supera_Monitor_Back.Entities;
 
 public partial class Professor {
     public int Id { get; set; }
@@ -22,4 +24,13 @@ public partial class Professor {
     public virtual Professor_NivelCertificacao? Professor_NivelCertificacao { get; set; }
 
     public virtual ICollection<Turma> Turma { get; set; } = new List<Turma>();
+
+    // 365.25 para considerar anos bissextos
+    public int Idade => DataNascimento.HasValue
+        ? ( int )((DateTime.Today - DataNascimento.Value).TotalDays / 365.25)
+        : 0;
+
+    public bool Aniversario => DataNascimento.HasValue
+        && DataNascimento.Value.Day == TimeFunctions.HoraAtualBR().Day
+        && DataNascimento.Value.Month == TimeFunctions.HoraAtualBR().Month;
 }

@@ -449,12 +449,17 @@ namespace Supera_Monitor_Back.Services {
 
                 // Validations passed
 
+                // Amarrar o novo registro à aula sendo reposta
                 Aula_Aluno registroDest = new() {
                     Aluno_Id = model.Aluno_Id,
                     Aula_Id = model.Dest_Aula_Id,
                     Presente = null,
                     ReposicaoDe_Aula_Id = model.Source_Aula_Id,
                 };
+
+                // Inserir falta na aula antiga
+                registroSource.Presente = false;
+                _db.Aula_Aluno.Update(registroSource);
 
                 _db.Aula_Aluno.Add(registroDest);
                 _db.SaveChanges();
