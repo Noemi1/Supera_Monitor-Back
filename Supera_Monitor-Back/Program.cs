@@ -44,6 +44,7 @@ builder.Services.AddScoped<IProfessorService, ProfessorService>();
 builder.Services.AddScoped<IProfessorService, ProfessorService>();
 builder.Services.AddScoped<IAulaService, AulaService>();
 builder.Services.AddScoped<IPessoaService, PessoaService>();
+builder.Services.AddScoped<IListaEsperaService, ListaEsperaService>();
 
 #endregion
 

@@ -36,6 +36,8 @@ namespace Supera_Monitor_Back.Helpers {
 
         public virtual DbSet<Aula> Aula { get; set; }
 
+        public virtual DbSet<AulaEsperaList> AulaEsperaList { get; set; }
+
         public virtual DbSet<Aula_Aluno> Aula_Aluno { get; set; }
 
         public virtual DbSet<Aula_ListaEspera> Aula_ListaEspera { get; set; }
@@ -352,6 +354,33 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.HasOne(d => d.Turma).WithMany(p => p.Aulas)
                     .HasForeignKey(d => d.Turma_Id)
                     .HasConstraintName("FK_Aula_Turma");
+            });
+
+            modelBuilder.Entity<AulaEsperaList>(entity => {
+                entity
+                    .HasNoKey()
+                    .ToView("AulaEsperaList");
+
+                entity.Property(e => e.Aluno_Foto).IsUnicode(false);
+                entity.Property(e => e.Celular)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.DataNascimento).HasColumnType("date");
+                entity.Property(e => e.Email)
+                    .HasMaxLength(250)
+                    .IsUnicode(false);
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(250)
+                    .IsUnicode(false);
+                entity.Property(e => e.Observacao)
+                    .HasMaxLength(8000)
+                    .IsUnicode(false);
+                entity.Property(e => e.PerfilCognitivo)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.Telefone)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<Aula_Aluno>(entity => {
