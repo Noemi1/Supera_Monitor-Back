@@ -654,25 +654,30 @@ namespace Supera_Monitor_Back.Services {
                 _db.Aula.Add(aulaReagendada);
                 _db.SaveChanges();
 
-                List<Aula_Aluno> alunos = _db.Aula_Aluno.Where(a => a.Aula_Id == aula.Id).ToList();
+                List<Aula_Aluno> registrosOriginais = _db.Aula_Aluno.Where(a => a.Aula_Id == aula.Id).ToList();
 
-                // TODO: Confirmar qual o comportamento esperado quando ocorre um reagendamento de aula
-                foreach (Aula_Aluno aluno in alunos) {
+                // Mover os registros dos alunos para a nova aula e remover os antigos
+                foreach (Aula_Aluno registro in registrosOriginais) {
                     Aula_Aluno registroReagendado = new() {
                         Aula_Id = aulaReagendada.Id,
 
-                        Aluno_Id = aluno.Aluno_Id,
+                        Aluno_Id = registro.Aluno_Id,
 
-                        Observacao = aluno.Observacao,
-                        Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
-                        NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
-                        Apostila_AH_Id = aluno.Apostila_AH_Id,
-                        NumeroPaginaAH = aluno.NumeroPaginaAH
+                        Observacao = registro.Observacao,
+                        Apostila_Abaco_Id = registro.Apostila_Abaco_Id,
+                        NumeroPaginaAbaco = registro.NumeroPaginaAbaco,
+                        Apostila_AH_Id = registro.Apostila_AH_Id,
+                        NumeroPaginaAH = registro.NumeroPaginaAH,
+
+                        ReposicaoDe_Aula_Id = registro.ReposicaoDe_Aula_Id,
                     };
 
                     _db.Aula_Aluno.Add(registroReagendado);
                 }
 
+                _db.SaveChanges();
+
+                _db.Aula_Aluno.RemoveRange(registrosOriginais);
                 _db.SaveChanges();
 
                 response.Success = true;

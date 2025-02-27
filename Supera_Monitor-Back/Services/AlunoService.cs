@@ -445,6 +445,10 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Registro do aluno não foi encontrado na aula original" };
                 }
 
+                if (registroSource.Presente == true) {
+                    return new ResponseModel { Message = "Não é possível de marcar reposição de aula para um aluno se este estava presente na aula original" };
+                }
+
                 // Validations passed
 
                 // Amarrar o novo registro à aula sendo reposta
@@ -455,8 +459,11 @@ namespace Supera_Monitor_Back.Services {
                     ReposicaoDe_Aula_Id = model.Source_Aula_Id,
                 };
 
-                // Inserir falta na aula antiga
-                registroSource.Presente = false;
+                // Se a reposição for feita após o horário da aula, ocasiona falta
+                if (TimeFunctions.HoraAtualBR() > aulaSource.Data) {
+                    registroSource.Presente = false;
+                }
+
                 _db.Aula_Aluno.Update(registroSource);
 
                 _db.Aula_Aluno.Add(registroDest);
