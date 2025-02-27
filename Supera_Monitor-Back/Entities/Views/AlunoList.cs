@@ -4,6 +4,14 @@
 
         public int Pessoa_Id { get; set; }
 
+        public int? Checklist_Id { get; set; }
+
+        public string? Checklist { get; set; }
+
+        public DateTime? DataInicioVigencia { get; set; }
+
+        public DateTime? DataFimVigencia { get; set; }
+
         public string? Nome { get; set; }
 
         public DateTime? DataNascimento { get; set; }
