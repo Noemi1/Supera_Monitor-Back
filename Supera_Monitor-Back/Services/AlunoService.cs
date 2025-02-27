@@ -128,12 +128,7 @@ namespace Supera_Monitor_Back.Services {
 
                 Aluno aluno = _mapper.Map<Aluno>(model);
 
-                aluno.Apostila_Kit_Id = model.Apostila_Kit_Id;
-                aluno.Aluno_Foto = model.Aluno_Foto;
                 aluno.Created = TimeFunctions.HoraAtualBR();
-                aluno.DataInicioVigencia = model.DataInicioVigencia;
-                aluno.DataFimVigencia = model.DataFimVigencia;
-                aluno.PerfilCognitivo_Id = model.PerfilCognitivo_Id;
                 aluno.Deactivated = null;
 
                 _db.Aluno.Add(aluno);
@@ -237,9 +232,12 @@ namespace Supera_Monitor_Back.Services {
                     return pessoaResponse;
                 }
 
-                aluno.Apostila_Kit_Id = model.Apostila_Kit_Id;
-                aluno.Aluno_Foto = model.Aluno_Foto;
                 aluno.Turma_Id = model.Turma_Id;
+                aluno.Aluno_Foto = model.Aluno_Foto;
+                aluno.Apostila_Kit_Id = model.Apostila_Kit_Id;
+                aluno.DataInicioVigencia = model.DataInicioVigencia ?? aluno.DataInicioVigencia;
+                aluno.DataFimVigencia = model.DataFimVigencia ?? aluno.DataFimVigencia;
+
                 aluno.LastUpdated = TimeFunctions.HoraAtualBR();
 
                 _db.Aluno.Update(aluno);
