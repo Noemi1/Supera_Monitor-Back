@@ -5,6 +5,7 @@ using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Accounts;
 using Supera_Monitor_Back.Models.Aluno;
 using Supera_Monitor_Back.Models.Aula;
+using Supera_Monitor_Back.Models.Checklist;
 using Supera_Monitor_Back.Models.Pessoa;
 using Supera_Monitor_Back.Models.Professor;
 using Supera_Monitor_Back.Models.Turma;
@@ -55,6 +56,9 @@ namespace Supera_Monitor_Back.Helpers {
             CreateMap<CalendarioList, Aula>();
 
             CreateMap<Apostila_Kit, KitResponse>();
+
+            CreateMap<Checklist_Item, ChecklistItemModel>();
+            CreateMap<Aluno_Checklist_Item, AlunoChecklistItemModel>();
         }
     }
 }

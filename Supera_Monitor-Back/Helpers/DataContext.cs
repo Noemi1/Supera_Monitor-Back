@@ -18,6 +18,8 @@ namespace Supera_Monitor_Back.Helpers {
 
         public virtual DbSet<AlunoList> AlunoList { get; set; }
 
+        public virtual DbSet<Aluno_Checklist_Item> Aluno_Checklist_Item { get; set; }
+
         public virtual DbSet<Aluno_Restricao> Aluno_Restricao { get; set; }
 
         public virtual DbSet<Aluno_Restricao_Rel> Aluno_Restricao_Rel { get; set; }
@@ -45,6 +47,10 @@ namespace Supera_Monitor_Back.Helpers {
         public virtual DbSet<CalendarioAlunoList> CalendarioAlunoList { get; set; }
 
         public virtual DbSet<CalendarioList> CalendarioList { get; set; }
+
+        public virtual DbSet<Checklist> Checklist { get; set; }
+
+        public virtual DbSet<Checklist_Item> Checklist_Item { get; set; }
 
         public virtual DbSet<Feriado> Feriado { get; set; }
 
@@ -191,7 +197,12 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.Property(e => e.Celular)
                     .HasMaxLength(50)
                     .IsUnicode(false);
+                entity.Property(e => e.Checklist)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
                 entity.Property(e => e.Created).HasColumnType("datetime");
+                entity.Property(e => e.DataFimVigencia).HasColumnType("date");
+                entity.Property(e => e.DataInicioVigencia).HasColumnType("date");
                 entity.Property(e => e.DataNascimento).HasColumnType("date");
                 entity.Property(e => e.Deactivated).HasColumnType("datetime");
                 entity.Property(e => e.Email)
@@ -219,6 +230,27 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.Property(e => e.Turma)
                     .HasMaxLength(100)
                     .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Aluno_Checklist_Item>(entity => {
+                entity.ToTable("Aluno_Checklist_Item");
+
+                entity.Property(e => e.DataFinalizacao).HasColumnType("datetime");
+                entity.Property(e => e.Prazo).HasColumnType("date");
+
+                entity.HasOne(d => d.Account_Finalizacao).WithMany(p => p.Aluno_Checklist_Item)
+                    .HasForeignKey(d => d.Account_Finalizacao_Id)
+                    .HasConstraintName("FK_Aluno_Checklist_Item_Account_Finalizacao");
+
+                entity.HasOne(d => d.Aluno).WithMany(p => p.Aluno_Checklist_Item)
+                    .HasForeignKey(d => d.Aluno_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Aluno_Checklist_Item_Aluno");
+
+                entity.HasOne(d => d.Checklist_Item).WithMany(p => p.Aluno_Checklist_Item)
+                    .HasForeignKey(d => d.Checklist_Item_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Aluno_Checklist_Item_Checklist_Item");
             });
 
             modelBuilder.Entity<Aluno_Restricao>(entity => {
@@ -481,6 +513,28 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.Property(e => e.Turma)
                     .HasMaxLength(100)
                     .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Checklist>(entity => {
+                entity.ToTable("Checklist");
+
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<Checklist_Item>(entity => {
+                entity.ToTable("Checklist_Item");
+
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.Deactivated).HasColumnType("datetime");
+
+                entity.HasOne(d => d.Checklist).WithMany(p => p.Checklist_Items)
+                    .HasForeignKey(d => d.Checklist_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Checklist_Item_Checklist");
             });
 
             modelBuilder.Entity<Feriado>(entity => {

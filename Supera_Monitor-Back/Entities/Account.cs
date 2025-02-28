@@ -32,6 +32,7 @@
         public virtual ICollection<Account> Created_Account { get; set; } = new List<Account>();
         public virtual ICollection<Aula_ListaEspera> Aula_ListaEspera { get; set; } = new List<Aula_ListaEspera>();
         public virtual ICollection<AccountRefreshToken> AccountRefreshToken { get; set; } = new List<AccountRefreshToken>();
+        public virtual ICollection<Aluno_Checklist_Item> Aluno_Checklist_Item { get; set; } = new List<Aluno_Checklist_Item>();
 
         public bool OwnsToken(string token)
         {

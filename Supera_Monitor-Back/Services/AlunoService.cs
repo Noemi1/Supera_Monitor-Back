@@ -29,12 +29,14 @@ namespace Supera_Monitor_Back.Services {
         private readonly Account? _account;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IPessoaService _pessoaService;
+        private readonly IChecklistService _checklistService;
 
-        public AlunoService(DataContext db, IMapper mapper, IPessoaService pessoaService, IHttpContextAccessor httpContextAccessor)
+        public AlunoService(DataContext db, IMapper mapper, IPessoaService pessoaService, IHttpContextAccessor httpContextAccessor, IChecklistService checklistService)
         {
             _db = db;
             _mapper = mapper;
             _pessoaService = pessoaService;
+            _checklistService = checklistService;
             _httpContextAccessor = httpContextAccessor;
             _account = ( Account? )httpContextAccessor?.HttpContext?.Items["Account"];
         }
@@ -133,6 +135,12 @@ namespace Supera_Monitor_Back.Services {
 
                 _db.Aluno.Add(aluno);
                 _db.SaveChanges();
+
+                ResponseModel populateChecklistResponse = _checklistService.PopulateAlunoChecklist(aluno.Id);
+
+                if (populateChecklistResponse.Success == false) {
+                    return populateChecklistResponse;
+                }
 
                 List<Aula> aulasTurmaDestino = _db.Aula
                     .Where(x =>

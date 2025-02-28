@@ -25,6 +25,8 @@ public partial class Aluno {
 
     public int? PerfilCognitivo_Id { get; set; }
 
+    public virtual ICollection<Aluno_Checklist_Item> Aluno_Checklist_Item { get; set; } = new List<Aluno_Checklist_Item>();
+
     public virtual ICollection<Aluno_Restricao_Rel> Aluno_Restricao_Rel { get; set; } = new List<Aluno_Restricao_Rel>();
 
     public virtual Apostila_Kit? Apostila_Kit { get; set; }
