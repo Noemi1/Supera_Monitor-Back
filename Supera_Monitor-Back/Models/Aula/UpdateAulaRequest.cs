@@ -6,5 +6,6 @@
         public int Professor_Id { get; set; }
 
         public string? Observacao { get; set; }
+        public string? Descricao { get; set; }
     }
 }

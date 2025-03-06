@@ -105,21 +105,23 @@ namespace Supera_Monitor_Back.Helpers {
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            var configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("AppSettings.json")
-                .Build();
+            if (!optionsBuilder.IsConfigured) { // Se já estiver configurado, não configura de novo (Testes realizam injeção de dependências)
+                var configuration = new ConfigurationBuilder()
+                    .SetBasePath(Directory.GetCurrentDirectory())
+                    .AddJsonFile("AppSettings.json")
+                    .Build();
 
-            var connectionString = configuration.GetConnectionString("ConnectionString");
+                var connectionString = configuration.GetConnectionString("ConnectionString");
 
-            optionsBuilder.UseSqlServer(connectionString, options => {
-                options.CommandTimeout(1200); // 20 minutos
-                options.EnableRetryOnFailure(
-                    maxRetryCount: 3,
-                    maxRetryDelay: TimeSpan.FromSeconds(30),
-                    errorNumbersToAdd: null
-                );
-            });
+                optionsBuilder.UseSqlServer(connectionString, options => {
+                    options.CommandTimeout(1200); // 20 minutos
+                    options.EnableRetryOnFailure(
+                        maxRetryCount: 3,
+                        maxRetryDelay: TimeSpan.FromSeconds(30),
+                        errorNumbersToAdd: null
+                    );
+                });
+            }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -504,6 +506,12 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.Property(e => e.Apostila_Abaco)
                     .HasMaxLength(50)
                     .IsUnicode(false);
+                entity.Property(e => e.Celular)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.CheckList)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
                 entity.Property(e => e.Kit)
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -652,6 +660,8 @@ namespace Supera_Monitor_Back.Helpers {
             });
 
             modelBuilder.Entity<Pessoa_FaixaEtaria>(entity => {
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
                 entity.Property(e => e.Nome)
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -709,6 +719,7 @@ namespace Supera_Monitor_Back.Helpers {
 
             modelBuilder.Entity<Pessoa_Sexo>(entity => {
                 entity.ToTable("Pessoa_Sexo");
+                entity.Property(e => e.Id).ValueGeneratedNever();
 
                 entity.Property(e => e.Nome)
                     .HasMaxLength(50)
@@ -717,6 +728,7 @@ namespace Supera_Monitor_Back.Helpers {
 
             modelBuilder.Entity<Pessoa_Status>(entity => {
                 entity.ToTable("Pessoa_Status");
+                entity.Property(e => e.Id).ValueGeneratedNever();
 
                 entity.Property(e => e.Nome)
                     .HasMaxLength(50)

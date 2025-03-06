@@ -73,10 +73,13 @@ namespace Supera_Monitor_Back.Services {
 
             try {
                 // Se Turma_Id passado na requisição for NÃO NULO, a turma deve existir
-                if (model.Turma_Id.HasValue) {
-                    bool TurmaExists = _db.Turma.Any(t => t.Id == model.Turma_Id);
 
-                    if (!TurmaExists) {
+                Turma? turma = null;
+
+                if (model.Turma_Id.HasValue) {
+                    turma = _db.Turma.Find(model.Turma_Id);
+
+                    if (turma is null) {
                         return new ResponseModel { Message = "Turma não encontrada" };
                     }
                 }
@@ -117,7 +120,8 @@ namespace Supera_Monitor_Back.Services {
                     Sala_Id = model.Sala_Id,
                     Professor_Id = model.Professor_Id,
                     Turma_Id = model.Turma_Id,
-                    Created = TimeFunctions.HoraAtualBR()
+                    Created = TimeFunctions.HoraAtualBR(),
+                    Descricao = !string.IsNullOrEmpty(model.Descricao) ? model.Descricao : turma?.Nome ?? "Aula independente",
                 };
 
                 _db.Aula.Add(aula);
@@ -198,6 +202,7 @@ namespace Supera_Monitor_Back.Services {
                 aula.Sala_Id = model.Sala_Id;
                 aula.Professor_Id = model.Professor_Id;
                 aula.Observacao = model.Observacao;
+                aula.Descricao = string.IsNullOrEmpty(model.Descricao) ? aula.Descricao : model.Descricao;
                 aula.LastUpdated = TimeFunctions.HoraAtualBR();
 
                 _db.Aula.Update(aula);
@@ -336,6 +341,8 @@ namespace Supera_Monitor_Back.Services {
                         ( int )a.Data.DayOfWeek == turma.DiaSemana &&
                         a.Data.TimeOfDay == turma.Horario);
 
+                    Sala? sala = _db.Sala.FirstOrDefault(s => s.Id == turma.Sala_Id);
+
                     CalendarioList agendamento = new();
 
                     Professor? associatedProfessor = professores.FirstOrDefault(p => p.Id == turma.Professor_Id);
@@ -352,6 +359,10 @@ namespace Supera_Monitor_Back.Services {
                         agendamento.Professor = associatedProfessor?.Account.Name ?? "Professor indefinido";
                         agendamento.CorLegenda = associatedProfessor?.CorLegenda ?? "#000";
 
+                        agendamento.Sala_Id = turma.Sala_Id;
+                        agendamento.NumeroSala = sala?.NumeroSala;
+                        agendamento.Andar = sala?.Andar;
+
                         agendamento.Observacao = "";
                     }
 
@@ -366,6 +377,9 @@ namespace Supera_Monitor_Back.Services {
                         agendamento.Professor_Id = aula.Professor_Id;
                         agendamento.Professor = associatedProfessor?.Account.Name ?? "Professor Indefinido";
                         agendamento.CorLegenda = associatedProfessor?.CorLegenda ?? "#000";
+                        agendamento.Sala_Id = sala?.Id;
+                        agendamento.NumeroSala = sala?.NumeroSala;
+                        agendamento.Andar = sala?.Andar;
 
                         agendamento.Observacao = aula.Observacao;
                     }
@@ -391,6 +405,7 @@ namespace Supera_Monitor_Back.Services {
                     Professor = associatedProfessor?.Account.Name ?? "Professor Indefinido",
                     CorLegenda = associatedProfessor?.CorLegenda ?? "#000",
 
+                    Sala_Id = aula.Sala_Id,
                     Observacao = aula.Observacao,
                     Finalizada = aula.Finalizada
                 };

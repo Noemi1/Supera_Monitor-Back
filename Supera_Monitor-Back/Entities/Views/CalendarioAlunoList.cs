@@ -6,7 +6,13 @@
 
         public int Aula_Id { get; set; }
 
+        public string? CheckList { get; set; }
+
+        public int? Checklist_Id { get; set; }
+
         public string? Aluno { get; set; }
+
+        public string? Celular { get; set; }
 
         public string? Aluno_Foto { get; set; }
 

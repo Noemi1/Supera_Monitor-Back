@@ -159,5 +159,18 @@ namespace Supera_Monitor_Back.Controllers {
                 return StatusCode(500, e);
             }
         }
+
+        [HttpGet("all/with-checklist")]
+        public ActionResult<List<ApostilaList>> GetAllWithChecklist()
+        {
+            try {
+                var response = _alunoService.GetAllWithChecklist();
+
+                return Ok(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
     }
 }

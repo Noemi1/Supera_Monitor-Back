@@ -12,6 +12,7 @@ namespace Supera_Monitor_Back.Services {
     public interface IAlunoService {
         AlunoList Get(int alunoId);
         List<AlunoList> GetAll();
+        List<AlunoListWithChecklist> GetAllWithChecklist();
         ResponseModel Insert(CreateAlunoRequest model);
         ResponseModel Update(UpdateAlunoRequest model);
         ResponseModel ToggleDeactivate(int alunoId);
@@ -57,6 +58,19 @@ namespace Supera_Monitor_Back.Services {
             List<AlunoList> alunos = _db.AlunoList.OrderBy(a => a.Nome).ToList();
 
             return alunos;
+        }
+
+        public List<AlunoListWithChecklist> GetAllWithChecklist()
+        {
+            List<AlunoList> alunos = _db.AlunoList.OrderBy(a => a.Nome).ToList();
+
+            List<AlunoListWithChecklist> alunosWithChecklist = _mapper.Map<List<AlunoListWithChecklist>>(alunos);
+
+            foreach (var alunoList in alunosWithChecklist) {
+                alunoList.AlunoChecklist = _checklistService.GetAllByAlunoId(alunoList.Id);
+            }
+
+            return alunosWithChecklist;
         }
 
         public ResponseModel Insert(CreateAlunoRequest model)

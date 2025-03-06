@@ -24,6 +24,10 @@
 
         public int? ReposicaoDe_Aula_Id { get; set; }
 
-        public int Sala_Id { get; set; }
+        public int? Sala_Id { get; set; }
+
+        public int? NumeroSala { get; set; }
+
+        public int? Andar { get; set; }
     }
 }

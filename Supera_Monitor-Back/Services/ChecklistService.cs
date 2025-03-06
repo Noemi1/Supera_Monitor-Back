@@ -169,16 +169,39 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Aluno já possui itens na checklist, logo, não foi populado novamente" };
                 }
 
+                // Se o aluno não tiver uma data de início de vigencia, não será possível calcular os prazos
+                if (aluno.DataInicioVigencia is null) {
+                    return new ResponseModel { Message = "Aluno deve possuir uma data de início de vigência para calcular os prazos das atividades" };
+                }
+
                 // Buscar todos os itens da checklist não desativados
                 List<Checklist_Item> checklistItems = _db.Checklist_Item.Where(c => c.Deactivated == null).ToList();
 
                 List<Aluno_Checklist_Item> alunoChecklist = new();
 
+                List<Checklist> checklists = _db.Checklist.ToList();
+
                 // Para cada um, adicionar na checklist do aluno
                 foreach (Checklist_Item item in checklistItems) {
+                    // Obtém o número da semana da tarefa, padrão 0 se não encontrado
+                    int semana = checklists.FirstOrDefault(c => c.Id == item.Checklist_Id)?.NumeroSemana ?? 0;
+
+                    // Obtém a data de início do aluno
+                    DateTime dataInicio = ( DateTime )aluno.DataInicioVigencia;
+
+                    // Calcula quantos dias faltam para o próximo domingo após a data de início
+                    int diasAteDomingo = (( int )DayOfWeek.Sunday - ( int )dataInicio.DayOfWeek + 7) % 7;
+
+                    // Determina o primeiro domingo a partir da data de início
+                    DateTime primeiroDomingo = dataInicio.AddDays(diasAteDomingo);
+
+                    // Calcula o prazo final da tarefa (domingo da semana correspondente)
+                    DateTime prazo = primeiroDomingo.AddDays(7 * (semana + 1));
+
+                    // Adiciona o item à checklist do aluno
                     alunoChecklist.Add(new() {
                         Aluno_Id = aluno.Id,
-                        Prazo = aluno.DataInicioVigencia.HasValue ? aluno.DataInicioVigencia.Value.AddDays(90) : null,
+                        Prazo = prazo,
                         Checklist_Item_Id = item.Id,
                         DataFinalizacao = null,
                         Account_Finalizacao_Id = null,
@@ -231,5 +254,6 @@ namespace Supera_Monitor_Back.Services {
 
             return response;
         }
+
     }
 }

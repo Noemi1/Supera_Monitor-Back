@@ -60,6 +60,7 @@ namespace Supera_Monitor_Back.Helpers {
 
             CreateMap<Checklist_Item, ChecklistItemModel>();
             CreateMap<Aluno_Checklist_Item, AlunoChecklistItemModel>();
+            CreateMap<AlunoList, AlunoListWithChecklist>();
 
             CreateMap<Sala, SalaModel>();
         }

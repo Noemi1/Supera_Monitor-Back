@@ -25,6 +25,8 @@ public partial class Aula {
 
     public DateTime? LastUpdated { get; set; }
 
+    public string? Descricao { get; set; }
+
     public virtual Account? Account_Created { get; set; }
 
     public virtual ICollection<Aula_Aluno> Aula_Aluno { get; set; } = new List<Aula_Aluno>();
