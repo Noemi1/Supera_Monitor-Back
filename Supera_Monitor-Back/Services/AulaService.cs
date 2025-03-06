@@ -265,6 +265,65 @@ namespace Supera_Monitor_Back.Services {
                 .Where(p => p.Account.Deactivated == null)
                 .ToList();
 
+            //Aplicar filtros
+            // Filtro de Turma
+            if (request.Turma_Id.HasValue) {
+                turmas = turmas.Where(x => x.Id == request.Turma_Id.Value).ToList();
+                aulas = aulas.Where(x => x.Turma_Id == request.Turma_Id.Value).ToList();
+                aulasIndependentes = aulasIndependentes.Where(x => x.Turma_Id == request.Turma_Id.Value).ToList();
+            }
+
+            // Filtro de Perfil Cognitivo
+            if (request.Perfil_Cognitivo_Id.HasValue) {
+                int perfilId = request.Perfil_Cognitivo_Id.Value;
+
+                // Filtrar turmas que possuem esse perfil cognitivo
+                turmas = turmas
+                    .Where(t => _db.Turma_PerfilCognitivo_Rel.Any(tp => tp.Turma_Id == t.Id && tp.PerfilCognitivo_Id == perfilId))
+                    .ToList();
+
+                // Obter IDs das turmas filtradas
+                List<int> turmaIds = turmas.Select(t => t.Id).ToList();
+
+                // Filtrar aulas apenas para as turmas que passaram no filtro
+                aulas = aulas.Where(a => a.Turma_Id.HasValue && turmaIds.Contains(a.Turma_Id.Value)).ToList();
+
+                // Como aulas independentes não pertencem a turmas, todas devem ser removidas
+                aulasIndependentes.Clear();
+            }
+
+            // Filtro de Professor
+            if (request.Professor_Id.HasValue) {
+                turmas = turmas.Where(x => x.Professor_Id == request.Professor_Id.Value).ToList();
+                aulas = aulas.Where(x => x.Professor_Id == request.Professor_Id.Value).ToList();
+                aulasIndependentes = aulasIndependentes.Where(x => x.Professor_Id == request.Professor_Id.Value).ToList();
+            }
+
+            // Filtro de Aluno
+            if (request.Aluno_Id.HasValue) {
+                int alunoId = request.Aluno_Id.Value;
+
+                // Buscar a turma do aluno (o aluno sempre pertence a uma turma)
+                var aluno = _db.Aluno.FirstOrDefault(x => x.Id == alunoId);
+
+                if (aluno != null) {
+                    // Filtrar turmas pela turma do aluno
+                    turmas = turmas.Where(x => x.Id == aluno.Turma_Id).ToList();
+
+                    // Filtrar aulas da turma do aluno
+                    aulas = aulas.Where(x => x.Turma_Id == aluno.Turma_Id).ToList();
+
+                    // Buscar IDs das aulas independentes em que o aluno está cadastrado
+                    List<int> aulasIndependentesIds = _db.Aula_Aluno
+                        .Where(x => x.Aluno_Id == alunoId)
+                        .Select(x => x.Aula_Id)
+                        .ToList();
+
+                    // Filtrar apenas as aulas independentes que o aluno se cadastrou
+                    aulasIndependentes = aulasIndependentes.Where(x => aulasIndependentesIds.Contains(x.Id)).ToList();
+                }
+            }
+
             List<CalendarioList> agendamentos = new();
 
             DateTime data = request.IntervaloDe.Value;
