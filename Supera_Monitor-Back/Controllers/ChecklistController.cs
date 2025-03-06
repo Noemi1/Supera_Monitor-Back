@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Checklist;
 using Supera_Monitor_Back.Services;
@@ -23,6 +24,19 @@ namespace Supera_Monitor_Back.Controllers {
         {
             try {
                 var response = _checklistService.GetAllByChecklistId(checklistId);
+
+                return Ok(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
+
+        [HttpGet("all/aluno/{alunoId}")]
+        public ActionResult<List<AlunoChecklistView>> GetAllByAlunoId(int alunoId)
+        {
+            try {
+                var response = _checklistService.GetAllByAlunoId(alunoId);
 
                 return Ok(response);
             } catch (Exception e) {

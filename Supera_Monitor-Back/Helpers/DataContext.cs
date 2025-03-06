@@ -16,6 +16,8 @@ namespace Supera_Monitor_Back.Helpers {
 
         public virtual DbSet<Aluno> Aluno { get; set; }
 
+        public virtual DbSet<AlunoChecklistView> AlunoChecklistView { get; set; }
+
         public virtual DbSet<AlunoList> AlunoList { get; set; }
 
         public virtual DbSet<Aluno_Checklist_Item> Aluno_Checklist_Item { get; set; }
@@ -175,6 +177,18 @@ namespace Supera_Monitor_Back.Helpers {
                     .HasForeignKey(d => d.Turma_Id)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Aluno_Turma");
+            });
+
+            modelBuilder.Entity<AlunoChecklistView>(entity => {
+                entity
+                    .HasNoKey()
+                    .ToView("AlunoChecklistView");
+
+                entity.Property(e => e.DataFinalizacao).HasColumnType("datetime");
+                entity.Property(e => e.Nome)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+                entity.Property(e => e.Prazo).HasColumnType("date");
             });
 
             modelBuilder.Entity<AlunoList>(entity => {

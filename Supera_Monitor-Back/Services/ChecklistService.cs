@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Supera_Monitor_Back.Entities;
+using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Checklist;
@@ -8,6 +9,7 @@ using Supera_Monitor_Back.Models.Checklist;
 namespace Supera_Monitor_Back.Services {
     public interface IChecklistService {
         List<ChecklistItemModel> GetAllByChecklistId(int checklistId);
+        List<AlunoChecklistView> GetAllByAlunoId(int alunoId);
         ResponseModel Insert(CreateChecklistItemRequest model);
         ResponseModel Update(UpdateChecklistItemRequest model);
         ResponseModel ToggleDeactivate(int checklistItemId);
@@ -20,14 +22,14 @@ namespace Supera_Monitor_Back.Services {
         private readonly DataContext _db;
         private readonly IMapper _mapper;
         private readonly Account? _account;
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IHttpContextAccessor? _httpContextAccessor;
 
         public ChecklistService(DataContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor)
         {
             _db = db;
             _mapper = mapper;
             _httpContextAccessor = httpContextAccessor;
-            _account = ( Account? )httpContextAccessor?.HttpContext?.Items["Account"];
+            _account = ( Account? )_httpContextAccessor?.HttpContext?.Items["Account"];
         }
 
         public List<ChecklistItemModel> GetAllByChecklistId(int checklistId)
@@ -40,6 +42,19 @@ namespace Supera_Monitor_Back.Services {
                 .ToList();
 
             return _mapper.Map<List<ChecklistItemModel>>(listChecklistItem);
+        }
+
+
+        public List<AlunoChecklistView> GetAllByAlunoId(int alunoId)
+        {
+            List<AlunoChecklistView> listAlunoChecklistView = _db.AlunoChecklistView
+                .Where(c =>
+                    c.Aluno_Id == alunoId)
+                .OrderBy(c => c.Checklist_Id)
+                .ThenBy(c => c.Ordem)
+                .ToList();
+
+            return listAlunoChecklistView;
         }
 
         public ResponseModel Insert(CreateChecklistItemRequest model)
