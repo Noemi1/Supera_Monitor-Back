@@ -30,6 +30,10 @@
 
         public string? Turma { get; set; }
 
+        public int? DiaSemana { get; set; }
+
+        public TimeSpan? Horario { get; set; }
+
         public int? Professor_Id { get; set; }
 
         public string? Professor { get; set; }
