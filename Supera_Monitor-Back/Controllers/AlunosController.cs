@@ -161,7 +161,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpGet("all/with-checklist")]
-        public ActionResult<List<ApostilaList>> GetAllWithChecklist()
+        public ActionResult<List<AlunoListWithChecklist>> GetAllWithChecklist()
         {
             try {
                 var response = _alunoService.GetAllWithChecklist();
