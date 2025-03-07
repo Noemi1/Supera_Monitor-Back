@@ -8,6 +8,7 @@ using Supera_Monitor_Back.Models.Aula;
 using Supera_Monitor_Back.Models.Checklist;
 using Supera_Monitor_Back.Models.Pessoa;
 using Supera_Monitor_Back.Models.Professor;
+using Supera_Monitor_Back.Models.Restricao;
 using Supera_Monitor_Back.Models.Sala;
 using Supera_Monitor_Back.Models.Turma;
 
@@ -58,11 +59,14 @@ namespace Supera_Monitor_Back.Helpers {
 
             CreateMap<Apostila_Kit, KitResponse>();
 
+            CreateMap<Checklist, ChecklistModel>();
             CreateMap<Checklist_Item, ChecklistItemModel>();
             CreateMap<Aluno_Checklist_Item, AlunoChecklistItemModel>();
             CreateMap<AlunoList, AlunoListWithChecklist>();
 
             CreateMap<Sala, SalaModel>();
+
+            CreateMap<Aluno_Restricao, AlunoRestricaoModel>();
         }
     }
 }

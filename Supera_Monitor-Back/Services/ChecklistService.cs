@@ -8,6 +8,7 @@ using Supera_Monitor_Back.Models.Checklist;
 
 namespace Supera_Monitor_Back.Services {
     public interface IChecklistService {
+        List<ChecklistModel> GetAll();
         List<ChecklistItemModel> GetAllByChecklistId(int checklistId);
         List<AlunoChecklistView> GetAllByAlunoId(int alunoId);
         ResponseModel Insert(CreateChecklistItemRequest model);
@@ -30,6 +31,15 @@ namespace Supera_Monitor_Back.Services {
             _mapper = mapper;
             _httpContextAccessor = httpContextAccessor;
             _account = ( Account? )_httpContextAccessor?.HttpContext?.Items["Account"];
+        }
+
+        public List<ChecklistModel> GetAll()
+        {
+            List<Checklist> listChecklist = _db.Checklist
+                .OrderBy(c => c.Ordem)
+                .ToList();
+
+            return _mapper.Map<List<ChecklistModel>>(listChecklist);
         }
 
         public List<ChecklistItemModel> GetAllByChecklistId(int checklistId)
@@ -254,6 +264,5 @@ namespace Supera_Monitor_Back.Services {
 
             return response;
         }
-
     }
 }

@@ -19,6 +19,19 @@ namespace Supera_Monitor_Back.Controllers {
             _logger = logger;
         }
 
+        [HttpGet("all")]
+        public ActionResult<List<ChecklistModel>> GetAll()
+        {
+            try {
+                var response = _checklistService.GetAll();
+
+                return Ok(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
+
         [HttpGet("all/{checklistId}")]
         public ActionResult<ResponseModel> GetAllByChecklistId(int checklistId)
         {
