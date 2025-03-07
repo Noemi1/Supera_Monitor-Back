@@ -98,11 +98,23 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Este professor está desativado" };
                 }
 
-                // Não devo criar uma turma com um professor que já está ocupado nesse dia da semana / horário
-                bool isProfessorAvailable = _professorService.IsProfessorAvailable(professor.Id, model.Data, model.Data.TimeOfDay, IgnoredAulaId: null);
+                bool professorHasTurmaConflict = _professorService.HasTurmaTimeConflict(
+                    model.Professor_Id,
+                    ( int )model.Data.DayOfWeek,
+                    model.Data.TimeOfDay,
+                    IgnoredTurmaId: turma?.Id);
 
-                if (isProfessorAvailable == false) {
-                    return new ResponseModel { Message = "O professor já tem um compromisso nesse horário" };
+                bool professorHasAulaConflict = _professorService.HasAulaTimeConflict(
+                    model.Professor_Id,
+                    model.Data,
+                    IgnoredAulaId: null);
+
+                if (professorHasAulaConflict) {
+                    return new ResponseModel { Message = "O professor já tem uma aula nesse horário" };
+                }
+
+                if (professorHasTurmaConflict) {
+                    return new ResponseModel { Message = "O professor já tem uma turma nesse horário" };
                 }
 
                 // Não devo poder registrar uma aula em uma sala que não existe
@@ -188,10 +200,23 @@ namespace Supera_Monitor_Back.Services {
 
                 // Se estou trocando de professor, o novo professor não pode estar ocupado nesse dia da semana / horário
                 if (aula.Professor_Id != model.Professor_Id) {
-                    bool isProfessorAvailable = _professorService.IsProfessorAvailable(professor.Id, aula.Data, aula.Data.TimeOfDay, IgnoredAulaId: aula.Id);
+                    bool professorHasTurmaConflict = _professorService.HasTurmaTimeConflict(
+                        model.Professor_Id,
+                        ( int )aula.Data.DayOfWeek,
+                        aula.Data.TimeOfDay,
+                        IgnoredTurmaId: aula.Turma_Id);
 
-                    if (isProfessorAvailable == false) {
-                        return new ResponseModel { Message = "O professor já tem um compromisso nesse horário" };
+                    bool professorHasAulaConflict = _professorService.HasAulaTimeConflict(
+                        model.Professor_Id,
+                        aula.Data,
+                        IgnoredAulaId: aula.Id);
+
+                    if (professorHasAulaConflict) {
+                        return new ResponseModel { Message = "O professor já tem uma aula nesse horário" };
+                    }
+
+                    if (professorHasTurmaConflict) {
+                        return new ResponseModel { Message = "O professor já tem uma turma nesse horário" };
                     }
                 }
 
@@ -693,18 +718,27 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Não é possível reagendar uma aula finalizada" };
                 }
 
-                bool isProfessorAvailable = _professorService.IsProfessorAvailable(
-                    model.Professor_Id,
-                    model.Data,
-                    model.Data.TimeOfDay,
-                    IgnoredAulaId: aula.Id);
-
-                if (isProfessorAvailable == false) {
-                    return new ResponseModel { Message = "O professor já tem um compromisso nesse horário" };
-                }
-
                 if (model.Data <= TimeFunctions.HoraAtualBR()) {
                     return new ResponseModel { Message = "Não é possível reagendar uma aula para um horário que já passou" };
+                }
+
+                bool professorHasTurmaConflict = _professorService.HasTurmaTimeConflict(
+                    model.Professor_Id,
+                    ( int )model.Data.DayOfWeek,
+                    model.Data.TimeOfDay,
+                    IgnoredTurmaId: aula.Turma_Id);
+
+                bool professorHasAulaConflict = _professorService.HasAulaTimeConflict(
+                    model.Professor_Id,
+                    model.Data,
+                    IgnoredAulaId: aula.Id);
+
+                if (professorHasAulaConflict) {
+                    return new ResponseModel { Message = "O professor já tem uma aula nesse horário" };
+                }
+
+                if (professorHasTurmaConflict) {
+                    return new ResponseModel { Message = "O professor já tem uma turma nesse horário" };
                 }
 
                 // Validations passed

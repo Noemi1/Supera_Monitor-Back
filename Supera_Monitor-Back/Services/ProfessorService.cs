@@ -19,8 +19,8 @@ namespace Supera_Monitor_Back.Services {
         List<ApostilaList> GetAllApostilas();
         List<NivelCertificacaoModel> GetAllCertificacoes();
 
-        bool IsProfessorAvailable(int professorId, DateTime date, TimeSpan time, int? IgnoredAulaId);
         bool HasTurmaTimeConflict(int professorId, int DiaSemana, TimeSpan Horario, int? IgnoredTurmaId);
+        public bool HasAulaTimeConflict(int professorId, DateTime date, int? IgnoredAulaId = null);
     }
 
     public class ProfessorService : IProfessorService {
@@ -252,55 +252,6 @@ namespace Supera_Monitor_Back.Services {
             return _mapper.Map<List<NivelCertificacaoModel>>(certificacoes);
         }
 
-        public bool IsProfessorAvailable(int professorId, DateTime date, TimeSpan time, int? IgnoredAulaId = null)
-        {
-            try {
-                Professor professor = _db.Professor.Find(professorId) ?? throw new Exception("IsProfessorAvailable : Professor não pode ser nulo");
-
-                TimeSpan twoHourInterval = TimeSpan.FromHours(2);
-
-                // Verifica se o professor é responsável por uma turma que está ocupando o mesmo dia e horário
-                bool hasTurmaConflict = _db.Turma
-                .Where(t =>
-                    t.Deactivated == null &&
-                    t.Professor_Id == professor.Id &&
-                    t.DiaSemana == ( int )date.DayOfWeek
-                )
-                .AsEnumerable() // Termina a query no banco, passando a responsabilidade do Any para o C#, queries do banco não lidam bem com TimeSpan
-                .Any(t =>
-                    time > t.Horario - twoHourInterval &&
-                    time < t.Horario + twoHourInterval
-                );
-
-                if (hasTurmaConflict) {
-                    return false;
-                }
-
-                // Verifica se o professor é responsável por uma aula que está ocupando o mesmo dia e horário
-                bool hasAulaConflict = _db.Aula
-                .Where(a =>
-                    a.Deactivated == null &&
-                    a.Professor_Id == professor.Id &&
-                    a.Data > TimeFunctions.HoraAtualBR()
-                )
-                .AsEnumerable() // Termina a query no banco, passando a responsabilidade do Any para o C#, queries do banco não lidam bem com TimeSpan
-                .Any(a =>
-                    a.Id != IgnoredAulaId && // Se estou reagendando uma aula, não devo considerar ela mesma como conflito
-                    time > a.Data.TimeOfDay - twoHourInterval &&
-                    time < a.Data.TimeOfDay + twoHourInterval
-                );
-
-                if (hasAulaConflict) {
-                    return false;
-                }
-
-                // Se não possui nenhum conflito de horário, retorna true para a disponibilidade
-                return true;
-            } catch (Exception ex) {
-                throw new Exception("Falha ao resgatar disponibilidade do professor | " + ex.ToString());
-            }
-        }
-
         public bool HasTurmaTimeConflict(int professorId, int DiaSemana, TimeSpan Horario, int? IgnoredTurmaId = null)
         {
             try {
@@ -322,13 +273,36 @@ namespace Supera_Monitor_Back.Services {
                     Horario < t.Horario + twoHourInterval
                 );
 
-                if (hasTurmaConflict) {
-                    return false;
-                }
-
-                return true;
+                return hasTurmaConflict;
             } catch (Exception ex) {
-                throw new Exception("Falha ao resgatar disponibilidade do professor | " + ex.ToString());
+                throw new Exception("Falha ao resgatar conflitos de turma do professor | " + ex.ToString());
+            }
+        }
+
+        public bool HasAulaTimeConflict(int professorId, DateTime date, int? IgnoredAulaId = null)
+        {
+            try {
+                Professor professor = _db.Professor.Find(professorId) ?? throw new Exception("IsProfessorAvailable : Professor não pode ser nulo");
+
+                TimeSpan twoHourInterval = TimeSpan.FromHours(2);
+
+                // Verifica se o professor é responsável por uma aula que está ocupando o mesmo dia e horário
+                bool hasAulaConflict = _db.Aula
+                .Where(a =>
+                    a.Deactivated == null &&
+                    a.Professor_Id == professor.Id &&
+                    a.Data > TimeFunctions.HoraAtualBR()
+                )
+                .AsEnumerable() // Termina a query no banco, passando a responsabilidade do Any para o C#, queries do banco não lidam bem com TimeSpan
+                .Any(a =>
+                    a.Id != IgnoredAulaId && // Se estou reagendando uma aula, não devo considerar ela mesma como conflito
+                    date.TimeOfDay > a.Data.TimeOfDay - twoHourInterval &&
+                    date.TimeOfDay < a.Data.TimeOfDay + twoHourInterval
+                );
+
+                return hasAulaConflict;
+            } catch (Exception ex) {
+                throw new Exception("Falha ao resgatar conflitos de aula do professor | " + ex.ToString());
             }
         }
     }
