@@ -274,20 +274,26 @@ namespace Supera_Monitor_Back.Services {
             List<Aula> aulas = _db.Aula
                 .Where(a =>
                     a.Deactivated == null &&
-                    a.Data >= request.IntervaloDe &&
-                    a.Data <= request.IntervaloAte)
+                    a.Data.Date >= request.IntervaloDe.Value.Date &&
+                    a.Data.Date <= request.IntervaloAte.Value.Date)
+                .Include(a => a.Aula_Aluno)
+                .Include(a => a.Turma)
+                .Include(a => a.Professor)
+                .Include(a => a.Professor.Account)
+                .Include(a => a.Sala)
                 .ToList();
 
-            List<Aula> aulasIndependentes = _db.Aula
-                .Where(a =>
-                    a.Deactivated == null &&
-                    a.Data >= request.IntervaloDe &&
-                    a.Data <= request.IntervaloAte &&
-                    a.Turma_Id == null)
-                .ToList();
+            //List<Aula> aulasIndependentes = _db.Aula
+            //    .Where(a =>
+            //        a.Deactivated == null &&
+            //        a.Data >= request.IntervaloDe &&
+            //        a.Data <= request.IntervaloAte &&
+            //        a.Turma_Id == null)
+            //    .ToList();
 
             List<Turma> turmas = _db.Turma
                 .Where(t => t.Deactivated == null)
+                .Include(t => t.Professor)
                 .ToList();
 
             List<Professor> professores = _db.Professor
@@ -295,12 +301,13 @@ namespace Supera_Monitor_Back.Services {
                 .Where(p => p.Account.Deactivated == null)
                 .ToList();
 
-            //Aplicar filtros
+            // Aplicar filtros
+
             // Filtro de Turma
             if (request.Turma_Id.HasValue) {
                 turmas = turmas.Where(x => x.Id == request.Turma_Id.Value).ToList();
                 aulas = aulas.Where(x => x.Turma_Id == request.Turma_Id.Value).ToList();
-                aulasIndependentes = aulasIndependentes.Where(x => x.Turma_Id == request.Turma_Id.Value).ToList();
+                //aulasIndependentes.Clear();
             }
 
             // Filtro de Perfil Cognitivo
@@ -316,17 +323,20 @@ namespace Supera_Monitor_Back.Services {
                 List<int> turmaIds = turmas.Select(t => t.Id).ToList();
 
                 // Filtrar aulas apenas para as turmas que passaram no filtro
-                aulas = aulas.Where(a => a.Turma_Id.HasValue && turmaIds.Contains(a.Turma_Id.Value)).ToList();
+                aulas = aulas.Where(a =>
+                    a.Turma_Id.HasValue &&
+                    turmaIds.Contains(a.Turma_Id.Value))
+                .ToList();
 
                 // Como aulas independentes não pertencem a turmas, todas devem ser removidas
-                aulasIndependentes.Clear();
+                //aulasIndependentes.Clear();
             }
 
             // Filtro de Professor
             if (request.Professor_Id.HasValue) {
                 turmas = turmas.Where(x => x.Professor_Id == request.Professor_Id.Value).ToList();
                 aulas = aulas.Where(x => x.Professor_Id == request.Professor_Id.Value).ToList();
-                aulasIndependentes = aulasIndependentes.Where(x => x.Professor_Id == request.Professor_Id.Value).ToList();
+                //aulasIndependentes = aulasIndependentes.Where(x => x.Professor_Id == request.Professor_Id.Value).ToList();
             }
 
             // Filtro de Aluno
@@ -341,240 +351,106 @@ namespace Supera_Monitor_Back.Services {
                     turmas = turmas.Where(x => x.Id == aluno.Turma_Id).ToList();
 
                     // Filtrar aulas da turma do aluno
-                    aulas = aulas.Where(x => x.Turma_Id == aluno.Turma_Id).ToList();
 
-                    // Buscar IDs das aulas independentes em que o aluno está cadastrado
-                    List<int> aulasIndependentesIds = _db.Aula_Aluno
-                        .Where(x => x.Aluno_Id == alunoId)
+                    List<int> aulasIds = aulas
+                        .SelectMany(a => a.Aula_Aluno)
+                        .Where(x => x.Aluno_Id == aluno.Id)
                         .Select(x => x.Aula_Id)
                         .ToList();
 
-                    // Filtrar apenas as aulas independentes que o aluno se cadastrou
-                    aulasIndependentes = aulasIndependentes.Where(x => aulasIndependentesIds.Contains(x.Id)).ToList();
+                    aulas = aulas.Where(x => aulasIds.Contains(x.Id)).ToList();
                 }
             }
 
-            List<CalendarioList> agendamentos = new();
+            List<CalendarioResponse> calendario = new();
+
+            // Adicionar todas as aulas instanciadas - Aulas instanciadas de turmas + Aulas independentes
+            foreach (Aula aula in aulas) {
+                CalendarioList calendarioList = new() {
+                    Aula_Id = aula.Id,
+                    Data = aula.Data,
+
+                    Turma_Id = aula.Turma_Id,
+                    Turma = aula.Turma is null ? "" : aula.Turma.Nome,
+
+                    Professor_Id = aula.Professor_Id,
+                    Professor = aula.Professor.Account.Name ?? "Professor indefinido",
+                    CorLegenda = aula.Professor.CorLegenda ?? "#000",
+
+                    CapacidadeMaximaAlunos = aula.Turma?.CapacidadeMaximaAlunos,
+
+                    Sala_Id = aula.Sala_Id,
+                    NumeroSala = aula.Sala.NumeroSala,
+                    Andar = aula.Sala.Andar,
+                    Observacao = "",
+                };
+
+                CalendarioResponse agendamento = _mapper.Map<CalendarioResponse>(calendarioList);
+
+                agendamento.Alunos = _db.CalendarioAlunoList
+                    .Where(a =>
+                        a.Aula_Id == aula.Id &&
+                        a.Deactivated == null)
+                    .ToList();
+
+                calendario.Add(agendamento);
+            };
 
             DateTime data = request.IntervaloDe.Value;
+
+            // Adicionar todas as aulas não instanciadas - Aulas de turmas que tem horário marcado
             while (data < request.IntervaloAte) {
                 List<Turma> turmasDoDia = turmas.Where(t => t.DiaSemana == ( int )data.DayOfWeek).ToList();
 
-                // Agrupar tanto aulas instanciadas quanto pseudo-aulas das turmas que existem
                 foreach (Turma turma in turmasDoDia) {
                     Aula? aula = aulas.FirstOrDefault(a =>
                         ( int )a.Data.DayOfWeek == turma.DiaSemana &&
-                        a.Data.TimeOfDay == turma.Horario);
+                        a.Data.TimeOfDay == turma.Horario &&
+                        a.Turma_Id == turma.Id);
 
-                    Sala? sala = _db.Sala.FirstOrDefault(s => s.Id == turma.Sala_Id);
 
-                    CalendarioList agendamento = new();
-
-                    Professor? associatedProfessor = professores.FirstOrDefault(p => p.Id == turma.Professor_Id);
-
-                    // Se a aula não existir, é uma pseudo-aula
-                    if (aula is null) {
-                        agendamento.Aula_Id = -1;
-                        agendamento.Data = new DateTime(data.Year, data.Month, data.Day, turma.Horario!.Value.Hours, turma.Horario!.Value.Minutes, turma.Horario!.Value.Seconds);
-                        agendamento.Turma_Id = turma.Id;
-                        agendamento.Turma = turma.Nome;
-                        agendamento.CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos;
-
-                        agendamento.Professor_Id = turma.Professor_Id ?? -1;
-                        agendamento.Professor = associatedProfessor?.Account.Name ?? "Professor indefinido";
-                        agendamento.CorLegenda = associatedProfessor?.CorLegenda ?? "#000";
-
-                        agendamento.Sala_Id = turma.Sala_Id;
-                        agendamento.NumeroSala = sala?.NumeroSala;
-                        agendamento.Andar = sala?.Andar;
-
-                        agendamento.Observacao = "";
-                    }
-
-                    // Se a aula existir, é uma aula instanciada
+                    // Se a aula foi encontrada, ignora e passa pro proximo
                     if (aula is not null) {
-                        agendamento.Aula_Id = aula.Id;
-                        agendamento.Data = aula.Data;
-                        agendamento.Turma_Id = turma.Id;
-                        agendamento.Turma = turma.Nome;
-                        agendamento.CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos;
-
-                        agendamento.Professor_Id = aula.Professor_Id;
-                        agendamento.Professor = associatedProfessor?.Account.Name ?? "Professor Indefinido";
-                        agendamento.CorLegenda = associatedProfessor?.CorLegenda ?? "#000";
-                        agendamento.Sala_Id = sala?.Id;
-                        agendamento.NumeroSala = sala?.NumeroSala;
-                        agendamento.Andar = sala?.Andar;
-
-                        agendamento.Observacao = aula.Observacao;
+                        continue;
                     }
 
-                    agendamentos.Add(agendamento);
+                    CalendarioList calendarioList = new() {
+                        Aula_Id = -1,
+                        Data = new DateTime(data.Year, data.Month, data.Day, turma.Horario!.Value.Hours, turma.Horario!.Value.Minutes, turma.Horario!.Value.Seconds),
+
+                        Turma_Id = turma.Id,
+                        Turma = turma.Nome,
+
+                        Professor_Id = turma.Professor_Id ?? -1,
+                        Professor = turma.Professor is not null ? turma.Professor.Account.Name : "Professor indefinido",
+
+                        CorLegenda = turma.Professor is not null ? turma.Professor.CorLegenda : "#000",
+
+                        CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
+
+                        Sala_Id = turma.Sala_Id,
+                        NumeroSala = turma.Sala?.NumeroSala,
+                        Andar = turma.Sala?.Andar,
+                        Observacao = "",
+                    };
+
+                    CalendarioResponse agendamento = _mapper.Map<CalendarioResponse>(calendarioList);
+
+                    // Na pseudo-aula, adicionar só os alunos da turma original
+                    List<AlunoList> alunos = _db.AlunoList
+                        .Where(a => a.Turma_Id == turma.Id)
+                        .ToList();
+
+                    agendamento.Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos);
+
+                    calendario.Add(agendamento);
                 }
 
                 data = data.AddDays(1);
             }
 
-            // Por fim, adicionar agendamentos de aulas que são independentes
-            foreach (Aula aula in aulasIndependentes) {
-                Professor? associatedProfessor = professores.FirstOrDefault(p => p.Id == aula.Professor_Id);
-
-                CalendarioList agendamento = new() {
-                    Aula_Id = aula.Id,
-                    Data = aula.Data,
-                    Turma_Id = -1,
-                    Turma = "Aula Independente",
-                    CapacidadeMaximaAlunos = 99,
-
-                    Professor_Id = aula.Professor_Id,
-                    Professor = associatedProfessor?.Account.Name ?? "Professor Indefinido",
-                    CorLegenda = associatedProfessor?.CorLegenda ?? "#000",
-
-                    Sala_Id = aula.Sala_Id,
-                    Observacao = aula.Observacao,
-                    Finalizada = aula.Finalizada
-                };
-
-                agendamentos.Add(agendamento);
-            }
-
-            List<CalendarioResponse> calendario = new();
-
-            // Iterar sobre todos os agendamentos, adicionando os alunos a eles e adaptando à CalendarioResponse para retornar
-            foreach (CalendarioList agendamento in agendamentos) {
-                CalendarioResponse aula = _mapper.Map<CalendarioResponse>(agendamento);
-
-                // Se Aula_Id === -1, é uma pseudo-aula que contém uma turma, então buscar os alunos com base no Id da turma
-                if (aula.Aula_Id == -1) {
-                    aula.Alunos = _db.CalendarioAlunoList.Where(a => a.Turma_Id == aula.Turma_Id).ToList();
-                }
-                // Senão, não é uma pseudo-aula, então buscar os alunos com base no Id da aula
-                else {
-                    aula.Alunos = _db.CalendarioAlunoList.Where(a => a.Aula_Id == aula.Aula_Id).ToList();
-                }
-
-                calendario.Add(aula);
-            }
-
             return calendario;
         }
-
-        //public List<CalendarioResponse> Calendario(CalendarioRequest request)
-        //{
-        //    DateTime now = TimeFunctions.HoraAtualBR();
-
-        //    // Se não passar data inicio, considera a segunda-feira da semana atual
-        //    if (!request.IntervaloDe.HasValue) {
-        //        // Retorna para o início da semana (domingo) e adiciona um dia para obter segunda-feira
-        //        request.IntervaloDe = now.AddDays(-( int )now.DayOfWeek);
-        //        request.IntervaloDe = request.IntervaloDe.Value.AddDays(1);
-        //    }
-
-        //    // Se não passar data fim, considera o sábado da semana da data inicio
-        //    if (!request.IntervaloAte.HasValue) {
-        //        // Retorna para o início da semana (domingo) e adiciona seis dias para obter sábado
-        //        request.IntervaloAte = request.IntervaloDe.Value.AddDays(-( int )request.IntervaloDe.Value.DayOfWeek);
-        //        request.IntervaloAte = request.IntervaloDe.Value.AddDays(6);
-        //    }
-
-        //    // Listar turmas com horários já definidos
-        //    List<Turma> turmas = _db.Turma
-        //        .Where(
-        //            x => x.Horario != null &&
-        //            x.Deactivated == null) // Não exibir aulas de turmas inativas
-        //        .ToList();
-
-        //    // Filtro de Turma
-        //    if (request.Turma_Id.HasValue) {
-        //        turmas = turmas.Where(x => x.Id == request.Turma_Id.Value).ToList();
-        //    }
-
-        //    // Filtro de Turma Tipo
-        //    //if (request.Turma_Tipo_Id.HasValue) {
-        //    //    turmas = turmas.Where(x => x.Turma_Tipo_Id == request.Turma_Tipo_Id.Value).ToList();
-        //    //}
-
-        //    // Filtro de Professor
-        //    if (request.Professor_Id.HasValue) {
-        //        turmas = turmas.Where(x => x.Professor_Id == request.Professor_Id.Value).ToList();
-        //    }
-
-        //    // Filtro de Aluno
-        //    if (request.Aluno_Id.HasValue) {
-        //        AlunoList aluno = _db.AlunoList.FirstOrDefault(x => x.Id == request.Aluno_Id.Value)!;
-        //        turmas = turmas.Where(x => x.Id == aluno.Turma_Id).ToList();
-        //    }
-
-        //    DateTime data = request.IntervaloDe.Value;
-        //    List<CalendarioResponse> list = new();
-
-        //    // Adiciona no calendario cada item do dia do intervalo
-        //    do {
-        //        // Coleta as turmas que tem aula no mesmo dia da semana que a data de referência
-        //        List<Turma> turmasDoDia = turmas.Where(x => x.DiaSemana == ( int )data.DayOfWeek).ToList();
-
-        //        foreach (TurmaList turma in turmasDoDia) {
-
-        //            // Seleciona a aula daquela turma com o mesmo dia e o mesmo horário
-        //            CalendarioList? aula = _db.CalendarioList.FirstOrDefault(x => x.Turma_Id == turma.Id
-        //                                            && x.Data.TimeOfDay == turma.Horario!.Value
-        //                                            && x.Data.Date == data.Date);
-
-        //            List<CalendarioAlunoList> alunos = new() { };
-
-        //            // Se a aula não estiver cadastrada ainda, retorna uma lista de alunos originalmente cadastrados na turma
-        //            // Senão, a aula já existe, a lista de alunos será composta pelos alunos da turma + alunos de reposição  
-        //            if (aula == null) {
-        //                ProfessorList? professor = _db.ProfessorList.FirstOrDefault(p => p.Id == turma.Professor_Id);
-
-        //                // Não exibir aulas de professores inativos (porém, > exibir professores nulos <)
-        //                if (professor?.Active == false) {
-        //                    continue;
-        //                }
-
-        //                var horario = turma.Horario!.Value;
-        //                aula = new CalendarioList {
-        //                    Aula_Id = -1,
-        //                    Data = new DateTime(data.Year, data.Month, data.Day, horario.Hours, horario.Minutes, horario.Seconds),
-        //                    Turma_Id = turma.Id,
-        //                    Turma = turma.Nome,
-        //                    CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
-        //                    Professor_Id = turma.Professor_Id.Value,
-        //                    Professor = turma.Professor ?? "Professor Indefinido",
-        //                    CorLegenda = turma.CorLegenda ?? "#000",
-        //                    Observacao = "",
-        //                    //Turma_Tipo_Id = ( int )turma.Turma_Tipo_Id,
-        //                    //Turma_Tipo = turma.Turma_Tipo
-        //                };
-
-        //                alunos = _db.AlunoList.Where(
-        //                    x => x.Turma_Id == turma.Id &&
-        //                    (request.Aluno_Id.HasValue ? request.Aluno_Id.Value == x.Id : true) &&
-        //                    x.Deactivated == null) // Não exibir alunos inativos na pseudo-aula
-        //                    .ToList()
-        //                    .Select(a => _mapper.Map<CalendarioAlunoList>(a))
-        //                    .OrderBy(a => a.Aluno)
-        //                    .ToList();
-        //            } else {
-        //                alunos = _db.CalendarioAlunoList
-        //                    .Where(x =>
-        //                        x.Aula_Id == aula.Aula_Id &&
-        //                        _db.AlunoList.Any(a => a.Id == x.Aluno_Id && a.Deactivated == null)) // Não exibir alunos inativos na lista de CalendarioAlunoList
-        //                    .OrderBy(a => a.Aluno)
-        //                    .ToList();
-        //            }
-
-        //            CalendarioResponse calendario = _mapper.Map<CalendarioResponse>(aula);
-        //            calendario.Alunos = alunos;
-
-        //            list.Add(calendario);
-        //        }
-
-        //        data = data.AddDays(1);
-        //    } while (data < request.IntervaloAte);
-
-        //    return list;
-        //}
 
         public ResponseModel RegisterChamada(RegisterChamadaRequest model)
         {

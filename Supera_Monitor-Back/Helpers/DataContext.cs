@@ -436,6 +436,7 @@ namespace Supera_Monitor_Back.Helpers {
 
                 entity.ToTable("Aula_Aluno");
 
+                entity.Property(e => e.Deactivated).HasColumnType("datetime");
                 entity.Property(e => e.Observacao).IsUnicode(false);
 
                 entity.HasOne(d => d.Aluno).WithMany(p => p.Aula_Aluno)
@@ -512,6 +513,7 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.Property(e => e.CheckList)
                     .HasMaxLength(50)
                     .IsUnicode(false);
+                entity.Property(e => e.Deactivated).HasColumnType("datetime");
                 entity.Property(e => e.Kit)
                     .HasMaxLength(50)
                     .IsUnicode(false);

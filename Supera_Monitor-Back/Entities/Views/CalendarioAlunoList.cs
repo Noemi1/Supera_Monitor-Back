@@ -42,6 +42,8 @@
 
         public string? Observacao { get; set; }
 
+        public DateTime? Deactivated { get; set; }
+
         public bool FlagAlunoNovo => false;
     }
 }

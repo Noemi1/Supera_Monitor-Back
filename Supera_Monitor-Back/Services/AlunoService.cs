@@ -430,9 +430,11 @@ namespace Supera_Monitor_Back.Services {
                     .Include(p => p.Turma_PerfilCognitivo_Rel)
                     .FirstOrDefault(t => t.Id == aulaDest.Turma_Id);
 
-                // Pega registros da aula destino
+                // Coletar registros ativos da aula destino
                 List<Aula_Aluno> registros = _db.Aula_Aluno
-                    .Where(r => r.Aula_Id == model.Dest_Aula_Id)
+                    .Where(r =>
+                        r.Aula_Id == model.Dest_Aula_Id &&
+                        r.Deactivated.HasValue)
                     .ToList();
 
                 bool RegistroAlreadyExists = registros.Any(r => r.Aluno_Id == model.Aluno_Id);
@@ -485,6 +487,9 @@ namespace Supera_Monitor_Back.Services {
                 if (TimeFunctions.HoraAtualBR() > aulaSource.Data) {
                     registroSource.Presente = false;
                 }
+
+                // Desativar o registro da aula
+                registroSource.Deactivated = TimeFunctions.HoraAtualBR();
 
                 _db.Aula_Aluno.Update(registroSource);
 
