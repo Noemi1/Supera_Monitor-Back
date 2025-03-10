@@ -111,13 +111,15 @@ namespace Supera_Monitor_Back.Services {
                 // Se for passado um horário na requisição
                 // Não devo permitir a criação de turma com um professor que já está ocupado nesse dia da semana / horário
                 if (model.Horario.HasValue) {
-                    bool isProfessorAvailable = _professorService.HasTurmaTimeConflict(
+                    bool professorHasTurmaTimeConflict = _professorService.HasTurmaTimeConflict(
                         professorId: professor.Id,
                         DiaSemana: model.DiaSemana,
                         Horario: model.Horario.Value,
                         IgnoredTurmaId: null);
 
-                    if (!isProfessorAvailable) {
+                    // TODO: Se há uma aula nesse horário, não vai bloquear
+
+                    if (professorHasTurmaTimeConflict) {
                         return new ResponseModel { Message = "Não foi possível criar a turma. O professor responsável já tem compromissos no horário indicado." };
                     }
                 }

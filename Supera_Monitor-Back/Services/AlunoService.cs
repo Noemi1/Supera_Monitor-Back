@@ -413,6 +413,10 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Aula original e aula destino não podem ser iguais" };
                 }
 
+                if (aulaSource.Turma_Id == aulaDest.Turma_Id) {
+                    return new ResponseModel { Message = "Aluno não pode repor aula na própria turma" };
+                }
+
                 if (aulaDest.Data < TimeFunctions.HoraAtualBR()) {
                     return new ResponseModel { Message = "Não é possível marcar reposição para uma aula que já ocorreu no passado" };
                 }
