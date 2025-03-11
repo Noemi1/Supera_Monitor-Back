@@ -369,6 +369,7 @@ namespace Supera_Monitor_Back.Services {
                     Professor_Id = aula.Professor_Id,
                     Professor = aula.Professor.Account.Name ?? "Professor indefinido",
                     CorLegenda = aula.Professor.CorLegenda ?? "#000",
+                    Finalizada = aula.Finalizada,
 
                     CapacidadeMaximaAlunos = aula.Turma?.CapacidadeMaximaAlunos,
 
@@ -401,7 +402,6 @@ namespace Supera_Monitor_Back.Services {
                         a.Data.TimeOfDay == turma.Horario &&
                         a.Turma_Id == turma.Id);
 
-
                     // Se a aula foi encontrada, ignora e passa pro proximo
                     if (aula is not null) {
                         continue;
@@ -420,6 +420,8 @@ namespace Supera_Monitor_Back.Services {
                         CorLegenda = turma.Professor is not null ? turma.Professor.CorLegenda : "#000",
 
                         CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
+
+                        Finalizada = false,
 
                         Sala_Id = turma.Sala_Id,
                         NumeroSala = turma.Sala?.NumeroSala,
@@ -622,7 +624,7 @@ namespace Supera_Monitor_Back.Services {
                     Observacao = model.Observacao ?? aula.Observacao ?? "",
                     ReposicaoDe_Aula_Id = aula.Id,
                     Descricao = aula.Descricao ?? "",
-                    Finalizada = aula.Finalizada,
+                    Finalizada = false,
 
                     Sala_Id = aula.Sala_Id,
                     Created = aula.Created,

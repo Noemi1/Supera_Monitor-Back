@@ -10,7 +10,7 @@
 
         public int? CapacidadeMaximaAlunos { get; set; }
 
-        public bool? Finalizada { get; set; }
+        public bool Finalizada { get; set; }
 
         public int Professor_Id { get; set; }
 

@@ -11,7 +11,7 @@ public partial class Aula {
 
     public string? Observacao { get; set; }
 
-    public bool? Finalizada { get; set; }
+    public bool Finalizada { get; set; }
 
     public int Sala_Id { get; set; }
 
