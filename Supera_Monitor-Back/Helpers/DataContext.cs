@@ -46,6 +46,8 @@ namespace Supera_Monitor_Back.Helpers {
 
         public virtual DbSet<Aula_ListaEspera> Aula_ListaEspera { get; set; }
 
+        public virtual DbSet<Aula_PerfilCognitivo_Rel> Aula_PerfilCognitivo_Rel { get; set; }
+
         public virtual DbSet<CalendarioAlunoList> CalendarioAlunoList { get; set; }
 
         public virtual DbSet<CalendarioList> CalendarioList { get; set; }

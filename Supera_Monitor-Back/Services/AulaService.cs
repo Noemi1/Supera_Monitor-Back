@@ -5,6 +5,7 @@ using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Aula;
+using Supera_Monitor_Back.Models.Turma;
 
 namespace Supera_Monitor_Back.Services {
     public interface IAulaService {
@@ -156,6 +157,18 @@ namespace Supera_Monitor_Back.Services {
 
                 _db.SaveChanges();
 
+                // Pegar os perfis cognitivos passados no request e criar as entidades de Aula_PerfilCognitivo
+                foreach (var perfil in model.PerfilCognitivo) {
+                    Aula_PerfilCognitivo_Rel newPerfilCognitivoRel = new() {
+                        Aula_Id = aula.Id,
+                        PerfilCognitivo_Id = perfil.Id,
+                    };
+
+                    _db.Aula_PerfilCognitivo_Rel.Add(newPerfilCognitivoRel);
+                }
+
+                _db.SaveChanges();
+
                 response.Message = "Aula registrada com sucesso";
                 response.Object = _db.CalendarioList.FirstOrDefault(a => a.Aula_Id == aula.Id);
                 response.Success = true;
@@ -232,6 +245,26 @@ namespace Supera_Monitor_Back.Services {
                 aula.LastUpdated = TimeFunctions.HoraAtualBR();
 
                 _db.Aula.Update(aula);
+                _db.SaveChanges();
+
+                // Por simplicidade, remover os perfis cognitivos anteriores
+                List<Aula_PerfilCognitivo_Rel> perfisToRemove = _db.Aula_PerfilCognitivo_Rel
+                    .Where(p => p.Aula_Id == aula.Id)
+                    .ToList();
+
+                _db.RemoveRange(perfisToRemove);
+                _db.SaveChanges();
+
+                // Pegar os perfis cognitivos passados no request e criar as entidades de Aula_PerfilCognitivo
+                foreach (var perfil in model.PerfilCognitivo) {
+                    Aula_PerfilCognitivo_Rel newPerfilCognitivoRel = new() {
+                        Aula_Id = aula.Id,
+                        PerfilCognitivo_Id = perfil.Id,
+                    };
+
+                    _db.Aula_PerfilCognitivo_Rel.Add(newPerfilCognitivoRel);
+                }
+
                 _db.SaveChanges();
 
                 response.Message = "Aula atualizada com sucesso";
@@ -387,6 +420,17 @@ namespace Supera_Monitor_Back.Services {
                         a.Aula_Id == aula.Id &&
                         a.Deactivated == null)
                     .ToList();
+
+                List<int> perfisCognitivosIds = _db.Aula_PerfilCognitivo_Rel
+                    .Where(p => p.Aula_Id == agendamento.Aula_Id)
+                    .Select(p => p.Id)
+                    .ToList();
+
+                List<PerfilCognitivo> perfisCognitivos = _db.PerfilCognitivo
+                    .Where(p => perfisCognitivosIds.Contains(p.Id))
+                    .ToList();
+
+                agendamento.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(perfisCognitivos);
 
                 calendario.Add(agendamento);
             };

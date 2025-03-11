@@ -447,19 +447,18 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Aluno já está cadastrado na aula destino" };
                 }
 
-                // Se for aula de uma turma
+                // A aula destino e o aluno devem compartilhar pelo menos um perfil cognitivo
+                bool perfilCognitivoMatches = _db.Aula_PerfilCognitivo_Rel
+                    .Any(ap =>
+                        ap.Aula_Id == aulaDest.Id &&
+                        ap.PerfilCognitivo_Id == aluno.PerfilCognitivo_Id);
+
+                if (perfilCognitivoMatches == false) {
+                    return new ResponseModel { Message = "O perfil cognitivo da aula não é adequado para este aluno" };
+                }
+
+                // Se for aula de uma turma, esta deve ter espaço para comportar o aluno
                 if (turmaDest is not null) {
-                    // A turma e o aluno devem compartilhar um perfil cognitivo
-                    bool perfilCognitivoMatches = turmaDest.Turma_PerfilCognitivo_Rel
-                        .Any(tp =>
-                            tp.Turma_Id == turmaDest.Id &&
-                            tp.PerfilCognitivo_Id == aluno.PerfilCognitivo_Id);
-
-                    if (perfilCognitivoMatches == false) {
-                        return new ResponseModel { Message = "O perfil cognitivo da turma não é adequado para este aluno" };
-                    }
-
-                    // A aula destino deve ter espaço para comportar o aluno
                     if (registros.Count >= turmaDest.CapacidadeMaximaAlunos) {
                         return new ResponseModel { Message = "Essa aula já está em sua capacidade máxima" };
                     }
