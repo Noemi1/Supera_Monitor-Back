@@ -1,6 +1,7 @@
 ﻿namespace Supera_Monitor_Back.Entities;
 
-public partial class Aula {
+#nullable enable
+public class Aula {
     public int Id { get; set; }
 
     public int? Turma_Id { get; set; }

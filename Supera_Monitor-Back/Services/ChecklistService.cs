@@ -4,6 +4,7 @@ using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
+using Supera_Monitor_Back.Models.Aluno;
 using Supera_Monitor_Back.Models.Checklist;
 
 namespace Supera_Monitor_Back.Services {
@@ -15,6 +16,7 @@ namespace Supera_Monitor_Back.Services {
         ResponseModel Update(UpdateChecklistItemRequest model);
         ResponseModel ToggleDeactivate(int checklistItemId);
 
+        List<AlunoListWithChecklist> GetAllAlunoChecklistsByAulaId(int aulaId);
         ResponseModel PopulateAlunoChecklist(int alunoId);
         ResponseModel ToggleAlunoChecklistItem(int alunoId);
     }
@@ -260,6 +262,31 @@ namespace Supera_Monitor_Back.Services {
                 response.Object = _mapper.Map<AlunoChecklistItemModel>(alunoChecklistItem);
             } catch (Exception ex) {
                 response.Message = "Falha ao popular checklist do aluno: " + ex.ToString();
+            }
+
+            return response;
+        }
+
+        public List<AlunoListWithChecklist> GetAllAlunoChecklistsByAulaId(int aulaId)
+        {
+            // Coletar lista de registros e os alunos que tem esses registros previamente p/ reduzir o número de chamadas ao banco
+            List<Aula_Aluno> registros = _db.Aula_Aluno.Where(a => a.Aula_Id == aulaId).ToList();
+            List<int> alunoIds = registros.Select(r => r.Aluno_Id).ToList();
+            List<AlunoList> alunos = _db.AlunoList.Where(a => alunoIds.Contains(a.Id)).ToList();
+
+            // Montar o objeto de retorno
+            List<AlunoListWithChecklist> response = new();
+
+            foreach (Aula_Aluno registro in registros) {
+                var aluno = alunos.FirstOrDefault(a => a.Id == registro.Aluno_Id);
+
+                List<AlunoChecklistView> alunoChecklists = GetAllByAlunoId(registro.Aluno_Id);
+
+                AlunoListWithChecklist alunoWithChecklist = _mapper.Map<AlunoListWithChecklist>(aluno);
+
+                alunoWithChecklist.AlunoChecklist = alunoChecklists;
+
+                response.Add(alunoWithChecklist);
             }
 
             return response;
