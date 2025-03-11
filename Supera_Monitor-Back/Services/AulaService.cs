@@ -274,7 +274,6 @@ namespace Supera_Monitor_Back.Services {
             // Pegar todas as aulas instanciadas no intervalo
             List<Aula> aulas = _db.Aula
                 .Where(a =>
-                    a.Deactivated == null &&
                     a.Data.Date >= request.IntervaloDe.Value.Date &&
                     a.Data.Date <= request.IntervaloAte.Value.Date)
                 .Include(a => a.Aula_Aluno)
@@ -370,6 +369,8 @@ namespace Supera_Monitor_Back.Services {
                     Professor = aula.Professor.Account.Name ?? "Professor indefinido",
                     CorLegenda = aula.Professor.CorLegenda ?? "#000",
                     Finalizada = aula.Finalizada,
+                    ReposicaoDe_Aula_Id = aula.ReposicaoDe_Aula_Id,
+                    Deactivated = aula.Deactivated,
 
                     CapacidadeMaximaAlunos = aula.Turma?.CapacidadeMaximaAlunos,
 
