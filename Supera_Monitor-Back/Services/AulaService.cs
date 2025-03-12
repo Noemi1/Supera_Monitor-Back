@@ -421,13 +421,13 @@ namespace Supera_Monitor_Back.Services {
                         a.Deactivated == null)
                     .ToList();
 
-                List<int> perfisCognitivosIds = _db.Aula_PerfilCognitivo_Rel
+                List<Aula_PerfilCognitivo_Rel> aulaPerfisCognitivos = _db.Aula_PerfilCognitivo_Rel
                     .Where(p => p.Aula_Id == agendamento.Aula_Id)
-                    .Select(p => p.Id)
+                    .Include(p => p.PerfilCognitivo)
                     .ToList();
 
-                List<PerfilCognitivo> perfisCognitivos = _db.PerfilCognitivo
-                    .Where(p => perfisCognitivosIds.Contains(p.Id))
+                List<PerfilCognitivo> perfisCognitivos = aulaPerfisCognitivos
+                    .Select(p => p.PerfilCognitivo)
                     .ToList();
 
                 agendamento.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(perfisCognitivos);
@@ -481,7 +481,19 @@ namespace Supera_Monitor_Back.Services {
                         .Where(a => a.Turma_Id == turma.Id)
                         .ToList();
 
+
                     agendamento.Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos);
+
+                    List<Turma_PerfilCognitivo_Rel> turmaPerfisCognitivos = _db.Turma_PerfilCognitivo_Rel
+                        .Where(p => p.Turma_Id == agendamento.Turma_Id)
+                        .Include(p => p.PerfilCognitivo)
+                        .ToList();
+
+                    List<PerfilCognitivo> perfisCognitivos = turmaPerfisCognitivos
+                        .Select(p => p.PerfilCognitivo)
+                        .ToList();
+
+                    agendamento.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(perfisCognitivos);
 
                     calendario.Add(agendamento);
                 }
