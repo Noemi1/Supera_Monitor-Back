@@ -9,14 +9,14 @@ using Supera_Monitor_Back.Models.Turma;
 
 namespace Supera_Monitor_Back.Services {
     public interface IAulaService {
-        CalendarioList Get(int aulaId);
+        CalendarioResponse Get(int aulaId);
         ResponseModel Insert(CreateAulaRequest model);
         ResponseModel Update(UpdateAulaRequest model);
         ResponseModel Delete(int aulaId);
 
-        List<CalendarioList> GetAll();
-        List<CalendarioList> GetAllByTurmaId(int turmaId);
-        List<CalendarioList> GetAllByProfessorId(int professorId);
+        List<CalendarioResponse> GetAll();
+        List<CalendarioResponse> GetAllByTurmaId(int turmaId);
+        List<CalendarioResponse> GetAllByProfessorId(int professorId);
 
         List<CalendarioResponse> Calendario(CalendarioRequest request);
 
@@ -36,7 +36,7 @@ namespace Supera_Monitor_Back.Services {
             _professorService = professorService;
         }
 
-        public CalendarioList Get(int aulaId)
+        public CalendarioResponse Get(int aulaId)
         {
             CalendarioList? aula = _db.CalendarioList.FirstOrDefault(a => a.Aula_Id == aulaId);
 
@@ -44,28 +44,90 @@ namespace Supera_Monitor_Back.Services {
                 throw new Exception("Aula não encontrada");
             }
 
-            return aula;
+            CalendarioResponse agendamento = _mapper.Map<CalendarioResponse>(aula);
+
+            List<Aula_PerfilCognitivo_Rel> aulaPerfisCognitivos = _db.Aula_PerfilCognitivo_Rel
+                .Where(p => p.Aula_Id == agendamento.Aula_Id)
+                .Include(p => p.PerfilCognitivo)
+                .ToList();
+
+            List<PerfilCognitivo> perfisCognitivos = aulaPerfisCognitivos.Select(p => p.PerfilCognitivo).ToList();
+
+            agendamento.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(perfisCognitivos);
+
+            return agendamento;
         }
 
-        public List<CalendarioList> GetAll()
+        public List<CalendarioResponse> GetAll()
         {
             List<CalendarioList> aulas = _db.CalendarioList.ToList();
 
-            return aulas;
+            List<CalendarioResponse> agendamentos = new();
+
+            foreach (CalendarioList aula in aulas) {
+                CalendarioResponse agendamento = _mapper.Map<CalendarioResponse>(aula);
+
+                List<Aula_PerfilCognitivo_Rel> aulaPerfisCognitivos = _db.Aula_PerfilCognitivo_Rel
+                    .Where(p => p.Aula_Id == agendamento.Aula_Id)
+                    .Include(p => p.PerfilCognitivo)
+                    .ToList();
+
+                List<PerfilCognitivo> perfisCognitivos = aulaPerfisCognitivos.Select(p => p.PerfilCognitivo).ToList();
+
+                agendamento.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(perfisCognitivos);
+
+                agendamentos.Add(agendamento);
+            }
+
+            return agendamentos;
         }
 
-        public List<CalendarioList> GetAllByTurmaId(int turmaId)
+        public List<CalendarioResponse> GetAllByTurmaId(int turmaId)
         {
             List<CalendarioList> aulas = _db.CalendarioList.Where(a => a.Turma_Id == turmaId).ToList();
 
-            return aulas;
+            List<CalendarioResponse> agendamentos = new();
+
+            foreach (CalendarioList aula in aulas) {
+                CalendarioResponse agendamento = _mapper.Map<CalendarioResponse>(aula);
+
+                List<Aula_PerfilCognitivo_Rel> aulaPerfisCognitivos = _db.Aula_PerfilCognitivo_Rel
+                    .Where(p => p.Aula_Id == agendamento.Aula_Id)
+                    .Include(p => p.PerfilCognitivo)
+                    .ToList();
+
+                List<PerfilCognitivo> perfisCognitivos = aulaPerfisCognitivos.Select(p => p.PerfilCognitivo).ToList();
+
+                agendamento.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(perfisCognitivos);
+
+                agendamentos.Add(agendamento);
+            }
+
+            return agendamentos;
         }
 
-        public List<CalendarioList> GetAllByProfessorId(int professorId)
+        public List<CalendarioResponse> GetAllByProfessorId(int professorId)
         {
             List<CalendarioList> aulas = _db.CalendarioList.Where(a => a.Professor_Id == professorId).ToList();
 
-            return aulas;
+            List<CalendarioResponse> agendamentos = new();
+
+            foreach (CalendarioList aula in aulas) {
+                CalendarioResponse agendamento = _mapper.Map<CalendarioResponse>(aula);
+
+                List<Aula_PerfilCognitivo_Rel> aulaPerfisCognitivos = _db.Aula_PerfilCognitivo_Rel
+                    .Where(p => p.Aula_Id == agendamento.Aula_Id)
+                    .Include(p => p.PerfilCognitivo)
+                    .ToList();
+
+                List<PerfilCognitivo> perfisCognitivos = aulaPerfisCognitivos.Select(p => p.PerfilCognitivo).ToList();
+
+                agendamento.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(perfisCognitivos);
+
+                agendamentos.Add(agendamento);
+            }
+
+            return agendamentos;
         }
 
         public ResponseModel Insert(CreateAulaRequest model)
@@ -143,7 +205,10 @@ namespace Supera_Monitor_Back.Services {
 
                 // Inserir os registros dos alunos originais na aula recém criada
                 // Se for uma aula sem Turma, então essa lista é vazia, e por padrão não será inserido nenhum registro de aluno
-                List<Aluno> alunos = _db.Aluno.Where(a => a.Turma_Id == aula.Turma_Id).ToList();
+                List<Aluno> alunos = _db.Aluno.Where(a =>
+                    a.Turma_Id == aula.Turma_Id &&
+                    a.Deactivated == null)
+                .ToList();
 
                 foreach (Aluno aluno in alunos) {
                     Aula_Aluno registro = new() {
@@ -706,7 +771,9 @@ namespace Supera_Monitor_Back.Services {
                 _db.Aula_PerfilCognitivo_Rel.AddRange(aulaReagendadaPerfisCognitivos);
                 _db.SaveChanges();
 
-                List<Aula_Aluno> registrosOriginais = _db.Aula_Aluno.Where(a => a.Aula_Id == aula.Id).ToList();
+                List<Aula_Aluno> registrosOriginais = _db.Aula_Aluno
+                    .Where(a => a.Aula_Id == aula.Id)
+                    .ToList();
 
                 // Mover os registros dos alunos para a nova aula e remover os antigos
                 foreach (Aula_Aluno registro in registrosOriginais) {
@@ -722,6 +789,7 @@ namespace Supera_Monitor_Back.Services {
                         NumeroPaginaAH = registro.NumeroPaginaAH,
 
                         ReposicaoDe_Aula_Id = registro.ReposicaoDe_Aula_Id,
+                        Deactivated = registro.Deactivated,
                     };
 
                     _db.Aula_Aluno.Add(registroReagendado);
