@@ -44,6 +44,10 @@
 
         public DateTime? Deactivated { get; set; }
 
+        public int? PerfilCognitivo_Id { get; set; }
+
+        public string PerfilCognitivo { get; set; } = null!;
+
         public bool FlagAlunoNovo => false;
     }
 }

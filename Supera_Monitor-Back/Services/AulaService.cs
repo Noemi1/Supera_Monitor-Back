@@ -692,6 +692,20 @@ namespace Supera_Monitor_Back.Services {
                 _db.Aula.Add(aulaReagendada);
                 _db.SaveChanges();
 
+                // Replicar os perfis cognitivos para a aula reagendada, sem remover os originais
+                List<Aula_PerfilCognitivo_Rel> aulaPerfisCognitivos = _db.Aula_PerfilCognitivo_Rel
+                    .Where(p => p.Aula_Id == aula.Id)
+                    .ToList();
+
+                List<Aula_PerfilCognitivo_Rel> aulaReagendadaPerfisCognitivos = aulaPerfisCognitivos
+                    .Select(p => new Aula_PerfilCognitivo_Rel() {
+                        Aula_Id = aulaReagendada.Id,
+                        PerfilCognitivo_Id = p.PerfilCognitivo_Id,
+                    }).ToList();
+
+                _db.Aula_PerfilCognitivo_Rel.AddRange(aulaReagendadaPerfisCognitivos);
+                _db.SaveChanges();
+
                 List<Aula_Aluno> registrosOriginais = _db.Aula_Aluno.Where(a => a.Aula_Id == aula.Id).ToList();
 
                 // Mover os registros dos alunos para a nova aula e remover os antigos

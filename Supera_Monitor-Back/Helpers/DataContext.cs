@@ -213,7 +213,7 @@ namespace Supera_Monitor_Back.Helpers {
                     .HasMaxLength(128)
                     .IsUnicode(false);
                 entity.Property(e => e.Celular)
-                    .HasMaxLength(50)
+                    .HasMaxLength(256)
                     .IsUnicode(false);
                 entity.Property(e => e.Checklist)
                     .HasMaxLength(50)
@@ -239,11 +239,14 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.Property(e => e.Observacao)
                     .HasMaxLength(8000)
                     .IsUnicode(false);
+                entity.Property(e => e.PerfilCognitivo)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
                 entity.Property(e => e.Pessoa_Sexo)
                     .HasMaxLength(50)
                     .IsUnicode(false);
                 entity.Property(e => e.Telefone)
-                    .HasMaxLength(50)
+                    .HasMaxLength(256)
                     .IsUnicode(false);
                 entity.Property(e => e.Turma)
                     .HasMaxLength(100)
@@ -510,7 +513,7 @@ namespace Supera_Monitor_Back.Helpers {
                     .HasMaxLength(50)
                     .IsUnicode(false);
                 entity.Property(e => e.Celular)
-                    .HasMaxLength(50)
+                    .HasMaxLength(256)
                     .IsUnicode(false);
                 entity.Property(e => e.CheckList)
                     .HasMaxLength(50)
@@ -520,6 +523,9 @@ namespace Supera_Monitor_Back.Helpers {
                     .HasMaxLength(50)
                     .IsUnicode(false);
                 entity.Property(e => e.Observacao).IsUnicode(false);
+                entity.Property(e => e.PerfilCognitivo)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
                 entity.Property(e => e.Turma)
                     .HasMaxLength(100)
                     .IsUnicode(false);
