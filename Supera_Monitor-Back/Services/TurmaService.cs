@@ -208,14 +208,14 @@ namespace Supera_Monitor_Back.Services {
                 // Se for passado um horário na requisição
                 // Não devo permitir a atualização de turma com um professor que já está ocupado nesse dia da semana / horário
                 if (model.Horario.HasValue) {
-                    bool isProfessorAvailable = _professorService.HasTurmaTimeConflict(
+                    bool professorHasTurmaTimeConflict = _professorService.HasTurmaTimeConflict(
                         professorId: professor.Id,
                         DiaSemana: model.DiaSemana,
                         Horario: model.Horario.Value,
                         IgnoredTurmaId: turma.Id);
 
-                    if (!isProfessorAvailable) {
-                        return new ResponseModel { Message = "Não foi possível criar a turma. O professor responsável já tem compromissos no horário indicado." };
+                    if (professorHasTurmaTimeConflict) {
+                        return new ResponseModel { Message = "Não foi possível atualizar a turma. O professor responsável já tem compromissos no horário indicado." };
                     }
                 }
 
