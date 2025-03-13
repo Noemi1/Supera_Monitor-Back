@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Models;
-using Supera_Monitor_Back.Models.Aluno;
 using Supera_Monitor_Back.Models.Checklist;
 using Supera_Monitor_Back.Services;
 using System.Reflection;
@@ -60,7 +59,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpGet("all/aula/{aulaId}")]
-        public ActionResult<List<AlunoListWithChecklist>> GetAllAlunoChecklistsByAulaId(int aulaId)
+        public ActionResult<List<ChecklistsFromAlunoModel>> GetAllAlunoChecklistsByAulaId(int aulaId)
         {
             try {
                 var response = _checklistService.GetAllAlunoChecklistsByAulaId(aulaId);
