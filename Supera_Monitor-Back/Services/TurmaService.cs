@@ -202,7 +202,7 @@ namespace Supera_Monitor_Back.Services {
 
                 // Não devo poder criar turma com um professor desativado
                 if (professor.Account.Deactivated != null) {
-                    return new ResponseModel { Message = "Não é possível criar uma turma com um professor desativado." };
+                    return new ResponseModel { Message = "Não é possível atualizar uma turma com um professor desativado." };
                 }
 
                 // Se for passado um horário na requisição

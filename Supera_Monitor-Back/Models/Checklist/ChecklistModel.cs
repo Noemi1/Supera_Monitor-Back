@@ -4,5 +4,7 @@
         public string Nome { get; set; } = string.Empty;
         public int Ordem { get; set; }
         public int NumeroSemana { get; set; }
+
+        public virtual ICollection<ChecklistItemModel> Items { get; set; } = new List<ChecklistItemModel>();
     }
 }

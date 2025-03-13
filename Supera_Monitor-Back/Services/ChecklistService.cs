@@ -40,7 +40,13 @@ namespace Supera_Monitor_Back.Services {
                 .OrderBy(c => c.Ordem)
                 .ToList();
 
-            return _mapper.Map<List<ChecklistModel>>(listChecklist);
+            var response = _mapper.Map<List<ChecklistModel>>(listChecklist);
+
+            foreach (ChecklistModel checklist in response) {
+                checklist.Items = GetAllByChecklistId(checklist.Id);
+            }
+
+            return response;
         }
 
         public List<ChecklistItemModel> GetAllByChecklistId(int checklistId)
