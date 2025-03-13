@@ -515,7 +515,7 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.Property(e => e.Celular)
                     .HasMaxLength(256)
                     .IsUnicode(false);
-                entity.Property(e => e.CheckList)
+                entity.Property(e => e.Checklist)
                     .HasMaxLength(50)
                     .IsUnicode(false);
                 entity.Property(e => e.Deactivated).HasColumnType("datetime");

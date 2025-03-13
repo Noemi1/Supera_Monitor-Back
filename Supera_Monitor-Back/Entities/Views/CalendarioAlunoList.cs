@@ -6,7 +6,7 @@
 
         public int Aula_Id { get; set; }
 
-        public string? CheckList { get; set; }
+        public string? Checklist { get; set; }
 
         public int? Checklist_Id { get; set; }
 

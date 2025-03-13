@@ -546,7 +546,6 @@ namespace Supera_Monitor_Back.Services {
                         .Where(a => a.Turma_Id == turma.Id)
                         .ToList();
 
-
                     agendamento.Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos);
 
                     List<Turma_PerfilCognitivo_Rel> turmaPerfisCognitivos = _db.Turma_PerfilCognitivo_Rel
