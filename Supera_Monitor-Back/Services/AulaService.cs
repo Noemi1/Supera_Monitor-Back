@@ -580,29 +580,22 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Aula não encontrada" };
                 }
 
+                // Não devo poder realizar a chamada em uma aula que está finalizada
+                //if (aula.Finalizada) {
+                //    return new ResponseModel { Message = "Aula já está finalizada" };
+                //}
+
                 Professor? professor = _db.Professor.Find(model.Professor_Id);
 
                 if (professor is null) {
                     return new ResponseModel { Message = "Professor não encontrado" };
                 }
 
-                // Se indicar uma mudança de professor - o professor sendo alocado não pode ter aula no mesmo horário
-                if (model.Professor_Id != aula.Professor_Id) {
-                    bool ProfessorIsAlreadyOccupied = _db.Aula.Any(a =>
-                        a.Professor_Id == model.Professor_Id &&
-                        a.Data == aula.Data
-                    );
-
-                    if (ProfessorIsAlreadyOccupied) {
-                        return new ResponseModel { Message = "O professor sendo alocado já tem uma aula nesse horário." };
-                    }
-                }
-
                 // Validations passed
 
                 // Buscar registros / alunos / apostilas previamente para reduzir o número de requisições ao banco
                 Dictionary<int, Aula_Aluno> registros = _db.Aula_Aluno
-                    .Where(x => model.Registros.Select(r => r.Turma_Aula_Aluno_Id).Contains(x.Id))
+                    .Where(x => model.Registros.Select(r => r.Aula_Aluno_Id).Contains(x.Id))
                     .ToDictionary(x => x.Id);
 
                 Dictionary<int, Aluno> alunos = _db.Aluno
@@ -621,14 +614,14 @@ namespace Supera_Monitor_Back.Services {
                 // Processar os registros / alunos / apostilas
                 foreach (UpdateRegistroRequest item in model.Registros) {
                     // Pegar o registro do aluno na aula - Se existir, coloca na variável registro
-                    registros.TryGetValue(item.Turma_Aula_Aluno_Id, out var registro);
+                    registros.TryGetValue(item.Aula_Aluno_Id, out var registro);
 
                     if (registro is null) {
                         continue;
                     }
 
-                    // Se existir, coloca na variável aluno
-                    alunos.TryGetValue(item.Turma_Aula_Aluno_Id, out var aluno);
+                    // Se o registro existir, pega o aluno baseado no Aluno_Id do registro e coloca na variável aluno
+                    alunos.TryGetValue(registro.Aluno_Id, out var aluno);
 
                     if (aluno is null) {
                         continue;
@@ -644,11 +637,11 @@ namespace Supera_Monitor_Back.Services {
                         x.Apostila_Kit_Id == aluno.Apostila_Kit_Id);
 
                     if (apostilaAbacoRel is null) {
-                        return new ResponseModel { Message = @$"Registro '{item.Turma_Aula_Aluno_Id}' está tentando atualizar a apostila do(a) aluno(a) com um kit Ábaco que ele(a) não possui" };
+                        return new ResponseModel { Message = $"Registro '{item.Aula_Aluno_Id}' está tentando atualizar a apostila do(a) aluno(a) com um kit Ábaco que ele(a) não possui" };
                     }
 
                     if (apostilaAhRel is null) {
-                        return new ResponseModel { Message = @$"Registro '{item.Turma_Aula_Aluno_Id}' está tentando atualizar a apostila do(a) aluno(a) com um kit AH que ele(a) não possui" };
+                        return new ResponseModel { Message = $"Registro '{item.Aula_Aluno_Id}' está tentando atualizar a apostila do(a) aluno(a) com um kit AH que ele(a) não possui" };
                     }
 
                     // Se o número da página passado no request for maior que o número de páginas da apostila
@@ -667,6 +660,7 @@ namespace Supera_Monitor_Back.Services {
                     registro.NumeroPaginaAH = item.Numero_Pagina_Ah;
 
                     registro.Presente = item.Presente;
+                    registro.Observacao = model?.Observacao;
 
                     _db.Aula_Aluno.Update(registro);
                 }
