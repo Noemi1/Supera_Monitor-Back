@@ -234,8 +234,15 @@ namespace Supera_Monitor_Back.Services {
 
                 _db.SaveChanges();
 
+                var calendarioList = _db.CalendarioList.FirstOrDefault(a => a.Aula_Id == aula.Id);
+                var calendarioAlunos = _db.CalendarioAlunoList.Where(a => a.Aula_Id == aula.Id).ToList();
+
+                CalendarioResponse calendarioResponse = _mapper.Map<CalendarioResponse>(calendarioList);
+                calendarioResponse.Alunos = calendarioAlunos;
+                calendarioResponse.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(model.PerfilCognitivo);
+
                 response.Message = "Aula registrada com sucesso";
-                response.Object = _db.CalendarioList.FirstOrDefault(a => a.Aula_Id == aula.Id);
+                response.Object = calendarioResponse;
                 response.Success = true;
             } catch (Exception ex) {
                 response.Message = "Falha ao registrar aula: " + ex.ToString();
