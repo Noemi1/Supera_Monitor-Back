@@ -1,15 +1,13 @@
 ﻿namespace Supera_Monitor_Back.Entities;
 
-public partial class Jornada {
+public partial class Jornada_Material {
     public int Id { get; set; }
 
-    public string Tema { get; set; } = null!;
+    public string FileName { get; set; } = null!;
 
-    public int Semana { get; set; }
+    public string FileBase64 { get; set; } = null!;
 
-    public DateTime DataInicio { get; set; }
-
-    public DateTime DataFim { get; set; }
+    public int Jornada_Id { get; set; }
 
     public DateTime Created { get; set; }
 
@@ -21,5 +19,5 @@ public partial class Jornada {
 
     public virtual Account Account_Created { get; set; } = null!;
 
-    public virtual ICollection<Jornada_Material> Jornada_Material { get; set; } = new List<Jornada_Material>();
+    public virtual Jornada Jornada { get; set; } = null!;
 }

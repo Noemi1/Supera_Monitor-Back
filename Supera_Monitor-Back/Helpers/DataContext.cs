@@ -60,6 +60,8 @@ namespace Supera_Monitor_Back.Helpers {
 
         public virtual DbSet<Jornada> Jornada { get; set; }
 
+        public virtual DbSet<Jornada_Material> Jornada_Material { get; set; }
+
         public virtual DbSet<Log> Log { get; set; }
 
         public virtual DbSet<LogError> LogError { get; set; }
@@ -579,13 +581,41 @@ namespace Supera_Monitor_Back.Helpers {
             });
 
             modelBuilder.Entity<Jornada>(entity => {
-                entity.HasNoKey();
-
+                entity.Property(e => e.Created).HasColumnType("datetime");
                 entity.Property(e => e.DataFim).HasColumnType("datetime");
                 entity.Property(e => e.DataInicio).HasColumnType("datetime");
+                entity.Property(e => e.Deactivated).HasColumnType("datetime");
+                entity.Property(e => e.LastUpdated).HasColumnType("datetime");
                 entity.Property(e => e.Tema)
                     .HasMaxLength(250)
                     .IsUnicode(false);
+
+                entity.HasOne(d => d.Account_Created).WithMany(p => p.Jornada)
+                    .HasForeignKey(d => d.Account_Created_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Jornada_Account_Created");
+            });
+
+            modelBuilder.Entity<Jornada_Material>(entity => {
+                entity.ToTable("Jornada_Material");
+
+                entity.Property(e => e.Created).HasColumnType("datetime");
+                entity.Property(e => e.Deactivated).HasColumnType("datetime");
+                entity.Property(e => e.FileBase64).IsUnicode(false);
+                entity.Property(e => e.FileName)
+                    .HasMaxLength(250)
+                    .IsUnicode(false);
+                entity.Property(e => e.LastUpdated).HasColumnType("datetime");
+
+                entity.HasOne(d => d.Account_Created).WithMany(p => p.Jornada_Material)
+                    .HasForeignKey(d => d.Account_Created_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Jornada_Material_Account_Created");
+
+                entity.HasOne(d => d.Jornada).WithMany(p => p.Jornada_Material)
+                    .HasForeignKey(d => d.Jornada_Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Jornada_Material_Jornada");
             });
 
             modelBuilder.Entity<Log>(entity => {
