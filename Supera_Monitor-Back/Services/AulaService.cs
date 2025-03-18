@@ -6,6 +6,8 @@ using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Aula;
 using Supera_Monitor_Back.Models.Turma;
+using Supera_Monitor_Back.Services.Email;
+using Supera_Monitor_Back.Services.Email.Models;
 
 namespace Supera_Monitor_Back.Services {
     public interface IAulaService {
@@ -28,12 +30,14 @@ namespace Supera_Monitor_Back.Services {
         private readonly DataContext _db;
         private readonly IMapper _mapper;
         private readonly IProfessorService _professorService;
+        private readonly IEmailService _emailService;
 
-        public AulaService(DataContext db, IMapper mapper, IProfessorService professorService)
+        public AulaService(DataContext db, IMapper mapper, IProfessorService professorService, IEmailService emailService)
         {
             _db = db;
             _mapper = mapper;
             _professorService = professorService;
+            _emailService = emailService;
         }
 
         public CalendarioResponse Get(int aulaId)
@@ -734,6 +738,11 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "O professor já tem uma aula nesse horário" };
                 }
 
+                // Se essa aula já foi reagendada, tem status Deactivated e não é possível reagendar novamente
+                if (aula.Deactivated.HasValue) {
+                    return new ResponseModel { Message = "Não foi possível reagendar esta aula, pois já possui um reagendamento marcado." };
+                }
+
                 // Validations passed
 
                 // Desativar a aula que foi reposta e adicionar a nova aula
@@ -799,6 +808,102 @@ namespace Supera_Monitor_Back.Services {
 
                 _db.Aula_Aluno.RemoveRange(registrosOriginais);
                 _db.SaveChanges();
+
+                // Enviar, de forma assíncrona, e-mail aos interessados:
+                // 1. O professor responsável pela aula
+                // 2. Os alunos que estavam registrados na aula original e foram relocados juntamente com a aula, cujo registro não estava Deactivated
+                Professor? professor = _db.Professor
+                    .Include(p => p.Account)
+                    .FirstOrDefault(p => p.Id == model.Professor_Id);
+
+                Turma? turma = _db.Turma
+                    .FirstOrDefault(t => t.Id == aula.Turma_Id);
+
+                if (professor is not null) {
+                    // TODO: Em produção, alterar o destinatário do e-mail
+
+                    //_emailService.SendEmail(
+                    //    templateType: "ReagendarAula",
+                    //    model: new ReagendarAulaModel {
+                    //        Name = professor.Account.Name ?? "Nome indefinido",
+                    //        OldDate = aula.Data,
+                    //        NewDate = aulaReagendada.Data,
+                    //        IsProfessor = true,
+                    //    },
+                    //    to: professor.Account.Email
+                    //);
+
+                    _emailService.SendEmail(
+                        templateType: "ReagendarAula",
+                        model: new ReagendarAulaModel {
+                            Name = professor.Account.Name ?? "Nome indefinido",
+                            TurmaName = turma is not null ? turma.Nome : "Aula Independente",
+                            OldDate = aula.Data,
+                            NewDate = aulaReagendada.Data,
+                        },
+                        to: "lgalax1y@gmail.com"
+                    );
+
+                    _emailService.SendEmail(
+                        templateType: "ReagendarAula",
+                        model: new ReagendarAulaModel {
+                            Name = professor.Account.Name ?? "Nome indefinido",
+                            TurmaName = turma is not null ? turma.Nome : "Aula Independente",
+                            OldDate = aula.Data,
+                            NewDate = aulaReagendada.Data,
+                        },
+                        to: "noemi@bullest.com.br"
+                    );
+                }
+
+                List<int> listAlunoIds = registrosOriginais
+                    .Where(r => r.Deactivated == null)
+                    .Select(r => r.Aluno_Id)
+                    .ToList();
+
+                // Por algum motivo Aluno não tá aparecendo relacionado com Pessoa pra dar include
+                List<int> listPessoaIds = _db.Aluno
+                    .Where(a => listAlunoIds.Contains(a.Id))
+                    .Select(a => a.Pessoa_Id)
+                    .ToList();
+
+                List<Pessoa> listPessoas = _db.Pessoa
+                    .Where(p => listPessoaIds.Contains(p.Id))
+                    .ToList();
+
+                foreach (Pessoa pessoa in listPessoas) {
+                    if (pessoa?.Email is not null) {
+                        // TODO: Em produção, alterar o destinatário do e-mail
+
+                        //_emailService.SendEmail(
+                        //    templateType: "ReagendarAula",
+                        //    model: new ReagendarAulaModel { NewDate = aulaReagendada.Data },
+                        //    to: pessoa.Email
+                        //);
+
+                        _emailService.SendEmail(
+                            templateType: "ReagendarAula",
+                            model: new ReagendarAulaModel {
+                                Name = pessoa?.Nome ?? "Nome indefinido",
+                                TurmaName = turma is not null ? turma.Nome : "Aula Independente",
+                                OldDate = aula.Data,
+                                NewDate = aulaReagendada.Data,
+                            },
+                            to: "noemi@bullest.com.br"
+                        );
+
+                        _emailService.SendEmail(
+                            templateType: "ReagendarAula",
+                            model: new ReagendarAulaModel {
+                                Name = pessoa?.Nome ?? "Nome indefinido",
+                                TurmaName = turma is not null ? turma.Nome : "Aula Independente",
+                                OldDate = aula.Data,
+                                NewDate = aulaReagendada.Data,
+                            },
+                            to: "lgalax1y@gmail.com"
+                        );
+                    }
+                }
 
                 response.Success = true;
                 response.OldObject = _db.CalendarioList.FirstOrDefault(a => a.Aula_Id == model.Id);

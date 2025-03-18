@@ -37,11 +37,11 @@ namespace Supera_Monitor_Back.Services.Email {
 
                     margin: auto;
                     text-align: center;
-                    padding: 24px;
                     font-variant: small-caps;
                     font-weight: 500;
                   ""
                 >
+                  <div style=""height: 20px;""></div>
                   <a
                     href=""tel:+1199999999""
                     style=""
@@ -66,6 +66,7 @@ namespace Supera_Monitor_Back.Services.Email {
                         <img style=""height: 20px; width: 20px; margin-right: 4px; vertical-align: middle;"" src=""cid:emailIcon"" />
                         supera@brigadeiro.com.br
                   </a>
+                  <div style=""height: 20px;""></div>
                 </footer>
             ";
 
@@ -241,6 +242,106 @@ namespace Supera_Monitor_Back.Services.Email {
                     EmailConstants.StyledHeading(Subject) +
                     message +
                     EmailConstants.PASSWORD_DISCLAIMER
+                ) +
+                EmailConstants.FOOTER
+            );
+        }
+    }
+
+    public class ReagendarAulaEmailTemplate : IEmailTemplate {
+        public string Subject => "Supera - Aula reagendada";
+
+        public string GenerateBody(object model)
+        {
+            var data = model as ReagendarAulaModel ?? throw new ArgumentException("Invalid model");
+
+            string message =
+                $@"
+                    <p>Olá {data.Name}</p>
+                    <p>Uma das aulas em que você está inserido(a) foi reagendada. Confira os detalhes abaixo:</p>
+                    <p>Sua aula do dia {data.OldDate:d} às {data.OldDate:t} foi reagendada para o dia <b>{data.NewDate:d} às {data.NewDate:t}</b> com a turma/aula: <b>{data.TurmaName}</b>.</p>
+                    <br>                    
+                    <p>Compareça na sua unidade Supera nesse novo dia para realizar a aula.</p>
+                ";
+
+            return EmailConstants.TemplateBody(
+                EmailConstants.HEADER +
+                EmailConstants.TemplateMessage(
+                    EmailConstants.StyledHeading(Subject) +
+                    message +
+                    EmailConstants.CONFIDENTIAL_DISCLAIMER
+                ) +
+                EmailConstants.FOOTER
+            );
+        }
+    }
+
+    public class AlunoReposicaoEmailTemplate : IEmailTemplate {
+        public string Subject => "Supera - Reposição de aula";
+
+        public string GenerateBody(object model)
+        {
+            var data = model as AlunoReposicaoEmailModel ?? throw new ArgumentException("Invalid model");
+
+            string message =
+                $@"
+                    <p>Olá {data.Name}</p>
+                    <p>Uma das aulas em que você está inserido(a) foi reagendada. Confira os detalhes abaixo:</p>
+                    <p>Sua aula do dia {data.OldDate:d} às {data.OldDate:t} foi reagendada para o dia <b>{data.NewDate:d} às {data.NewDate:t}</b> com a turma/aula: <b>{data.TurmaName}</b>.</p>
+                    <br>                    
+                    <p>Compareça na sua unidade Supera nesse novo dia para realizar a aula.</p>
+                ";
+
+            return EmailConstants.TemplateBody(
+                EmailConstants.HEADER +
+                EmailConstants.TemplateMessage(
+                    EmailConstants.StyledHeading(Subject) +
+                    message +
+                    EmailConstants.CONFIDENTIAL_DISCLAIMER
+                ) +
+                EmailConstants.FOOTER
+            );
+        }
+    }
+
+    public class ProfessorReposicaoEmailTemplate : IEmailTemplate {
+        public string Subject => "Supera - Reposição de aula";
+
+        public string GenerateBody(object model)
+        {
+            var data = model as ProfessorReposicaoEmailModel ?? throw new ArgumentException("Invalid model");
+
+            string namesTable = $@"
+                <table border=""1"" cellspacing=""0"" cellpadding=""5"" style=""border-collapse: collapse; border-spacing: 0; width: 100%; border: 1px solid #ccc; border-radius: 8px; overflow: hidden;"">
+                    <tr style=""background-color: #f4f4f4; text-align: center;"">
+                        <th style=""padding: 8px; border-bottom: 1px solid #ccc; text-align: left;"">Nome</th>
+                        <th style=""padding: 8px; border-bottom: 1px solid #ccc; text-align: left;"">Email</th>
+                        <th style=""padding: 8px; border-bottom: 1px solid #ccc; text-align: left;"">Telefone</th>
+                    </tr>
+                    {string.Join("", data.Pessoas.Select(p => $@"
+                    <tr>
+                        <td style=""padding: 8px; border-bottom: 1px solid #ccc;"">{p.Nome ?? "Nome não encontrado"}</td>
+                        <td style=""padding: 8px; border-bottom: 1px solid #ccc;"">{p.Email ?? "Não informado"}</td>
+                        <td style=""padding: 8px; border-bottom: 1px solid #ccc;"">Cel: {p.Celular ?? "Não informado"}    Tel: {p.Telefone ?? "Não informado"}</td>
+                    </tr>"))}
+                </table>";
+
+            string message =
+                $@"
+                    <p>Olá {data.Name}</p>
+                    <p>O aluno {data.AlunoName} agendou uma reposição para sua aula do dia {data.NewDate:g} com a turma/aula: <b>{data.TurmaName}</b>, que acontece no dia {data.OldDate:g}</p>
+                    <p>Segue a lista dos alunos que participarão da aula:</p>
+                    {namesTable}
+                    <br>
+                    <p>Compareça na sua unidade Supera nesse novo dia para realizar a aula.</p>
+                ";
+
+            return EmailConstants.TemplateBody(
+                EmailConstants.HEADER +
+                EmailConstants.TemplateMessage(
+                    EmailConstants.StyledHeading(Subject) +
+                    message +
+                    EmailConstants.CONFIDENTIAL_DISCLAIMER
                 ) +
                 EmailConstants.FOOTER
             );

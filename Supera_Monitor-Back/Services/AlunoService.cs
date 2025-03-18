@@ -6,6 +6,8 @@ using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Aluno;
 using Supera_Monitor_Back.Models.Pessoa;
+using Supera_Monitor_Back.Services.Email;
+using Supera_Monitor_Back.Services.Email.Models;
 using static Supera_Monitor_Back.Entities.Pessoa_Status;
 
 namespace Supera_Monitor_Back.Services {
@@ -31,13 +33,15 @@ namespace Supera_Monitor_Back.Services {
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IPessoaService _pessoaService;
         private readonly IChecklistService _checklistService;
+        private readonly IEmailService _emailService;
 
-        public AlunoService(DataContext db, IMapper mapper, IPessoaService pessoaService, IHttpContextAccessor httpContextAccessor, IChecklistService checklistService)
+        public AlunoService(DataContext db, IMapper mapper, IPessoaService pessoaService, IHttpContextAccessor httpContextAccessor, IChecklistService checklistService, IEmailService emailService)
         {
             _db = db;
             _mapper = mapper;
             _pessoaService = pessoaService;
             _checklistService = checklistService;
+            _emailService = emailService;
             _httpContextAccessor = httpContextAccessor;
             _account = ( Account? )httpContextAccessor?.HttpContext?.Items["Account"];
         }
@@ -394,6 +398,12 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Aluno não encontrado" };
                 }
 
+                Pessoa? pessoa = _db.Pessoa.FirstOrDefault(a => a.Id == aluno.Pessoa_Id);
+
+                if (pessoa is null) {
+                    return new ResponseModel { Message = "Pessoa não encontrada" };
+                }
+
                 if (aluno.Active == false) {
                     return new ResponseModel { Message = "Não é possível marcar reposição para um aluno inativo" };
                 }
@@ -498,6 +508,97 @@ namespace Supera_Monitor_Back.Services {
 
                 _db.Aula_Aluno.Add(registroDest);
                 _db.SaveChanges();
+
+                // Enviar, de forma assíncrona, e-mail aos interessados:
+                // 1. O professor responsável pela aula
+                // 2. Ao aluno que teve a aula reposta
+
+                Professor? professor = _db.Professor
+                    .Include(p => p.Account)
+                    .FirstOrDefault(p => p.Id == aulaSource.Professor_Id);
+
+                if (professor is not null) {
+                    // TODO: Em produção, alterar o destinatário do e-mail
+
+                    //_emailService.SendEmail(
+                    //    templateType: "ReposicaoAula",
+                    //    model: new ReposicaoEmailModel { },
+                    //    to: professor.Account.Email
+                    //);
+
+                    List<int> alunoIdsInAulaDest = _db.Aula_Aluno
+                        .Where(r => r.Aula_Id == aulaDest.Id)
+                        .Select(r => r.Aluno_Id)
+                        .ToList();
+
+                    List<int> pessoaIdsInAulaDest = _db.Aluno
+                        .Where(a => alunoIdsInAulaDest.Contains(a.Id))
+                        .Select(a => a.Pessoa_Id)
+                        .ToList();
+
+                    List<Pessoa> pessoasInAulaDest = _db.Pessoa
+                        .Where(a => pessoaIdsInAulaDest.Contains(a.Id))
+                        .ToList();
+
+                    _emailService.SendEmail(
+                        templateType: "ReposicaoProfessor",
+                        model: new ProfessorReposicaoEmailModel {
+                            Name = professor.Account.Name,
+                            AlunoName = pessoa.Nome ?? "Nome não encontrado",
+                            NewDate = aulaDest.Data,
+                            OldDate = aulaSource.Data,
+                            Pessoas = pessoasInAulaDest,
+                            TurmaName = turmaDest is not null ? turmaDest.Nome : "Aula independente"
+                        },
+                        to: "noemi@bullest.com.br"
+                    );
+
+                    _emailService.SendEmail(
+                        templateType: "ReposicaoProfessor",
+                        model: new ProfessorReposicaoEmailModel {
+                            Name = professor.Account.Name,
+                            AlunoName = pessoa.Nome ?? "Nome não encontrado",
+                            NewDate = aulaDest.Data,
+                            OldDate = aulaSource.Data,
+                            Pessoas = pessoasInAulaDest,
+                            TurmaName = turmaDest is not null ? turmaDest.Nome : "Aula independente"
+                        },
+                        to: "lgalax1y@gmail.com"
+                    );
+                }
+
+                //_emailService.SendEmail(
+                //    templateType: "ReposicaoAluno",
+                //    model: new AlunoReposicaoEmailModel {
+                //        Name = pessoa.Nome ?? "Nome não encontrado",
+                //        OldDate = aulaSource.Data,
+                //        NewDate = aulaDest.Data,
+                //        TurmaName = turmaDest is not null ? turmaDest.Nome : "Aula independente"
+                //    },
+                //    to: pessoa.Email!
+                //);
+
+                _emailService.SendEmail(
+                    templateType: "ReposicaoAluno",
+                    model: new AlunoReposicaoEmailModel {
+                        Name = pessoa.Nome ?? "Nome não encontrado",
+                        OldDate = aulaSource.Data,
+                        NewDate = aulaDest.Data,
+                        TurmaName = turmaDest is not null ? turmaDest.Nome : "Aula independente"
+                    },
+                    to: "lgalax1y@gmail.com"
+                );
+
+                _emailService.SendEmail(
+                    templateType: "ReposicaoAluno",
+                    model: new AlunoReposicaoEmailModel {
+                        Name = pessoa.Nome ?? "Nome não encontrado",
+                        OldDate = aulaSource.Data,
+                        NewDate = aulaDest.Data,
+                        TurmaName = turmaDest is not null ? turmaDest.Nome : "Aula independente"
+                    },
+                    to: "noemi@bullest.com.br"
+                );
 
                 response.Success = true;
                 response.Object = _db.CalendarioAlunoList.FirstOrDefault(r => r.Id == registroDest.Id);

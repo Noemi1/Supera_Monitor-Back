@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Supera_Monitor_Back.Services.Email {
     public interface IEmailService {
-        Task Send(string to, string subject, string html, string from = null);
+        Task Send(string to, string subject, string html, string? from = null);
         Task SendEmail(string templateType, object model, string to);
     }
 
@@ -21,11 +21,11 @@ namespace Supera_Monitor_Back.Services.Email {
             _templateFactory = templateFactory;
         }
 
-        public async Task Send(string to, string subject, string html, string from = null)
+        public async Task Send(string to, string subject, string html, string? from = null)
         {
             try {
                 // Create and populate message instance
-                MailMessage email = new MailMessage();
+                MailMessage email = new();
                 email.From = new MailAddress(_appSettings.EmailFrom);
                 email.To.Add(to);
                 email.Subject = subject;

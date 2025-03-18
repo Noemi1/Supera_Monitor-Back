@@ -296,6 +296,7 @@ namespace Supera_Monitor_Back.Services {
                 .AsEnumerable() // Termina a query no banco, passando a responsabilidade do Any para o C#, queries do banco não lidam bem com TimeSpan
                 .Any(a =>
                     a.Id != IgnoredAulaId && // Se estou reagendando uma aula, não devo considerar ela mesma como conflito
+                    date.Day == a.Data.Day &&
                     date.TimeOfDay > a.Data.TimeOfDay - twoHourInterval &&
                     date.TimeOfDay < a.Data.TimeOfDay + twoHourInterval
                 );
