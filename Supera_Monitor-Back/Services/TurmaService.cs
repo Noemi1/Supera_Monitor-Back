@@ -42,15 +42,14 @@ namespace Supera_Monitor_Back.Services {
                 throw new Exception("Turma não encontrada.");
             }
 
-            // Busca os perfis cognitivos necessários diretamente do banco
-            var perfisDaTurma = _db.PerfilCognitivo
-                .Where(p => _db.Turma_PerfilCognitivo_Rel
-                    .Where(tp => tp.Turma_Id == turmaId)
-                    .Select(tp => tp.PerfilCognitivo_Id)
-                    .Contains(p.Id))
+            List<Turma_PerfilCognitivo_Rel> turmaPerfisCognitivos = _db.Turma_PerfilCognitivo_Rel
+                .Where(p => p.Turma_Id == turma.Id)
+                .Include(p => p.PerfilCognitivo)
                 .ToList();
 
-            turma.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(perfisDaTurma);
+            List<PerfilCognitivo> perfisCognitivos = turmaPerfisCognitivos.Select(p => p.PerfilCognitivo).ToList();
+
+            turma.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(perfisCognitivos);
 
             return turma;
         }
@@ -249,9 +248,12 @@ namespace Supera_Monitor_Back.Services {
 
                 // Remove os perfis cognitivos antigos e insere os novos (ineficiente, se os perfis não mudaram, ainda assim remove e adiciona)
                 // se tiver dando problema, peço perdão e prometo que vou melhorar c: depois == nunca => true
-                List<Turma_PerfilCognitivo_Rel> perfisCognitivos = _db.Turma_PerfilCognitivo_Rel.Where(p => p.Turma_Id == turma.Id).ToList();
+                List<Turma_PerfilCognitivo_Rel> turmaPerfisCognitivos = _db.Turma_PerfilCognitivo_Rel
+                    .Where(p => p.Turma_Id == turma.Id)
+                    .Include(p => p.PerfilCognitivo)
+                    .ToList();
 
-                _db.Turma_PerfilCognitivo_Rel.RemoveRange(perfisCognitivos);
+                _db.Turma_PerfilCognitivo_Rel.RemoveRange(turmaPerfisCognitivos);
                 _db.SaveChanges();
 
                 foreach (PerfilCognitivo perfil in requestPerfis) {
@@ -265,9 +267,17 @@ namespace Supera_Monitor_Back.Services {
 
                 _db.SaveChanges();
 
+                List<PerfilCognitivo> perfisCognitivos = turmaPerfisCognitivos
+                    .Select(p => p.PerfilCognitivo)
+                    .ToList();
+
+                TurmaList turmaList = _db.TurmaList.First(t => t.Id == turma.Id);
+
+                turmaList.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(perfisCognitivos);
+
                 response.Success = true;
                 response.Message = "Turma atualizada com sucesso";
-                response.Object = _db.TurmaList.FirstOrDefault(t => t.Id == turma.Id);
+                response.Object = turmaList;
             } catch (Exception ex) {
                 response.Message = "Falha ao atualizar a turma: " + ex.ToString();
             }
