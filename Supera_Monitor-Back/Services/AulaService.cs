@@ -671,7 +671,7 @@ namespace Supera_Monitor_Back.Services {
                     registro.NumeroPaginaAH = item.Numero_Pagina_Ah;
 
                     registro.Presente = item.Presente;
-                    registro.Observacao = model?.Observacao;
+                    registro.Observacao = item.Observacao;
 
                     _db.Aula_Aluno.Update(registro);
                 }
