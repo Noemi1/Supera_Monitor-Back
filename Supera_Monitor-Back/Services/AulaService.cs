@@ -395,6 +395,7 @@ namespace Supera_Monitor_Back.Services {
             List<Turma> turmas = _db.Turma
                 .Where(t => t.Deactivated == null)
                 .Include(t => t.Professor)
+                .Include(t => t.Sala)
                 .ToList();
 
             List<Professor> professores = _db.Professor
@@ -495,6 +496,7 @@ namespace Supera_Monitor_Back.Services {
                     .Where(a =>
                         a.Aula_Id == aula.Id &&
                         a.Deactivated == null)
+                    .OrderBy(a => a.Aluno)
                     .ToList();
 
                 List<Aula_PerfilCognitivo_Rel> aulaPerfisCognitivos = _db.Aula_PerfilCognitivo_Rel
@@ -555,6 +557,7 @@ namespace Supera_Monitor_Back.Services {
                     // Na pseudo-aula, adicionar só os alunos da turma original
                     List<AlunoList> alunos = _db.AlunoList
                         .Where(a => a.Turma_Id == turma.Id)
+                        .OrderBy(a => a.Nome)
                         .ToList();
 
                     agendamento.Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos);
