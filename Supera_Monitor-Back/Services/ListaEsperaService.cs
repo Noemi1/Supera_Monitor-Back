@@ -47,7 +47,7 @@ namespace Supera_Monitor_Back.Services {
                 Aluno? aluno = _db.Aluno.FirstOrDefault(a => a.Id == model.Aluno_Id);
 
                 if (aluno is null) {
-                    return new ResponseModel { Message = "Aula não foi encontrada" };
+                    return new ResponseModel { Message = "Aluno não foi encontrado" };
                 }
 
                 // Se o aluno já possui um registro na aula, não faz sentido que ele entre na lista de espera
