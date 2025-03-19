@@ -36,7 +36,7 @@ namespace Supera_Monitor_Back.Services {
 
         public TurmaList Get(int turmaId)
         {
-            var turma = _db.TurmaList.AsNoTracking().FirstOrDefault(t => t.Id == turmaId);
+            TurmaList? turma = _db.TurmaList.AsNoTracking().FirstOrDefault(t => t.Id == turmaId);
 
             if (turma == null) {
                 throw new Exception("Turma não encontrada.");

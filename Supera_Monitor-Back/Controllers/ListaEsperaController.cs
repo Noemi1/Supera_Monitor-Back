@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.ListaEspera;
 using Supera_Monitor_Back.Services;
@@ -19,7 +20,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpGet("all/{aulaId}")]
-        public ActionResult<ResponseModel> GetAllByAulaId(int aulaId)
+        public ActionResult<List<AulaEsperaList>> GetAllByAulaId(int aulaId)
         {
             try {
                 var response = _listaEsperaService.GetAllByAulaId(aulaId);

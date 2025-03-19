@@ -19,7 +19,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpGet("all")]
-        public ActionResult<ResponseModel> GetAllSalas()
+        public ActionResult<List<SalaModel>> GetAllSalas()
         {
             try {
                 var response = _salaService.GetAllSalas();
