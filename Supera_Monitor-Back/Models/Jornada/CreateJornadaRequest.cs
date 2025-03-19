@@ -8,4 +8,6 @@ public class CreateJornadaRequest {
     public DateTime DataInicio { get; set; }
 
     public DateTime DataFim { get; set; }
+
+    public string? CorLegenda { get; set; }
 }

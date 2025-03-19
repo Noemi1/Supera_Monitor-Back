@@ -19,6 +19,8 @@ public partial class Jornada {
 
     public DateTime? Deactivated { get; set; }
 
+    public string? CorLegenda { get; set; }
+
     public virtual Account Account_Created { get; set; } = null!;
 
     public virtual ICollection<Jornada_Material> Jornada_Material { get; set; } = new List<Jornada_Material>();

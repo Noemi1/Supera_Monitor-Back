@@ -29,7 +29,7 @@ public class RestricaoService : IRestricaoService {
         Aluno_Restricao? restricao = _db.Aluno_Restricao.Find(restricaoId);
 
         if (restricao is null) {
-            throw new Exception("Aula não encontrada");
+            throw new Exception("Restrição não encontrada");
         }
 
         return _mapper.Map<AlunoRestricaoModel>(restricao);

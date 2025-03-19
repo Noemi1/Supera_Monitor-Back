@@ -43,6 +43,7 @@ namespace Supera_Monitor_Back.Services {
                 throw new Exception("Professor não encontrado.");
             }
 
+
             return professor;
         }
 

@@ -581,6 +581,9 @@ namespace Supera_Monitor_Back.Helpers {
             });
 
             modelBuilder.Entity<Jornada>(entity => {
+                entity.Property(e => e.CorLegenda)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
                 entity.Property(e => e.Created).HasColumnType("datetime");
                 entity.Property(e => e.DataFim).HasColumnType("datetime");
                 entity.Property(e => e.DataInicio).HasColumnType("datetime");
@@ -804,6 +807,9 @@ namespace Supera_Monitor_Back.Helpers {
                     .IsUnicode(false);
                 entity.Property(e => e.DataInicio).HasColumnType("date");
                 entity.Property(e => e.DataNascimento).HasColumnType("date");
+                entity.Property(e => e.NivelCertificacao)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<Professor_AgendaPedagogica>(entity => {

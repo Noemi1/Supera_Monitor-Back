@@ -11,6 +11,8 @@ public class JornadaModel {
 
     public DateTime DataFim { get; set; }
 
+    public string? CorLegenda { get; set; }
+
     public int Account_Created_Id { get; set; }
 
     public DateTime Created { get; set; }

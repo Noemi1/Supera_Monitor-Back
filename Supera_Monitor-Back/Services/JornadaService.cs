@@ -81,6 +81,7 @@ public class JornadaService : IJornadaService {
                 Semana = model.Semana,
                 DataInicio = model.DataInicio,
                 DataFim = model.DataFim,
+                CorLegenda = model.CorLegenda,
 
                 Deactivated = null,
                 Created = TimeFunctions.HoraAtualBR(),
@@ -131,6 +132,7 @@ public class JornadaService : IJornadaService {
             jornada.Semana = model.Semana;
             jornada.DataInicio = model.DataInicio;
             jornada.DataFim = model.DataFim;
+            jornada.CorLegenda = model.CorLegenda;
 
             jornada.LastUpdated = TimeFunctions.HoraAtualBR();
 
