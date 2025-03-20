@@ -78,4 +78,6 @@ public partial class AlunoList {
     public string PerfilCognitivo { get; set; } = null!;
 
     public bool Active => !Deactivated.HasValue;
+
+    public virtual ICollection<AlunoRestricaoList> Restricoes { get; set; } = new List<AlunoRestricaoList>();
 }

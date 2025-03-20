@@ -7,8 +7,8 @@ using Supera_Monitor_Back.Models.Restricao;
 namespace Supera_Monitor_Back.Services;
 
 public interface IRestricaoService {
-    AlunoRestricaoModel Get(int restricaoId);
-    List<AlunoRestricaoModel> GetAll();
+    RestricaoModel Get(int restricaoId);
+    List<RestricaoModel> GetAll();
     ResponseModel Insert(CreateRestricaoRequest model);
     ResponseModel Update(UpdateRestricaoRequest model);
     ResponseModel Delete(int restricaoId);
@@ -24,7 +24,7 @@ public class RestricaoService : IRestricaoService {
         _mapper = mapper;
     }
 
-    public AlunoRestricaoModel Get(int restricaoId)
+    public RestricaoModel Get(int restricaoId)
     {
         Aluno_Restricao? restricao = _db.Aluno_Restricao.Find(restricaoId);
 
@@ -32,14 +32,14 @@ public class RestricaoService : IRestricaoService {
             throw new Exception("Restrição não encontrada");
         }
 
-        return _mapper.Map<AlunoRestricaoModel>(restricao);
+        return _mapper.Map<RestricaoModel>(restricao);
     }
 
-    public List<AlunoRestricaoModel> GetAll()
+    public List<RestricaoModel> GetAll()
     {
         List<Aluno_Restricao> listChecklist = _db.Aluno_Restricao.ToList();
 
-        return _mapper.Map<List<AlunoRestricaoModel>>(listChecklist);
+        return _mapper.Map<List<RestricaoModel>>(listChecklist);
     }
 
     public ResponseModel Insert(CreateRestricaoRequest model)
@@ -64,7 +64,7 @@ public class RestricaoService : IRestricaoService {
 
             response.Success = true;
             response.Message = "Restrição criada com sucesso";
-            response.Object = _mapper.Map<AlunoRestricaoModel>(newRestricao);
+            response.Object = _mapper.Map<RestricaoModel>(newRestricao);
         } catch (Exception ex) {
             response.Message = "Não foi possível criar a restrição: " + ex.ToString();
         }
@@ -101,7 +101,7 @@ public class RestricaoService : IRestricaoService {
 
             response.Success = true;
             response.Message = "Restrição atualizada com sucesso";
-            response.Object = _mapper.Map<AlunoRestricaoModel>(restricao);
+            response.Object = _mapper.Map<RestricaoModel>(restricao);
         } catch (Exception ex) {
             response.Message = "Não foi possível atualizar a restrição: " + ex.ToString();
         }

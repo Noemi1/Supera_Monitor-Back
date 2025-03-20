@@ -1,4 +1,6 @@
-﻿namespace Supera_Monitor_Back.Models.Aluno {
+﻿using Supera_Monitor_Back.Models.Restricao;
+
+namespace Supera_Monitor_Back.Models.Aluno {
     public class CreateAlunoRequest {
         public int Pessoa_Id { get; set; }
         public int Turma_Id { get; set; }
@@ -11,5 +13,7 @@
         public int? Apostila_Kit_Id { get; set; }
 
         public string AspNetUsers_Created_Id { get; set; } = string.Empty;
+
+        public List<RestricaoModel> Restricoes { get; set; } = new List<RestricaoModel>();
     }
 }

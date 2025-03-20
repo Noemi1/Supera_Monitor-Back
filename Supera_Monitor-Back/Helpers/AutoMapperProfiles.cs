@@ -69,7 +69,8 @@ namespace Supera_Monitor_Back.Helpers {
 
             CreateMap<Sala, SalaModel>();
 
-            CreateMap<Aluno_Restricao, AlunoRestricaoModel>();
+            CreateMap<Aluno_Restricao, RestricaoModel>();
+            CreateMap<Aluno_Restricao_Rel, AlunoRestricaoModel>();
 
             CreateMap<Jornada, JornadaModel>();
             CreateMap<Jornada_Material, MaterialModel>();

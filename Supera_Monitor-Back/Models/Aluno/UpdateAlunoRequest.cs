@@ -1,4 +1,6 @@
-﻿namespace Supera_Monitor_Back.Models.Aluno {
+﻿using Supera_Monitor_Back.Models.Restricao;
+
+namespace Supera_Monitor_Back.Models.Aluno {
     public class UpdateAlunoRequest {
         public int Id { get; set; }
 
@@ -22,5 +24,7 @@
         public string? Telefone { get; set; } = string.Empty;
         public string? Celular { get; set; } = string.Empty;
         public int? Pessoa_Sexo_Id { get; set; }
+
+        public List<RestricaoModel> Restricoes { get; set; } = new List<RestricaoModel>();
     }
 }

@@ -6,6 +6,7 @@ using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Aluno;
 using Supera_Monitor_Back.Models.Pessoa;
+using Supera_Monitor_Back.Models.Restricao;
 using Supera_Monitor_Back.Services.Email;
 using Supera_Monitor_Back.Services.Email.Models;
 using static Supera_Monitor_Back.Entities.Pessoa_Status;
@@ -54,12 +55,19 @@ namespace Supera_Monitor_Back.Services {
                 throw new Exception("Aluno não encontrado");
             }
 
+            aluno.Restricoes = _db.AlunoRestricaoList.Where(ar => ar.Aluno_Id == aluno.Id).ToList();
+
             return aluno;
         }
 
         public List<AlunoList> GetAll()
         {
             List<AlunoList> alunos = _db.AlunoList.OrderBy(a => a.Nome).ToList();
+
+            foreach (var aluno in alunos) {
+                var restricoes = _db.Aluno_Restricao_Rel.Where(ar => ar.Aluno_Id == aluno.Id).ToList();
+                aluno.Restricoes = _db.AlunoRestricaoList.Where(ar => ar.Aluno_Id == aluno.Id).ToList();
+            }
 
             return alunos;
         }
@@ -144,6 +152,14 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Não é possível inserir um aluno com um perfil cognitivo que não existe" };
                 }
 
+                var existingRestricoes = _db.Aluno_Restricao.ToList();
+
+                bool areRestricoesValid = model.Restricoes.All(r => existingRestricoes.Any(ar => ar.Id == r.Id));
+
+                if (!areRestricoesValid) {
+                    return new ResponseModel { Message = "Uma ou mais restrições passadas na requisição não existem" };
+                }
+
                 // Validations passed
 
                 Aluno aluno = _mapper.Map<Aluno>(model);
@@ -152,6 +168,17 @@ namespace Supera_Monitor_Back.Services {
                 aluno.Deactivated = null;
 
                 _db.Aluno.Add(aluno);
+                _db.SaveChanges();
+
+                // Inserir restrições no aluno
+
+                foreach (RestricaoModel item in model.Restricoes) {
+                    _db.Aluno_Restricao_Rel.Add(new Aluno_Restricao_Rel {
+                        Restricao_Id = item.Id,
+                        Aluno_Id = aluno.Id,
+                    });
+                }
+
                 _db.SaveChanges();
 
                 ResponseModel populateChecklistResponse = _checklistService.PopulateAlunoChecklist(aluno.Id);
@@ -243,6 +270,16 @@ namespace Supera_Monitor_Back.Services {
                     }
                 }
 
+                var existingRestricoes = _db.Aluno_Restricao.ToList();
+
+                bool areRestricoesValid = model.Restricoes.All(r => existingRestricoes.Any(ar => ar.Id == r.Id));
+
+                if (!areRestricoesValid) {
+                    return new ResponseModel { Message = "Uma ou mais restrições passadas na requisição não existem" };
+                }
+
+                // Validations passed
+
                 AlunoList? old = _db.AlunoList.AsNoTracking().FirstOrDefault(a => a.Id == model.Id);
 
                 if (old is null) {
@@ -267,6 +304,18 @@ namespace Supera_Monitor_Back.Services {
                 aluno.LastUpdated = TimeFunctions.HoraAtualBR();
 
                 _db.Aluno.Update(aluno);
+                _db.SaveChanges();
+
+                List<Aluno_Restricao_Rel> oldRestricoes = _db.Aluno_Restricao_Rel.Where(ar => ar.Aluno_Id == aluno.Id).ToList();
+                _db.Aluno_Restricao_Rel.RemoveRange(oldRestricoes);
+
+                foreach (RestricaoModel item in model.Restricoes) {
+                    _db.Aluno_Restricao_Rel.Add(new Aluno_Restricao_Rel {
+                        Restricao_Id = item.Id,
+                        Aluno_Id = aluno.Id,
+                    });
+                }
+
                 _db.SaveChanges();
 
                 /*

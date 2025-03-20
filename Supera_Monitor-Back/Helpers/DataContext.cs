@@ -20,6 +20,8 @@ namespace Supera_Monitor_Back.Helpers {
 
         public virtual DbSet<AlunoList> AlunoList { get; set; }
 
+        public virtual DbSet<AlunoRestricaoList> AlunoRestricaoList { get; set; }
+
         public virtual DbSet<Aluno_Checklist_Item> Aluno_Checklist_Item { get; set; }
 
         public virtual DbSet<Aluno_Restricao> Aluno_Restricao { get; set; }
@@ -252,6 +254,16 @@ namespace Supera_Monitor_Back.Helpers {
                     .IsUnicode(false);
                 entity.Property(e => e.Turma)
                     .HasMaxLength(100)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<AlunoRestricaoList>(entity => {
+                entity
+                    .HasNoKey()
+                    .ToView("AlunoRestricaoList");
+
+                entity.Property(e => e.Restricao)
+                    .HasMaxLength(250)
                     .IsUnicode(false);
             });
 
