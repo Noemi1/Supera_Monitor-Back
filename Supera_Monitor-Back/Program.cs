@@ -48,6 +48,7 @@ builder.Services.AddScoped<IListaEsperaService, ListaEsperaService>();
 builder.Services.AddScoped<IChecklistService, ChecklistService>();
 builder.Services.AddScoped<ISalaService, SalaService>();
 builder.Services.AddScoped<IJornadaService, JornadaService>();
+builder.Services.AddScoped<IRestricaoService, RestricaoService>();
 
 #endregion
 
