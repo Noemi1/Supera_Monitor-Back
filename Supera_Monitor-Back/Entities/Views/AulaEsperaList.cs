@@ -9,6 +9,8 @@ public partial class AulaEsperaList {
 
     public int? Turma_Id { get; set; }
 
+    public string? Turma { get; set; }
+
     public int? Pessoa_Id { get; set; }
 
     public string? Aluno_Foto { get; set; }

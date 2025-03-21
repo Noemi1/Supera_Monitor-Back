@@ -19,9 +19,9 @@ public partial class ProfessorList : BaseList {
 
     public DateTime? DataNascimento { get; set; }
 
-    public int? NivelCertificacao_Id { get; set; }
+    public int? Professor_NivelCertificacao_Id { get; set; }
 
-    public string? NivelCertificacao { get; set; }
+    public string? Professor_NivelCertificacao { get; set; }
 
     // 365.25 para considerar anos bissextos
     public int Idade => DataNascimento.HasValue

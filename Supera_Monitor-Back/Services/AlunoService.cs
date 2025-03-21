@@ -476,12 +476,16 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Aluno não pode repor aula na própria turma" };
                 }
 
+                if (aulaDest.Finalizada) {
+                    return new ResponseModel { Message = "Não é possível marcar reposição para uma aula finalizada" };
+                }
+
                 if (aulaDest.Data < TimeFunctions.HoraAtualBR()) {
-                    return new ResponseModel { Message = "Não é possível marcar reposição para uma aula que já ocorreu no passado" };
+                    return new ResponseModel { Message = "Não é possível marcar reposição para uma aula no passado" };
                 }
 
                 if (aulaDest.Deactivated != null) {
-                    return new ResponseModel { Message = "Não é possível inserir reposição em uma aula inativa" };
+                    return new ResponseModel { Message = "Não é possível marcar reposição em uma aula inativa" };
                 }
 
                 if (Math.Abs((aulaDest.Data - aulaSource.Data).TotalDays) > 30) {

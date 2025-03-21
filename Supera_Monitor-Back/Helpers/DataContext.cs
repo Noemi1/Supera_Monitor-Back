@@ -448,6 +448,9 @@ namespace Supera_Monitor_Back.Helpers {
                 entity.Property(e => e.Telefone)
                     .HasMaxLength(50)
                     .IsUnicode(false);
+                entity.Property(e => e.Turma)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<Aula_Aluno>(entity => {
@@ -819,11 +822,10 @@ namespace Supera_Monitor_Back.Helpers {
                     .IsUnicode(false);
                 entity.Property(e => e.DataInicio).HasColumnType("date");
                 entity.Property(e => e.DataNascimento).HasColumnType("date");
-                entity.Property(e => e.NivelCertificacao)
+                entity.Property(e => e.Professor_NivelCertificacao)
                     .HasMaxLength(100)
                     .IsUnicode(false);
             });
-
             modelBuilder.Entity<Professor_AgendaPedagogica>(entity => {
                 entity.HasKey(e => e.Id).HasName("PK_AgendaPedagogica");
 
