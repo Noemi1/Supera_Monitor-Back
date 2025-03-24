@@ -11,6 +11,9 @@ public interface ISalaService {
     ResponseModel Insert(CreateSalaRequest model);
     ResponseModel Update(UpdateSalaRequest model);
     ResponseModel Delete(int salaId);
+
+    //bool HasOccupyingTurmaInInterval(int salaId, DateTime start, DateTime end, int? ignoredTurmaId = null);
+    //bool HasOccupyingAulaInInterval(int salaId, DateTime start, DateTime end, int? ignoredAulaId = null);
 }
 
 
@@ -123,4 +126,45 @@ public class SalaService : ISalaService {
 
         return response;
     }
+
+    //public bool HasOccupyingTurmaInInterval(int salaId, DateTime start, DateTime end, int? ignoredTurmaId = null)
+    //{
+    //    try {
+    //        Sala sala = _db.Sala.Find(salaId) ?? throw new Exception("HasOccupyingTurmaInInterval: Sala não encontrada");
+
+    //        TimeSpan twoHourInterval = TimeSpan.FromHours(2);
+
+    //        if (start.Date != end.Date) {
+    //            throw new Exception("HasOccupyingTurmaInInterval: Data de inicio e fim devem ser a mesma");
+    //        }
+
+    //        var turmasInSala = _db.Turma
+    //        .Where(t =>
+    //            t.Deactivated == null &&
+    //            t.Sala_Id == salaId
+    //        );
+
+    //        bool hasTurmaInInterval = _db.Turma
+    //        .Where(t =>
+    //            t.Deactivated == null &&
+    //            t.Sala_Id == salaId
+    //        )
+    //        .AsEnumerable() // Termina a query no banco, passando a responsabilidade do Any para o C#, queries do banco não lidam bem com TimeSpan
+    //        .Any(a =>
+    //            a.Id != IgnoredAulaId && // Se estou reagendando uma aula, não devo considerar ela mesma como conflito
+    //            date.Day == a.Data.Day &&
+    //            date.TimeOfDay > a.Data.TimeOfDay - twoHourInterval &&
+    //            date.TimeOfDay < a.Data.TimeOfDay + twoHourInterval
+    //        );
+
+    //        return hasAulaConflict;
+    //    } catch (Exception ex) {
+    //        throw new Exception("Falha ao resgatar conflitos de aula do professor | " + ex.ToString());
+    //    }
+    //}
+
+    //public bool HasOccupyingAulaInInterval(DateTime start, DateTime end, int? ignoredAulaId = null)
+    //{
+    //    throw new NotImplementedException();
+    //}
 }

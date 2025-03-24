@@ -1,4 +1,4 @@
-﻿namespace Supera_Monitor_Back.Models.Jornada;
+﻿namespace Supera_Monitor_Back.Models.Roteiro;
 
 public class MaterialModel {
     public int Id { get; set; }
@@ -7,7 +7,7 @@ public class MaterialModel {
 
     public string FileBase64 { get; set; } = null!;
 
-    public int Jornada_Id { get; set; }
+    public int Roteiro_Id { get; set; }
 
     public int Account_Created_Id { get; set; }
 

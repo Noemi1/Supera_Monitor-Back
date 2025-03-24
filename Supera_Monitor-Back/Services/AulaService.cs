@@ -546,7 +546,7 @@ namespace Supera_Monitor_Back.Services {
 
                         Finalizada = false,
 
-                        Sala_Id = turma.Sala_Id,
+                        Sala_Id = turma.Sala?.Id ?? -1,
                         NumeroSala = turma.Sala?.NumeroSala,
                         Andar = turma.Sala?.Andar,
                         Observacao = "",

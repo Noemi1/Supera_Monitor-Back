@@ -27,6 +27,8 @@ public partial class Aluno {
 
     public virtual ICollection<Aluno_Checklist_Item> Aluno_Checklist_Item { get; set; } = new List<Aluno_Checklist_Item>();
 
+    public virtual ICollection<Aluno_Historico> Aluno_Historico { get; set; } = new List<Aluno_Historico>();
+
     public virtual ICollection<Aluno_Restricao_Rel> Aluno_Restricao_Rel { get; set; } = new List<Aluno_Restricao_Rel>();
 
     public virtual Apostila_Kit? Apostila_Kit { get; set; }
@@ -36,6 +38,8 @@ public partial class Aluno {
     public virtual ICollection<Aula_ListaEspera> Aula_ListaEspera { get; set; } = new List<Aula_ListaEspera>();
 
     public virtual Turma Turma { get; set; } = null!;
+
+    public virtual Pessoa Pessoa { get; set; } = null!;
 
     public bool Active => !Deactivated.HasValue;
 }

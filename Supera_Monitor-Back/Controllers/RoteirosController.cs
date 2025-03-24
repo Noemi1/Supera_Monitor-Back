@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Supera_Monitor_Back.Models;
-using Supera_Monitor_Back.Models.Jornada;
+using Supera_Monitor_Back.Models.Roteiro;
 using Supera_Monitor_Back.Services;
 using System.Reflection;
 
@@ -8,21 +8,21 @@ namespace Supera_Monitor_Back.Controllers {
     [Authorize(Entities.Role.Admin, Entities.Role.Teacher, Entities.Role.Assistant)]
     [ApiController]
     [Route("back/[controller]")]
-    public class JornadasController : _BaseController {
-        private readonly IJornadaService _jornadaService;
+    public class RoteirosController : _BaseController {
+        private readonly IRoteiroService _roteiroService;
         private readonly ILogService _logger;
 
-        public JornadasController(IJornadaService jornadaService, ILogService logger)
+        public RoteirosController(IRoteiroService roteiroService, ILogService logger)
         {
-            _jornadaService = jornadaService;
+            _roteiroService = roteiroService;
             _logger = logger;
         }
 
         [HttpGet("all")]
-        public ActionResult<List<JornadaModel>> GetAll()
+        public ActionResult<List<RoteiroModel>> GetAll()
         {
             try {
-                var response = _jornadaService.GetAll();
+                var response = _roteiroService.GetAll();
 
                 return Ok(response);
             } catch (Exception e) {
@@ -32,10 +32,10 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPost()]
-        public ActionResult<ResponseModel> Insert(CreateJornadaRequest model)
+        public ActionResult<ResponseModel> Insert(CreateRoteiroRequest model)
         {
             try {
-                var response = _jornadaService.Insert(model);
+                var response = _roteiroService.Insert(model);
 
                 if (response.Success) {
                     return Ok(response);
@@ -49,10 +49,10 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPut()]
-        public ActionResult<ResponseModel> Update(UpdateJornadaRequest model)
+        public ActionResult<ResponseModel> Update(UpdateRoteiroRequest model)
         {
             try {
-                var response = _jornadaService.Update(model);
+                var response = _roteiroService.Update(model);
 
                 if (response.Success) {
                     return Ok(response);
@@ -65,11 +65,11 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
-        [HttpPatch("{jornadaId}")]
-        public ActionResult<ResponseModel> ToggleDeactivate(int jornadaId)
+        [HttpPatch("{roteiroId}")]
+        public ActionResult<ResponseModel> ToggleDeactivate(int roteiroId)
         {
             try {
-                var response = _jornadaService.ToggleDeactivate(jornadaId);
+                var response = _roteiroService.ToggleDeactivate(roteiroId);
 
                 if (response.Success) {
                     return Ok(response);
@@ -82,11 +82,11 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
-        [HttpGet("material/{jornadaMaterialId}")]
-        public ActionResult<ResponseModel> GetAllMaterialByJornada(int jornadaMaterialId)
+        [HttpGet("material/{roteiroMaterialId}")]
+        public ActionResult<ResponseModel> GetAllMaterialByRoteiro(int roteiroMaterialId)
         {
             try {
-                var response = _jornadaService.GetAllMaterialByJornada(jornadaMaterialId);
+                var response = _roteiroService.GetAllMaterialByRoteiro(roteiroMaterialId);
 
                 return Ok(response);
             } catch (Exception e) {
@@ -96,10 +96,10 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPost("material")]
-        public ActionResult<ResponseModel> InsertMaterial(CreateJornadaMaterialRequest model)
+        public ActionResult<ResponseModel> InsertMaterial(CreateRoteiroMaterialRequest model)
         {
             try {
-                var response = _jornadaService.InsertMaterial(model);
+                var response = _roteiroService.InsertMaterial(model);
 
                 if (response.Success) {
                     return Ok(response);
@@ -113,11 +113,11 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
 
-        [HttpPatch("material/{jornadaMaterialId}")]
-        public ActionResult<ResponseModel> ToggleDeactivateMaterial(int jornadaMaterialId)
+        [HttpPatch("material/{roteiroMaterialId}")]
+        public ActionResult<ResponseModel> ToggleDeactivateMaterial(int roteiroMaterialId)
         {
             try {
-                var response = _jornadaService.ToggleDeactivateMaterial(jornadaMaterialId);
+                var response = _roteiroService.ToggleDeactivateMaterial(roteiroMaterialId);
 
                 if (response.Success) {
                     return Ok(response);

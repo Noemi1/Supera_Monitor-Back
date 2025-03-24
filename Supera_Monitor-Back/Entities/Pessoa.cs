@@ -45,6 +45,8 @@ public partial class Pessoa {
 
     public int? Pessoa_Geracao_Id { get; set; }
 
+    public virtual ICollection<Aluno> Alunos { get; set; } = new List<Aluno>();
+
     public virtual Pessoa_FaixaEtaria? Pessoa_FaixaEtaria { get; set; }
 
     public virtual Pessoa_Geracao? Pessoa_Geracao { get; set; }

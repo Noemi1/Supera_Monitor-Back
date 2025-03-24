@@ -47,7 +47,7 @@ builder.Services.AddScoped<IPessoaService, PessoaService>();
 builder.Services.AddScoped<IListaEsperaService, ListaEsperaService>();
 builder.Services.AddScoped<IChecklistService, ChecklistService>();
 builder.Services.AddScoped<ISalaService, SalaService>();
-builder.Services.AddScoped<IJornadaService, JornadaService>();
+builder.Services.AddScoped<IRoteiroService, RoteiroService>();
 builder.Services.AddScoped<IRestricaoService, RestricaoService>();
 
 #endregion
@@ -83,3 +83,5 @@ app.MapControllers();
 app.UseMiddleware<JwtMiddleware>();
 
 app.Run();
+
+public partial class Program { }

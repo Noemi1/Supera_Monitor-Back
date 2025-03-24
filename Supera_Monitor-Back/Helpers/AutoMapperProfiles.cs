@@ -6,10 +6,10 @@ using Supera_Monitor_Back.Models.Accounts;
 using Supera_Monitor_Back.Models.Aluno;
 using Supera_Monitor_Back.Models.Aula;
 using Supera_Monitor_Back.Models.Checklist;
-using Supera_Monitor_Back.Models.Jornada;
 using Supera_Monitor_Back.Models.Pessoa;
 using Supera_Monitor_Back.Models.Professor;
 using Supera_Monitor_Back.Models.Restricao;
+using Supera_Monitor_Back.Models.Roteiro;
 using Supera_Monitor_Back.Models.Sala;
 using Supera_Monitor_Back.Models.Turma;
 
@@ -72,8 +72,8 @@ namespace Supera_Monitor_Back.Helpers {
             CreateMap<Aluno_Restricao, RestricaoModel>();
             CreateMap<Aluno_Restricao_Rel, AlunoRestricaoModel>();
 
-            CreateMap<Jornada, JornadaModel>();
-            CreateMap<Jornada_Material, MaterialModel>();
+            CreateMap<Roteiro, RoteiroModel>();
+            CreateMap<Roteiro_Material, MaterialModel>();
         }
     }
 }

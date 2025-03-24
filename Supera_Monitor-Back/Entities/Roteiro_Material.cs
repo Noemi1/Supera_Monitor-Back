@@ -1,13 +1,13 @@
 ﻿namespace Supera_Monitor_Back.Entities;
 
-public partial class Jornada_Material {
+public partial class Roteiro_Material {
     public int Id { get; set; }
 
     public string FileName { get; set; } = null!;
 
     public string FileBase64 { get; set; } = null!;
 
-    public int Jornada_Id { get; set; }
+    public int Roteiro_Id { get; set; }
 
     public DateTime Created { get; set; }
 
@@ -19,5 +19,5 @@ public partial class Jornada_Material {
 
     public virtual Account Account_Created { get; set; } = null!;
 
-    public virtual Jornada Jornada { get; set; } = null!;
+    public virtual Roteiro Roteiro { get; set; } = null!;
 }

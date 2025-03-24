@@ -1,6 +1,6 @@
-﻿namespace Supera_Monitor_Back.Models.Jornada;
+﻿namespace Supera_Monitor_Back.Models.Roteiro;
 
-public class JornadaModel {
+public class RoteiroModel {
     public int Id { get; set; }
 
     public string Tema { get; set; } = null!;

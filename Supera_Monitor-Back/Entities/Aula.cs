@@ -1,6 +1,5 @@
 ﻿namespace Supera_Monitor_Back.Entities;
 
-#nullable enable
 public class Aula {
     public int Id { get; set; }
 
@@ -18,6 +17,8 @@ public class Aula {
 
     public int? ReposicaoDe_Aula_Id { get; set; }
 
+    public string? ReposicaoMotivo { get; set; }
+
     public int? Account_Created_Id { get; set; }
 
     public DateTime Created { get; set; }
@@ -25,6 +26,8 @@ public class Aula {
     public DateTime? Deactivated { get; set; }
 
     public DateTime? LastUpdated { get; set; }
+
+    public int Roteiro_Id { get; set; }
 
     public string? Descricao { get; set; }
 
@@ -41,6 +44,8 @@ public class Aula {
     public virtual Professor Professor { get; set; } = null!;
 
     public virtual Aula? ReposicaoDe_Aula { get; set; }
+
+    public virtual Roteiro Roteiro { get; set; } = null!;
 
     public virtual Sala Sala { get; set; } = null!;
 

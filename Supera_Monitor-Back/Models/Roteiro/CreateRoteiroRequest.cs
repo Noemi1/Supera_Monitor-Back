@@ -1,6 +1,6 @@
-﻿namespace Supera_Monitor_Back.Models.Jornada;
+﻿namespace Supera_Monitor_Back.Models.Roteiro;
 
-public class CreateJornadaRequest {
+public class CreateRoteiroRequest {
     public string Tema { get; set; } = null!;
 
     public int Semana { get; set; }

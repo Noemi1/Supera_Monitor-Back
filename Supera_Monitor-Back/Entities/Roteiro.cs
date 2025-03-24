@@ -1,6 +1,6 @@
 ﻿namespace Supera_Monitor_Back.Entities;
 
-public partial class Jornada {
+public partial class Roteiro {
     public int Id { get; set; }
 
     public string Tema { get; set; } = null!;
@@ -23,5 +23,7 @@ public partial class Jornada {
 
     public virtual Account Account_Created { get; set; } = null!;
 
-    public virtual ICollection<Jornada_Material> Jornada_Material { get; set; } = new List<Jornada_Material>();
+    public virtual ICollection<Aula> Aula { get; set; } = new List<Aula>();
+
+    public virtual ICollection<Roteiro_Material> Roteiro_Material { get; set; } = new List<Roteiro_Material>();
 }

@@ -28,11 +28,13 @@
         public virtual ICollection<Log> Log { get; set; } = new List<Log>();
         public virtual ICollection<Aula> Aula { get; set; } = new List<Aula>();
         public virtual ICollection<Turma> Turma { get; set; } = new List<Turma>();
-        public virtual ICollection<Jornada> Jornada { get; set; } = new List<Jornada>();
+        public virtual ICollection<Roteiro> Roteiro { get; set; } = new List<Roteiro>();
         public virtual ICollection<Professor> Professor { get; set; } = new List<Professor>();
         public virtual ICollection<Account> Created_Account { get; set; } = new List<Account>();
+        public virtual ICollection<Aluno_Historico> Aluno_Historico { get; set; } = new List<Aluno_Historico>();
         public virtual ICollection<Aula_ListaEspera> Aula_ListaEspera { get; set; } = new List<Aula_ListaEspera>();
-        public virtual ICollection<Jornada_Material> Jornada_Material { get; set; } = new List<Jornada_Material>();
+        public virtual ICollection<Roteiro_Material> Roteiro_Material { get; set; } = new List<Roteiro_Material>();
+        public virtual ICollection<Aula_Aluno_Contato> Aula_Aluno_Contato { get; set; } = new List<Aula_Aluno_Contato>();
         public virtual ICollection<AccountRefreshToken> AccountRefreshToken { get; set; } = new List<AccountRefreshToken>();
         public virtual ICollection<Aluno_Checklist_Item> Aluno_Checklist_Item { get; set; } = new List<Aluno_Checklist_Item>();
 
