@@ -165,6 +165,20 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Este professor está desativado" };
                 }
 
+                // Não devo poder registrar uma aula em uma sala que não existe
+                bool salaExists = _db.Sala.Any(s => s.Id == model.Sala_Id);
+
+                if (!salaExists) {
+                    return new ResponseModel { Message = "Sala não encontrada" };
+                }
+
+                // Não devo poder criar turma com um roteiro que não existe
+                bool roteiroExists = _db.Roteiro.Any(r => r.Id == model.Roteiro_Id);
+
+                if (!roteiroExists) {
+                    return new ResponseModel { Message = "Roteiro não encontrado" };
+                }
+
                 bool professorHasTurmaConflict = _professorService.HasTurmaTimeConflict(
                     model.Professor_Id,
                     ( int )model.Data.DayOfWeek,
@@ -184,13 +198,6 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "O professor já tem uma aula nesse horário" };
                 }
 
-                // Não devo poder registrar uma aula em uma sala que não existe
-                bool salaExists = _db.Sala.Any(s => s.Id == model.Sala_Id);
-
-                if (!salaExists) {
-                    return new ResponseModel { Message = "Sala não encontrada" };
-                }
-
                 // Validations passed
 
                 Aula aula = new() {
@@ -200,7 +207,8 @@ namespace Supera_Monitor_Back.Services {
                     Professor_Id = model.Professor_Id,
                     Turma_Id = model.Turma_Id,
                     Created = TimeFunctions.HoraAtualBR(),
-                    Descricao = !string.IsNullOrEmpty(model.Descricao) ? model.Descricao : turma?.Nome ?? "Aula independente",
+                    Descricao = model.Descricao ?? turma?.Nome ?? "Aula independente",
+                    Roteiro_Id = model.Roteiro_Id,
                     Finalizada = false,
                 };
 
@@ -283,6 +291,13 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Sala não encontrada" };
                 }
 
+                // Não devo poder atualizar turma com um roteiro que não existe
+                bool roteiroExists = _db.Roteiro.Any(r => r.Id == model.Roteiro_Id);
+
+                if (!roteiroExists) {
+                    return new ResponseModel { Message = "Roteiro não encontrado" };
+                }
+
                 // Não devo poder atualizar turma com um professor que está desativado
                 if (professor.Account.Deactivated is not null) {
                     return new ResponseModel { Message = "Professor está desativado" };
@@ -314,6 +329,7 @@ namespace Supera_Monitor_Back.Services {
 
                 response.OldObject = _db.CalendarioList.FirstOrDefault(a => a.Aula_Id == model.Id);
 
+                aula.Roteiro_Id = model.Roteiro_Id;
                 aula.Sala_Id = model.Sala_Id;
                 aula.Professor_Id = model.Professor_Id;
                 aula.Observacao = model.Observacao;
@@ -390,6 +406,7 @@ namespace Supera_Monitor_Back.Services {
                 .Include(a => a.Professor)
                 .Include(a => a.Professor.Account)
                 .Include(a => a.Sala)
+                .Include(a => a.Roteiro)
                 .ToList();
 
             List<Turma> turmas = _db.Turma
@@ -470,6 +487,11 @@ namespace Supera_Monitor_Back.Services {
             foreach (Aula aula in aulas) {
                 CalendarioList calendarioList = new() {
                     Aula_Id = aula.Id,
+
+                    Roteiro_Id = aula.Roteiro_Id,
+                    Semana = aula.Roteiro.Semana,
+                    Tema = aula.Roteiro.Tema,
+
                     Data = aula.Data,
 
                     Turma_Id = aula.Turma_Id,
@@ -532,6 +554,11 @@ namespace Supera_Monitor_Back.Services {
 
                     CalendarioList calendarioList = new() {
                         Aula_Id = -1,
+
+                        Roteiro_Id = -1,
+                        Semana = null,
+                        Tema = null,
+
                         Data = new DateTime(data.Year, data.Month, data.Day, turma.Horario!.Value.Hours, turma.Horario!.Value.Minutes, turma.Horario!.Value.Seconds),
 
                         Turma_Id = turma.Id,
@@ -550,6 +577,7 @@ namespace Supera_Monitor_Back.Services {
                         NumeroSala = turma.Sala?.NumeroSala,
                         Andar = turma.Sala?.Andar,
                         Observacao = "",
+
                     };
 
                     CalendarioResponse agendamento = _mapper.Map<CalendarioResponse>(calendarioList);
