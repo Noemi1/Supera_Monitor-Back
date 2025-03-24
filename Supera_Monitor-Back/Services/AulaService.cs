@@ -12,7 +12,8 @@ using Supera_Monitor_Back.Services.Email.Models;
 namespace Supera_Monitor_Back.Services {
     public interface IAulaService {
         CalendarioResponse Get(int aulaId);
-        ResponseModel Insert(CreateAulaRequest model);
+        ResponseModel InsertAulaTurma(CreateAulaTurmaRequest model);
+        ResponseModel InsertAulaExtra(CreateAulaExtraRequest model);
         ResponseModel Update(UpdateAulaRequest model);
         ResponseModel Delete(int aulaId);
 
@@ -32,12 +33,18 @@ namespace Supera_Monitor_Back.Services {
         private readonly IProfessorService _professorService;
         private readonly IEmailService _emailService;
 
-        public AulaService(DataContext db, IMapper mapper, IProfessorService professorService, IEmailService emailService)
+        private readonly Account? _account;
+        private readonly IHttpContextAccessor? _httpContextAccessor;
+
+        public AulaService(DataContext db, IMapper mapper, IProfessorService professorService, IEmailService emailService, IHttpContextAccessor httpContextAccessor)
         {
             _db = db;
             _mapper = mapper;
             _professorService = professorService;
             _emailService = emailService;
+
+            _httpContextAccessor = httpContextAccessor;
+            _account = ( Account? )_httpContextAccessor?.HttpContext?.Items["Account"];
         }
 
         public CalendarioResponse Get(int aulaId)
@@ -134,21 +141,16 @@ namespace Supera_Monitor_Back.Services {
             return agendamentos;
         }
 
-        public ResponseModel Insert(CreateAulaRequest model)
+        public ResponseModel InsertAulaTurma(CreateAulaTurmaRequest model)
         {
             ResponseModel response = new() { Success = false };
 
             try {
                 // Se Turma_Id passado na requisição for NÃO NULO, a turma deve existir
+                Turma? turma = _db.Turma.Find(model.Turma_Id);
 
-                Turma? turma = null;
-
-                if (model.Turma_Id.HasValue) {
-                    turma = _db.Turma.Find(model.Turma_Id);
-
-                    if (turma is null) {
-                        return new ResponseModel { Message = "Turma não encontrada" };
-                    }
+                if (turma is null) {
+                    return new ResponseModel { Message = "Turma não encontrada" };
                 }
 
                 // Não devo poder registrar uma aula com um professor que não existe
@@ -202,62 +204,184 @@ namespace Supera_Monitor_Back.Services {
 
                 Aula aula = new() {
                     Data = model.Data,
-                    Observacao = model.Observacao,
-                    Sala_Id = model.Sala_Id,
-                    Professor_Id = model.Professor_Id,
+
                     Turma_Id = model.Turma_Id,
-                    Created = TimeFunctions.HoraAtualBR(),
-                    Descricao = model.Descricao ?? turma?.Nome ?? "Aula independente",
                     Roteiro_Id = model.Roteiro_Id,
+                    Professor_Id = model.Professor_Id,
+                    Sala_Id = model.Sala_Id,
+
+                    Descricao = model.Descricao ?? turma?.Nome ?? "",
+                    Observacao = model.Observacao,
+
                     Finalizada = false,
+                    Deactivated = null,
+
+                    Created = TimeFunctions.HoraAtualBR(),
+                    LastUpdated = null,
+                    Account_Created_Id = _account?.Id,
                 };
 
                 _db.Aula.Add(aula);
                 _db.SaveChanges();
 
-                // Inserir os registros dos alunos originais na aula recém criada
-                // Se for uma aula sem Turma, então essa lista é vazia, e por padrão não será inserido nenhum registro de aluno
+                // Inserir os registros dos alunos originais da turma na aula recém criada
                 List<Aluno> alunos = _db.Aluno.Where(a =>
                     a.Turma_Id == aula.Turma_Id &&
                     a.Deactivated == null)
                 .ToList();
 
-                foreach (Aluno aluno in alunos) {
-                    Aula_Aluno registro = new() {
-                        Aula_Id = aula.Id,
-                        Aluno_Id = aluno.Id,
-                        Presente = null,
-                    };
+                List<Aula_Aluno> registros = alunos.Select(aluno => new Aula_Aluno {
+                    Aula_Id = aula.Id,
+                    Aluno_Id = aluno.Id,
+                    Presente = null
+                }).ToList();
 
-                    _db.Aula_Aluno.Add(registro);
-                }
-
+                _db.Aula_Aluno.AddRange(registros);
                 _db.SaveChanges();
 
                 // Pegar os perfis cognitivos passados no request e criar as entidades de Aula_PerfilCognitivo
-                foreach (var perfil in model.PerfilCognitivo) {
-                    Aula_PerfilCognitivo_Rel newPerfilCognitivoRel = new() {
-                        Aula_Id = aula.Id,
-                        PerfilCognitivo_Id = perfil.Id,
-                    };
+                List<Aula_PerfilCognitivo_Rel> aulaPerfisCognitivos = model.PerfilCognitivo.Select(perfil => new Aula_PerfilCognitivo_Rel {
+                    Aula_Id = aula.Id,
+                    PerfilCognitivo_Id = perfil.Id
+                }).ToList();
 
-                    _db.Aula_PerfilCognitivo_Rel.Add(newPerfilCognitivoRel);
-                }
-
+                _db.Aula_PerfilCognitivo_Rel.AddRange(aulaPerfisCognitivos);
                 _db.SaveChanges();
 
-                var calendarioList = _db.CalendarioList.FirstOrDefault(a => a.Aula_Id == aula.Id);
-                var calendarioAlunos = _db.CalendarioAlunoList.Where(a => a.Aula_Id == aula.Id).ToList();
+                CalendarioList? calendarioList = _db.CalendarioList.FirstOrDefault(a => a.Aula_Id == aula.Id);
 
                 CalendarioResponse calendarioResponse = _mapper.Map<CalendarioResponse>(calendarioList);
-                calendarioResponse.Alunos = calendarioAlunos;
+                calendarioResponse.Alunos = _db.CalendarioAlunoList.Where(a => a.Aula_Id == aula.Id).ToList();
                 calendarioResponse.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(model.PerfilCognitivo);
 
                 response.Message = "Aula registrada com sucesso";
                 response.Object = calendarioResponse;
                 response.Success = true;
             } catch (Exception ex) {
-                response.Message = "Falha ao registrar aula: " + ex.ToString();
+                response.Message = "Falha ao registrar aula de uma turma: " + ex.ToString();
+            }
+
+            return response;
+        }
+
+
+        public ResponseModel InsertAulaExtra(CreateAulaExtraRequest model)
+        {
+            ResponseModel response = new() { Success = false };
+
+            try {
+                // Não devo poder registrar uma aula com um professor que não existe
+                Professor? professor = _db.Professor
+                    .Include(p => p.Account)
+                    .FirstOrDefault(p => p.Id == model.Professor_Id);
+
+                if (professor is null) {
+                    return new ResponseModel { Message = "Professor não encontrado" };
+                }
+
+                // Não devo poder registrar uma aula com um professor que está desativado
+                if (professor.Account.Deactivated is not null) {
+                    return new ResponseModel { Message = "Este professor está desativado" };
+                }
+
+                // Não devo poder registrar uma aula em uma sala que não existe
+                bool salaExists = _db.Sala.Any(s => s.Id == model.Sala_Id);
+
+                if (!salaExists) {
+                    return new ResponseModel { Message = "Sala não encontrada" };
+                }
+
+                // Não devo poder criar turma com um roteiro que não existe
+                bool roteiroExists = _db.Roteiro.Any(r => r.Id == model.Roteiro_Id);
+
+                if (!roteiroExists) {
+                    return new ResponseModel { Message = "Roteiro não encontrado" };
+                }
+
+                // O professor associado não pode possuir conflitos de horário
+
+                bool professorHasTurmaConflict = _professorService.HasTurmaTimeConflict(
+                    model.Professor_Id,
+                    ( int )model.Data.DayOfWeek,
+                    model.Data.TimeOfDay,
+                    IgnoredTurmaId: null);
+
+                if (professorHasTurmaConflict) {
+                    return new ResponseModel { Message = "O professor já tem uma turma nesse horário" };
+                }
+
+                bool professorHasAulaConflict = _professorService.HasAulaTimeConflict(
+                    model.Professor_Id,
+                    model.Data,
+                    IgnoredAulaId: null);
+
+                if (professorHasAulaConflict) {
+                    return new ResponseModel { Message = "O professor já tem uma aula nesse horário" };
+                }
+
+                var alunoIds = _db.Aluno
+                    .Where(a => model.Alunos.Contains(a.Id))
+                    .Select(a => a.Id)
+                    .ToHashSet();
+
+                bool allAlunosValid = model.Alunos.All(id => alunoIds.Contains(id));
+
+                if (!allAlunosValid) {
+                    return new ResponseModel { Message = "Aluno(s) não encontrado(s)" };
+                }
+
+                // Validations passed
+
+                Aula aula = new() {
+                    Data = model.Data,
+                    Roteiro_Id = model.Roteiro_Id,
+                    Professor_Id = model.Professor_Id,
+                    Sala_Id = model.Sala_Id,
+
+                    Turma_Id = null,
+                    Finalizada = false,
+                    Deactivated = null,
+
+                    Descricao = model.Descricao ?? "",
+                    Observacao = model.Observacao ?? "",
+
+                    Created = TimeFunctions.HoraAtualBR(),
+                    LastUpdated = null,
+                    Account_Created_Id = _account?.Id
+                };
+
+                _db.Aula.Add(aula);
+                _db.SaveChanges();
+
+                // Inserir os registros dos alunos passados na requisição
+                List<Aula_Aluno> registros = model.Alunos.Select(alunoId => new Aula_Aluno {
+                    Aula_Id = aula.Id,
+                    Aluno_Id = alunoId,
+                    Presente = null,
+                }).ToList();
+
+                _db.Aula_Aluno.AddRange(registros);
+
+                // Pegar os perfis cognitivos passados na requisição e criar as entidades de Aula_PerfilCognitivo
+                List<Aula_PerfilCognitivo_Rel> aulaPerfisCognitivos = model.PerfilCognitivo.Select(perfil => new Aula_PerfilCognitivo_Rel {
+                    Aula_Id = aula.Id,
+                    PerfilCognitivo_Id = perfil.Id
+                }).ToList();
+
+                _db.Aula_PerfilCognitivo_Rel.AddRange(aulaPerfisCognitivos);
+                _db.SaveChanges();
+
+                CalendarioList? calendarioList = _db.CalendarioList.FirstOrDefault(a => a.Aula_Id == aula.Id);
+
+                CalendarioResponse calendarioResponse = _mapper.Map<CalendarioResponse>(calendarioList);
+                calendarioResponse.Alunos = _db.CalendarioAlunoList.Where(a => a.Aula_Id == aula.Id).ToList();
+                calendarioResponse.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(model.PerfilCognitivo);
+
+                response.Message = "Aula extra criada com sucesso";
+                response.Object = calendarioResponse;
+                response.Success = true;
+            } catch (Exception ex) {
+                response.Message = $"Falha ao registrar aula extra: {ex}";
             }
 
             return response;
@@ -401,7 +525,7 @@ namespace Supera_Monitor_Back.Services {
                 .Where(a =>
                     a.Data.Date >= request.IntervaloDe.Value.Date &&
                     a.Data.Date <= request.IntervaloAte.Value.Date)
-                .Include(a => a.Aula_Aluno)
+                .Include(a => a.Aula_Aluno_Aula)
                 .Include(a => a.Turma)
                 .Include(a => a.Professor)
                 .Include(a => a.Professor.Account)
@@ -426,7 +550,6 @@ namespace Supera_Monitor_Back.Services {
             if (request.Turma_Id.HasValue) {
                 turmas = turmas.Where(x => x.Id == request.Turma_Id.Value).ToList();
                 aulas = aulas.Where(x => x.Turma_Id == request.Turma_Id.Value).ToList();
-                //aulasIndependentes.Clear();
             }
 
             // Filtro de Perfil Cognitivo
@@ -448,14 +571,12 @@ namespace Supera_Monitor_Back.Services {
                 .ToList();
 
                 // Como aulas independentes não pertencem a turmas, todas devem ser removidas
-                //aulasIndependentes.Clear();
             }
 
             // Filtro de Professor
             if (request.Professor_Id.HasValue) {
                 turmas = turmas.Where(x => x.Professor_Id == request.Professor_Id.Value).ToList();
                 aulas = aulas.Where(x => x.Professor_Id == request.Professor_Id.Value).ToList();
-                //aulasIndependentes = aulasIndependentes.Where(x => x.Professor_Id == request.Professor_Id.Value).ToList();
             }
 
             // Filtro de Aluno
@@ -472,7 +593,7 @@ namespace Supera_Monitor_Back.Services {
                     // Filtrar aulas da turma do aluno
 
                     List<int> aulasIds = aulas
-                        .SelectMany(a => a.Aula_Aluno)
+                        .SelectMany(a => a.Aula_Aluno_Aula)
                         .Where(x => x.Aluno_Id == aluno.Id)
                         .Select(x => x.Aula_Id)
                         .ToList();
@@ -563,15 +684,15 @@ namespace Supera_Monitor_Back.Services {
 
                         Turma_Id = turma.Id,
                         Turma = turma.Nome,
+                        CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
 
                         Professor_Id = turma.Professor_Id ?? -1,
                         Professor = turma.Professor is not null ? turma.Professor.Account.Name : "Professor indefinido",
-
                         CorLegenda = turma.Professor is not null ? turma.Professor.CorLegenda : "#000",
 
-                        CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
-
                         Finalizada = false,
+                        Deactivated = null,
+                        ReposicaoDe_Aula_Id = null,
 
                         Sala_Id = turma.Sala?.Id ?? -1,
                         NumeroSala = turma.Sala?.NumeroSala,

@@ -72,15 +72,29 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPost()]
-        public ActionResult<ResponseModel> Insert(CreateAulaRequest model)
+        public ActionResult<ResponseModel> InsertAulaTurma(CreateAulaTurmaRequest model)
         {
             try {
-                var response = _aulaService.Insert(model);
+                var response = _aulaService.InsertAulaTurma(model);
 
                 if (response.Success) {
-                    //int aulaId = response.Object!.Aula_Id;
-                    //_logger.Log("Insert", "Aula", response, Account?.Id);
-                    //return Accepted(@$"/aulas/{aulaId}", response);
+                    return Ok(response);
+                }
+
+                return BadRequest(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
+
+        [HttpPost("extra")]
+        public ActionResult<ResponseModel> InsertAulaExtra(CreateAulaExtraRequest model)
+        {
+            try {
+                var response = _aulaService.InsertAulaExtra(model);
+
+                if (response.Success) {
                     return Ok(response);
                 }
 

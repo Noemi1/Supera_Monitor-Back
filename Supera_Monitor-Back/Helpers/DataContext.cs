@@ -516,9 +516,14 @@ public partial class DataContext : DbContext {
                 .HasForeignKey(d => d.Apostila_Abaco_Id)
                 .HasConstraintName("FK_Aula_Aluno_Apostila_Abaco");
 
-            entity.HasOne(d => d.ReposicaoDe_Aula).WithMany(p => p.Aula_Aluno)
-                .HasForeignKey(d => d.ReposicaoDe_Aula_Id)
+            entity.HasOne(d => d.Aula).WithMany(p => p.Aula_Aluno_Aula)
+                .HasForeignKey(d => d.Aula_Id)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Aula_Aluno_Aula");
+
+            entity.HasOne(d => d.ReposicaoDe_Aula).WithMany(p => p.Aula_Aluno_ReposicaoDe_Aula)
+                .HasForeignKey(d => d.ReposicaoDe_Aula_Id)
+                .HasConstraintName("FK_Aula_Aluno_ReposicaoDe");
         });
 
         modelBuilder.Entity<Aula_Aluno_Contato>(entity => {

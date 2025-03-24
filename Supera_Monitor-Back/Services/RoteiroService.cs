@@ -85,7 +85,7 @@ public class RoteiroService : IRoteiroService {
 
                 Deactivated = null,
                 Created = TimeFunctions.HoraAtualBR(),
-                Account_Created_Id = _account.Id,
+                Account_Created_Id = _account!.Id,
             };
 
             _db.Roteiro.Add(newRoteiro);
@@ -210,7 +210,7 @@ public class RoteiroService : IRoteiroService {
                 Roteiro_Id = model.Roteiro_Id,
 
                 Deactivated = null,
-                Account_Created_Id = _account.Id,
+                Account_Created_Id = _account!.Id,
                 Created = TimeFunctions.HoraAtualBR(),
             };
 

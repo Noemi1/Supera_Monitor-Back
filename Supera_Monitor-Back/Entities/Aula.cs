@@ -3,21 +3,19 @@
 public class Aula {
     public int Id { get; set; }
 
-    public int? Turma_Id { get; set; }
+    public string Descricao { get; set; } = null!;
 
     public DateTime Data { get; set; }
 
     public int Professor_Id { get; set; }
+
+    public int? Turma_Id { get; set; }
 
     public string? Observacao { get; set; }
 
     public bool Finalizada { get; set; }
 
     public int Sala_Id { get; set; }
-
-    public int? ReposicaoDe_Aula_Id { get; set; }
-
-    public string? ReposicaoMotivo { get; set; }
 
     public int? Account_Created_Id { get; set; }
 
@@ -29,11 +27,15 @@ public class Aula {
 
     public int Roteiro_Id { get; set; }
 
-    public string? Descricao { get; set; }
+    public int? ReposicaoDe_Aula_Id { get; set; }
+
+    public string? ReposicaoMotivo { get; set; }
 
     public virtual Account? Account_Created { get; set; }
 
-    public virtual ICollection<Aula_Aluno> Aula_Aluno { get; set; } = new List<Aula_Aluno>();
+    public virtual ICollection<Aula_Aluno> Aula_Aluno_Aula { get; set; } = new List<Aula_Aluno>();
+
+    public virtual ICollection<Aula_Aluno> Aula_Aluno_ReposicaoDe_Aula { get; set; } = new List<Aula_Aluno>();
 
     public virtual ICollection<Aula_ListaEspera> Aula_ListaEspera { get; set; } = new List<Aula_ListaEspera>();
 
