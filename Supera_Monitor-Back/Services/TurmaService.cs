@@ -123,12 +123,28 @@ namespace Supera_Monitor_Back.Services {
                     }
                 }
 
-                // Se for passado um Sala_Id na requisição, não devo permitir a criação de uma turma em uma sala que não existe
+                // Se for passado um Sala_Id na requisição
                 if (model.Sala_Id.HasValue) {
                     bool salaExists = _db.Sala.Any(s => s.Id == model.Sala_Id);
 
+                    // Não devo permitir a criação de uma turma em uma sala que não existe
                     if (salaExists == false) {
                         return new ResponseModel { Message = "Sala não encontrada." };
+                    }
+
+                    // Não devo permitir que duas turmas usem a mesma sala no mesmo horário (intervalo de 2 horas antes e depois)
+                    TimeSpan twoHourInterval = TimeSpan.FromHours(2);
+
+                    bool salaIsAlreadyOccupied = _db.Turma
+                        .Where(t =>
+                             t.Deactivated == null
+                             && t.DiaSemana == model.DiaSemana
+                             && t.Sala_Id == model.Sala_Id)
+                        .AsEnumerable()
+                        .Any(t => model.Horario > t.Horario - twoHourInterval && model.Horario < t.Horario + twoHourInterval);
+
+                    if (salaIsAlreadyOccupied) {
+                        return new ResponseModel { Message = "Sala está ocupada por outra turma no mesmo horário." };
                     }
                 }
 
@@ -215,6 +231,32 @@ namespace Supera_Monitor_Back.Services {
 
                     if (professorHasTurmaTimeConflict) {
                         return new ResponseModel { Message = "Não foi possível atualizar a turma. O professor responsável já tem compromissos no horário indicado." };
+                    }
+                }
+
+                // Se for passado um Sala_Id na requisição
+                if (model.Sala_Id.HasValue) {
+                    bool salaExists = _db.Sala.Any(s => s.Id == model.Sala_Id);
+
+                    // Não devo permitir a criação de uma turma em uma sala que não existe
+                    if (salaExists == false) {
+                        return new ResponseModel { Message = "Sala não encontrada." };
+                    }
+
+                    // Não devo permitir que duas turmas usem a mesma sala no mesmo horário (intervalo de 2 horas antes e depois)
+                    TimeSpan twoHourInterval = TimeSpan.FromHours(2);
+
+                    bool salaIsAlreadyOccupied = _db.Turma
+                        .Where(t =>
+                             t.Id != model.Id // Deve-se ignorar caso seja a própria turma
+                             && t.Deactivated == null
+                             && t.DiaSemana == model.DiaSemana
+                             && t.Sala_Id == model.Sala_Id)
+                        .AsEnumerable()
+                        .Any(t => model.Horario > t.Horario - twoHourInterval && model.Horario < t.Horario + twoHourInterval);
+
+                    if (salaIsAlreadyOccupied) {
+                        return new ResponseModel { Message = "Sala está ocupada por outra turma no mesmo horário." };
                     }
                 }
 
