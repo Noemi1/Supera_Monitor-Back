@@ -176,6 +176,17 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Sala não encontrada" };
                 }
 
+                // Não devo poder permitir registro de uma aula em uma sala que está ocupada no horário indicado
+                bool isSalaOccupied = _db.Aula.Any(a =>
+                    a.Deactivated == null
+                    && a.Sala_Id == model.Sala_Id
+                    && a.Data == model.Data
+                    && a.Deactivated == null);
+
+                if (isSalaOccupied) {
+                    return new ResponseModel { Message = "Sala está ocupada nesse mesmo horário" };
+                }
+
                 // Não devo poder criar turma com um roteiro que não existe
                 bool roteiroExists = _db.Roteiro.Any(r => r.Id == model.Roteiro_Id);
 
@@ -291,6 +302,17 @@ namespace Supera_Monitor_Back.Services {
 
                 if (!salaExists) {
                     return new ResponseModel { Message = "Sala não encontrada" };
+                }
+
+                // Não devo poder permitir registro de uma aula em uma sala que está ocupada no horário indicado
+                bool isSalaOccupied = _db.Aula.Any(a =>
+                    a.Deactivated == null
+                    && a.Sala_Id == model.Sala_Id
+                    && a.Data == model.Data
+                    && a.Deactivated == null);
+
+                if (isSalaOccupied) {
+                    return new ResponseModel { Message = "Sala está ocupada por outra aula nesse mesmo horário" };
                 }
 
                 // Não devo poder criar turma com um roteiro que não existe
@@ -415,6 +437,18 @@ namespace Supera_Monitor_Back.Services {
 
                 if (salaExists == false) {
                     return new ResponseModel { Message = "Sala não encontrada" };
+                }
+
+                // Não devo poder permitir registro de uma aula em uma sala que está ocupada no horário indicado
+                bool isSalaOccupied = _db.Aula.Any(a =>
+                    a.Id != aula.Id
+                    && a.Deactivated == null
+                    && a.Sala_Id == model.Sala_Id
+                    && a.Data == aula.Data
+                    && a.Deactivated == null);
+
+                if (isSalaOccupied) {
+                    return new ResponseModel { Message = "Sala está ocupada por outra aula nesse mesmo horário" };
                 }
 
                 // Não devo poder atualizar turma com um roteiro que não existe
