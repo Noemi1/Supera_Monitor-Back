@@ -25,6 +25,8 @@ namespace Supera_Monitor_Back.Services {
 
         ResponseModel RegisterChamada(RegisterChamadaRequest model);
         ResponseModel ReagendarAula(ReagendarAulaRequest model);
+
+        List<Feriado> GetAllFeriados();
     }
 
     public class AulaService : IAulaService {
@@ -1066,6 +1068,13 @@ namespace Supera_Monitor_Back.Services {
             }
 
             return response;
+        }
+
+        public List<Feriado> GetAllFeriados()
+        {
+            List<Feriado> feriados = _db.Feriado.ToList();
+
+            return feriados;
         }
     }
 }

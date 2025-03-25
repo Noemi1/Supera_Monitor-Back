@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Aluno;
@@ -45,6 +46,18 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
+        [HttpGet("historico/{alunoId}")]
+        public ActionResult<List<Aluno_Historico>> GetHistoricoById(int alunoId)
+        {
+            try {
+                var response = _alunoService.GetHistoricoById(alunoId);
+
+                return Ok(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
 
         [HttpPost()]
         public ActionResult<ResponseModel> Insert(CreateAlunoRequest model)

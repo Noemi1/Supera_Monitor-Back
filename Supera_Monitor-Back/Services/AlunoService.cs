@@ -24,6 +24,8 @@ namespace Supera_Monitor_Back.Services {
         ResponseModel GetSummaryByAluno(int alunoId);
         List<ApostilaList> GetApostilasByAluno(int alunoId);
 
+        List<Aluno_Historico> GetHistoricoById(int alunoId);
+
         ResponseModel NewReposicao(NewReposicaoRequest model);
     }
 
@@ -211,6 +213,13 @@ namespace Supera_Monitor_Back.Services {
                     _db.Aula_Aluno.Add(registro);
                 }
 
+                _db.Aluno_Historico.Add(new Aluno_Historico {
+                    Aluno_Id = aluno.Id,
+                    Descricao = "Aluno cadastrado",
+                    Account_Id = _account.Id,
+                    Data = TimeFunctions.HoraAtualBR(),
+                });
+
                 _db.SaveChanges();
 
                 response.Message = "Aluno cadastrado com sucesso";
@@ -369,6 +378,13 @@ namespace Supera_Monitor_Back.Services {
                     }
                 }
 
+                _db.Aluno_Historico.Add(new Aluno_Historico {
+                    Aluno_Id = aluno.Id,
+                    Descricao = $"Aluno foi transferido da turma ID: '{old.Turma_Id}' para a turma ID: '{aluno.Turma_Id}'",
+                    Account_Id = _account.Id,
+                    Data = TimeFunctions.HoraAtualBR(),
+                });
+
                 _db.SaveChanges();
 
                 response.Message = "Aluno atualizado com sucesso";
@@ -404,6 +420,14 @@ namespace Supera_Monitor_Back.Services {
                 aluno.Deactivated = IsAlunoActive ? TimeFunctions.HoraAtualBR() : null;
 
                 _db.Aluno.Update(aluno);
+
+                _db.Aluno_Historico.Add(new Aluno_Historico {
+                    Aluno_Id = aluno.Id,
+                    Descricao = $"Aluno {(aluno.Deactivated.HasValue ? "Reativado" : "Desativado")}",
+                    Account_Id = _account.Id,
+                    Data = TimeFunctions.HoraAtualBR(),
+                });
+
                 _db.SaveChanges();
 
                 response.Success = true;
@@ -560,6 +584,14 @@ namespace Supera_Monitor_Back.Services {
                 _db.Aula_Aluno.Update(registroSource);
 
                 _db.Aula_Aluno.Add(registroDest);
+
+                _db.Aluno_Historico.Add(new Aluno_Historico {
+                    Aluno_Id = aluno.Id,
+                    Descricao = $"Aluno realizou reposição da aula original ID: '{aulaSource.Id}' para aula destino ID: '{aulaDest.Id}'",
+                    Account_Id = _account.Id,
+                    Data = TimeFunctions.HoraAtualBR(),
+                });
+
                 _db.SaveChanges();
 
                 // Enviar, de forma assíncrona, e-mail aos interessados:
@@ -728,6 +760,11 @@ namespace Supera_Monitor_Back.Services {
             }
 
             return response;
+        }
+
+        public List<Aluno_Historico> GetHistoricoById(int alunoId)
+        {
+            return _db.Aluno_Historico.Where(h => h.Aluno_Id == alunoId).ToList();
         }
     }
 }
