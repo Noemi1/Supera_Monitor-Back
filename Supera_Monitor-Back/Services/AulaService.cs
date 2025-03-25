@@ -176,12 +176,16 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Sala não encontrada" };
                 }
 
-                // Não devo poder permitir registro de uma aula em uma sala que está ocupada no horário indicado
+                // Não devo poder permitir registro de uma aula em uma sala que está ocupada num intervalo de 2 horas antes ou depois
+                var twoHoursBefore = model.Data.AddHours(-2);
+                var twoHoursAfter = model.Data.AddHours(2);
+
                 bool isSalaOccupied = _db.Aula.Any(a =>
                     a.Deactivated == null
                     && a.Sala_Id == model.Sala_Id
-                    && a.Data == model.Data
-                    && a.Deactivated == null);
+                    && a.Data.Date == model.Data.Date
+                    && a.Data > twoHoursBefore
+                    && a.Data < twoHoursAfter);
 
                 if (isSalaOccupied) {
                     return new ResponseModel { Message = "Sala está ocupada nesse mesmo horário" };
@@ -304,15 +308,19 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Sala não encontrada" };
                 }
 
-                // Não devo poder permitir registro de uma aula em uma sala que está ocupada no horário indicado
+                // Não devo poder permitir registro de uma aula em uma sala que está ocupada num intervalo de 2 horas antes ou depois
+                var twoHoursBefore = model.Data.AddHours(-2);
+                var twoHoursAfter = model.Data.AddHours(2);
+
                 bool isSalaOccupied = _db.Aula.Any(a =>
                     a.Deactivated == null
                     && a.Sala_Id == model.Sala_Id
-                    && a.Data == model.Data
-                    && a.Deactivated == null);
+                    && a.Data.Date == model.Data.Date
+                    && a.Data > twoHoursBefore
+                    && a.Data < twoHoursAfter);
 
                 if (isSalaOccupied) {
-                    return new ResponseModel { Message = "Sala está ocupada por outra aula nesse mesmo horário" };
+                    return new ResponseModel { Message = "Sala está ocupada nesse mesmo horário" };
                 }
 
                 // Não devo poder criar turma com um roteiro que não existe
@@ -439,16 +447,20 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Sala não encontrada" };
                 }
 
-                // Não devo poder permitir registro de uma aula em uma sala que está ocupada no horário indicado
+                // Não devo poder permitir registro de uma aula em uma sala que está ocupada num intervalo de 2 horas antes ou depois
+                var twoHoursBefore = aula.Data.AddHours(-2);
+                var twoHoursAfter = aula.Data.AddHours(2);
+
                 bool isSalaOccupied = _db.Aula.Any(a =>
                     a.Id != aula.Id
                     && a.Deactivated == null
                     && a.Sala_Id == model.Sala_Id
-                    && a.Data == aula.Data
-                    && a.Deactivated == null);
+                    && a.Data.Date == aula.Data.Date
+                    && a.Data > twoHoursBefore
+                    && a.Data < twoHoursAfter);
 
                 if (isSalaOccupied) {
-                    return new ResponseModel { Message = "Sala está ocupada por outra aula nesse mesmo horário" };
+                    return new ResponseModel { Message = "Sala está ocupada nesse mesmo horário" };
                 }
 
                 // Não devo poder atualizar turma com um roteiro que não existe
