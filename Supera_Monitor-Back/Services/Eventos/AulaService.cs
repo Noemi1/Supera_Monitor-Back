@@ -166,6 +166,15 @@ public class AulaService : IAulaService {
                 a.Deactivated == null)
             .ToList();
 
+            // Inserir participação do professor
+            Evento_Participacao_Professor participacaoProfessor = new() {
+                Evento_Id = evento.Id,
+                Professor_Id = professor.Id,
+            };
+
+            _db.Evento_Participacao_Professors.Add(participacaoProfessor);
+            _db.SaveChanges();
+
             IEnumerable<Evento_Participacao_Aluno> registros = alunos.Select(aluno => new Evento_Participacao_Aluno {
                 Evento_Id = evento.Id,
                 Aluno_Id = aluno.Id,
@@ -312,6 +321,15 @@ public class AulaService : IAulaService {
             };
 
             _db.Add(evento);
+            _db.SaveChanges();
+
+            // Inserir participação do professor
+            Evento_Participacao_Professor participacaoProfessor = new() {
+                Evento_Id = evento.Id,
+                Professor_Id = professor.Id,
+            };
+
+            _db.Evento_Participacao_Professors.Add(participacaoProfessor);
             _db.SaveChanges();
 
             // Inserir os registros dos alunos passados na requisição
@@ -468,6 +486,22 @@ public class AulaService : IAulaService {
             });
 
             _db.AddRange(eventoAulaPerfisCognitivos);
+            _db.SaveChanges();
+
+            Evento_Participacao_Professor? participacaoToRemove = _db.Evento_Participacao_Professors.FirstOrDefault(p => p.Evento_Id == evento.Id && p.Professor_Id == professor.Id);
+
+            if (participacaoToRemove is not null) {
+                _db.Evento_Participacao_Professors.Remove(participacaoToRemove);
+            }
+
+            // Remover participação antiga e inserir nova participação do professor
+            Evento_Participacao_Professor newParticipacaoProfessor = new() {
+                Evento_Id = evento.Id,
+                Professor_Id = professor.Id,
+            };
+
+            _db.Evento_Participacao_Professors.Add(newParticipacaoProfessor);
+
             _db.SaveChanges();
 
             var responseObject = _db.Eventos.Where(e => e.Id == evento.Id)
