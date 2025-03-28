@@ -67,8 +67,8 @@ namespace Supera_Monitor_Back.Services {
 
         public AuthenticateResponse Authenticate(AuthenticateRequest model, string ipAddress)
         {
-            Account? account = _db.Account
-                .Include(e => e.AccountRefreshToken)
+            Account? account = _db.Accounts
+                .Include(e => e.AccountRefreshTokens)
                 .Include(e => e.Role)
                 .SingleOrDefault(e => e.Email == model.Email);
 
@@ -87,12 +87,12 @@ namespace Supera_Monitor_Back.Services {
 
             AccountRefreshToken refreshToken = GenerateRefreshToken(ipAddress);
             refreshToken.Account_Id = account.Id;
-            account.AccountRefreshToken.Add(refreshToken);
+            account.AccountRefreshTokens.Add(refreshToken);
 
             _db.Update(account);
             _db.SaveChanges();
 
-            var relatedProfessor = _db.Professor.FirstOrDefault(p => p.Account_Id == account.Id);
+            var relatedProfessor = _db.Professors.FirstOrDefault(p => p.Account_Id == account.Id);
 
             AuthenticateResponse response = _mapper.Map<AuthenticateResponse>(account);
             response.Role = account.Role.Role;
@@ -108,14 +108,14 @@ namespace Supera_Monitor_Back.Services {
         {
             var (refreshToken, account) = GetRefreshToken(token);
 
-            var relatedProfessor = _db.Professor.FirstOrDefault(p => p.Account_Id == account.Id);
+            var relatedProfessor = _db.Professors.FirstOrDefault(p => p.Account_Id == account.Id);
 
             // Renew refresh and JWT tokens
             var newRefreshToken = GenerateRefreshToken(ipAddress);
             refreshToken.Revoked = TimeFunctions.HoraAtualBR();
             refreshToken.RevokedByIp = ipAddress;
             refreshToken.ReplacedByToken = newRefreshToken.Token;
-            account.AccountRefreshToken.Add(newRefreshToken);
+            account.AccountRefreshTokens.Add(newRefreshToken);
 
             RemoveOldRefreshTokens(account);
 
@@ -145,7 +145,7 @@ namespace Supera_Monitor_Back.Services {
                 refreshToken.Revoked = TimeFunctions.HoraAtualBR();
                 refreshToken.RevokedByIp = ipAddress;
 
-                _db.AccountRefreshToken.Update(refreshToken);
+                _db.AccountRefreshTokens.Update(refreshToken);
                 _db.SaveChanges();
 
                 response.Success = true;
@@ -159,7 +159,7 @@ namespace Supera_Monitor_Back.Services {
 
         public ResponseModel UpdateAccount(UpdateAccountRequest model)
         {
-            Account? account = _db.Account.FirstOrDefault(acc => acc.Email == model.Email);
+            Account? account = _db.Accounts.FirstOrDefault(acc => acc.Email == model.Email);
 
             if (account == null) {
                 return new ResponseModel { Message = "Conta não encontrada." };
@@ -169,26 +169,26 @@ namespace Supera_Monitor_Back.Services {
                 return new ResponseModel { Message = "Tentativa inválida." };
             }
 
-            AccountList oldObj = _db.AccountList.AsNoTracking()
+            AccountList oldObj = _db.AccountLists.AsNoTracking()
                                                 .FirstOrDefault(acc => acc.Id == account.Id)!;
 
             account.Name = model.Name;
             account.Phone = model.Phone;
 
-            _db.Account.Update(account);
+            _db.Accounts.Update(account);
             _db.SaveChanges();
 
             return new ResponseModel {
                 Success = true,
                 Message = "Conta atualizada com sucesso.",
-                Object = _db.AccountList.AsNoTracking().FirstOrDefault(acc => acc.Id == account.Id),
+                Object = _db.AccountLists.AsNoTracking().FirstOrDefault(acc => acc.Id == account.Id),
                 OldObject = oldObj,
             };
         }
 
         public ResponseModel ForgotPassword(ForgotPasswordRequest model, string origin)
         {
-            Account? account = _db.Account.SingleOrDefault(acc => acc.Email == model.Email);
+            Account? account = _db.Accounts.SingleOrDefault(acc => acc.Email == model.Email);
             ResponseModel response = new();
 
             // Create a reset token that lasts 1 day
@@ -196,7 +196,7 @@ namespace Supera_Monitor_Back.Services {
                 account.ResetToken = Utils.RandomTokenString();
                 account.ResetTokenExpires = TimeFunctions.HoraAtualBR().AddDays(1);
 
-                _db.Account.Update(account);
+                _db.Accounts.Update(account);
                 _db.SaveChanges();
 
                 // Send password reset email
@@ -206,7 +206,7 @@ namespace Supera_Monitor_Back.Services {
                     to: account.Email);
 
                 response.Success = true;
-                response.Object = _db.AccountList
+                response.Object = _db.AccountLists
                     .AsNoTracking()
                     .FirstOrDefault(acc => acc.Id == account.Id)!;
             }
@@ -218,7 +218,7 @@ namespace Supera_Monitor_Back.Services {
 
         public ResponseModel ChangePassword(ChangePasswordRequest model)
         {
-            Account? account = _db.Account.FirstOrDefault(acc => acc.Email == _account.Email);
+            Account? account = _db.Accounts.FirstOrDefault(acc => acc.Email == _account.Email);
 
             if (account == null) {
                 return new ResponseModel { Message = "Conta não encontrada." };
@@ -246,11 +246,11 @@ namespace Supera_Monitor_Back.Services {
             account.ResetToken = null;
             account.ResetTokenExpires = null;
 
-            _db.Account.Update(account);
+            _db.Accounts.Update(account);
             _db.SaveChanges();
 
             return new ResponseModel {
-                Object = _db.AccountList.FirstOrDefault(acc => acc.Id == account.Id),
+                Object = _db.AccountLists.FirstOrDefault(acc => acc.Id == account.Id),
                 Success = true,
                 Message = "Senha foi trocada com sucesso."
             };
@@ -260,7 +260,7 @@ namespace Supera_Monitor_Back.Services {
         {
             DateTime now = TimeFunctions.HoraAtualBR();
 
-            Account? account = _db.Account.SingleOrDefault(x =>
+            Account? account = _db.Accounts.SingleOrDefault(x =>
                 x.ResetToken == model.Token &&
                 x.ResetTokenExpires >= now);
 
@@ -274,19 +274,19 @@ namespace Supera_Monitor_Back.Services {
             account.ResetToken = null;
             account.ResetTokenExpires = null;
 
-            _db.Account.Update(account);
+            _db.Accounts.Update(account);
             _db.SaveChanges();
 
             return new ResponseModel {
                 Success = true,
-                Object = _db.AccountList.FirstOrDefault(acc => acc.Id == account.Id),
+                Object = _db.AccountLists.FirstOrDefault(acc => acc.Id == account.Id),
                 Message = "Senha atualizada com sucesso. Por favor, faça o login."
             };
         }
 
         public ResponseModel VerifyEmail(string token)
         {
-            Account? account = _db.Account.FirstOrDefault(acc => acc.VerificationToken == token);
+            Account? account = _db.Accounts.FirstOrDefault(acc => acc.VerificationToken == token);
 
             if (account == null) {
                 return new ResponseModel { Message = "Verificação falhou." };
@@ -296,11 +296,11 @@ namespace Supera_Monitor_Back.Services {
             account.Verified = TimeFunctions.HoraAtualBR();
             account.VerificationToken = null;
 
-            _db.Account.Update(account);
+            _db.Accounts.Update(account);
             _db.SaveChanges();
 
             return new ResponseModel {
-                Object = _db.AccountList.FirstOrDefault(acc => acc.Id == account.Id),
+                Object = _db.AccountLists.FirstOrDefault(acc => acc.Id == account.Id),
                 Success = true,
                 Message = "Verificação foi realizada com sucesso. Por favor, faça o login."
             };
@@ -308,7 +308,7 @@ namespace Supera_Monitor_Back.Services {
 
         public void ValidateResetToken(ValidateResetTokenRequest model)
         {
-            var account = _db.Account.SingleOrDefault(acc =>
+            var account = _db.Accounts.SingleOrDefault(acc =>
                 acc.ResetToken == model.Token &&
                 acc.ResetTokenExpires > TimeFunctions.HoraAtualBR());
 
@@ -323,19 +323,19 @@ namespace Supera_Monitor_Back.Services {
 
         private (AccountRefreshToken, Account) GetRefreshToken(string token)
         {
-            var accounts = _db.Account
+            var accounts = _db.Accounts
                 .Include(x => x.Role)
-                .Include(x => x.AccountRefreshToken)
+                .Include(x => x.AccountRefreshTokens)
                 .ToList();
 
             var account = accounts
-                .SingleOrDefault(acc => acc.AccountRefreshToken.Any(t => t.Token == token));
+                .SingleOrDefault(acc => acc.AccountRefreshTokens.Any(t => t.Token == token));
 
             if (account == null) {
                 throw new Exception("Invalid token.");
             }
 
-            var refreshToken = account.AccountRefreshToken.Single(t => t.Token == token);
+            var refreshToken = account.AccountRefreshTokens.Single(t => t.Token == token);
 
             if (!refreshToken.IsActive) {
                 throw new Exception("Invalid token.");
@@ -346,7 +346,7 @@ namespace Supera_Monitor_Back.Services {
 
         private void RemoveOldRefreshTokens(Account account)
         {
-            account.AccountRefreshToken = account.AccountRefreshToken.Where(token =>
+            account.AccountRefreshTokens = account.AccountRefreshTokens.Where(token =>
                 token.IsActive && token.Created.AddDays(_appSettings.RefreshTokenTTL) > TimeFunctions.HoraAtualBR()).ToList();
         }
 

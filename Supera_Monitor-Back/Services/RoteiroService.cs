@@ -33,7 +33,7 @@ public class RoteiroService : IRoteiroService {
 
     public List<RoteiroModel> GetAll()
     {
-        List<Roteiro> listRoteiros = _db.Roteiro
+        List<Roteiro> listRoteiros = _db.Roteiros
             .OrderBy(j => j.Semana)
             .ToList();
 
@@ -50,7 +50,7 @@ public class RoteiroService : IRoteiroService {
             }
 
             // Não deve ser possível criar um roteiro em uma semana que já está associada a outro roteiro (nos roteiros ativos)
-            bool hasSemanaConflict = _db.Roteiro.Any(r =>
+            bool hasSemanaConflict = _db.Roteiros.Any(r =>
                 r.Deactivated == null &&
                 r.Semana == model.Semana);
 
@@ -63,7 +63,7 @@ public class RoteiroService : IRoteiroService {
             // 1. A DataInicio do novo roteiro está dentro do intervalo de um roteiro existente.
             // 2. A DataFim do novo roteiro está dentro do intervalo de um roteiro existente.
             // 3. O novo roteiro engloba completamente outro roteiro já cadastrado.
-            bool isDuringAnotherRoteiro = _db.Roteiro.Any(r =>
+            bool isDuringAnotherRoteiro = _db.Roteiros.Any(r =>
                 r.Deactivated == null &&
                 ((model.DataInicio >= r.DataInicio && model.DataInicio <= r.DataFim) || // DataInicio está dentro de outro roteiro
                  (model.DataFim >= r.DataInicio && model.DataFim <= r.DataFim) ||       // DataFim está dentro de outro roteiro
@@ -88,7 +88,7 @@ public class RoteiroService : IRoteiroService {
                 Account_Created_Id = _account!.Id,
             };
 
-            _db.Roteiro.Add(newRoteiro);
+            _db.Roteiros.Add(newRoteiro);
             _db.SaveChanges();
 
             response.Success = true;
@@ -106,7 +106,7 @@ public class RoteiroService : IRoteiroService {
         ResponseModel response = new() { Success = false };
 
         try {
-            Roteiro? roteiro = _db.Roteiro.FirstOrDefault(r => r.Id == model.Id);
+            Roteiro? roteiro = _db.Roteiros.FirstOrDefault(r => r.Id == model.Id);
 
             if (roteiro == null) {
                 return new ResponseModel { Message = "Roteiro não encontrado." };
@@ -117,7 +117,7 @@ public class RoteiroService : IRoteiroService {
             }
 
             // Não deve ser possível criar um roteiro em uma semana que já está associada a outro roteiro (nos roteiros ativos)
-            bool hasSemanaConflict = _db.Roteiro.Any(r =>
+            bool hasSemanaConflict = _db.Roteiros.Any(r =>
                 r.Id != model.Id &&
                 r.Deactivated == null &&
                 r.Semana == model.Semana);
@@ -136,7 +136,7 @@ public class RoteiroService : IRoteiroService {
 
             roteiro.LastUpdated = TimeFunctions.HoraAtualBR();
 
-            _db.Roteiro.Update(roteiro);
+            _db.Roteiros.Update(roteiro);
             _db.SaveChanges();
 
             response.Success = true;
@@ -154,7 +154,7 @@ public class RoteiroService : IRoteiroService {
         ResponseModel response = new() { Success = false };
 
         try {
-            Roteiro? roteiro = _db.Roteiro.FirstOrDefault(r => r.Id == roteiroId);
+            Roteiro? roteiro = _db.Roteiros.FirstOrDefault(r => r.Id == roteiroId);
 
             if (roteiro == null) {
                 return new ResponseModel { Message = "Roteiro não encontrado." };
@@ -166,7 +166,7 @@ public class RoteiroService : IRoteiroService {
 
             roteiro.Deactivated = isRoteiroActive ? TimeFunctions.HoraAtualBR() : null;
 
-            _db.Roteiro.Update(roteiro);
+            _db.Roteiros.Update(roteiro);
             _db.SaveChanges();
 
             response.Success = true;
@@ -180,7 +180,7 @@ public class RoteiroService : IRoteiroService {
 
     public List<MaterialModel> GetAllMaterialByRoteiro(int roteiroId)
     {
-        List<Roteiro_Material> listMaterial = _db.Roteiro_Material
+        List<Roteiro_Material> listMaterial = _db.Roteiro_Materials
             .Where(m => m.Roteiro_Id == roteiroId)
             .ToList();
 
@@ -192,7 +192,7 @@ public class RoteiroService : IRoteiroService {
         ResponseModel response = new() { Success = false };
 
         try {
-            Roteiro? roteiro = _db.Roteiro.FirstOrDefault(r => r.Id == model.Roteiro_Id);
+            Roteiro? roteiro = _db.Roteiros.FirstOrDefault(r => r.Id == model.Roteiro_Id);
 
             if (roteiro == null) {
                 return new ResponseModel { Message = "Roteiro não encontrado." };
@@ -214,7 +214,7 @@ public class RoteiroService : IRoteiroService {
                 Created = TimeFunctions.HoraAtualBR(),
             };
 
-            _db.Roteiro_Material.Add(newMaterial);
+            _db.Roteiro_Materials.Add(newMaterial);
             _db.SaveChanges();
 
             response.Success = true;
@@ -232,7 +232,7 @@ public class RoteiroService : IRoteiroService {
         ResponseModel response = new() { Success = false };
 
         try {
-            Roteiro_Material? material = _db.Roteiro_Material.FirstOrDefault(rm => rm.Id == roteiroMaterialId);
+            Roteiro_Material? material = _db.Roteiro_Materials.FirstOrDefault(rm => rm.Id == roteiroMaterialId);
 
             if (material == null) {
                 return new ResponseModel { Message = "Material não encontrado." };
@@ -244,7 +244,7 @@ public class RoteiroService : IRoteiroService {
 
             material.Deactivated = isMaterialActive ? TimeFunctions.HoraAtualBR() : null;
 
-            _db.Roteiro_Material.Update(material);
+            _db.Roteiro_Materials.Update(material);
             _db.SaveChanges();
 
             response.Success = true;

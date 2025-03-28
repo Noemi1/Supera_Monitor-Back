@@ -33,9 +33,7 @@ public partial class Aula_Aluno {
 
     public virtual Aula Aula { get; set; } = null!;
 
-    public virtual ICollection<Aula_Aluno_Contato> Aula_Aluno_Contato { get; set; } = new List<Aula_Aluno_Contato>();
+    public virtual ICollection<Aula_Aluno_Contato> Aula_Aluno_Contatos { get; set; } = new List<Aula_Aluno_Contato>();
 
     public virtual Aula? ReposicaoDe_Aula { get; set; }
-
-    public bool Reposicao => ReposicaoDe_Aula_Id.HasValue;
 }

@@ -1,4 +1,4 @@
-﻿using Supera_Monitor_Back.Models.Turma;
+﻿using Supera_Monitor_Back.Models;
 
 namespace Supera_Monitor_Back.Entities.Views;
 

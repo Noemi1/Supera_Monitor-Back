@@ -46,7 +46,7 @@ namespace Supera_Monitor_Back.Services {
 
         public AccountResponse Get(int accountId)
         {
-            Account? account = _db.Account
+            Account? account = _db.Accounts
                 .Include(acc => acc.Role)
                 .FirstOrDefault(acc => acc.Id == accountId);
 
@@ -61,21 +61,21 @@ namespace Supera_Monitor_Back.Services {
 
         public List<AccountList> GetAll()
         {
-            List<AccountList> accounts = _db.AccountList.OrderBy(t => t.Name).ToList();
+            List<AccountList> accounts = _db.AccountLists.OrderBy(t => t.Name).ToList();
 
             return accounts;
         }
 
         public List<AccountRoleModel> GetRoles()
         {
-            List<AccountRole> roles = _db.AccountRole.ToList();
+            List<AccountRole> roles = _db.AccountRoles.ToList();
 
             return _mapper.Map<List<AccountRoleModel>>(roles);
         }
 
         public ResponseModel Insert(CreateAccountRequest model, string origin)
         {
-            Account? account = _db.Account.FirstOrDefault(acc => acc.Email == model.Email);
+            Account? account = _db.Accounts.FirstOrDefault(acc => acc.Email == model.Email);
 
             if (account != null) {
                 return new ResponseModel { Message = "Este e-mail já está em uso." };
@@ -93,7 +93,7 @@ namespace Supera_Monitor_Back.Services {
             (string randomPassword, string passwordHash) = Utils.GenerateRandomHashedPassword();
             account.PasswordHash = passwordHash;
 
-            _db.Account.Add(account);
+            _db.Accounts.Add(account);
             _db.SaveChanges();
 
             SendVerificationEmail(account, origin, randomPassword);
@@ -101,19 +101,19 @@ namespace Supera_Monitor_Back.Services {
             return new ResponseModel {
                 Message = "Conta cadastrada com sucesso!",
                 Success = true,
-                Object = _db.AccountList.AsNoTracking().FirstOrDefault(accList => accList.Id == account.Id),
+                Object = _db.AccountLists.AsNoTracking().FirstOrDefault(accList => accList.Id == account.Id),
             };
         }
 
         public ResponseModel Update(UpdateAccountRequest model)
         {
-            Account? account = _db.Account.Find(model.Id);
+            Account? account = _db.Accounts.Find(model.Id);
 
             if (account == null) {
                 return new ResponseModel { Message = "Conta não encontrada." };
             }
 
-            var emailIsAlreadyTaken = _db.Account.Any(acc => acc.Email == model.Email && acc.Id != model.Id);
+            var emailIsAlreadyTaken = _db.Accounts.Any(acc => acc.Email == model.Email && acc.Id != model.Id);
 
             if (emailIsAlreadyTaken) {
                 return new ResponseModel { Message = "Este e-mail já está em uso." };
@@ -139,23 +139,23 @@ namespace Supera_Monitor_Back.Services {
                 _httpContextAccessor.HttpContext.Items["Account"] = account;
             }
 
-            AccountList? old = _db.AccountList.AsNoTracking().FirstOrDefault(accList => accList.Id == account.Id);
+            AccountList? old = _db.AccountLists.AsNoTracking().FirstOrDefault(accList => accList.Id == account.Id);
 
-            _db.Account.Update(account);
+            _db.Accounts.Update(account);
             _db.SaveChanges();
 
             return new ResponseModel {
                 Message = "Conta atualizada com sucesso!",
                 Success = true,
-                Object = _db.AccountList.AsNoTracking().FirstOrDefault(x => x.Id == account.Id),
+                Object = _db.AccountLists.AsNoTracking().FirstOrDefault(x => x.Id == account.Id),
                 OldObject = old
             };
         }
 
         public ResponseModel Delete(int accountId)
         {
-            Account? account = _db.Account
-                .Include(acc => acc.AccountRefreshToken)
+            Account? account = _db.Accounts
+                .Include(acc => acc.AccountRefreshTokens)
                 .Include(acc => acc.Role)
                 .FirstOrDefault(acc => acc.Id == accountId);
 
@@ -173,11 +173,11 @@ namespace Supera_Monitor_Back.Services {
 
             // Validations passed
 
-            AccountList? logObject = _db.AccountList.FirstOrDefault(acc => acc.Id == account.Id);
+            AccountList? logObject = _db.AccountLists.FirstOrDefault(acc => acc.Id == account.Id);
 
-            _db.AccountRefreshToken.RemoveRange(account.AccountRefreshToken);
+            _db.AccountRefreshTokens.RemoveRange(account.AccountRefreshTokens);
 
-            _db.Account.Remove(account);
+            _db.Accounts.Remove(account);
             _db.SaveChanges();
 
             return new ResponseModel {
@@ -202,7 +202,7 @@ namespace Supera_Monitor_Back.Services {
 
         public ResponseModel ResetPassword(int accountId)
         {
-            Account? account = _db.Account
+            Account? account = _db.Accounts
                  .Include(x => x.Role)
                  .FirstOrDefault(x => x.Id == accountId);
 
@@ -218,7 +218,7 @@ namespace Supera_Monitor_Back.Services {
             account.PasswordHash = passwordHash;
             account.PasswordReset = TimeFunctions.HoraAtualBR();
 
-            _db.Account.Update(account);
+            _db.Accounts.Update(account);
             _db.SaveChanges();
 
             _emailService.SendEmail(
@@ -229,14 +229,14 @@ namespace Supera_Monitor_Back.Services {
             return new ResponseModel {
                 Message = "Email de recuperação de senha enviado!",
                 Success = true,
-                Object = _db.AccountList.AsNoTracking().FirstOrDefault(accList => accList.Id == account.Id)
+                Object = _db.AccountLists.AsNoTracking().FirstOrDefault(accList => accList.Id == account.Id)
             };
         }
 
         public ResponseModel ToggleDeactivate(int accountId, string ipAddress)
         {
-            Account? account = _db.Account
-                            .Include(acc => acc.AccountRefreshToken)
+            Account? account = _db.Accounts
+                            .Include(acc => acc.AccountRefreshTokens)
                             .FirstOrDefault(acc => acc.Id == accountId);
 
             if (account == null) {
@@ -257,7 +257,7 @@ namespace Supera_Monitor_Back.Services {
 
             account.Deactivated = IsAccountActive ? TimeFunctions.HoraAtualBR() : null;
 
-            _db.Account.Update(account);
+            _db.Accounts.Update(account);
             _db.SaveChanges();
 
             // If user is editing his own account
@@ -267,7 +267,7 @@ namespace Supera_Monitor_Back.Services {
 
             // If account is being deactivated, revoke all its active tokens
             if (account.Deactivated != null) {
-                var tokens = account.AccountRefreshToken.Where(tok => tok.IsActive).ToList();
+                var tokens = account.AccountRefreshTokens.Where(tok => tok.IsActive).ToList();
 
                 foreach (var refreshToken in tokens) {
                     _accountService.RevokeToken(refreshToken.Token, ipAddress);
@@ -276,7 +276,7 @@ namespace Supera_Monitor_Back.Services {
 
             return new ResponseModel {
                 Success = true,
-                Object = _db.AccountList.AsNoTracking().FirstOrDefault(accList => accList.Id == account.Id),
+                Object = _db.AccountLists.AsNoTracking().FirstOrDefault(accList => accList.Id == account.Id),
             };
         }
 

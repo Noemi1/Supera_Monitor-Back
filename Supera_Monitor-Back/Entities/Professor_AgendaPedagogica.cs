@@ -7,5 +7,5 @@ public partial class Professor_AgendaPedagogica {
 
     public string Descricao { get; set; } = null!;
 
-    public virtual ICollection<Professor_AgendaPedagogica_Rel> Professor_AgendaPedagogica_Rel { get; set; } = new List<Professor_AgendaPedagogica_Rel>();
+    public virtual ICollection<Professor_AgendaPedagogica_Rel> Professor_AgendaPedagogica_Rels { get; set; } = new List<Professor_AgendaPedagogica_Rel>();
 }

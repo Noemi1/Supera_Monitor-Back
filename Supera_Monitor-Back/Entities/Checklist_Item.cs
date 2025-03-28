@@ -11,7 +11,7 @@ public partial class Checklist_Item {
 
     public DateTime? Deactivated { get; set; }
 
-    public virtual ICollection<Aluno_Checklist_Item> Aluno_Checklist_Item { get; set; } = new List<Aluno_Checklist_Item>();
+    public virtual ICollection<Aluno_Checklist_Item> Aluno_Checklist_Items { get; set; } = new List<Aluno_Checklist_Item>();
 
     public virtual Checklist Checklist { get; set; } = null!;
 }

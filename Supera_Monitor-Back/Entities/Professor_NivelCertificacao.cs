@@ -5,5 +5,5 @@ public partial class Professor_NivelCertificacao {
 
     public string Descricao { get; set; } = null!;
 
-    public virtual ICollection<Professor> Professor { get; set; } = new List<Professor>();
+    public virtual ICollection<Professor> Professors { get; set; } = new List<Professor>();
 }

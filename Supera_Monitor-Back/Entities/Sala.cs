@@ -9,5 +9,7 @@ public partial class Sala {
 
     public virtual ICollection<Aula> Aulas { get; set; } = new List<Aula>();
 
+    public virtual ICollection<Evento> Eventos { get; set; } = new List<Evento>();
+
     public virtual ICollection<Turma> Turmas { get; set; } = new List<Turma>();
 }

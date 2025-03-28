@@ -3,6 +3,7 @@ using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Middlewares;
 using Supera_Monitor_Back.Services;
 using Supera_Monitor_Back.Services.Email;
+using Supera_Monitor_Back.Services.Eventos;
 using System.Globalization;
 using System.Text.Json.Serialization;
 
@@ -41,14 +42,15 @@ builder.Services.AddScoped<IEmailTemplateFactory, EmailTemplateFactory>();
 builder.Services.AddScoped<ITurmaService, TurmaService>();
 builder.Services.AddScoped<IAlunoService, AlunoService>();
 builder.Services.AddScoped<IProfessorService, ProfessorService>();
-builder.Services.AddScoped<IProfessorService, ProfessorService>();
-builder.Services.AddScoped<IAulaService, AulaService>();
 builder.Services.AddScoped<IPessoaService, PessoaService>();
 builder.Services.AddScoped<IListaEsperaService, ListaEsperaService>();
 builder.Services.AddScoped<IChecklistService, ChecklistService>();
 builder.Services.AddScoped<ISalaService, SalaService>();
 builder.Services.AddScoped<IRoteiroService, RoteiroService>();
 builder.Services.AddScoped<IRestricaoService, RestricaoService>();
+
+builder.Services.AddScoped<IAulaService, AulaService>();
+builder.Services.AddScoped<IEventoService, EventoService>();
 
 #endregion
 

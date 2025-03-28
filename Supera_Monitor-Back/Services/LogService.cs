@@ -28,7 +28,7 @@ namespace Supera_Monitor_Back.Services {
 
         public List<LogList> GetList(int AccountId)
         {
-            List<LogList> list = _db.LogList.Where(x => x.Account_Id == AccountId)/*.Take(50)*/
+            List<LogList> list = _db.LogLists.Where(x => x.Account_Id == AccountId)/*.Take(50)*/
                 .OrderByDescending(x => x.Date)
                 .ToList();
 
@@ -37,7 +37,7 @@ namespace Supera_Monitor_Back.Services {
 
         public LogModel GetLogAcao(int Id)
         {
-            Log? entity = _db.Log.Include(x => x.Account)/*.Include(x => x.Customer)*/.FirstOrDefault(x => x.Id == Id);
+            Log? entity = _db.Logs.Include(x => x.Account)/*.Include(x => x.Customer)*/.FirstOrDefault(x => x.Id == Id);
 
             if (entity == null) {
                 throw new Exception("Log não encontrado");
@@ -58,7 +58,7 @@ namespace Supera_Monitor_Back.Services {
                 Date = TimeFunctions.HoraAtualBR(),
             };
 
-            _db.Log.Add(log);
+            _db.Logs.Add(log);
             _db.SaveChanges();
 
             return log;
@@ -73,7 +73,7 @@ namespace Supera_Monitor_Back.Services {
                     Message = ex.ToString()
                 };
 
-                _db.LogError.Add(logError);
+                _db.LogErrors.Add(logError);
                 _db.SaveChanges();
             } catch {
 

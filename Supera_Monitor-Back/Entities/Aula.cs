@@ -1,6 +1,6 @@
 ﻿namespace Supera_Monitor_Back.Entities;
 
-public class Aula {
+public partial class Aula {
     public int Id { get; set; }
 
     public string Descricao { get; set; } = null!;
@@ -33,13 +33,13 @@ public class Aula {
 
     public virtual Account? Account_Created { get; set; }
 
-    public virtual ICollection<Aula_Aluno> Aula_Aluno_Aula { get; set; } = new List<Aula_Aluno>();
+    public virtual ICollection<Aula_Aluno> Aula_AlunoAulas { get; set; } = new List<Aula_Aluno>();
 
-    public virtual ICollection<Aula_Aluno> Aula_Aluno_ReposicaoDe_Aula { get; set; } = new List<Aula_Aluno>();
+    public virtual ICollection<Aula_Aluno> Aula_AlunoReposicaoDe_Aulas { get; set; } = new List<Aula_Aluno>();
 
-    public virtual ICollection<Aula_ListaEspera> Aula_ListaEspera { get; set; } = new List<Aula_ListaEspera>();
+    public virtual ICollection<Aula_ListaEspera> Aula_ListaEsperas { get; set; } = new List<Aula_ListaEspera>();
 
-    public virtual ICollection<Aula_PerfilCognitivo_Rel> Aula_PerfilCognitivo_Rel { get; set; } = new List<Aula_PerfilCognitivo_Rel>();
+    public virtual ICollection<Aula_PerfilCognitivo_Rel> Aula_PerfilCognitivo_Rels { get; set; } = new List<Aula_PerfilCognitivo_Rel>();
 
     public virtual ICollection<Aula> InverseReposicaoDe_Aula { get; set; } = new List<Aula>();
 

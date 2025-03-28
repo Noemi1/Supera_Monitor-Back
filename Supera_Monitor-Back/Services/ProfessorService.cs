@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
@@ -20,7 +21,7 @@ namespace Supera_Monitor_Back.Services {
         List<NivelCertificacaoModel> GetAllCertificacoes();
 
         bool HasTurmaTimeConflict(int professorId, int DiaSemana, TimeSpan Horario, int? IgnoredTurmaId);
-        public bool HasAulaTimeConflict(int professorId, DateTime date, int? IgnoredAulaId = null);
+        bool HasEventoParticipacaoConflict(int professorId, DateTime Data, int? IgnoredParticipacaoId);
     }
 
     public class ProfessorService : IProfessorService {
@@ -37,7 +38,7 @@ namespace Supera_Monitor_Back.Services {
 
         public ProfessorList Get(int professorId)
         {
-            ProfessorList? professor = _db.ProfessorList.FirstOrDefault(p => p.Id == professorId);
+            ProfessorList? professor = _db.ProfessorLists.FirstOrDefault(p => p.Id == professorId);
 
             if (professor == null) {
                 throw new Exception("Professor não encontrado.");
@@ -49,7 +50,7 @@ namespace Supera_Monitor_Back.Services {
 
         public List<ProfessorList> GetAll()
         {
-            List<ProfessorList> professores = _db.ProfessorList.OrderBy(p => p.Nome).ToList();
+            List<ProfessorList> professores = _db.ProfessorLists.OrderBy(p => p.Nome).ToList();
 
             return professores;
         }
@@ -66,19 +67,19 @@ namespace Supera_Monitor_Back.Services {
                 };
 
                 // Só atribuir o nivel de certificacao passado na requisição se este existir, caso contrário, nulo
-                bool NivelCertificacaoExists = _db.Professor_NivelCertificacao.Any(n => n.Id == model.Professor_NivelCertificacao_Id);
+                bool NivelCertificacaoExists = _db.Professor_NivelCertificacaos.Any(n => n.Id == model.Professor_NivelCertificacao_Id);
 
                 professor.Professor_NivelCertificacao_Id = NivelCertificacaoExists ? model.Professor_NivelCertificacao_Id : null;
 
                 // Se for passado um Account_Id no request, busca a conta no banco, senão cria uma e salva
                 if (model.Account_Id != null) {
-                    Account? accountToAssign = _db.Account.Find(model.Account_Id);
+                    Account? accountToAssign = _db.Accounts.Find(model.Account_Id);
 
                     if (accountToAssign == null) {
                         return new ResponseModel { Message = "Conta não encontrada" };
                     }
 
-                    bool UserIsAlreadyAssigned = _db.ProfessorList.Any(p => p.Account_Id == model.Account_Id);
+                    bool UserIsAlreadyAssigned = _db.ProfessorLists.Any(p => p.Account_Id == model.Account_Id);
 
                     if (UserIsAlreadyAssigned == true) {
                         return new ResponseModel { Message = "Usuário já está associado a um professor" };
@@ -134,11 +135,11 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Ocorreu algum erro ao criar o professor" };
                 }
 
-                _db.Professor.Add(professor);
+                _db.Professors.Add(professor);
                 _db.SaveChanges();
 
                 response.Message = "Professor cadastrado com sucesso";
-                response.Object = _db.ProfessorList.FirstOrDefault(p => p.Id == professor.Id);
+                response.Object = _db.ProfessorLists.FirstOrDefault(p => p.Id == professor.Id);
                 response.Success = true;
             } catch (Exception ex) {
                 response.Message = "Falha ao cadastrar professor: " + ex.ToString();
@@ -152,22 +153,22 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Professor? professor = _db.Professor.Find(model.Id);
+                Professor? professor = _db.Professors.Find(model.Id);
 
                 if (professor == null) {
                     return new ResponseModel { Message = "Professor não encontrado" };
                 }
 
-                Account? account = _db.Account.Find(professor.Account_Id);
+                Account? account = _db.Accounts.Find(professor.Account_Id);
 
                 if (account == null) {
                     return new ResponseModel { Message = "Conta não encontrada" };
                 }
 
-                response.OldObject = _db.ProfessorList.SingleOrDefault(p => p.Id == professor.Id);
+                response.OldObject = _db.ProfessorLists.SingleOrDefault(p => p.Id == professor.Id);
 
                 // Só atribuir o nivel de certificacao passado na requisição se este existir, caso contrário, nulo
-                bool NivelCertificacaoExists = _db.Professor_NivelCertificacao.Any(n => n.Id == model.Professor_NivelCertificacao_Id);
+                bool NivelCertificacaoExists = _db.Professor_NivelCertificacaos.Any(n => n.Id == model.Professor_NivelCertificacao_Id);
 
                 professor.Professor_NivelCertificacao_Id = NivelCertificacaoExists ? model.Professor_NivelCertificacao_Id : null;
 
@@ -175,18 +176,18 @@ namespace Supera_Monitor_Back.Services {
                 account.Phone = model.Telefone;
                 account.LastUpdated = TimeFunctions.HoraAtualBR();
 
-                _db.Account.Update(account);
+                _db.Accounts.Update(account);
                 _db.SaveChanges();
 
                 professor.DataInicio = model.DataInicio;
                 professor.CorLegenda = model.CorLegenda;
                 professor.DataNascimento = model.DataNascimento;
 
-                _db.Professor.Update(professor);
+                _db.Professors.Update(professor);
                 _db.SaveChanges();
 
                 response.Message = "Professor atualizado com sucesso";
-                response.Object = _db.ProfessorList.FirstOrDefault(p => p.Id == professor.Id);
+                response.Object = _db.ProfessorLists.FirstOrDefault(p => p.Id == professor.Id);
                 response.Success = true;
             } catch (Exception ex) {
                 response.Message = "Ocorreu um erro ao atualizar professor" + ex.ToString();
@@ -200,7 +201,7 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Professor? professor = _db.Professor.Find(professorId);
+                Professor? professor = _db.Professors.Find(professorId);
 
                 if (professor == null) {
                     return new ResponseModel { Message = "Professor não encontrado" };
@@ -208,9 +209,9 @@ namespace Supera_Monitor_Back.Services {
 
                 // Validations passed
 
-                response.Object = _db.ProfessorList.FirstOrDefault(p => p.Id == professorId);
+                response.Object = _db.ProfessorLists.FirstOrDefault(p => p.Id == professorId);
 
-                _db.Professor.Remove(professor);
+                _db.Professors.Remove(professor);
                 _db.SaveChanges();
 
                 response.Message = "Turma excluída com sucesso";
@@ -224,14 +225,14 @@ namespace Supera_Monitor_Back.Services {
 
         public List<ApostilaList> GetAllApostilas()
         {
-            List<ApostilaList> apostilas = _db.ApostilaList.ToList();
+            List<ApostilaList> apostilas = _db.ApostilaLists.ToList();
 
             return apostilas;
         }
 
         public List<KitResponse> GetAllKits()
         {
-            List<Apostila_Kit> listApostilaKits = _db.Apostila_Kit.ToList();
+            List<Apostila_Kit> listApostilaKits = _db.Apostila_Kits.ToList();
 
             List<KitResponse> listKitResponse = _mapper.Map<List<KitResponse>>(listApostilaKits);
 
@@ -248,7 +249,7 @@ namespace Supera_Monitor_Back.Services {
 
         public List<NivelCertificacaoModel> GetAllCertificacoes()
         {
-            List<Professor_NivelCertificacao> certificacoes = _db.Professor_NivelCertificacao.ToList();
+            List<Professor_NivelCertificacao> certificacoes = _db.Professor_NivelCertificacaos.ToList();
 
             return _mapper.Map<List<NivelCertificacaoModel>>(certificacoes);
         }
@@ -256,12 +257,12 @@ namespace Supera_Monitor_Back.Services {
         public bool HasTurmaTimeConflict(int professorId, int DiaSemana, TimeSpan Horario, int? IgnoredTurmaId = null)
         {
             try {
-                Professor professor = _db.Professor.Find(professorId) ?? throw new Exception("IsProfessorAvailable : Professor não pode ser nulo");
+                Professor professor = _db.Professors.Find(professorId) ?? throw new Exception("IsProfessorAvailable : Professor não pode ser nulo");
 
                 TimeSpan twoHourInterval = TimeSpan.FromHours(2);
 
                 // Verifica se o professor é responsável por uma turma que está ocupando o mesmo dia e horário
-                bool hasTurmaConflict = _db.Turma
+                bool hasTurmaConflict = _db.Turmas
                 .Where(t =>
                     t.Deactivated == null &&
                     t.Professor_Id == professor.Id &&
@@ -276,35 +277,37 @@ namespace Supera_Monitor_Back.Services {
 
                 return hasTurmaConflict;
             } catch (Exception ex) {
-                throw new Exception("Falha ao resgatar conflitos de turma do professor | " + ex.ToString());
+                throw new Exception($"Falha ao resgatar conflitos de turma do professor | {ex}");
             }
         }
 
-        public bool HasAulaTimeConflict(int professorId, DateTime date, int? IgnoredAulaId = null)
+        public bool HasEventoParticipacaoConflict(int professorId, DateTime Data, int? IgnoredParticipacaoId)
         {
             try {
-                Professor professor = _db.Professor.Find(professorId) ?? throw new Exception("IsProfessorAvailable : Professor não pode ser nulo");
+                Professor professor = _db.Professors.Find(professorId) ?? throw new Exception("IsProfessorAvailable : Professor não pode ser nulo");
 
                 TimeSpan twoHourInterval = TimeSpan.FromHours(2);
 
-                // Verifica se o professor é responsável por uma aula que está ocupando o mesmo dia e horário
-                bool hasAulaConflict = _db.Aula
-                .Where(a =>
-                    a.Deactivated == null &&
-                    a.Professor_Id == professor.Id &&
-                    a.Data > TimeFunctions.HoraAtualBR()
+                // Verifica se o professor possui responsabilidade de participação em um evento que está ocupando o mesmo dia e horário
+
+                bool hasParticipacaoConflict = _db.Evento_Participacao_Professors
+                .Include(e => e.Evento)
+                .Where(e =>
+                    e.Evento.Deactivated == null &&
+                    e.Professor_Id == professor.Id &&
+                    e.Evento.Data > TimeFunctions.HoraAtualBR()
                 )
                 .AsEnumerable() // Termina a query no banco, passando a responsabilidade do Any para o C#, queries do banco não lidam bem com TimeSpan
-                .Any(a =>
-                    a.Id != IgnoredAulaId && // Se estou reagendando uma aula, não devo considerar ela mesma como conflito
-                    date.Day == a.Data.Day &&
-                    date.TimeOfDay > a.Data.TimeOfDay - twoHourInterval &&
-                    date.TimeOfDay < a.Data.TimeOfDay + twoHourInterval
+                .Any(e =>
+                    e.Id != IgnoredParticipacaoId && // Se estou reagendando uma aula, não devo considerar ela mesma como conflito
+                    Data.Day == e.Evento.Data.Day &&
+                    Data.TimeOfDay > e.Evento.Data.TimeOfDay - twoHourInterval &&
+                    Data.TimeOfDay < e.Evento.Data.TimeOfDay + twoHourInterval
                 );
 
-                return hasAulaConflict;
+                return hasParticipacaoConflict;
             } catch (Exception ex) {
-                throw new Exception("Falha ao resgatar conflitos de aula do professor | " + ex.ToString());
+                throw new Exception($"Falha ao resgatar conflitos de participação do professor | {ex}");
             }
         }
     }

@@ -13,7 +13,7 @@ public partial class Pessoa_Origem {
 
     public string? Descricao { get; set; }
 
-    public virtual Pessoa_Origem_Categoria Pessoa_Origem_Categoria { get; set; } = null!;
+    public virtual Pessoa_Origem_Categorium Pessoa_Origem_Categoria { get; set; } = null!;
 
     public virtual ICollection<Pessoa> Pessoas { get; set; } = new List<Pessoa>();
 }

@@ -5,5 +5,5 @@ public partial class Aluno_Restricao {
 
     public string Restricao { get; set; } = null!;
 
-    public virtual ICollection<Aluno_Restricao_Rel> Aluno_Restricao_Rel { get; set; } = new List<Aluno_Restricao_Rel>();
+    public virtual ICollection<Aluno_Restricao_Rel> Aluno_Restricao_Rels { get; set; } = new List<Aluno_Restricao_Rel>();
 }

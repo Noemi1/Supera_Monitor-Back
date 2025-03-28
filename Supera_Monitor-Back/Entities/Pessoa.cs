@@ -27,7 +27,7 @@ public partial class Pessoa {
 
     public string? CPF { get; set; }
 
-    public string? AspNetUsers_Id { get; set; }
+    public string? aspnetusers_Id { get; set; }
 
     public int? Pessoa_Sexo_Id { get; set; }
 
@@ -47,7 +47,7 @@ public partial class Pessoa {
 
     public virtual ICollection<Aluno> Alunos { get; set; } = new List<Aluno>();
 
-    public virtual Pessoa_FaixaEtaria? Pessoa_FaixaEtaria { get; set; }
+    public virtual Pessoa_FaixaEtarium? Pessoa_FaixaEtaria { get; set; }
 
     public virtual Pessoa_Geracao? Pessoa_Geracao { get; set; }
 

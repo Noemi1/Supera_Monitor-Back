@@ -36,13 +36,13 @@ namespace Supera_Monitor_Back.Services {
 
         public TurmaList Get(int turmaId)
         {
-            TurmaList? turma = _db.TurmaList.AsNoTracking().FirstOrDefault(t => t.Id == turmaId);
+            TurmaList? turma = _db.TurmaLists.AsNoTracking().FirstOrDefault(t => t.Id == turmaId);
 
             if (turma == null) {
                 throw new Exception("Turma não encontrada.");
             }
 
-            List<Turma_PerfilCognitivo_Rel> turmaPerfisCognitivos = _db.Turma_PerfilCognitivo_Rel
+            List<Turma_PerfilCognitivo_Rel> turmaPerfisCognitivos = _db.Turma_PerfilCognitivo_Rels
                 .Where(p => p.Turma_Id == turma.Id)
                 .Include(p => p.PerfilCognitivo)
                 .ToList();
@@ -56,15 +56,15 @@ namespace Supera_Monitor_Back.Services {
 
         public List<TurmaList> GetAll()
         {
-            List<TurmaList> turmas = _db.TurmaList.OrderBy(t => t.Nome).ToList();
+            List<TurmaList> turmas = _db.TurmaLists.OrderBy(t => t.Nome).ToList();
 
             // Obtém todos os perfis cognitivos do banco de dados
-            var allPerfisCognitivos = _db.PerfilCognitivo.ToList();
+            var allPerfisCognitivos = _db.PerfilCognitivos.ToList();
             var perfisCognitivosMap = allPerfisCognitivos.ToDictionary(p => p.Id);
 
             // Para cada turma, busca e associa os perfis cognitivos correspondentes
             foreach (var turma in turmas) {
-                var perfilIds = _db.Turma_PerfilCognitivo_Rel
+                var perfilIds = _db.Turma_PerfilCognitivo_Rels
                     .Where(tp => tp.Turma_Id == turma.Id)
                     .Select(tp => tp.PerfilCognitivo_Id)
                     .ToList();
@@ -83,7 +83,7 @@ namespace Supera_Monitor_Back.Services {
 
         public List<PerfilCognitivoModel> GetAllPerfisCognitivos()
         {
-            List<PerfilCognitivo> profiles = _db.PerfilCognitivo.ToList();
+            List<PerfilCognitivo> profiles = _db.PerfilCognitivos.ToList();
 
             return _mapper.Map<List<PerfilCognitivoModel>>(profiles);
         }
@@ -94,7 +94,7 @@ namespace Supera_Monitor_Back.Services {
 
             try {
                 // Não devo poder criar turma com um professor que não existe
-                Professor? professor = _db.Professor
+                Professor? professor = _db.Professors
                     .Include(p => p.Account)
                     .FirstOrDefault(p => p.Id == model.Professor_Id);
 
@@ -125,7 +125,7 @@ namespace Supera_Monitor_Back.Services {
 
                 // Se for passado um Sala_Id na requisição
                 if (model.Sala_Id.HasValue) {
-                    bool salaExists = _db.Sala.Any(s => s.Id == model.Sala_Id);
+                    bool salaExists = _db.Salas.Any(s => s.Id == model.Sala_Id);
 
                     // Não devo permitir a criação de uma turma em uma sala que não existe
                     if (salaExists == false) {
@@ -135,7 +135,7 @@ namespace Supera_Monitor_Back.Services {
                     // Não devo permitir que duas turmas usem a mesma sala no mesmo horário (intervalo de 2 horas antes e depois)
                     TimeSpan twoHourInterval = TimeSpan.FromHours(2);
 
-                    bool salaIsAlreadyOccupied = _db.Turma
+                    bool salaIsAlreadyOccupied = _db.Turmas
                         .Where(t =>
                              t.Deactivated == null
                              && t.DiaSemana == model.DiaSemana
@@ -152,7 +152,7 @@ namespace Supera_Monitor_Back.Services {
                 List<PerfilCognitivo> requestPerfis = _mapper.Map<List<PerfilCognitivo>>(model.PerfilCognitivo);
                 List<int> perfilIds = requestPerfis.Select(p => p.Id).ToList();
 
-                int perfilCognitivoCount = _db.PerfilCognitivo.Count(p => perfilIds.Contains(p.Id));
+                int perfilCognitivoCount = _db.PerfilCognitivos.Count(p => perfilIds.Contains(p.Id));
 
                 if (requestPerfis.Count != perfilCognitivoCount) {
                     return new ResponseModel { Message = "Algum dos perfis cognitivos informados na requisição não existe." };
@@ -167,7 +167,7 @@ namespace Supera_Monitor_Back.Services {
                 turma.Created = TimeFunctions.HoraAtualBR();
                 turma.Account_Created_Id = _account.Id;
 
-                _db.Turma.Add(turma);
+                _db.Turmas.Add(turma);
                 _db.SaveChanges();
 
                 foreach (PerfilCognitivo perfil in requestPerfis) {
@@ -176,12 +176,12 @@ namespace Supera_Monitor_Back.Services {
                         PerfilCognitivo_Id = perfil.Id,
                     };
 
-                    _db.Turma_PerfilCognitivo_Rel.Add(newTurmaPerfilRel);
+                    _db.Turma_PerfilCognitivo_Rels.Add(newTurmaPerfilRel);
                 }
 
                 response.Success = true;
                 response.Message = "Turma cadastrada com sucesso";
-                response.Object = _db.TurmaList.FirstOrDefault(t => t.Id == turma.Id);
+                response.Object = _db.TurmaLists.FirstOrDefault(t => t.Id == turma.Id);
             } catch (Exception ex) {
                 response.Message = "Falha ao inserir nova turma: " + ex.ToString();
             }
@@ -194,7 +194,7 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Turma? turma = _db.Turma.Find(model.Id);
+                Turma? turma = _db.Turmas.Find(model.Id);
 
                 // Não devo poder atualizar uma turma que não existe
                 if (turma == null) {
@@ -207,7 +207,7 @@ namespace Supera_Monitor_Back.Services {
                 }
 
                 // Não devo poder atualizar turma com um professor que não existe
-                Professor? professor = _db.Professor
+                Professor? professor = _db.Professors
                     .Include(p => p.Account)
                     .FirstOrDefault(p => p.Id == model.Professor_Id);
 
@@ -236,7 +236,7 @@ namespace Supera_Monitor_Back.Services {
 
                 // Se for passado um Sala_Id na requisição
                 if (model.Sala_Id.HasValue) {
-                    bool salaExists = _db.Sala.Any(s => s.Id == model.Sala_Id);
+                    bool salaExists = _db.Salas.Any(s => s.Id == model.Sala_Id);
 
                     // Não devo permitir a criação de uma turma em uma sala que não existe
                     if (salaExists == false) {
@@ -246,7 +246,7 @@ namespace Supera_Monitor_Back.Services {
                     // Não devo permitir que duas turmas usem a mesma sala no mesmo horário (intervalo de 2 horas antes e depois)
                     TimeSpan twoHourInterval = TimeSpan.FromHours(2);
 
-                    bool salaIsAlreadyOccupied = _db.Turma
+                    bool salaIsAlreadyOccupied = _db.Turmas
                         .Where(t =>
                              t.Id != model.Id // Deve-se ignorar caso seja a própria turma
                              && t.Deactivated == null
@@ -264,7 +264,7 @@ namespace Supera_Monitor_Back.Services {
                 List<PerfilCognitivo> requestPerfis = _mapper.Map<List<PerfilCognitivo>>(model.PerfilCognitivo);
                 List<int> perfilIds = requestPerfis.Select(p => p.Id).ToList();
 
-                int perfilCognitivoCount = _db.PerfilCognitivo.Count(p => perfilIds.Contains(p.Id));
+                int perfilCognitivoCount = _db.PerfilCognitivos.Count(p => perfilIds.Contains(p.Id));
 
                 if (requestPerfis.Count != perfilCognitivoCount) {
                     return new ResponseModel { Message = "Algum dos perfis cognitivos informados na requisição não existe." };
@@ -272,7 +272,7 @@ namespace Supera_Monitor_Back.Services {
 
                 // Validations passed
 
-                response.OldObject = _db.TurmaList.FirstOrDefault(t => t.Id == model.Id);
+                response.OldObject = _db.TurmaLists.FirstOrDefault(t => t.Id == model.Id);
 
                 turma.Nome = model.Nome;
                 turma.Horario = model.Horario;
@@ -285,17 +285,17 @@ namespace Supera_Monitor_Back.Services {
 
                 turma.LastUpdated = TimeFunctions.HoraAtualBR();
 
-                _db.Turma.Update(turma);
+                _db.Turmas.Update(turma);
                 _db.SaveChanges();
 
                 // Remove os perfis cognitivos antigos e insere os novos (ineficiente, se os perfis não mudaram, ainda assim remove e adiciona)
                 // se tiver dando problema, peço perdão e prometo que vou melhorar c: depois == nunca => true
-                List<Turma_PerfilCognitivo_Rel> turmaPerfisCognitivos = _db.Turma_PerfilCognitivo_Rel
+                List<Turma_PerfilCognitivo_Rel> turmaPerfisCognitivos = _db.Turma_PerfilCognitivo_Rels
                     .Where(p => p.Turma_Id == turma.Id)
                     .Include(p => p.PerfilCognitivo)
                     .ToList();
 
-                _db.Turma_PerfilCognitivo_Rel.RemoveRange(turmaPerfisCognitivos);
+                _db.Turma_PerfilCognitivo_Rels.RemoveRange(turmaPerfisCognitivos);
                 _db.SaveChanges();
 
                 foreach (PerfilCognitivo perfil in requestPerfis) {
@@ -304,7 +304,7 @@ namespace Supera_Monitor_Back.Services {
                         PerfilCognitivo_Id = perfil.Id,
                     };
 
-                    _db.Turma_PerfilCognitivo_Rel.Add(newTurmaPerfilRel);
+                    _db.Turma_PerfilCognitivo_Rels.Add(newTurmaPerfilRel);
                 }
 
                 _db.SaveChanges();
@@ -313,7 +313,7 @@ namespace Supera_Monitor_Back.Services {
                     .Select(p => p.PerfilCognitivo)
                     .ToList();
 
-                TurmaList turmaList = _db.TurmaList.First(t => t.Id == turma.Id);
+                TurmaList turmaList = _db.TurmaLists.First(t => t.Id == turma.Id);
 
                 turmaList.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(perfisCognitivos);
 
@@ -332,7 +332,7 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Turma? turma = _db.Turma.Find(turmaId);
+                Turma? turma = _db.Turmas.Find(turmaId);
 
                 if (turma == null) {
                     return new ResponseModel { Message = "Turma não encontrada" };
@@ -340,9 +340,9 @@ namespace Supera_Monitor_Back.Services {
 
                 // Validations passed
 
-                response.Object = _db.TurmaList.FirstOrDefault(t => t.Id == turmaId);
+                response.Object = _db.TurmaLists.FirstOrDefault(t => t.Id == turmaId);
 
-                _db.Turma.Remove(turma);
+                _db.Turmas.Remove(turma);
                 _db.SaveChanges();
 
                 response.Message = "Turma excluída com sucesso";
@@ -356,14 +356,14 @@ namespace Supera_Monitor_Back.Services {
 
         public List<AlunoList> GetAllAlunosByTurma(int turmaId)
         {
-            List<AlunoList> alunos = _db.AlunoList.Where(a => a.Turma_Id == turmaId).ToList();
+            List<AlunoList> alunos = _db.AlunoLists.Where(a => a.Turma_Id == turmaId).ToList();
 
             return alunos;
         }
 
         public ResponseModel ToggleDeactivate(int turmaId, string ipAddress)
         {
-            Turma? turma = _db.Turma.Find(turmaId);
+            Turma? turma = _db.Turmas.Find(turmaId);
 
             if (turma == null) {
                 return new ResponseModel { Message = "Turma não encontrada." };
@@ -379,12 +379,12 @@ namespace Supera_Monitor_Back.Services {
 
             turma.Deactivated = IsTurmaActive ? TimeFunctions.HoraAtualBR() : null;
 
-            _db.Turma.Update(turma);
+            _db.Turmas.Update(turma);
             _db.SaveChanges();
 
             return new ResponseModel {
                 Success = true,
-                Object = _db.TurmaList.AsNoTracking().FirstOrDefault(t => t.Id == turma.Id),
+                Object = _db.TurmaLists.AsNoTracking().FirstOrDefault(t => t.Id == turma.Id),
             };
         }
     }

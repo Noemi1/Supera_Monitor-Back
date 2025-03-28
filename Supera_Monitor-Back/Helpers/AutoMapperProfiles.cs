@@ -6,6 +6,8 @@ using Supera_Monitor_Back.Models.Accounts;
 using Supera_Monitor_Back.Models.Aluno;
 using Supera_Monitor_Back.Models.Aula;
 using Supera_Monitor_Back.Models.Checklist;
+using Supera_Monitor_Back.Models.Eventos;
+using Supera_Monitor_Back.Models.Eventos.Aula;
 using Supera_Monitor_Back.Models.Pessoa;
 using Supera_Monitor_Back.Models.Professor;
 using Supera_Monitor_Back.Models.Restricao;
@@ -47,7 +49,7 @@ namespace Supera_Monitor_Back.Helpers {
 
             CreateMap<Professor_NivelCertificacao, NivelCertificacaoModel>();
 
-            CreateMap<Pessoa_FaixaEtaria, PessoaFaixaEtariaModel>();
+            CreateMap<Pessoa_FaixaEtarium, PessoaFaixaEtariaModel>();
             CreateMap<Pessoa_Geracao, PessoaGeracaoModel>();
             CreateMap<Pessoa_Status, PessoaStatusModel>();
             CreateMap<Pessoa_Sexo, PessoaSexoModel>();
@@ -74,6 +76,17 @@ namespace Supera_Monitor_Back.Helpers {
 
             CreateMap<Roteiro, RoteiroModel>();
             CreateMap<Roteiro_Material, MaterialModel>();
+
+            CreateMap<Evento_Aula, AulaModel>()
+                .ForMember(dest => dest.Professor, opt => opt.MapFrom(src => src.Professor.Account.Name))
+                .ForMember(dest => dest.Roteiro, opt => opt.MapFrom(src => src.Roteiro.Tema))
+                .ForMember(dest => dest.Turma, opt => opt.MapFrom(src => src.Turma.Nome));
+            CreateMap<Evento, EventoAulaModel>()
+                .ForMember(dest => dest.Evento_Tipo, opt => opt.MapFrom(src => src.Evento_Tipo.Nome))
+                .ForMember(dest => dest.Sala, opt => opt.MapFrom(src => $"{src.Sala.NumeroSala} - Andar: {src.Sala.Andar}"));
+            CreateMap<Evento, EventoModel>()
+                .ForMember(dest => dest.Evento_Tipo, opt => opt.MapFrom(src => src.Evento_Tipo.Nome))
+                .ForMember(dest => dest.Sala, opt => opt.MapFrom(src => $"{src.Sala.NumeroSala} - Andar: {src.Sala.Andar}"));
         }
     }
 }

@@ -26,7 +26,7 @@ public class RestricaoService : IRestricaoService {
 
     public RestricaoModel Get(int restricaoId)
     {
-        Aluno_Restricao? restricao = _db.Aluno_Restricao.Find(restricaoId);
+        Aluno_Restricao? restricao = _db.Aluno_Restricaos.Find(restricaoId);
 
         if (restricao is null) {
             throw new Exception("Restrição não encontrada");
@@ -37,7 +37,7 @@ public class RestricaoService : IRestricaoService {
 
     public List<RestricaoModel> GetAll()
     {
-        List<Aluno_Restricao> listChecklist = _db.Aluno_Restricao.ToList();
+        List<Aluno_Restricao> listChecklist = _db.Aluno_Restricaos.ToList();
 
         return _mapper.Map<List<RestricaoModel>>(listChecklist);
     }
@@ -51,7 +51,7 @@ public class RestricaoService : IRestricaoService {
                 return new ResponseModel { Message = "Restrição não pode ser nula/vazia" };
             }
 
-            bool restricaoAlreadyExists = _db.Aluno_Restricao.Any(r => r.Restricao == model.Restricao);
+            bool restricaoAlreadyExists = _db.Aluno_Restricaos.Any(r => r.Restricao == model.Restricao);
 
             if (restricaoAlreadyExists) {
                 return new ResponseModel { Message = "Restrição já está registrada" };
@@ -59,7 +59,7 @@ public class RestricaoService : IRestricaoService {
 
             Aluno_Restricao newRestricao = new() { Restricao = model.Restricao };
 
-            _db.Aluno_Restricao.Add(newRestricao);
+            _db.Aluno_Restricaos.Add(newRestricao);
             _db.SaveChanges();
 
             response.Success = true;
@@ -77,7 +77,7 @@ public class RestricaoService : IRestricaoService {
         ResponseModel response = new() { Success = false };
 
         try {
-            Aluno_Restricao? restricao = _db.Aluno_Restricao.Find(model.Id);
+            Aluno_Restricao? restricao = _db.Aluno_Restricaos.Find(model.Id);
 
             if (restricao is null) {
                 return new ResponseModel { Message = "Restrição não encontrada" };
@@ -87,7 +87,7 @@ public class RestricaoService : IRestricaoService {
                 return new ResponseModel { Message = "Restrição não pode ser nula/vazia" };
             }
 
-            bool restricaoAlreadyExists = _db.Aluno_Restricao
+            bool restricaoAlreadyExists = _db.Aluno_Restricaos
                 .Any(r => r.Restricao == model.Restricao && r.Id != model.Id);
 
             if (restricaoAlreadyExists) {
@@ -96,7 +96,7 @@ public class RestricaoService : IRestricaoService {
 
             restricao.Restricao = model.Restricao;
 
-            _db.Aluno_Restricao.Update(restricao);
+            _db.Aluno_Restricaos.Update(restricao);
             _db.SaveChanges();
 
             response.Success = true;
@@ -114,13 +114,13 @@ public class RestricaoService : IRestricaoService {
         ResponseModel response = new() { Success = false };
 
         try {
-            Aluno_Restricao? restricao = _db.Aluno_Restricao.Find(restricaoId);
+            Aluno_Restricao? restricao = _db.Aluno_Restricaos.Find(restricaoId);
 
             if (restricao is null) {
                 return new ResponseModel { Message = "Restrição não encontrada" };
             }
 
-            _db.Aluno_Restricao.Remove(restricao);
+            _db.Aluno_Restricaos.Remove(restricao);
             _db.SaveChanges();
 
             response.Success = true;

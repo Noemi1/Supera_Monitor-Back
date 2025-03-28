@@ -36,7 +36,7 @@ namespace Supera_Monitor_Back.Services {
 
         public List<ChecklistModel> GetAll()
         {
-            List<Checklist> listChecklist = _db.Checklist
+            List<Checklist> listChecklist = _db.Checklists
                 .OrderBy(c => c.Ordem)
                 .ToList();
 
@@ -51,7 +51,7 @@ namespace Supera_Monitor_Back.Services {
 
         public List<ChecklistItemModel> GetAllByChecklistId(int checklistId)
         {
-            List<Checklist_Item> listChecklistItem = _db.Checklist_Item
+            List<Checklist_Item> listChecklistItem = _db.Checklist_Items
                 .Where(c =>
                     c.Checklist_Id == checklistId &&
                     c.Deactivated == null)
@@ -64,7 +64,7 @@ namespace Supera_Monitor_Back.Services {
 
         public List<AlunoChecklistView> GetAllByAlunoId(int alunoId)
         {
-            List<AlunoChecklistView> listAlunoChecklistView = _db.AlunoChecklistView
+            List<AlunoChecklistView> listAlunoChecklistView = _db.AlunoChecklistViews
                 .Where(c =>
                     c.Aluno_Id == alunoId)
                 .OrderBy(c => c.Checklist_Id)
@@ -79,7 +79,7 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                bool checklistExists = _db.Checklist.Any(c => c.Id == model.Checklist_Id);
+                bool checklistExists = _db.Checklists.Any(c => c.Id == model.Checklist_Id);
 
                 if (checklistExists == false) {
                     return new ResponseModel { Message = "Checklist não encontrada" };
@@ -96,7 +96,7 @@ namespace Supera_Monitor_Back.Services {
                     Deactivated = null
                 };
 
-                _db.Checklist_Item.Add(newChecklistItem);
+                _db.Checklist_Items.Add(newChecklistItem);
                 _db.SaveChanges();
 
                 response.Success = true;
@@ -114,7 +114,7 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Checklist_Item? checklistItem = _db.Checklist_Item.AsNoTracking().FirstOrDefault(c => c.Id == model.Id);
+                Checklist_Item? checklistItem = _db.Checklist_Items.AsNoTracking().FirstOrDefault(c => c.Id == model.Id);
 
                 if (checklistItem is null) {
                     return new ResponseModel { Success = false, Message = "Item da checklist não encontrado" };
@@ -147,7 +147,7 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Checklist_Item? checklistItem = _db.Checklist_Item.FirstOrDefault(ci => ci.Id == checklistItemId);
+                Checklist_Item? checklistItem = _db.Checklist_Items.FirstOrDefault(ci => ci.Id == checklistItemId);
 
                 if (checklistItem == null) {
                     return new ResponseModel { Message = "Item da checklist não encontrado." };
@@ -157,7 +157,7 @@ namespace Supera_Monitor_Back.Services {
 
                 checklistItem.Deactivated = isItemActive ? TimeFunctions.HoraAtualBR() : null;
 
-                _db.Checklist_Item.Update(checklistItem);
+                _db.Checklist_Items.Update(checklistItem);
                 _db.SaveChanges();
 
                 response.Success = true;
@@ -175,14 +175,14 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Aluno? aluno = _db.Aluno.Find(alunoId);
+                Aluno? aluno = _db.Alunos.Find(alunoId);
 
                 if (aluno is null) {
                     return new ResponseModel { Message = "Aluno não encontrado" };
                 }
 
                 // Se a checklist do aluno já está populada, não popular novamente
-                if (_db.Aluno_Checklist_Item.Any(c => c.Id == aluno.Id)) {
+                if (_db.Aluno_Checklist_Items.Any(c => c.Id == aluno.Id)) {
                     return new ResponseModel { Message = "Aluno já possui itens na checklist, logo, não foi populado novamente" };
                 }
 
@@ -192,11 +192,11 @@ namespace Supera_Monitor_Back.Services {
                 }
 
                 // Buscar todos os itens da checklist não desativados
-                List<Checklist_Item> checklistItems = _db.Checklist_Item.Where(c => c.Deactivated == null).ToList();
+                List<Checklist_Item> checklistItems = _db.Checklist_Items.Where(c => c.Deactivated == null).ToList();
 
                 List<Aluno_Checklist_Item> alunoChecklist = new();
 
-                List<Checklist> checklists = _db.Checklist.ToList();
+                List<Checklist> checklists = _db.Checklists.ToList();
 
                 // Para cada um, adicionar na checklist do aluno
                 foreach (Checklist_Item item in checklistItems) {
@@ -225,7 +225,7 @@ namespace Supera_Monitor_Back.Services {
                     });
                 }
 
-                _db.Aluno_Checklist_Item.AddRange(alunoChecklist);
+                _db.Aluno_Checklist_Items.AddRange(alunoChecklist);
                 _db.SaveChanges();
 
                 response.Success = true;
@@ -242,7 +242,7 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Aluno_Checklist_Item? alunoChecklistItem = _db.Aluno_Checklist_Item.Find(alunoChecklistItemId);
+                Aluno_Checklist_Item? alunoChecklistItem = _db.Aluno_Checklist_Items.Find(alunoChecklistItemId);
 
                 if (alunoChecklistItem is null) {
                     return new ResponseModel { Message = "Item da checklist do aluno não encontrado" };
@@ -259,7 +259,7 @@ namespace Supera_Monitor_Back.Services {
                     alunoChecklistItem.Account_Finalizacao_Id = _account.Id;
                 }
 
-                _db.Aluno_Checklist_Item.Update(alunoChecklistItem);
+                _db.Aluno_Checklist_Items.Update(alunoChecklistItem);
                 _db.SaveChanges();
 
                 response.Success = true;
@@ -275,9 +275,9 @@ namespace Supera_Monitor_Back.Services {
         public List<ChecklistsFromAlunoModel> GetAllAlunoChecklistsByAulaId(int aulaId)
         {
             // Coletar lista de registros e os alunos que tem esses registros previamente p/ reduzir o número de chamadas ao banco
-            List<Aula_Aluno> registros = _db.Aula_Aluno.Where(a => a.Aula_Id == aulaId && a.Deactivated == null).ToList();
+            List<Aula_Aluno> registros = _db.Aula_Alunos.Where(a => a.Aula_Id == aulaId && a.Deactivated == null).ToList();
             List<int> alunoIds = registros.Select(r => r.Aluno_Id).ToList();
-            List<AlunoList> alunos = _db.AlunoList.Where(a => alunoIds.Contains(a.Id)).ToList();
+            List<AlunoList> alunos = _db.AlunoLists.Where(a => alunoIds.Contains(a.Id)).ToList();
 
             // Montar o objeto de retorno
             List<ChecklistsFromAlunoModel> response = new();

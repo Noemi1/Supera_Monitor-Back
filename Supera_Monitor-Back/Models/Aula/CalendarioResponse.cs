@@ -1,5 +1,4 @@
 ﻿using Supera_Monitor_Back.Entities.Views;
-using Supera_Monitor_Back.Models.Turma;
 
 namespace Supera_Monitor_Back.Models.Aula {
     public class CalendarioResponse : CalendarioList {

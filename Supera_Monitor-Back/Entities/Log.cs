@@ -1,12 +1,17 @@
-﻿namespace Supera_Monitor_Back.Entities {
-    public class Log {
-        public int Id { get; set; }
-        public DateTime Date { get; set; }
-        public string Action { get; set; } = string.Empty;
-        public string Object { get; set; } = string.Empty;
-        public string Entity { get; set; } = string.Empty;
+﻿namespace Supera_Monitor_Back.Entities;
 
-        public int? Account_Id { get; set; }
-        public virtual Account? Account { get; set; }
-    }
+public partial class Log {
+    public int Id { get; set; }
+
+    public DateTime Date { get; set; }
+
+    public string Action { get; set; } = null!;
+
+    public string Object { get; set; } = null!;
+
+    public string Entity { get; set; } = null!;
+
+    public int? Account_Id { get; set; }
+
+    public virtual Account? Account { get; set; }
 }

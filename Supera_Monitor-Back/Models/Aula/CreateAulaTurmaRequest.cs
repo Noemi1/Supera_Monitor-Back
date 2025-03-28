@@ -1,6 +1,4 @@
-﻿using Supera_Monitor_Back.Models.Turma;
-
-namespace Supera_Monitor_Back.Models.Aula;
+﻿namespace Supera_Monitor_Back.Models.Aula;
 
 public class CreateAulaTurmaRequest {
     public DateTime Data { get; set; }

@@ -1,0 +1,205 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Supera_Monitor_Back.Entities;
+using Supera_Monitor_Back.Models;
+using Supera_Monitor_Back.Models.Eventos;
+using Supera_Monitor_Back.Models.Eventos.Aula;
+using Supera_Monitor_Back.Services;
+using Supera_Monitor_Back.Services.Eventos;
+using System.Reflection;
+
+namespace Supera_Monitor_Back.Controllers;
+
+[Authorize(Entities.Role.Admin, Entities.Role.Teacher, Entities.Role.Assistant)]
+[ApiController]
+[Route("back/[controller]")]
+public class EventosController : _BaseController {
+    private readonly IEventoService _eventoService;
+    private readonly IAulaService _aulaService;
+    private readonly ILogService _logger;
+
+    public EventosController(IEventoService eventoService, IAulaService aulaService, ILogService logger)
+    {
+        _eventoService = eventoService;
+        _aulaService = aulaService;
+        _logger = logger;
+    }
+
+    [HttpGet("aulas/all")]
+    public ActionResult<List<EventoAulaModel>> GetAll()
+    {
+        try {
+            var response = _aulaService.GetAll();
+
+            return Ok(response);
+        } catch (Exception e) {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
+
+    [HttpGet("aulas/{aulaId}")]
+    public ActionResult<List<EventoAulaModel>> GetById(int aulaId)
+    {
+        try {
+            var response = _aulaService.GetById(aulaId);
+
+            return Ok(response);
+        } catch (Exception e) {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
+
+    [HttpPost("aulas/turma")]
+    public ActionResult<ResponseModel> InsertAulaForTurma(CreateAulaTurmaRequest request)
+    {
+        try {
+            var response = _aulaService.InsertAulaForTurma(request);
+
+            if (response.Success == false) {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
+        } catch (Exception e) {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
+
+    [HttpPost("aulas/extra")]
+    public ActionResult<ResponseModel> InsertAulaExtra(CreateAulaExtraRequest request)
+    {
+        try {
+            var response = _aulaService.InsertAulaExtra(request);
+
+            if (response.Success == false) {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
+        } catch (Exception e) {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
+
+    [HttpPut("aulas")]
+    public ActionResult<ResponseModel> Update(UpdateAulaRequest request)
+    {
+        try {
+            var response = _aulaService.Update(request);
+
+            if (response.Success == false) {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
+        } catch (Exception e) {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
+
+    [HttpPost("oficinas")]
+    public ActionResult<ResponseModel> InsertOficina(CreateEventoRequest request)
+    {
+        try {
+            var response = _eventoService.Insert(request, ( int )EventoTipo.Oficina);
+
+            if (response.Success == false) {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
+        } catch (Exception e) {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
+
+    [HttpPut("oficinas")]
+    public ActionResult<ResponseModel> UpdateOficina(UpdateEventoRequest request)
+    {
+        try {
+            var response = _eventoService.Update(request);
+
+            if (response.Success == false) {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
+        } catch (Exception e) {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
+
+    [HttpPost("reunioes")]
+    public ActionResult<ResponseModel> InsertReuniao(CreateEventoRequest request)
+    {
+        try {
+            var response = _eventoService.Insert(request, ( int )EventoTipo.Reuniao);
+
+            if (response.Success == false) {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
+        } catch (Exception e) {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
+
+    [HttpPut("reunioes")]
+    public ActionResult<ResponseModel> UpdateReuniao(UpdateEventoRequest request)
+    {
+        try {
+            var response = _eventoService.Update(request);
+
+            if (response.Success == false) {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
+        } catch (Exception e) {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
+
+    [HttpPost("superacao")]
+    public ActionResult<ResponseModel> InsertSuperacao(CreateEventoRequest request)
+    {
+        try {
+            var response = _eventoService.Insert(request, ( int )EventoTipo.Superacao);
+
+            if (response.Success == false) {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
+        } catch (Exception e) {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
+
+    [HttpPut("superacao")]
+    public ActionResult<ResponseModel> UpdateSuperacao(UpdateEventoRequest request)
+    {
+        try {
+            var response = _eventoService.Update(request);
+
+            if (response.Success == false) {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
+        } catch (Exception e) {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
+}

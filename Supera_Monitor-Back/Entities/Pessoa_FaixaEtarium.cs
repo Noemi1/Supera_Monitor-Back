@@ -1,6 +1,6 @@
 ﻿namespace Supera_Monitor_Back.Entities;
 
-public partial class Pessoa_FaixaEtaria {
+public partial class Pessoa_FaixaEtarium {
     public int Id { get; set; }
 
     public string Nome { get; set; } = null!;

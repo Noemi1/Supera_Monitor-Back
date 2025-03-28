@@ -11,9 +11,6 @@ public interface ISalaService {
     ResponseModel Insert(CreateSalaRequest model);
     ResponseModel Update(UpdateSalaRequest model);
     ResponseModel Delete(int salaId);
-
-    //bool HasOccupyingTurmaInInterval(int salaId, DateTime start, DateTime end, int? ignoredTurmaId = null);
-    //bool HasOccupyingAulaInInterval(int salaId, DateTime start, DateTime end, int? ignoredAulaId = null);
 }
 
 
@@ -29,7 +26,7 @@ public class SalaService : ISalaService {
 
     public List<SalaModel> GetAllSalas()
     {
-        List<Sala> salas = _db.Sala
+        List<Sala> salas = _db.Salas
             .OrderBy(s => s.Andar)
             .ThenBy(s => s.NumeroSala)
             .ToList();
@@ -43,7 +40,7 @@ public class SalaService : ISalaService {
 
         try {
             // Não devo poder criar duas salas com o mesmo numero
-            bool SalaAlreadyExists = _db.Sala.Any(s => s.NumeroSala == model.NumeroSala);
+            bool SalaAlreadyExists = _db.Salas.Any(s => s.NumeroSala == model.NumeroSala);
 
             if (SalaAlreadyExists) {
                 return new ResponseModel { Message = "A operação foi cancelada pois existe outra sala com esse mesmo número" };
@@ -54,7 +51,7 @@ public class SalaService : ISalaService {
                 NumeroSala = model.NumeroSala,
             };
 
-            _db.Sala.Add(newSala);
+            _db.Salas.Add(newSala);
             _db.SaveChanges();
 
 
@@ -74,14 +71,14 @@ public class SalaService : ISalaService {
 
         try {
             // Não devo poder atualizar uma sala que não existe
-            Sala? sala = _db.Sala.Find(model.Id);
+            Sala? sala = _db.Salas.Find(model.Id);
 
             if (sala is null) {
                 return new ResponseModel { Message = "Sala não encontrada" };
             }
 
             // Não devo poder atualizar da sala para um outro numero que ja existe
-            bool SalaAlreadyExists = _db.Sala.Any(s => s.NumeroSala == model.NumeroSala && s.Id != model.Id);
+            bool SalaAlreadyExists = _db.Salas.Any(s => s.NumeroSala == model.NumeroSala && s.Id != model.Id);
 
             if (SalaAlreadyExists) {
                 return new ResponseModel { Message = "A operação foi cancelada pois existe outra sala com esse mesmo número" };
@@ -90,7 +87,7 @@ public class SalaService : ISalaService {
             sala.Andar = model.Andar;
             sala.NumeroSala = model.NumeroSala;
 
-            _db.Sala.Update(sala);
+            _db.Salas.Update(sala);
             _db.SaveChanges();
 
             response.Success = true;
@@ -109,13 +106,13 @@ public class SalaService : ISalaService {
 
         try {
             // Não devo poder deletar uma sala que não existe
-            Sala? sala = _db.Sala.Find(salaId);
+            Sala? sala = _db.Salas.Find(salaId);
 
             if (sala is null) {
                 return new ResponseModel { Message = "Sala não encontrada" };
             }
 
-            _db.Sala.Remove(sala);
+            _db.Salas.Remove(sala);
             _db.SaveChanges();
 
             response.Success = true;
@@ -126,45 +123,4 @@ public class SalaService : ISalaService {
 
         return response;
     }
-
-    //public bool HasOccupyingTurmaInInterval(int salaId, DateTime start, DateTime end, int? ignoredTurmaId = null)
-    //{
-    //    try {
-    //        Sala sala = _db.Sala.Find(salaId) ?? throw new Exception("HasOccupyingTurmaInInterval: Sala não encontrada");
-
-    //        TimeSpan twoHourInterval = TimeSpan.FromHours(2);
-
-    //        if (start.Date != end.Date) {
-    //            throw new Exception("HasOccupyingTurmaInInterval: Data de inicio e fim devem ser a mesma");
-    //        }
-
-    //        var turmasInSala = _db.Turma
-    //        .Where(t =>
-    //            t.Deactivated == null &&
-    //            t.Sala_Id == salaId
-    //        );
-
-    //        bool hasTurmaInInterval = _db.Turma
-    //        .Where(t =>
-    //            t.Deactivated == null &&
-    //            t.Sala_Id == salaId
-    //        )
-    //        .AsEnumerable() // Termina a query no banco, passando a responsabilidade do Any para o C#, queries do banco não lidam bem com TimeSpan
-    //        .Any(a =>
-    //            a.Id != IgnoredAulaId && // Se estou reagendando uma aula, não devo considerar ela mesma como conflito
-    //            date.Day == a.Data.Day &&
-    //            date.TimeOfDay > a.Data.TimeOfDay - twoHourInterval &&
-    //            date.TimeOfDay < a.Data.TimeOfDay + twoHourInterval
-    //        );
-
-    //        return hasAulaConflict;
-    //    } catch (Exception ex) {
-    //        throw new Exception("Falha ao resgatar conflitos de aula do professor | " + ex.ToString());
-    //    }
-    //}
-
-    //public bool HasOccupyingAulaInInterval(DateTime start, DateTime end, int? ignoredAulaId = null)
-    //{
-    //    throw new NotImplementedException();
-    //}
 }
