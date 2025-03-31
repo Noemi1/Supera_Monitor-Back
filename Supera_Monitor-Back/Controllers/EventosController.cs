@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Models;
+using Supera_Monitor_Back.Models.Aula;
 using Supera_Monitor_Back.Models.Eventos;
 using Supera_Monitor_Back.Models.Eventos.Aula;
 using Supera_Monitor_Back.Services;
@@ -244,6 +245,24 @@ public class EventosController : _BaseController {
             }
 
             return Ok(response);
+        } catch (Exception e) {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
+
+    [HttpPost("aulas/chamada")]
+    public ActionResult<ResponseModel> Chamada(ChamadaRequest request)
+    {
+        try {
+            ResponseModel response = _aulaService.Chamada(request);
+
+            if (response.Success) {
+                _logger.Log("Chamada", "Aula", response, Account?.Id);
+                return Ok(response);
+            }
+
+            return BadRequest(response);
         } catch (Exception e) {
             _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
             return StatusCode(500, e);

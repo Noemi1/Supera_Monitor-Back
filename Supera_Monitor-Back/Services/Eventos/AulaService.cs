@@ -16,6 +16,8 @@ public interface IAulaService {
     public ResponseModel InsertAulaExtra(CreateAulaExtraRequest request);
     public ResponseModel InsertAulaForTurma(CreateAulaTurmaRequest request);
     public ResponseModel Update(UpdateAulaRequest request);
+
+    public ResponseModel Chamada(ChamadaRequest request);
 }
 
 public class AulaService : IAulaService {
@@ -413,15 +415,15 @@ public class AulaService : IAulaService {
             }
 
             // Não devo poder permitir registro de uma aula em uma sala que está ocupada num intervalo de 2 horas antes ou depois
-            var twoHoursBefore = request.Data.AddHours(-2);
-            var twoHoursAfter = request.Data.AddHours(2);
+            var duracaoBefore = request.Data.AddHours(request.DuracaoMinutos);
+            var duracaoAfter = request.Data.AddHours(request.DuracaoMinutos);
 
             bool isSalaOccupied = _db.Aulas.Any(a =>
                 a.Deactivated == null
                 && a.Sala_Id == request.Sala_Id
                 && a.Data.Date == request.Data.Date
-                && a.Data > twoHoursBefore
-                && a.Data < twoHoursAfter);
+                && a.Data > duracaoBefore
+                && a.Data < duracaoAfter);
 
             if (isSalaOccupied) {
                 return new ResponseModel { Message = "Sala está ocupada nesse mesmo horário" };
@@ -452,6 +454,8 @@ public class AulaService : IAulaService {
 
             // Validations passed
 
+            Roteiro? roteiro = _db.Roteiros.FirstOrDefault(r => request.Data.Date >= r.DataInicio.Date && request.Data.Date <= r.DataFim.Date);
+
             Evento evento = new() {
                 Data = request.Data,
                 Descricao = request.Descricao ?? "Aula extra",
@@ -464,6 +468,7 @@ public class AulaService : IAulaService {
                     Turma_Id = null,
                     CapacidadeMaximaAlunos = 1,
                     Professor_Id = request.Professor_Id,
+                    Roteiro_Id = roteiro?.Id,
                 },
 
                 Created = TimeFunctions.HoraAtualBR(),
@@ -513,6 +518,7 @@ public class AulaService : IAulaService {
     public ResponseModel Update(UpdateAulaRequest request)
     {
         ResponseModel response = new() { Success = false };
+
         try {
             Evento? evento = _db.Eventos.Include(e => e.Evento_Aula).FirstOrDefault(e => e.Id == request.Id);
 
@@ -659,6 +665,92 @@ public class AulaService : IAulaService {
             response.Success = true;
         } catch (Exception ex) {
             response.Message = $"Falha ao atualizar evento de aula: {ex}";
+        }
+
+        return response;
+    }
+
+    public ResponseModel Chamada(ChamadaRequest request)
+    {
+        ResponseModel response = new() { Success = false };
+
+        try {
+            Evento? evento = _db.Eventos
+                .Include(e => e.Evento_Aula)
+                .Include(e => e.Evento_Participacao_Professors)
+                .FirstOrDefault(e => e.Id == request.Evento_Id);
+
+            // Não devo poder realizar a chamada em um evento de aula que não existe
+            if (evento is null) {
+                return new ResponseModel { Message = "Evento não encontrado" };
+            }
+
+            if (evento.Evento_Aula is null) {
+                return new ResponseModel { Message = "Aula não encontrada" };
+            }
+
+            // Não devo poder realizar a chamada em uma aula que está finalizada
+            if (evento.Finalizado) {
+                return new ResponseModel { Message = "Aula já está finalizada" };
+            }
+
+            var participacaoProfessor = _db.Evento_Participacao_Professors.FirstOrDefault(p => p.Professor_Id == evento.Evento_Aula.Professor_Id);
+
+            if (participacaoProfessor is null) {
+                return new ResponseModel { Message = "Professor ministrante não encontrado" };
+            }
+
+            // Validations passed
+
+            List<int> listParticipacoes = request.Registros.Select(r => r.Participacao_Id).ToList();
+
+            Dictionary<int, Evento_Participacao_Aluno> registros = _db.Evento_Participacao_Alunos
+                .Include(e => e.Aluno)
+                .Where(e => listParticipacoes.Contains(e.Id))
+                .ToDictionary(p => p.Id);
+
+
+            // Processar os registros / alunos / apostilas
+            foreach (var item in request.Registros) {
+                // Pegar o registro do aluno na aula - Se existir, coloca na variável registro
+                registros.TryGetValue(item.Participacao_Id, out var registro);
+
+                if (registro is null) {
+                    continue;
+                }
+
+                registro.Apostila_AH_Id = item.Apostila_Ah_Id;
+                registro.NumeroPaginaAH = item.Numero_Pagina_Ah;
+                registro.Apostila_Abaco_Id = item.Apostila_Abaco_Id;
+                registro.NumeroPaginaAbaco = item.Numero_Pagina_Abaco;
+                registro.Presente = registro.Presente;
+                registro.Observacao = registro.Observacao;
+
+                if (registro.Presente == true) {
+                    registro.Aluno.Apostila_Abaco_Id = item.Apostila_Abaco_Id;
+                    registro.Aluno.Apostila_AH_Id = item.Apostila_Ah_Id;
+                    registro.Aluno.NumeroPaginaAbaco = item.Numero_Pagina_Abaco;
+                    registro.Aluno.NumeroPaginaAH = item.Numero_Pagina_Ah;
+                }
+
+                _db.Update(registro);
+            }
+
+            evento.Observacao = request.Observacao;
+            evento.Finalizado = true;
+
+            _db.Eventos.Update(evento);
+
+            participacaoProfessor.Presente = true;
+
+            _db.Evento_Participacao_Professors.Update(participacaoProfessor);
+            _db.SaveChanges();
+
+            response.Message = "Chamada realizada com sucesso";
+            response.Object = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == evento.Id);
+            response.Success = true;
+        } catch (Exception ex) {
+            response.Message = $"Falha ao realizar a chamada: {ex}";
         }
 
         return response;
