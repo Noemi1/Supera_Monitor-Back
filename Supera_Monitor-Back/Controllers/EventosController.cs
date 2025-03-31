@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Models;
-using Supera_Monitor_Back.Models.Aula;
 using Supera_Monitor_Back.Models.Eventos;
 using Supera_Monitor_Back.Models.Eventos.Aula;
 using Supera_Monitor_Back.Services;
