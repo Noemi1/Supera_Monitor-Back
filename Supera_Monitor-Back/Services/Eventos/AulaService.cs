@@ -403,6 +403,15 @@ public class AulaService : IAulaService {
                 return new ResponseModel { Message = "Sala não encontrada" };
             }
 
+            // Se o aluno já participou de alguma aula zero, então não deve ser possível criar novamente
+            bool alunoAlreadyParticipated = _db.Evento_Participacao_Alunos
+                .Include(p => p.Evento)
+                .Any(p => p.Aluno_Id == aluno.Id && p.Evento.Evento_Tipo_Id == ( int )EventoTipo.AulaZero);
+
+            if (alunoAlreadyParticipated) {
+                return new ResponseModel { Message = "Aluno já participou de uma aula zero" };
+            }
+
             // Não devo poder permitir registro de uma aula em uma sala que está ocupada num intervalo de 2 horas antes ou depois
             var twoHoursBefore = request.Data.AddHours(-2);
             var twoHoursAfter = request.Data.AddHours(2);
@@ -416,13 +425,6 @@ public class AulaService : IAulaService {
 
             if (isSalaOccupied) {
                 return new ResponseModel { Message = "Sala está ocupada nesse mesmo horário" };
-            }
-
-            // Não devo poder criar turma com um roteiro que não existe
-            bool roteiroExists = _db.Roteiros.Any(r => r.Id == request.Roteiro_Id);
-
-            if (!roteiroExists) {
-                return new ResponseModel { Message = "Roteiro não encontrado" };
             }
 
             // O professor associado não pode possuir conflitos de horário
@@ -459,9 +461,8 @@ public class AulaService : IAulaService {
 
                 Evento_Tipo_Id = ( int )EventoTipo.AulaZero,
                 Evento_Aula = new Evento_Aula {
-                    Roteiro_Id = request.Roteiro_Id,
                     Turma_Id = null,
-                    CapacidadeMaximaAlunos = request.CapacidadeMaximaAlunos,
+                    CapacidadeMaximaAlunos = 1,
                     Professor_Id = request.Professor_Id,
                 },
 

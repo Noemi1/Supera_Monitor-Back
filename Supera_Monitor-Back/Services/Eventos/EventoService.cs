@@ -14,6 +14,7 @@ public interface IEventoService {
     public ResponseModel Insert(CreateEventoRequest request, int eventoTipoId);
     public ResponseModel Update(UpdateEventoRequest request);
 
+    public ResponseModel EnrollAluno(EnrollAlunoRequest request);
     public List<CalendarioEventoList> GetCalendario(CalendarioRequest request);
 }
 
@@ -333,15 +334,6 @@ public class EventoService : IEventoService {
             throw new Exception("Final do intervalo não pode ser antes do seu próprio início");
         }
 
-        //IQueryable<Evento> eventos = _db.Eventos
-        //    .Where(e => e.Data.Date >= request.IntervaloDe.Value.Date && e.Data.Date <= request.IntervaloAte.Value.Date)
-        //    .Include(e => e.Sala)
-        //    .Include(e => e.Evento_Tipo)
-        //    .Include(e => e.Evento_Participacao_AlunoEventos)
-        //    .Include(e => e.Evento_Aula!)
-        //        .ThenInclude(ea => ea.Evento_Aula_PerfilCognitivo_Rels)
-        //        .ThenInclude(ea => ea.Evento_Aula.Roteiro);
-
         IQueryable<CalendarioEventoList> eventos = _db.CalendarioEventoLists
             .Where(e => e.Data.Date >= request.IntervaloDe.Value.Date && e.Data.Date <= request.IntervaloAte.Value.Date);
 
@@ -488,5 +480,84 @@ public class EventoService : IEventoService {
     {
         var response = date.AddDays(-( int )date.DayOfWeek);
         return response.AddDays(6);
+    }
+
+    public ResponseModel EnrollAluno(EnrollAlunoRequest request)
+    {
+        ResponseModel response = new() { Success = false };
+
+        try {
+            Evento? evento = _db.Eventos.Include(e => e.Evento_Aula).FirstOrDefault(e => e.Id == request.Evento_Id);
+
+            if (evento is null) {
+                return new ResponseModel { Message = "Evento não encontrado" };
+            }
+
+            Aluno? aluno = _db.Alunos.Find(request.Aluno_Id);
+
+            if (aluno is null) {
+                return new ResponseModel { Message = "Aluno não encontrado" };
+            }
+
+            // Se aluno já está inscrito, não deve poder ser inscrito novamente
+            bool alunoIsAlreadyEnrolled = _db.Evento_Participacao_Alunos.Any(a => a.Evento_Id == evento.Id && a.Aluno_Id == aluno.Id);
+
+            if (alunoIsAlreadyEnrolled) {
+                return new ResponseModel { Message = "Aluno já está inscrito neste evento" };
+            }
+
+            int amountOfAlunosEnrolled = _db.Evento_Participacao_Alunos.Count(a => a.Evento_Id == evento.Id);
+
+            // Dependendo do tipo de evento, não deve poder inscrever mais um aluno
+            switch (evento.Evento_Tipo_Id) {
+            case ( int )EventoTipo.Aula:
+                if (amountOfAlunosEnrolled >= evento.Evento_Aula!.CapacidadeMaximaAlunos) {
+                    return new ResponseModel { Message = "Este evento de aula se encontra lotado." };
+                }
+                break;
+
+            case ( int )EventoTipo.AulaExtra:
+                if (amountOfAlunosEnrolled >= evento.Evento_Aula!.CapacidadeMaximaAlunos) {
+                    return new ResponseModel { Message = "Este evento de aula extra se encontra lotado." };
+                }
+                break;
+
+            case ( int )EventoTipo.AulaZero:
+                if (amountOfAlunosEnrolled >= 1) {
+                    return new ResponseModel { Message = "Este evento de aula zero se encontra lotado." };
+                }
+                break;
+
+            case ( int )EventoTipo.Reuniao:
+                return new ResponseModel { Message = "Não é possível inscrever alunos em uma reunião." };
+
+            case ( int )EventoTipo.Superacao:
+                if (amountOfAlunosEnrolled >= 1) {
+                    return new ResponseModel { Message = "Este evento de Superação se encontra lotado." };
+                }
+                break;
+
+            default:
+                break;
+            }
+
+            // Validations passed
+
+            Evento_Participacao_Aluno newParticipacao = new() {
+                Evento_Id = evento.Id,
+                Aluno_Id = aluno.Id,
+            };
+
+            _db.Evento_Participacao_Alunos.Add(newParticipacao);
+            _db.SaveChanges();
+
+            response.Message = $"Aluno foi inscrito no evento com sucesso";
+            response.Object = newParticipacao;
+            response.Success = true;
+        } catch (Exception ex) {
+            response.Message = $"Falha ao inscrever aluno no evento: {ex}";
+        }
+
+        return response;
     }
 }

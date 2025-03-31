@@ -232,4 +232,21 @@ public class EventosController : _BaseController {
             return StatusCode(500, e);
         }
     }
+
+    [HttpPost("inscrever")]
+    public ActionResult<ResponseModel> EnrollAluno(EnrollAlunoRequest request)
+    {
+        try {
+            var response = _eventoService.EnrollAluno(request);
+
+            if (response.Success == false) {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
+        } catch (Exception e) {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
 }
