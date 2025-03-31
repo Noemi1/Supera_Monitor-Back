@@ -13,6 +13,8 @@ public partial class Aluno_Checklist_Item {
 
     public int? Account_Finalizacao_Id { get; set; }
 
+    public string? Observacoes { get; set; }
+
     public virtual Account? Account_Finalizacao { get; set; }
 
     public virtual Aluno Aluno { get; set; } = null!;

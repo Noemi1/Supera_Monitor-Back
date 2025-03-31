@@ -11,6 +11,10 @@ public partial class Apostila {
 
     public int Apostila_Tipo_Id { get; set; }
 
+    public virtual ICollection<Aluno> AlunoApostila_AHs { get; set; } = new List<Aluno>();
+
+    public virtual ICollection<Aluno> AlunoApostila_Abacos { get; set; } = new List<Aluno>();
+
     public virtual ICollection<Apostila_Kit_Rel> Apostila_Kit_Rels { get; set; } = new List<Apostila_Kit_Rel>();
 
     public virtual ICollection<Aula_Aluno> Aula_AlunoApostila_AHs { get; set; } = new List<Aula_Aluno>();

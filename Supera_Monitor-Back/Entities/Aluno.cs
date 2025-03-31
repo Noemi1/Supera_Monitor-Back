@@ -25,11 +25,29 @@ public partial class Aluno {
 
     public int? PerfilCognitivo_Id { get; set; }
 
+    public string? LoginApp { get; set; }
+
+    public string? SenhaApp { get; set; }
+
+    public string? RM { get; set; }
+
+    public int? Apostila_Abaco_Id { get; set; }
+
+    public int? Apostila_AH_Id { get; set; }
+
+    public int? NumeroPaginaAH { get; set; }
+
+    public int? NumeroPaginaAbaco { get; set; }
+
     public virtual ICollection<Aluno_Checklist_Item> Aluno_Checklist_Items { get; set; } = new List<Aluno_Checklist_Item>();
 
     public virtual ICollection<Aluno_Historico> Aluno_Historicos { get; set; } = new List<Aluno_Historico>();
 
-    public virtual ICollection<Aluno_Restricao_Rel> Aluno_Restricao_Rels { get; set; } = new List<Aluno_Restricao_Rel>();
+    public virtual ICollection<Aluno_Restricao> Aluno_Restricaos { get; set; } = new List<Aluno_Restricao>();
+
+    public virtual Apostila? Apostila_AH { get; set; }
+
+    public virtual Apostila? Apostila_Abaco { get; set; }
 
     public virtual Apostila_Kit? Apostila_Kit { get; set; }
 

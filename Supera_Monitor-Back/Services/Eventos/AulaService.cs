@@ -304,7 +304,7 @@ public class AulaService : IAulaService {
                 Sala_Id = request.Sala_Id,
                 DuracaoMinutos = request.DuracaoMinutos,
 
-                Evento_Tipo_Id = ( int )EventoTipo.Aula,
+                Evento_Tipo_Id = ( int )EventoTipo.AulaExtra,
                 Evento_Aula = new Evento_Aula {
                     Roteiro_Id = request.Roteiro_Id,
                     Turma_Id = null,

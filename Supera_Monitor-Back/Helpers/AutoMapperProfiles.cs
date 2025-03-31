@@ -4,7 +4,6 @@ using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Accounts;
 using Supera_Monitor_Back.Models.Aluno;
-using Supera_Monitor_Back.Models.Aula;
 using Supera_Monitor_Back.Models.Checklist;
 using Supera_Monitor_Back.Models.Eventos;
 using Supera_Monitor_Back.Models.Eventos.Aula;
@@ -59,8 +58,13 @@ namespace Supera_Monitor_Back.Helpers {
                 .ForMember(dest => dest.Aluno_Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Aluno, opt => opt.MapFrom(src => src.Nome))
                 .ForMember(dest => dest.Aula_Id, opt => opt.MapFrom(src => -1));
-            CreateMap<CalendarioList, CalendarioResponse>();
+            //CreateMap<CalendarioList, CalendarioResponse>();
             CreateMap<CalendarioList, Aula>();
+
+            CreateMap<Evento_Aula, AulaModel>()
+                .ForMember(dest => dest.Professor, opt => opt.MapFrom(src => src.Professor.Account.Name))
+                .ForMember(dest => dest.Roteiro, opt => opt.MapFrom(src => src.Roteiro.Tema))
+                .ForMember(dest => dest.Turma, opt => opt.MapFrom(src => src.Turma.Nome));
 
             CreateMap<Apostila_Kit, KitResponse>();
 
@@ -72,7 +76,6 @@ namespace Supera_Monitor_Back.Helpers {
             CreateMap<Sala, SalaModel>();
 
             CreateMap<Aluno_Restricao, RestricaoModel>();
-            CreateMap<Aluno_Restricao_Rel, AlunoRestricaoModel>();
 
             CreateMap<Roteiro, RoteiroModel>();
             CreateMap<Roteiro_Material, MaterialModel>();

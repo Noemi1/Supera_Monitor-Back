@@ -21,6 +21,8 @@ public partial class Evento_Participacao_Aluno {
 
     public int? ReposicaoDe_Evento_Id { get; set; }
 
+    public DateTime? Deactivated { get; set; }
+
     public virtual Aluno Aluno { get; set; } = null!;
 
     public virtual Apostila? Apostila_AH { get; set; }

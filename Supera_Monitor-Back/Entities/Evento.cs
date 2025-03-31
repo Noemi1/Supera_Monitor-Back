@@ -37,5 +37,9 @@ public partial class Evento {
 
     public virtual Evento_Tipo Evento_Tipo { get; set; } = null!;
 
+    public virtual ICollection<Evento> InverseReagendamentoDe_Evento { get; set; } = new List<Evento>();
+
+    public virtual Evento? ReagendamentoDe_Evento { get; set; }
+
     public virtual Sala Sala { get; set; } = null!;
 }

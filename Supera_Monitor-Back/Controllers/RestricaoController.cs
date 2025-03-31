@@ -68,13 +68,13 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpDelete("{restricaoId}")]
-        public ActionResult<ResponseModel> Delete(int restricaoId)
+        public ActionResult<ResponseModel> Deactivate(int restricaoId)
         {
             try {
-                var response = _restricaoService.Delete(restricaoId);
+                var response = _restricaoService.Deactivate(restricaoId);
 
                 if (response.Success) {
-                    _logger.Log("Delete", "Aluno_Restricao", response, Account?.Id);
+                    _logger.Log("Deactivate", "Aluno_Restricao", response, Account?.Id);
                     return Ok(response);
                 }
 

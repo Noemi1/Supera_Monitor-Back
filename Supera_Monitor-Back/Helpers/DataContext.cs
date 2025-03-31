@@ -29,8 +29,6 @@ public partial class DataContext : DbContext {
 
     public virtual DbSet<Aluno_Restricao> Aluno_Restricaos { get; set; }
 
-    public virtual DbSet<Aluno_Restricao_Rel> Aluno_Restricao_Rels { get; set; }
-
     public virtual DbSet<Apostila> Apostilas { get; set; }
 
     public virtual DbSet<ApostilaList> ApostilaLists { get; set; }
@@ -56,6 +54,8 @@ public partial class DataContext : DbContext {
     public virtual DbSet<Aula_PerfilCognitivo_Rel> Aula_PerfilCognitivo_Rels { get; set; }
 
     public virtual DbSet<CalendarioAlunoList> CalendarioAlunoLists { get; set; }
+
+    public virtual DbSet<CalendarioEventoList> CalendarioEventoLists { get; set; }
 
     public virtual DbSet<CalendarioList> CalendarioLists { get; set; }
 
@@ -196,6 +196,23 @@ public partial class DataContext : DbContext {
             entity.Property(e => e.DataInicioVigencia).HasColumnType("date");
             entity.Property(e => e.Deactivated).HasColumnType("datetime");
             entity.Property(e => e.LastUpdated).HasColumnType("datetime");
+            entity.Property(e => e.LoginApp)
+                .HasMaxLength(250)
+                .IsUnicode(false);
+            entity.Property(e => e.RM)
+                .HasMaxLength(5)
+                .IsUnicode(false);
+            entity.Property(e => e.SenhaApp)
+                .HasMaxLength(250)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.Apostila_AH).WithMany(p => p.AlunoApostila_AHs)
+                .HasForeignKey(d => d.Apostila_AH_Id)
+                .HasConstraintName("FK_Aluno_ApostilaAH");
+
+            entity.HasOne(d => d.Apostila_Abaco).WithMany(p => p.AlunoApostila_Abacos)
+                .HasForeignKey(d => d.Apostila_Abaco_Id)
+                .HasConstraintName("FK_Aluno_ApostilaAbaco");
 
             entity.HasOne(d => d.Apostila_Kit).WithMany(p => p.Alunos)
                 .HasForeignKey(d => d.Apostila_Kit_Id)
@@ -296,6 +313,7 @@ public partial class DataContext : DbContext {
             entity.ToTable("Aluno_Checklist_Item");
 
             entity.Property(e => e.DataFinalizacao).HasColumnType("datetime");
+            entity.Property(e => e.Observacoes).IsUnicode(false);
             entity.Property(e => e.Prazo).HasColumnType("date");
 
             entity.HasOne(d => d.Account_Finalizacao).WithMany(p => p.Aluno_Checklist_Items)
@@ -334,23 +352,21 @@ public partial class DataContext : DbContext {
         modelBuilder.Entity<Aluno_Restricao>(entity => {
             entity.ToTable("Aluno_Restricao");
 
-            entity.Property(e => e.Restricao)
+            entity.Property(e => e.Created).HasColumnType("datetime");
+            entity.Property(e => e.Deactivated).HasColumnType("datetime");
+            entity.Property(e => e.Descricao)
                 .HasMaxLength(250)
                 .IsUnicode(false);
-        });
 
-        modelBuilder.Entity<Aluno_Restricao_Rel>(entity => {
-            entity.ToTable("Aluno_Restricao_Rel");
+            entity.HasOne(d => d.Account_Created).WithMany(p => p.Aluno_Restricaos)
+                .HasForeignKey(d => d.Account_Created_Id)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Aluno_Restricao_Account");
 
-            entity.HasOne(d => d.Aluno).WithMany(p => p.Aluno_Restricao_Rels)
+            entity.HasOne(d => d.Aluno).WithMany(p => p.Aluno_Restricaos)
                 .HasForeignKey(d => d.Aluno_Id)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Aluno_Restricao_Rel_Aluno");
-
-            entity.HasOne(d => d.Restricao).WithMany(p => p.Aluno_Restricao_Rels)
-                .HasForeignKey(d => d.Restricao_Id)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Aluno_Restricao_Rel_Aluno_Restricao");
+                .HasConstraintName("FK_Aluno_Restricao_Aluno");
         });
 
         modelBuilder.Entity<Apostila>(entity => {
@@ -627,6 +643,34 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
+        modelBuilder.Entity<CalendarioEventoList>(entity => {
+            entity
+                .HasNoKey()
+                .ToView("CalendarioEventoList");
+
+            entity.Property(e => e.CorLegenda)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.Created).HasColumnType("datetime");
+            entity.Property(e => e.Data).HasColumnType("datetime");
+            entity.Property(e => e.Deactivated).HasColumnType("datetime");
+            entity.Property(e => e.Descricao)
+                .HasMaxLength(250)
+                .IsUnicode(false);
+            entity.Property(e => e.Evento_Tipo)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.LastUpdated).HasColumnType("datetime");
+            entity.Property(e => e.Observacao).IsUnicode(false);
+            entity.Property(e => e.ReagendamentoDe_Evento).HasColumnType("datetime");
+            entity.Property(e => e.Tema)
+                .HasMaxLength(250)
+                .IsUnicode(false);
+            entity.Property(e => e.Turma)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+        });
+
         modelBuilder.Entity<CalendarioList>(entity => {
             entity
                 .HasNoKey()
@@ -685,6 +729,10 @@ public partial class DataContext : DbContext {
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Evento_Evento_Tipo");
 
+            entity.HasOne(d => d.ReagendamentoDe_Evento).WithMany(p => p.InverseReagendamentoDe_Evento)
+                .HasForeignKey(d => d.ReagendamentoDe_Evento_Id)
+                .HasConstraintName("FK_Evento_ReagendamentoDe_Evento");
+
             entity.HasOne(d => d.Sala).WithMany(p => p.Eventos)
                 .HasForeignKey(d => d.Sala_Id)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -729,10 +777,10 @@ public partial class DataContext : DbContext {
                 .HasConstraintName("FK_Evento_Aula_PerfilCognitivo_Rel_PerfilCognitivo");
         });
 
-
         modelBuilder.Entity<Evento_Participacao_Aluno>(entity => {
             entity.ToTable("Evento_Participacao_Aluno");
 
+            entity.Property(e => e.Deactivated).HasColumnType("datetime");
             entity.Property(e => e.Observacao).IsUnicode(false);
 
             entity.HasOne(d => d.Aluno).WithMany(p => p.Evento_Participacao_Alunos)

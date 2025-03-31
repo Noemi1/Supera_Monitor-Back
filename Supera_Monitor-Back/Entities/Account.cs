@@ -43,6 +43,8 @@ public partial class Account {
 
     public virtual ICollection<Aluno_Historico> Aluno_Historicos { get; set; } = new List<Aluno_Historico>();
 
+    public virtual ICollection<Aluno_Restricao> Aluno_Restricaos { get; set; } = new List<Aluno_Restricao>();
+
     public virtual ICollection<Aula_Aluno_Contato> Aula_Aluno_Contatos { get; set; } = new List<Aula_Aluno_Contato>();
 
     public virtual ICollection<Aula_ListaEspera> Aula_ListaEsperas { get; set; } = new List<Aula_ListaEspera>();

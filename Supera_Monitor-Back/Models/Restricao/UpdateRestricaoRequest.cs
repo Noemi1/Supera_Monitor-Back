@@ -2,5 +2,6 @@
 
 public class UpdateRestricaoRequest {
     public int Id { get; set; }
-    public string Restricao { get; set; } = string.Empty;
+    public int Aluno_Id { get; set; }
+    public string Descricao { get; set; } = null!;
 }

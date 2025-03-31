@@ -6,7 +6,6 @@ using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Aluno;
 using Supera_Monitor_Back.Models.Pessoa;
-using Supera_Monitor_Back.Models.Restricao;
 using Supera_Monitor_Back.Services.Email;
 using Supera_Monitor_Back.Services.Email.Models;
 
@@ -31,19 +30,21 @@ namespace Supera_Monitor_Back.Services {
     public class AlunoService : IAlunoService {
         private readonly DataContext _db;
         private readonly IMapper _mapper;
-        private readonly Account? _account;
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IEmailService _emailService;
         private readonly IPessoaService _pessoaService;
         private readonly IChecklistService _checklistService;
-        private readonly IEmailService _emailService;
+
+        private readonly Account? _account;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public AlunoService(DataContext db, IMapper mapper, IPessoaService pessoaService, IHttpContextAccessor httpContextAccessor, IChecklistService checklistService, IEmailService emailService)
         {
             _db = db;
             _mapper = mapper;
+            _emailService = emailService;
             _pessoaService = pessoaService;
             _checklistService = checklistService;
-            _emailService = emailService;
+
             _httpContextAccessor = httpContextAccessor;
             _account = ( Account? )httpContextAccessor?.HttpContext?.Items["Account"];
         }
@@ -66,8 +67,8 @@ namespace Supera_Monitor_Back.Services {
             List<AlunoList> alunos = _db.AlunoLists.OrderBy(a => a.Nome).ToList();
 
             foreach (var aluno in alunos) {
-                var restricoes = _db.Aluno_Restricao_Rels.Where(ar => ar.Aluno_Id == aluno.Id).ToList();
-                aluno.Restricoes = _db.AlunoRestricaoLists.Where(ar => ar.Aluno_Id == aluno.Id).ToList();
+                //var restricoes = _db.Aluno_Restricao_Rels.Where(ar => ar.Aluno_Id == aluno.Id).ToList();
+                //aluno.Restricoes = _db.AlunoRestricaoLists.Where(ar => ar.Aluno_Id == aluno.Id).ToList();
             }
 
             return alunos;
@@ -109,21 +110,23 @@ namespace Supera_Monitor_Back.Services {
                 }
 
                 // Só pode ser cadastrado um aluno por pessoa
-                bool AlunoAlreadyRegistered = _db.Alunos.Any(a => a.Pessoa_Id == model.Pessoa_Id);
+                bool alunoAlreadyRegistered = _db.Alunos.Any(a => a.Pessoa_Id == model.Pessoa_Id);
 
-                if (AlunoAlreadyRegistered) {
+                if (alunoAlreadyRegistered) {
                     return new ResponseModel { Message = "Pessoa já tem um aluno cadastrado em seu nome" };
                 }
 
                 // Aluno só pode ser cadastrado em uma turma válida
-                bool TurmaExists = _db.Turmas.Any(t => t.Id == model.Turma_Id);
+                bool turmaExists = _db.Turmas.Any(t => t.Id == model.Turma_Id);
 
-                if (!TurmaExists) {
+                if (!turmaExists) {
                     return new ResponseModel { Message = "Turma não encontrada" };
                 }
 
                 // Aluno só pode ser inserido em uma turma válida
-                Turma? turmaDestino = _db.Turmas.FirstOrDefault(t => t.Id == model.Turma_Id);
+                Turma? turmaDestino = _db.Turmas
+                    .Include(t => t.Alunos)
+                    .FirstOrDefault(t => t.Id == model.Turma_Id);
 
                 if (turmaDestino is null) {
                     return new ResponseModel { Message = "Turma não encontrada" };
@@ -131,13 +134,13 @@ namespace Supera_Monitor_Back.Services {
 
                 // Aluno só pode ser inserido em uma turma que não está cheia
                 // Não considera reposição, pois não estamos olhando para uma aula específica
-                int AmountOfAlunosInTurma = _db.AlunoLists.Count(a => a.Turma_Id == turmaDestino.Id);
+                int amountOfAlunosInTurmaDestino = turmaDestino.Alunos.Count;
 
-                if (AmountOfAlunosInTurma >= turmaDestino.CapacidadeMaximaAlunos) {
+                if (amountOfAlunosInTurmaDestino >= turmaDestino.CapacidadeMaximaAlunos) {
                     return new ResponseModel { Message = "Turma já está em sua capacidade máxima" };
                 }
 
-                // O aluno só pode receber um kit que esteja cadastrado ou nulo
+                // O aluno não pode receber um kit que não existe, mas pode receber kit nulo
                 if (model.Apostila_Kit_Id is not null) {
                     bool apostilaKitExists = _db.Apostila_Kits.Any(k => k.Id == model.Apostila_Kit_Id);
 
@@ -153,33 +156,37 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Não é possível inserir um aluno com um perfil cognitivo que não existe" };
                 }
 
-                var existingRestricoes = _db.Aluno_Restricaos.ToList();
-
-                bool areRestricoesValid = model.Restricoes.All(r => existingRestricoes.Any(ar => ar.Id == r.Id));
-
-                if (!areRestricoesValid) {
-                    return new ResponseModel { Message = "Uma ou mais restrições passadas na requisição não existem" };
-                }
-
                 // Validations passed
 
-                Aluno aluno = _mapper.Map<Aluno>(model);
+                // quando chegar o dia que isso dê pau, me perdoe. só deus sabe como tá a mente do palhaço
+                var randomNumberGenerator = new Random();
+                int randomNumber;
 
-                aluno.Created = TimeFunctions.HoraAtualBR();
-                aluno.Deactivated = null;
+                do {
+                    randomNumber = randomNumberGenerator.Next(100000, 1000000);
+                } while (_db.Alunos.Any(a => a.RM == randomNumber.ToString()));
 
-                _db.Alunos.Add(aluno);
-                _db.SaveChanges();
+                Aluno aluno = new() {
+                    Aluno_Foto = model.Aluno_Foto,
+                    DataInicioVigencia = model.DataInicioVigencia,
+                    DataFimVigencia = model.DataFimVigencia,
+                    Turma_Id = turmaDestino.Id,
+                    PerfilCognitivo_Id = model.PerfilCognitivo_Id,
 
-                // Inserir restrições no aluno
+                    Apostila_Kit_Id = model.Apostila_Kit_Id,
 
-                foreach (RestricaoModel item in model.Restricoes) {
-                    _db.Aluno_Restricao_Rels.Add(new Aluno_Restricao_Rel {
-                        Restricao_Id = item.Id,
-                        Aluno_Id = aluno.Id,
-                    });
-                }
+                    RM = randomNumber.ToString(),
+                    LoginApp = pessoa.Email ?? $"{randomNumber}@supera",
+                    SenhaApp = "Super@123",
+                    Pessoa_Id = model.Pessoa_Id,
 
+                    Created = TimeFunctions.HoraAtualBR(),
+                    LastUpdated = null,
+                    Deactivated = null,
+                    AspNetUsers_Created_Id = model.AspNetUsers_Created_Id,
+                };
+
+                _db.Add(aluno);
                 _db.SaveChanges();
 
                 ResponseModel populateChecklistResponse = _checklistService.PopulateAlunoChecklist(aluno.Id);
@@ -188,28 +195,30 @@ namespace Supera_Monitor_Back.Services {
                     return populateChecklistResponse;
                 }
 
-                List<Aula> aulasTurmaDestino = _db.Aulas
-                    .Where(x =>
-                        x.Turma_Id == aluno.Turma_Id &&
-                        x.Data >= TimeFunctions.HoraAtualBR())
+                List<Evento> eventoAulasTurmaDestino = _db.Eventos
+                    .Include(e => e.Evento_Aula)
+                    .Include(e => e.Evento_Participacao_AlunoEventos)
+                    .Where(e =>
+                        e.Evento_Aula != null
+                        && e.Data >= TimeFunctions.HoraAtualBR()
+                        && e.Evento_Aula.Turma_Id == aluno.Turma_Id)
                     .ToList();
 
                 // Inserir novos registros deste aluno nas aulas futuras da turma destino
-                foreach (Aula aula in aulasTurmaDestino) {
+                foreach (Evento evento in eventoAulasTurmaDestino) {
                     // Aula não deve registrar aluno se estiver em sua capacidade máxima e nesse caso, -> considera os alunos de reposição <-
-                    int AmountOfAlunosInAula = _db.CalendarioAlunoLists.Count(a => a.Aula_Id == aula.Id);
+                    var alunosInEventoAula = evento.Evento_Participacao_AlunoEventos.Count(p => p.Deactivated != null);
 
-                    if (AmountOfAlunosInAula >= turmaDestino.CapacidadeMaximaAlunos) {
+                    if (alunosInEventoAula >= evento.Evento_Aula!.CapacidadeMaximaAlunos) {
                         continue;
                     }
 
-                    Aula_Aluno registro = new() {
+                    Evento_Participacao_Aluno participacaoAluno = new() {
                         Aluno_Id = aluno.Id,
-                        Aula_Id = aula.Id,
-                        Presente = null,
+                        Evento_Id = evento.Id,
                     };
 
-                    _db.Aula_Alunos.Add(registro);
+                    _db.Evento_Participacao_Alunos.Add(participacaoAluno);
                 }
 
                 _db.Aluno_Historicos.Add(new Aluno_Historico {
@@ -236,9 +245,17 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
+
                 Aluno? aluno = _db.Alunos.Find(model.Id);
 
-                // Aluno só pode ser atualizado se existir
+                if (aluno == null) {
+                    return new ResponseModel { Message = "Aluno não encontrado" };
+                }
+
+                Pessoa? pessoa = _db.Pessoas
+                    .Include(p => p.Alunos)
+                    .Single(p => p.Id == aluno.Pessoa_Id);
+
                 if (aluno == null) {
                     return new ResponseModel { Message = "Aluno não encontrado" };
                 }
@@ -262,9 +279,9 @@ namespace Supera_Monitor_Back.Services {
                 // Se aluno estiver trocando de turma, deve-se garantir que a turma destino tem espaço disponível
                 // Não considera reposição, pois não estamos olhando para uma aula específica
                 if (isSwitchingTurma) {
-                    int AmountOfAlunosInTurma = _db.AlunoLists.Count(a => a.Turma_Id == turmaDestino.Id);
+                    int amountOfAlunosInTurma = _db.Alunos.Count(a => a.Turma_Id == turmaDestino.Id && a.Deactivated == null);
 
-                    if (AmountOfAlunosInTurma >= turmaDestino.CapacidadeMaximaAlunos) {
+                    if (amountOfAlunosInTurma >= turmaDestino.CapacidadeMaximaAlunos) {
                         return new ResponseModel { Message = "Turma já está em sua capacidade máxima" };
                     }
                 }
@@ -278,21 +295,9 @@ namespace Supera_Monitor_Back.Services {
                     }
                 }
 
-                var existingRestricoes = _db.Aluno_Restricaos.ToList();
-
-                bool areRestricoesValid = model.Restricoes.All(r => existingRestricoes.Any(ar => ar.Id == r.Id));
-
-                if (!areRestricoesValid) {
-                    return new ResponseModel { Message = "Uma ou mais restrições passadas na requisição não existem" };
-                }
-
                 // Validations passed
 
-                AlunoList? old = _db.AlunoLists.AsNoTracking().FirstOrDefault(a => a.Id == model.Id);
-
-                if (old is null) {
-                    return new ResponseModel { Message = "Aluno original não encontrado" };
-                }
+                Aluno? oldObject = _db.Alunos.AsNoTracking().FirstOrDefault(a => a.Id == model.Id);
 
                 UpdatePessoaRequest updatePessoaModel = _mapper.Map<UpdatePessoaRequest>(model);
                 updatePessoaModel.Pessoa_Id = aluno.Pessoa_Id;
@@ -302,6 +307,11 @@ namespace Supera_Monitor_Back.Services {
                 if (pessoaResponse.Success == false) {
                     return pessoaResponse;
                 }
+
+                aluno.RM = model.RM;
+                aluno.LoginApp = model.LoginApp;
+                aluno.SenhaApp = model.SenhaApp;
+                aluno.PerfilCognitivo_Id = model.PerfilCognitivo_Id;
 
                 aluno.Turma_Id = model.Turma_Id;
                 aluno.Aluno_Foto = model.Aluno_Foto;
@@ -314,27 +324,17 @@ namespace Supera_Monitor_Back.Services {
                 _db.Alunos.Update(aluno);
                 _db.SaveChanges();
 
-                List<Aluno_Restricao_Rel> oldRestricoes = _db.Aluno_Restricao_Rels.Where(ar => ar.Aluno_Id == aluno.Id).ToList();
-                _db.Aluno_Restricao_Rels.RemoveRange(oldRestricoes);
-
-                foreach (RestricaoModel item in model.Restricoes) {
-                    _db.Aluno_Restricao_Rels.Add(new Aluno_Restricao_Rel {
-                        Restricao_Id = item.Id,
-                        Aluno_Id = aluno.Id,
-                    });
-                }
-
-                _db.SaveChanges();
-
                 /*
                  * Se o aluno trocou de turma:
                  * 1. Remover seu registro nas próximas aulas da turma original
                  * 2. Adicionar seu registro nas próximas aulas da turma destino
                 */
+
+                // TODO: TIRAR AULA DESSA BOMBA
                 if (isSwitchingTurma) {
                     List<Aula> aulasTurmaOriginal = _db.Aulas
                         .Where(a =>
-                            a.Turma_Id == old.Turma_Id &&
+                            a.Turma_Id == oldObject.Turma_Id &&
                             a.Data >= TimeFunctions.HoraAtualBR())
                         .ToList();
 
@@ -379,7 +379,7 @@ namespace Supera_Monitor_Back.Services {
 
                 _db.Aluno_Historicos.Add(new Aluno_Historico {
                     Aluno_Id = aluno.Id,
-                    Descricao = $"Aluno foi transferido da turma ID: '{old.Turma_Id}' para a turma ID: '{aluno.Turma_Id}'",
+                    Descricao = $"Aluno foi transferido da turma ID: '{oldObject?.Turma_Id}' para a turma ID: '{aluno.Turma_Id}'",
                     Account_Id = _account.Id,
                     Data = TimeFunctions.HoraAtualBR(),
                 });
@@ -387,7 +387,7 @@ namespace Supera_Monitor_Back.Services {
                 _db.SaveChanges();
 
                 response.Message = "Aluno atualizado com sucesso";
-                response.OldObject = old;
+                response.OldObject = oldObject;
                 response.Object = _db.AlunoLists.AsNoTracking().FirstOrDefault(aluno => aluno.Id == model.Id);
                 response.Success = true;
             } catch (Exception ex) {

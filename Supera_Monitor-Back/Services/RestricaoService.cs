@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
@@ -11,17 +12,21 @@ public interface IRestricaoService {
     List<RestricaoModel> GetAll();
     ResponseModel Insert(CreateRestricaoRequest model);
     ResponseModel Update(UpdateRestricaoRequest model);
-    ResponseModel Delete(int restricaoId);
+    ResponseModel Deactivate(int restricaoId);
 }
 
 public class RestricaoService : IRestricaoService {
     private readonly DataContext _db;
     private readonly IMapper _mapper;
+    private readonly Account? _account;
+    private readonly IHttpContextAccessor? _httpContextAccessor;
 
-    public RestricaoService(DataContext db, IMapper mapper)
+    public RestricaoService(DataContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor)
     {
         _db = db;
         _mapper = mapper;
+        _httpContextAccessor = httpContextAccessor;
+        _account = ( Account? )_httpContextAccessor?.HttpContext?.Items["Account"];
     }
 
     public RestricaoModel Get(int restricaoId)
@@ -37,9 +42,9 @@ public class RestricaoService : IRestricaoService {
 
     public List<RestricaoModel> GetAll()
     {
-        List<Aluno_Restricao> listChecklist = _db.Aluno_Restricaos.ToList();
+        List<Aluno_Restricao> listRestricoes = _db.Aluno_Restricaos.ToList();
 
-        return _mapper.Map<List<RestricaoModel>>(listChecklist);
+        return _mapper.Map<List<RestricaoModel>>(listRestricoes);
     }
 
     public ResponseModel Insert(CreateRestricaoRequest model)
@@ -47,26 +52,33 @@ public class RestricaoService : IRestricaoService {
         ResponseModel response = new() { Success = false };
 
         try {
-            if (string.IsNullOrEmpty(model.Restricao)) {
-                return new ResponseModel { Message = "Restrição não pode ser nula/vazia" };
+            Aluno? aluno = _db.Alunos.Find(model.Aluno_Id);
+
+            if (aluno is null) {
+                return new ResponseModel { Message = "Aluno não encontrado" };
             }
 
-            bool restricaoAlreadyExists = _db.Aluno_Restricaos.Any(r => r.Restricao == model.Restricao);
-
-            if (restricaoAlreadyExists) {
-                return new ResponseModel { Message = "Restrição já está registrada" };
+            if (string.IsNullOrEmpty(model.Descricao)) {
+                return new ResponseModel { Message = "Descrição da restrição não pode ser nula/vazia" };
             }
 
-            Aluno_Restricao newRestricao = new() { Restricao = model.Restricao };
+            Aluno_Restricao newRestricao = new() {
+                Descricao = model.Descricao,
+                Aluno_Id = model.Aluno_Id,
+
+                Created = TimeFunctions.HoraAtualBR(),
+                Deactivated = null,
+                Account_Created_Id = _account.Id,
+            };
 
             _db.Aluno_Restricaos.Add(newRestricao);
             _db.SaveChanges();
 
             response.Success = true;
-            response.Message = "Restrição criada com sucesso";
+            response.Message = $"Restrição criada com sucesso";
             response.Object = _mapper.Map<RestricaoModel>(newRestricao);
         } catch (Exception ex) {
-            response.Message = "Não foi possível criar a restrição: " + ex.ToString();
+            response.Message = $"Não foi possível criar a restrição: {ex}";
         }
 
         return response;
@@ -83,18 +95,13 @@ public class RestricaoService : IRestricaoService {
                 return new ResponseModel { Message = "Restrição não encontrada" };
             }
 
-            if (string.IsNullOrEmpty(model.Restricao)) {
+            if (string.IsNullOrEmpty(model.Descricao)) {
                 return new ResponseModel { Message = "Restrição não pode ser nula/vazia" };
             }
 
-            bool restricaoAlreadyExists = _db.Aluno_Restricaos
-                .Any(r => r.Restricao == model.Restricao && r.Id != model.Id);
+            Aluno_Restricao? oldRestricao = _db.Aluno_Restricaos.AsNoTracking().FirstOrDefault(r => r.Id == model.Id);
 
-            if (restricaoAlreadyExists) {
-                return new ResponseModel { Message = "Restrição já está registrada" };
-            }
-
-            restricao.Restricao = model.Restricao;
+            restricao.Descricao = model.Descricao;
 
             _db.Aluno_Restricaos.Update(restricao);
             _db.SaveChanges();
@@ -102,14 +109,15 @@ public class RestricaoService : IRestricaoService {
             response.Success = true;
             response.Message = "Restrição atualizada com sucesso";
             response.Object = _mapper.Map<RestricaoModel>(restricao);
+            response.OldObject = _mapper.Map<RestricaoModel>(oldRestricao);
         } catch (Exception ex) {
-            response.Message = "Não foi possível atualizar a restrição: " + ex.ToString();
+            response.Message = $"Não foi possível atualizar a restrição: {ex}";
         }
 
         return response;
     }
 
-    public ResponseModel Delete(int restricaoId)
+    public ResponseModel Deactivate(int restricaoId)
     {
         ResponseModel response = new() { Success = false };
 
@@ -120,13 +128,15 @@ public class RestricaoService : IRestricaoService {
                 return new ResponseModel { Message = "Restrição não encontrada" };
             }
 
-            _db.Aluno_Restricaos.Remove(restricao);
+            restricao.Deactivated = TimeFunctions.HoraAtualBR();
+
+            _db.Aluno_Restricaos.Update(restricao);
             _db.SaveChanges();
 
             response.Success = true;
-            response.Message = "Restrição removida com sucesso";
+            response.Message = "Restrição desativada com sucesso";
         } catch (Exception ex) {
-            response.Message = "Não foi possível remover a restrição: " + ex.ToString();
+            response.Message = "Não foi possível desativar a restrição: " + ex.ToString();
         }
 
         return response;

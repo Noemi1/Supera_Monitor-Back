@@ -3,7 +3,17 @@
 public partial class Aluno_Restricao {
     public int Id { get; set; }
 
-    public string Restricao { get; set; } = null!;
+    public string Descricao { get; set; } = null!;
 
-    public virtual ICollection<Aluno_Restricao_Rel> Aluno_Restricao_Rels { get; set; } = new List<Aluno_Restricao_Rel>();
+    public int Aluno_Id { get; set; }
+
+    public int Account_Created_Id { get; set; }
+
+    public DateTime Created { get; set; }
+
+    public DateTime? Deactivated { get; set; }
+
+    public virtual Account Account_Created { get; set; } = null!;
+
+    public virtual Aluno Aluno { get; set; } = null!;
 }
