@@ -12,6 +12,7 @@ public interface IAulaService {
     public EventoAulaModel GetById(int aulaId);
     public List<EventoAulaModel> GetAll();
 
+    public ResponseModel InsertAulaZero(CreateAulaZeroRequest request);
     public ResponseModel InsertAulaExtra(CreateAulaExtraRequest request);
     public ResponseModel InsertAulaForTurma(CreateAulaTurmaRequest request);
     public ResponseModel Update(UpdateAulaRequest request);
@@ -365,6 +366,144 @@ public class AulaService : IAulaService {
             response.Success = true;
         } catch (Exception ex) {
             response.Message = $"Falha ao registrar aula extra: {ex}";
+        }
+
+        return response;
+    }
+
+    public ResponseModel InsertAulaZero(CreateAulaZeroRequest request)
+    {
+        ResponseModel response = new() { Success = false };
+
+        try {
+            // Não devo poder registrar uma aula com um professor que não existe
+            Professor? professor = _db.Professors
+                .Include(p => p.Account)
+                .FirstOrDefault(p => p.Id == request.Professor_Id);
+
+            if (professor is null) {
+                return new ResponseModel { Message = "Professor não encontrado" };
+            }
+
+            // Não devo poder registrar uma aula com um professor que está desativado
+            if (professor.Account.Deactivated is not null) {
+                return new ResponseModel { Message = "Este professor está desativado" };
+            }
+
+            Aluno? aluno = _db.Alunos.FirstOrDefault(a => a.Id == request.Aluno_Id);
+
+            if (aluno is null) {
+                return new ResponseModel { Message = "Aluno não encontrado" };
+            }
+
+            // Não devo poder registrar uma aula em uma sala que não existe
+            bool salaExists = _db.Salas.Any(s => s.Id == request.Sala_Id);
+
+            if (!salaExists) {
+                return new ResponseModel { Message = "Sala não encontrada" };
+            }
+
+            // Não devo poder permitir registro de uma aula em uma sala que está ocupada num intervalo de 2 horas antes ou depois
+            var twoHoursBefore = request.Data.AddHours(-2);
+            var twoHoursAfter = request.Data.AddHours(2);
+
+            bool isSalaOccupied = _db.Aulas.Any(a =>
+                a.Deactivated == null
+                && a.Sala_Id == request.Sala_Id
+                && a.Data.Date == request.Data.Date
+                && a.Data > twoHoursBefore
+                && a.Data < twoHoursAfter);
+
+            if (isSalaOccupied) {
+                return new ResponseModel { Message = "Sala está ocupada nesse mesmo horário" };
+            }
+
+            // Não devo poder criar turma com um roteiro que não existe
+            bool roteiroExists = _db.Roteiros.Any(r => r.Id == request.Roteiro_Id);
+
+            if (!roteiroExists) {
+                return new ResponseModel { Message = "Roteiro não encontrado" };
+            }
+
+            // O professor associado não pode possuir conflitos de horário
+
+            bool hasTurmaConflict = _professorService.HasTurmaTimeConflict(
+                professorId: professor.Id,
+                DiaSemana: ( int )request.Data.DayOfWeek,
+                Horario: request.Data.TimeOfDay,
+                IgnoredTurmaId: null
+            );
+
+            if (hasTurmaConflict) {
+                return new ResponseModel { Message = $"Professor: '{professor.Account.Name}' possui uma turma nesse mesmo horário" };
+            }
+
+            bool hasParticipacaoConflict = _professorService.HasEventoParticipacaoConflict(
+                professorId: professor.Id,
+                Data: request.Data,
+                IgnoredParticipacaoId: null
+            );
+
+            if (hasParticipacaoConflict) {
+                return new ResponseModel { Message = $"Professor: {professor.Account.Name} possui participação em outro evento nesse mesmo horário" };
+            }
+
+            // Validations passed
+
+            Evento evento = new() {
+                Data = request.Data,
+                Descricao = request.Descricao ?? "Aula extra",
+                Observacao = request.Observacao ?? "Sem observação",
+                Sala_Id = request.Sala_Id,
+                DuracaoMinutos = request.DuracaoMinutos,
+
+                Evento_Tipo_Id = ( int )EventoTipo.AulaZero,
+                Evento_Aula = new Evento_Aula {
+                    Roteiro_Id = request.Roteiro_Id,
+                    Turma_Id = null,
+                    CapacidadeMaximaAlunos = request.CapacidadeMaximaAlunos,
+                    Professor_Id = request.Professor_Id,
+                },
+
+                Created = TimeFunctions.HoraAtualBR(),
+                LastUpdated = null,
+                Deactivated = null,
+                Finalizado = false,
+                ReagendamentoDe_Evento_Id = null,
+                Account_Created_Id = _account.Id,
+            };
+
+            _db.Add(evento);
+            _db.SaveChanges();
+
+            // Inserir participação do professor
+            Evento_Participacao_Professor participacaoProfessor = new() {
+                Evento_Id = evento.Id,
+                Professor_Id = professor.Id,
+            };
+
+            _db.Evento_Participacao_Professors.Add(participacaoProfessor);
+
+            // Inserir o registro do aluno passado na requisição
+            Evento_Participacao_Aluno registro = new() {
+                Aluno_Id = aluno.Id,
+                Evento_Id = evento.Id,
+                Presente = null,
+            };
+
+            _db.Evento_Participacao_Alunos.Add(registro);
+            _db.SaveChanges();
+
+            var responseObject = _db.Eventos.Where(e => e.Id == evento.Id)
+                .ProjectTo<EventoAulaModel>(_mapper.ConfigurationProvider)
+                .AsNoTracking()
+                .First();
+
+            response.Message = "Aula zero criada com sucesso";
+            response.Object = responseObject;
+            response.Success = true;
+        } catch (Exception ex) {
+            response.Message = $"Falha ao registrar aula zero: {ex}";
         }
 
         return response;

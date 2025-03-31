@@ -97,6 +97,23 @@ public class EventosController : _BaseController {
         }
     }
 
+    [HttpPost("aulas/zero")]
+    public ActionResult<ResponseModel> InsertAulaZero(CreateAulaZeroRequest request)
+    {
+        try {
+            var response = _aulaService.InsertAulaZero(request);
+
+            if (response.Success == false) {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
+        } catch (Exception e) {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
+
     [HttpPut("aulas")]
     public ActionResult<ResponseModel> Update(UpdateAulaRequest request)
     {
