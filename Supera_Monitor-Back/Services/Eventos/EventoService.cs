@@ -13,6 +13,7 @@ namespace Supera_Monitor_Back.Services.Eventos;
 public interface IEventoService {
     public ResponseModel Insert(CreateEventoRequest request, int eventoTipoId);
     public ResponseModel Update(UpdateEventoRequest request);
+    public ResponseModel Cancelar(int eventoId);
 
     public ResponseModel EnrollAluno(EnrollAlunoRequest request);
     public List<CalendarioEventoList> GetCalendario(CalendarioRequest request);
@@ -493,6 +494,14 @@ public class EventoService : IEventoService {
                 return new ResponseModel { Message = "Evento não encontrado" };
             }
 
+            if (evento.Deactivated.HasValue) {
+                return new ResponseModel { Message = "Evento está desativado" };
+            }
+
+            if (evento.Finalizado) {
+                return new ResponseModel { Message = "Evento já foi finalizado" };
+            }
+
             Aluno? aluno = _db.Alunos.Find(request.Aluno_Id);
 
             if (aluno is null) {
@@ -556,6 +565,43 @@ public class EventoService : IEventoService {
             response.Success = true;
         } catch (Exception ex) {
             response.Message = $"Falha ao inscrever aluno no evento: {ex}";
+        }
+
+        return response;
+    }
+
+    public ResponseModel Cancelar(int eventoId)
+    {
+        ResponseModel response = new() { Success = false };
+
+        try {
+            Evento? evento = _db.Eventos.FirstOrDefault(e => e.Id == eventoId);
+
+            if (evento is null) {
+                return new ResponseModel { Message = "Evento não encontrado." };
+            }
+
+            if (evento.Deactivated.HasValue) {
+                return new ResponseModel { Message = "Evento já foi cancelado" };
+            }
+
+            // Validations passed
+
+            evento.Deactivated = TimeFunctions.HoraAtualBR();
+
+            _db.Eventos.Update(evento);
+            _db.SaveChanges();
+
+            var responseObject = _db.Eventos.Where(e => e.Id == evento.Id)
+                .ProjectTo<EventoModel>(_mapper.ConfigurationProvider)
+                .AsNoTracking()
+                .First();
+
+            response.Message = $"Evento foi cancelado com sucesso";
+            response.Object = responseObject;
+            response.Success = true;
+        } catch (Exception ex) {
+            response.Message = $"Falha ao cancelar evento: {ex}";
         }
 
         return response;

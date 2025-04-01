@@ -257,7 +257,23 @@ public class EventosController : _BaseController {
             ResponseModel response = _aulaService.Chamada(request);
 
             if (response.Success) {
-                _logger.Log("Chamada", "Aula", response, Account?.Id);
+                return Ok(response);
+            }
+
+            return BadRequest(response);
+        } catch (Exception e) {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
+
+    [HttpPost("cancelar/{eventoId}")]
+    public ActionResult<ResponseModel> Cancelar(int eventoId)
+    {
+        try {
+            ResponseModel response = _eventoService.Cancelar(eventoId);
+
+            if (response.Success) {
                 return Ok(response);
             }
 
