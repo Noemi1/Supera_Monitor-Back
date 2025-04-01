@@ -42,14 +42,19 @@ public class EventoService : IEventoService {
 
         try {
             // Validação de quantidades de alunos/professores para cada tipo de evento
+
+            string eventoTipo;
+
             switch (eventoTipoId) {
             case ( int )EventoTipo.Reuniao:
                 if (request.Alunos.Count != 0) {
                     return new ResponseModel { Message = "Um evento de reunião não pode ter alunos associados" };
                 }
+                eventoTipo = "Reunião";
                 break;
 
             case ( int )EventoTipo.Oficina:
+                eventoTipo = "Oficina";
                 break;
 
             case ( int )EventoTipo.AulaZero:
@@ -60,13 +65,14 @@ public class EventoService : IEventoService {
                 if (request.Professores.Count != 1) {
                     return new ResponseModel { Message = "Um evento de aula zero deve ter exatamente um professor associado" };
                 }
-
+                eventoTipo = "Aula Zero";
                 break;
 
             case ( int )EventoTipo.Superacao:
                 if (request.Alunos.Count != 1) {
                     return new ResponseModel { Message = "Um evento de Superação só pode ter um aluno associado" };
                 }
+                eventoTipo = "Superação";
                 break;
 
             default:
@@ -120,15 +126,15 @@ public class EventoService : IEventoService {
             }
 
             // Não devo poder registrar um evento em uma sala que está ocupada num intervalo de 2 horas antes ou depois
-            var twoHoursBefore = request.Data.AddHours(-2);
-            var twoHoursAfter = request.Data.AddHours(2);
+            var duracaoBefore = request.Data.AddMinutes(-( int )request.DuracaoMinutos);
+            var duracaoAfter = request.Data.AddMinutes(( int )request.DuracaoMinutos);
 
             bool isSalaOccupied = _db.Eventos.Any(e =>
                 e.Deactivated == null
                 && e.Sala_Id == request.Sala_Id
                 && e.Data.Date == request.Data.Date
-                && e.Data > twoHoursBefore
-                && e.Data < twoHoursAfter);
+                && e.Data > duracaoBefore
+                && e.Data < duracaoAfter);
 
             if (isSalaOccupied) {
                 return new ResponseModel { Message = "Esta sala se encontra ocupada neste horário" };
@@ -160,6 +166,17 @@ public class EventoService : IEventoService {
                 Aluno_Id = aluno.Id,
                 Evento_Id = evento.Id,
             });
+
+            foreach (var participacao in participacoesAlunos) {
+                _db.Evento_Participacao_Alunos.Add(participacao);
+
+                _db.Aluno_Historicos.Add(new Aluno_Historico {
+                    Account_Id = _account.Id,
+                    Aluno_Id = participacao.Aluno_Id,
+                    Data = evento.Data,
+                    Descricao = $"Aluno se inscreveu em um evento de '{eventoTipo}' no dia {evento.Data:G}"
+                });
+            }
 
             if (participacoesAlunos.Any()) {
                 _db.Evento_Participacao_Alunos.AddRange(participacoesAlunos);
@@ -274,16 +291,16 @@ public class EventoService : IEventoService {
             }
 
             // Não devo poder registrar um evento em uma sala que está ocupada num intervalo de 2 horas antes ou depois
-            var twoHoursBefore = request.Data.AddHours(-2);
-            var twoHoursAfter = request.Data.AddHours(2);
+            var duracaoBefore = request.Data.AddMinutes(-( int )request.DuracaoMinutos);
+            var duracaoAfter = request.Data.AddMinutes(( int )request.DuracaoMinutos);
 
             bool isSalaOccupied = _db.Eventos.Any(e =>
                 e.Id != evento.Id
                 && e.Deactivated == null
                 && e.Sala_Id == request.Sala_Id
                 && e.Data.Date == request.Data.Date
-                && e.Data > twoHoursBefore
-                && e.Data < twoHoursAfter);
+                && e.Data > duracaoBefore
+                && e.Data < duracaoAfter);
 
             if (isSalaOccupied) {
                 return new ResponseModel { Message = "Esta sala se encontra ocupada neste horário" };
@@ -374,7 +391,7 @@ public class EventoService : IEventoService {
         // Adicionar aulas instanciadas ao retorno
         List<CalendarioEventoList> calendarioResponse = eventos.ToList();
 
-        // Adicionar os alunos às aulas instanciadas
+        // Adicionar os alunos e perfis cognitivos às aulas instanciadas
         foreach (CalendarioEventoList evento in calendarioResponse) {
             evento.Alunos = _db.CalendarioAlunoLists.Where(a => a.Aula_Id == evento.Id).ToList();
 

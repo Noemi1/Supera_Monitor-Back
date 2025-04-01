@@ -93,15 +93,15 @@ public class AulaService : IAulaService {
             }
 
             // Não devo poder permitir registro de uma aula em uma sala que está ocupada num intervalo de 2 horas antes ou depois
-            var twoHoursBefore = request.Data.AddHours(-2);
-            var twoHoursAfter = request.Data.AddHours(2);
+            var duracaoBefore = request.Data.AddMinutes(-( int )request.DuracaoMinutos);
+            var duracaoAfter = request.Data.AddMinutes(( int )request.DuracaoMinutos);
 
-            bool isSalaOccupied = _db.Aulas.Any(a =>
-                a.Deactivated == null
-                && a.Sala_Id == request.Sala_Id
-                && a.Data.Date == request.Data.Date
-                && a.Data > twoHoursBefore
-                && a.Data < twoHoursAfter);
+            bool isSalaOccupied = _db.Eventos.Any(e =>
+                e.Deactivated == null
+                && e.Sala_Id == request.Sala_Id
+                && e.Data.Date == request.Data.Date
+                && e.Data > duracaoBefore
+                && e.Data < duracaoAfter);
 
             if (isSalaOccupied) {
                 return new ResponseModel { Message = "Sala está ocupada nesse mesmo horário" };
@@ -242,16 +242,16 @@ public class AulaService : IAulaService {
                 return new ResponseModel { Message = "Sala não encontrada" };
             }
 
-            // Não devo poder permitir registro de uma aula em uma sala que está ocupada num intervalo de 2 horas antes ou depois
-            var twoHoursBefore = request.Data.AddHours(-2);
-            var twoHoursAfter = request.Data.AddHours(2);
+            // Não devo poder permitir registro de uma aula em uma sala que está ocupada num intervalo de horas antes ou depois
+            var duracaoBefore = request.Data.AddMinutes(-( int )request.DuracaoMinutos);
+            var duracaoAfter = request.Data.AddMinutes(( int )request.DuracaoMinutos);
 
-            bool isSalaOccupied = _db.Aulas.Any(a =>
-                a.Deactivated == null
-                && a.Sala_Id == request.Sala_Id
-                && a.Data.Date == request.Data.Date
-                && a.Data > twoHoursBefore
-                && a.Data < twoHoursAfter);
+            bool isSalaOccupied = _db.Eventos.Any(e =>
+                e.Deactivated == null
+                && e.Sala_Id == request.Sala_Id
+                && e.Data.Date == request.Data.Date
+                && e.Data > duracaoBefore
+                && e.Data < duracaoAfter);
 
             if (isSalaOccupied) {
                 return new ResponseModel { Message = "Sala está ocupada nesse mesmo horário" };
@@ -414,16 +414,16 @@ public class AulaService : IAulaService {
                 return new ResponseModel { Message = "Aluno já participou de uma aula zero" };
             }
 
-            // Não devo poder permitir registro de uma aula em uma sala que está ocupada num intervalo de 2 horas antes ou depois
-            var duracaoBefore = request.Data.AddHours(request.DuracaoMinutos);
-            var duracaoAfter = request.Data.AddHours(request.DuracaoMinutos);
+            // Não devo poder permitir registro de uma aula em uma sala que está ocupada num intervalo de request.DuracaoMinutos antes ou depois
+            var duracaoBefore = request.Data.AddMinutes(-( int )request.DuracaoMinutos);
+            var duracaoAfter = request.Data.AddMinutes(( int )request.DuracaoMinutos);
 
-            bool isSalaOccupied = _db.Aulas.Any(a =>
-                a.Deactivated == null
-                && a.Sala_Id == request.Sala_Id
-                && a.Data.Date == request.Data.Date
-                && a.Data > duracaoBefore
-                && a.Data < duracaoAfter);
+            bool isSalaOccupied = _db.Eventos.Any(e =>
+                e.Deactivated == null
+                && e.Sala_Id == request.Sala_Id
+                && e.Data.Date == request.Data.Date
+                && e.Data > duracaoBefore
+                && e.Data < duracaoAfter);
 
             if (isSalaOccupied) {
                 return new ResponseModel { Message = "Sala está ocupada nesse mesmo horário" };
@@ -547,17 +547,19 @@ public class AulaService : IAulaService {
                 return new ResponseModel { Message = "Sala não encontrada" };
             }
 
-            // Não devo poder permitir registro de uma aula em uma sala que está ocupada num intervalo de 2 horas antes ou depois
-            var twoHoursBefore = evento.Data.AddHours(-2);
-            var twoHoursAfter = evento.Data.AddHours(2);
+            // Não devo poder permitir registro de uma aula em uma sala que está ocupada num intervalo de request.DuracaoMinutos antes ou depois
 
-            bool isSalaOccupied = _db.Aulas.Any(a =>
-                a.Id != evento.Id
-                && a.Deactivated == null
-                && a.Sala_Id == request.Sala_Id
-                && a.Data.Date == evento.Data.Date
-                && a.Data > twoHoursBefore
-                && a.Data < twoHoursAfter);
+
+            var duracaoBefore = request.Data.AddMinutes(-( int )request.DuracaoMinutos);
+            var duracaoAfter = request.Data.AddMinutes(( int )request.DuracaoMinutos);
+
+            bool isSalaOccupied = _db.Eventos.Any(e =>
+                e.Id != evento.Id
+                && e.Deactivated == null
+                && e.Sala_Id == request.Sala_Id
+                && e.Data.Date == request.Data.Date
+                && e.Data > duracaoBefore
+                && e.Data < duracaoAfter);
 
             if (isSalaOccupied) {
                 return new ResponseModel { Message = "Sala está ocupada nesse mesmo horário" };

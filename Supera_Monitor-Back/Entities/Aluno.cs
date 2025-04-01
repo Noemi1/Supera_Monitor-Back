@@ -51,8 +51,6 @@ public partial class Aluno {
 
     public virtual Apostila_Kit? Apostila_Kit { get; set; }
 
-    public virtual ICollection<Aula_Aluno> Aula_Alunos { get; set; } = new List<Aula_Aluno>();
-
     public virtual ICollection<Aula_ListaEspera> Aula_ListaEsperas { get; set; } = new List<Aula_ListaEspera>();
 
     public virtual ICollection<Evento_Participacao_Aluno> Evento_Participacao_Alunos { get; set; } = new List<Evento_Participacao_Aluno>();

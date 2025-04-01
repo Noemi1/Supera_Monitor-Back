@@ -49,8 +49,6 @@ public partial class Account {
 
     public virtual ICollection<Aula_ListaEspera> Aula_ListaEsperas { get; set; } = new List<Aula_ListaEspera>();
 
-    public virtual ICollection<Aula> Aulas { get; set; } = new List<Aula>();
-
     public virtual ICollection<Account> InverseAccount_Created { get; set; } = new List<Account>();
 
     public virtual ICollection<Log> Logs { get; set; } = new List<Log>();

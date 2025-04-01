@@ -29,8 +29,6 @@ public partial class Turma {
 
     public virtual ICollection<Aluno> Alunos { get; set; } = new List<Aluno>();
 
-    public virtual ICollection<Aula> Aulas { get; set; } = new List<Aula>();
-
     public virtual ICollection<Evento_Aula> Evento_Aulas { get; set; } = new List<Evento_Aula>();
 
     public virtual Professor? Professor { get; set; }

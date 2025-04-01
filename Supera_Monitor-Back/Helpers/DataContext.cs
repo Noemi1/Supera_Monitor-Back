@@ -41,11 +41,7 @@ public partial class DataContext : DbContext {
 
     public virtual DbSet<AspNetUser> AspNetUsers { get; set; }
 
-    public virtual DbSet<Aula> Aulas { get; set; }
-
     public virtual DbSet<AulaEsperaList> AulaEsperaLists { get; set; }
-
-    public virtual DbSet<Aula_Aluno> Aula_Alunos { get; set; }
 
     public virtual DbSet<Aula_Aluno_Contato> Aula_Aluno_Contatos { get; set; }
 
@@ -448,51 +444,6 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Aula>(entity => {
-            entity.HasKey(e => e.Id).HasName("PK_Turma_Aula");
-
-            entity.ToTable("Aula");
-
-            entity.Property(e => e.Created).HasColumnType("datetime");
-            entity.Property(e => e.Data).HasColumnType("datetime");
-            entity.Property(e => e.Deactivated).HasColumnType("datetime");
-            entity.Property(e => e.Descricao)
-                .HasMaxLength(250)
-                .IsUnicode(false);
-            entity.Property(e => e.LastUpdated).HasColumnType("datetime");
-            entity.Property(e => e.Observacao).IsUnicode(false);
-            entity.Property(e => e.ReposicaoMotivo)
-                .HasMaxLength(250)
-                .IsUnicode(false);
-
-            entity.HasOne(d => d.Account_Created).WithMany(p => p.Aulas)
-                .HasForeignKey(d => d.Account_Created_Id)
-                .HasConstraintName("FK_Aula_Account_Created");
-
-            entity.HasOne(d => d.Professor).WithMany(p => p.Aulas)
-                .HasForeignKey(d => d.Professor_Id)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Aula_Professor");
-
-            entity.HasOne(d => d.ReposicaoDe_Aula).WithMany(p => p.InverseReposicaoDe_Aula)
-                .HasForeignKey(d => d.ReposicaoDe_Aula_Id)
-                .HasConstraintName("FK_Aula_ReposicaoDe");
-
-            entity.HasOne(d => d.Roteiro).WithMany(p => p.Aulas)
-                .HasForeignKey(d => d.Roteiro_Id)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Aula_Roteiro");
-
-            entity.HasOne(d => d.Sala).WithMany(p => p.Aulas)
-                .HasForeignKey(d => d.Sala_Id)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Aula_Sala");
-
-            entity.HasOne(d => d.Turma).WithMany(p => p.Aulas)
-                .HasForeignKey(d => d.Turma_Id)
-                .HasConstraintName("FK_Aula_Turma");
-        });
-
         modelBuilder.Entity<AulaEsperaList>(entity => {
             entity
                 .HasNoKey()
@@ -523,38 +474,6 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Aula_Aluno>(entity => {
-            entity.ToTable("Aula_Aluno");
-
-            entity.Property(e => e.Deactivated).HasColumnType("datetime");
-            entity.Property(e => e.Observacao).IsUnicode(false);
-            entity.Property(e => e.ReposicaoMotivo)
-                .HasMaxLength(250)
-                .IsUnicode(false);
-
-            entity.HasOne(d => d.Aluno).WithMany(p => p.Aula_Alunos)
-                .HasForeignKey(d => d.Aluno_Id)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Aula_Aluno_Aluno");
-
-            entity.HasOne(d => d.Apostila_AH).WithMany(p => p.Aula_AlunoApostila_AHs)
-                .HasForeignKey(d => d.Apostila_AH_Id)
-                .HasConstraintName("FK_Aula_Aluno_Apostila_AH");
-
-            entity.HasOne(d => d.Apostila_Abaco).WithMany(p => p.Aula_AlunoApostila_Abacos)
-                .HasForeignKey(d => d.Apostila_Abaco_Id)
-                .HasConstraintName("FK_Aula_Aluno_Apostila_Abaco");
-
-            entity.HasOne(d => d.Aula).WithMany(p => p.Aula_AlunoAulas)
-                .HasForeignKey(d => d.Aula_Id)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Aula_Aluno_Aula");
-
-            entity.HasOne(d => d.ReposicaoDe_Aula).WithMany(p => p.Aula_AlunoReposicaoDe_Aulas)
-                .HasForeignKey(d => d.ReposicaoDe_Aula_Id)
-                .HasConstraintName("FK_Aula_Aluno_ReposicaoDe");
-        });
-
         modelBuilder.Entity<Aula_Aluno_Contato>(entity => {
             entity.HasKey(e => e.Id).HasName("PK_Aula_Aluno_Falta");
 
@@ -567,11 +486,6 @@ public partial class DataContext : DbContext {
                 .HasForeignKey(d => d.Account_Id)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Aula_Aluno_Contato_Account");
-
-            entity.HasOne(d => d.Aula_Aluno).WithMany(p => p.Aula_Aluno_Contatos)
-                .HasForeignKey(d => d.Aula_Aluno_Id)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Aula_Aluno_Contato_Aula_Aluno");
         });
 
         modelBuilder.Entity<Aula_ListaEspera>(entity => {
@@ -588,20 +502,10 @@ public partial class DataContext : DbContext {
                 .HasForeignKey(d => d.Aluno_Id)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Aula_ListaEspera_Aluno");
-
-            entity.HasOne(d => d.Aula).WithMany(p => p.Aula_ListaEsperas)
-                .HasForeignKey(d => d.Aula_Id)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Aula_ListaEspera_Aula");
         });
 
         modelBuilder.Entity<Aula_PerfilCognitivo_Rel>(entity => {
             entity.ToTable("Aula_PerfilCognitivo_Rel");
-
-            entity.HasOne(d => d.Aula).WithMany(p => p.Aula_PerfilCognitivo_Rels)
-                .HasForeignKey(d => d.Aula_Id)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Aula_PerfilCognitivo_Rel_Aula");
 
             entity.HasOne(d => d.PerfilCognitivo).WithMany(p => p.Aula_PerfilCognitivo_Rels)
                 .HasForeignKey(d => d.PerfilCognitivo_Id)

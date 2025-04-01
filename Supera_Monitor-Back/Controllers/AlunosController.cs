@@ -130,10 +130,10 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPost("reposicao")]
-        public ActionResult<ResponseModel> NewReposicao(NewReposicaoRequest model)
+        public ActionResult<ResponseModel> Reposicao(ReposicaoRequest model)
         {
             try {
-                ResponseModel response = _alunoService.NewReposicao(model);
+                ResponseModel response = _alunoService.Reposicao(model);
 
                 if (response.Success) {
                     _logger.Log("Reposicao", "TurmaAulaAluno", response, Account?.Id);

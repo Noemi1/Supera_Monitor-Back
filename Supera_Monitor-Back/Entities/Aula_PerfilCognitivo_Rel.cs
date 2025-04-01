@@ -7,7 +7,5 @@ public partial class Aula_PerfilCognitivo_Rel {
 
     public int PerfilCognitivo_Id { get; set; }
 
-    public virtual Aula Aula { get; set; } = null!;
-
     public virtual PerfilCognitivo PerfilCognitivo { get; set; } = null!;
 }

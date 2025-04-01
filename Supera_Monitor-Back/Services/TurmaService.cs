@@ -132,7 +132,7 @@ namespace Supera_Monitor_Back.Services {
                         return new ResponseModel { Message = "Sala não encontrada." };
                     }
 
-                    // Não devo permitir que duas turmas usem a mesma sala no mesmo horário (intervalo de 2 horas antes e depois)
+                    // Não devo permitir que duas turmas usem a mesma sala recorrentemente no mesmo horário (intervalo de 2 horas antes e depois)
                     TimeSpan twoHourInterval = TimeSpan.FromHours(2);
 
                     bool salaIsAlreadyOccupied = _db.Turmas
@@ -141,7 +141,9 @@ namespace Supera_Monitor_Back.Services {
                              && t.DiaSemana == model.DiaSemana
                              && t.Sala_Id == model.Sala_Id)
                         .AsEnumerable()
-                        .Any(t => model.Horario > t.Horario - twoHourInterval && model.Horario < t.Horario + twoHourInterval);
+                        .Any(t =>
+                            model.Horario > t.Horario - twoHourInterval
+                            && model.Horario < t.Horario + twoHourInterval);
 
                     if (salaIsAlreadyOccupied) {
                         return new ResponseModel { Message = "Sala está ocupada por outra turma no mesmo horário." };

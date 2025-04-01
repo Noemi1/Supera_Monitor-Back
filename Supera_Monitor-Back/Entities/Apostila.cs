@@ -17,10 +17,6 @@ public partial class Apostila {
 
     public virtual ICollection<Apostila_Kit_Rel> Apostila_Kit_Rels { get; set; } = new List<Apostila_Kit_Rel>();
 
-    public virtual ICollection<Aula_Aluno> Aula_AlunoApostila_AHs { get; set; } = new List<Aula_Aluno>();
-
-    public virtual ICollection<Aula_Aluno> Aula_AlunoApostila_Abacos { get; set; } = new List<Aula_Aluno>();
-
     public virtual ICollection<Evento_Participacao_Aluno> Evento_Participacao_AlunoApostila_AHs { get; set; } = new List<Evento_Participacao_Aluno>();
 
     public virtual ICollection<Evento_Participacao_Aluno> Evento_Participacao_AlunoApostila_Abacos { get; set; } = new List<Evento_Participacao_Aluno>();

@@ -12,6 +12,4 @@ public partial class Aula_Aluno_Contato {
     public string Observacoes { get; set; } = null!;
 
     public virtual Account Account { get; set; } = null!;
-
-    public virtual Aula_Aluno Aula_Aluno { get; set; } = null!;
 }

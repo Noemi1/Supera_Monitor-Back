@@ -15,8 +15,6 @@ public partial class Professor {
 
     public virtual Account Account { get; set; } = null!;
 
-    public virtual ICollection<Aula> Aulas { get; set; } = new List<Aula>();
-
     public virtual ICollection<Evento_Aula> Evento_Aulas { get; set; } = new List<Evento_Aula>();
 
     public virtual ICollection<Evento_Participacao_Professor> Evento_Participacao_Professors { get; set; } = new List<Evento_Participacao_Professor>();

@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
@@ -16,13 +15,11 @@ namespace Supera_Monitor_Back.Services {
 
     public class ListaEsperaService : IListaEsperaService {
         private readonly DataContext _db;
-        private readonly IMapper _mapper;
         private readonly Account? _account;
 
-        public ListaEsperaService(DataContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor)
+        public ListaEsperaService(DataContext db, IHttpContextAccessor httpContextAccessor)
         {
             _db = db;
-            _mapper = mapper;
             _account = ( Account? )httpContextAccessor.HttpContext?.Items["Account"];
         }
 
@@ -38,9 +35,16 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Aula? aula = _db.Aulas.AsNoTracking().FirstOrDefault(a => a.Id == model.Aula_Id);
+                Evento? evento = _db.Eventos
+                    .Include(e => e.Evento_Aula)
+                    .Include(e => e.Evento_Participacao_AlunoEventos)
+                    .FirstOrDefault(e => e.Id == model.Aula_Id);
 
-                if (aula is null) {
+                if (evento is null) {
+                    return new ResponseModel { Message = "Evento não foi encontrado" };
+                }
+
+                if (evento.Evento_Aula is null) {
                     return new ResponseModel { Message = "Aula não foi encontrada" };
                 }
 
@@ -51,22 +55,19 @@ namespace Supera_Monitor_Back.Services {
                 }
 
                 // Se o aluno já possui um registro na aula, não faz sentido que ele entre na lista de espera
-                bool registroAlreadyExists = _db.Aula_Alunos.AsNoTracking().Any(r =>
-                    r.Aula_Id == aula.Id &&
-                    r.Aluno_Id == aluno.Id);
+                bool registroAlreadyExists = evento.Evento_Participacao_AlunoEventos.Any(p => p.Aluno_Id == aluno.Id);
 
                 if (registroAlreadyExists == true) {
-                    return new ResponseModel { Message = "A operação não foi concluída porque o aluno em questão já está registrado na aula" };
+                    return new ResponseModel { Message = "O aluno já está registrado na aula" };
                 }
 
                 // Se o aluno ja está na lista de espera, não faz sentido adicioná-lo novamente
-                bool esperaAlreadyExists = _db.Aula_ListaEsperas.AsNoTracking().Any(x =>
-                    x.Aula_Id == aula.Id &&
-                    x.Aluno_Id == aluno.Id
-                );
+                bool alreadyInEspera = _db.Aula_ListaEsperas.Any(e =>
+                    e.Aula_Id == evento.Id
+                    && e.Aluno_Id == aluno.Id);
 
-                if (esperaAlreadyExists == true) {
-                    return new ResponseModel { Message = "A operação não foi concluída porque o aluno em questão já está na lista de espera" };
+                if (alreadyInEspera) {
+                    return new ResponseModel { Message = "O aluno em questão já está na lista de espera" };
                 }
 
                 Aula_ListaEspera newEspera = new() {
@@ -80,11 +81,12 @@ namespace Supera_Monitor_Back.Services {
                 _db.SaveChanges();
 
                 response.Success = true;
-                response.Message = "Registro do aluno na lista de espera foi inserido com sucesso";
+                response.Message = "Aluno foi inserido na lista de espera com sucesso";
                 response.Object = _db.AulaEsperaLists.AsNoTracking().FirstOrDefault(x => x.Id == newEspera.Id);
             } catch (Exception ex) {
-                response.Message = "Falha ao inserir aluno na lista de espera: " + ex.ToString();
+                response.Message = $"Falha ao inserir aluno na lista de espera: {ex}";
             }
+
             return response;
         }
 
@@ -96,61 +98,44 @@ namespace Supera_Monitor_Back.Services {
                 Aula_ListaEspera? espera = _db.Aula_ListaEsperas.Find(listaEsperaId);
 
                 if (espera is null) {
-                    return new ResponseModel { Message = "Não foi encontrado o registro na lista de espera" };
+                    return new ResponseModel { Message = "Registro na lista de espera não encontrado" };
                 }
 
-                Aula? aulaDestino = _db.Aulas.AsNoTracking().FirstOrDefault(a => a.Id == espera.Aula_Id);
+                Evento? eventoDestino = _db.Eventos
+                    .Include(e => e.Evento_Aula)
+                    .Include(e => e.Evento_Participacao_AlunoEventos)
+                    .FirstOrDefault(a => a.Id == espera.Aula_Id);
 
-                if (aulaDestino is null) {
-                    return new ResponseModel { Message = "Este registro de espera está apontando para uma aula que não existe" };
+                if (eventoDestino is null) {
+                    return new ResponseModel { Message = "Evento não encontrado" };
                 }
 
-                Aula? aulaLastRegistro = _db.Aulas
-                    .AsNoTracking()
-                    .OrderByDescending(a => a.Data)
-                    .FirstOrDefault();
-
-                Aula_Aluno? lastRegistro = null;
-
-                if (aulaLastRegistro != null) {
-                    lastRegistro = _db.Aula_Alunos.AsNoTracking().FirstOrDefault(r =>
-                        r.Aluno_Id == espera.Aluno_Id &&
-                        r.Aula_Id == aulaLastRegistro.Id);
+                if (eventoDestino.Evento_Aula == null) {
+                    return new ResponseModel { Message = "Aula não encontrada" };
                 }
-
-                Aula_Aluno promotedRegistro = new() {
-                    Aluno_Id = espera.Aluno_Id,
-                    Aula_Id = espera.Aula_Id,
-
-                    // O registro do aluno deve continuar de onde parou, TODO: Se não tem ultimo registro, buscar o início das apostilas do aluno
-                    Apostila_AH_Id = lastRegistro?.Apostila_AH_Id,
-                    NumeroPaginaAH = lastRegistro?.NumeroPaginaAH,
-                    Apostila_Abaco_Id = lastRegistro?.Apostila_Abaco_Id,
-                    NumeroPaginaAbaco = lastRegistro?.NumeroPaginaAbaco,
-                };
 
                 // Deve-se verificar se a aula tem espaço antes de promover o registro
-                // Se a aula está associada a uma Turma, possui capacidade máxima e devemos verificar
-                // Se a aula é independente, não há capacidade máxima, continuar sem problemas
-                Turma? turma = _db.Turmas.AsNoTracking().FirstOrDefault(t => t.Id == aulaDestino.Turma_Id);
-                int registrosInAula = _db.Aula_Alunos.AsNoTracking().Count(r => r.Aula_Id == aulaDestino.Id);
+                int registrosInAula = eventoDestino.Evento_Participacao_AlunoEventos.Count(p => p.Deactivated == null);
 
-                if (turma is not null) {
-                    if (registrosInAula >= turma.CapacidadeMaximaAlunos) {
-                        return new ResponseModel { Message = "Não é possível promover o aluno para a aula, a aula já está em capacidade máxima" };
-                    }
+                if (registrosInAula >= eventoDestino.Evento_Aula.CapacidadeMaximaAlunos) {
+                    return new ResponseModel { Message = "Não é possível promover o aluno para a aula, a aula já está em capacidade máxima" };
                 }
 
+                Evento_Participacao_Aluno promotedRegistro = new() {
+                    Aluno_Id = espera.Aluno_Id,
+                    Evento_Id = espera.Aula_Id,
+                };
+
                 _db.Aula_ListaEsperas.Remove(espera);
-                _db.Aula_Alunos.Add(promotedRegistro);
+                _db.Evento_Participacao_Alunos.Add(promotedRegistro);
 
                 _db.SaveChanges();
 
                 response.Success = true;
-                response.Message = "Registro do aluno foi promovido para a aula com sucesso";
+                response.Message = "Aluno foi promovido para a aula com sucesso";
                 response.Object = _db.CalendarioAlunoLists.AsNoTracking().FirstOrDefault(a => a.Id == promotedRegistro.Id);
             } catch (Exception ex) {
-                response.Message = "Falha ao promover aluno da lista de espera para a aula: " + ex.ToString();
+                response.Message = $"Falha ao promover aluno da lista de espera para a aula: {ex}";
             }
             return response;
         }
@@ -166,10 +151,16 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Não foi encontrado o registro na lista de espera" };
                 }
 
-                Aula? aulaDestino = _db.Aulas.AsNoTracking().FirstOrDefault(a => a.Id == espera.Aula_Id);
+                Evento? eventoDestino = _db.Eventos
+                    .Include(e => e.Evento_Aula)
+                    .FirstOrDefault(a => a.Id == espera.Aula_Id);
 
-                if (aulaDestino is null) {
-                    return new ResponseModel { Message = "Este registro de espera está apontando para uma aula que não existe" };
+                if (eventoDestino is null) {
+                    return new ResponseModel { Message = "Evento não encontrado" };
+                }
+
+                if (eventoDestino.Evento_Aula == null) {
+                    return new ResponseModel { Message = "Aula não encontrada" };
                 }
 
                 _db.Aula_ListaEsperas.Remove(espera);

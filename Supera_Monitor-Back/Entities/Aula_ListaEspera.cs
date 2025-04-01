@@ -14,6 +14,4 @@ public partial class Aula_ListaEspera {
     public virtual Account Account_Created { get; set; } = null!;
 
     public virtual Aluno Aluno { get; set; } = null!;
-
-    public virtual Aula Aula { get; set; } = null!;
 }

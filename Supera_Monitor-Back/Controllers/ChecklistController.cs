@@ -58,18 +58,18 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
-        [HttpGet("all/aula/{aulaId}")]
-        public ActionResult<List<ChecklistsFromAlunoModel>> GetAllAlunoChecklistsByAulaId(int aulaId)
-        {
-            try {
-                var response = _checklistService.GetAllAlunoChecklistsByAulaId(aulaId);
+        //[HttpGet("all/aula/{aulaId}")]
+        //public ActionResult<List<ChecklistsFromAlunoModel>> GetAllAlunoChecklistsByAulaId(int aulaId)
+        //{
+        //    try {
+        //        var response = _checklistService.GetAllAlunoChecklistsByAulaId(aulaId);
 
-                return Ok(response);
-            } catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-                return StatusCode(500, e);
-            }
-        }
+        //        return Ok(response);
+        //    } catch (Exception e) {
+        //        _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+        //        return StatusCode(500, e);
+        //    }
+        //}
 
         [HttpPost()]
         public ActionResult<ResponseModel> Insert(CreateChecklistItemRequest model)

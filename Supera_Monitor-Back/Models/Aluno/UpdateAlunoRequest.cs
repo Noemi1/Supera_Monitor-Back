@@ -18,8 +18,8 @@ public class UpdateAlunoRequest {
     public string SenhaApp { get; set; } = string.Empty;
 
     // Alterar dados da entidade Pessoa
-    public string Nome { get; set; } = string.Empty;
-    public string DataNascimento { get; set; } = string.Empty;
+    public string? Nome { get; set; } = string.Empty;
+    public DateTime? DataNascimento { get; set; }
 
     public string? Email { get; set; } = string.Empty;
     public string? Endereco { get; set; } = string.Empty;
