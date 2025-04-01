@@ -75,7 +75,8 @@ namespace Supera_Monitor_Back.Helpers {
 
             CreateMap<Sala, SalaModel>();
 
-            CreateMap<Aluno_Restricao, RestricaoModel>();
+            CreateMap<Aluno_Restricao, RestricaoModel>()
+                .ForMember(dest => dest.Aluno, opt => opt.MapFrom(src => src.Aluno.Pessoa.Nome));
 
             CreateMap<Roteiro, RoteiroModel>();
             CreateMap<Roteiro_Material, MaterialModel>();

@@ -10,6 +10,7 @@ namespace Supera_Monitor_Back.Services;
 public interface IRestricaoService {
     RestricaoModel Get(int restricaoId);
     List<RestricaoModel> GetAll();
+    List<RestricaoModel> GetAllByAluno(int alunoId);
     ResponseModel Insert(CreateRestricaoRequest model);
     ResponseModel Update(UpdateRestricaoRequest model);
     ResponseModel Deactivate(int restricaoId);
@@ -96,7 +97,7 @@ public class RestricaoService : IRestricaoService {
             }
 
             if (string.IsNullOrEmpty(model.Descricao)) {
-                return new ResponseModel { Message = "Restrição não pode ser nula/vazia" };
+                return new ResponseModel { Message = "Descrição da restrição não pode ser nula/vazia" };
             }
 
             Aluno_Restricao? oldRestricao = _db.Aluno_Restricaos.AsNoTracking().FirstOrDefault(r => r.Id == model.Id);
@@ -128,17 +129,33 @@ public class RestricaoService : IRestricaoService {
                 return new ResponseModel { Message = "Restrição não encontrada" };
             }
 
+            if (restricao.Deactivated.HasValue) {
+                return new ResponseModel { Message = "Restrição já está desativada" };
+            }
+
             restricao.Deactivated = TimeFunctions.HoraAtualBR();
 
             _db.Aluno_Restricaos.Update(restricao);
             _db.SaveChanges();
 
             response.Success = true;
+            response.Object = _mapper.Map<RestricaoModel>(restricao);
             response.Message = "Restrição desativada com sucesso";
         } catch (Exception ex) {
             response.Message = "Não foi possível desativar a restrição: " + ex.ToString();
         }
 
         return response;
+    }
+
+    public List<RestricaoModel> GetAllByAluno(int alunoId)
+    {
+        List<Aluno_Restricao> restricoes = _db.Aluno_Restricaos
+            .Include(r => r.Aluno)
+            .ThenInclude(r => r.Pessoa)
+            .Where(r => r.Aluno_Id == alunoId)
+            .ToList();
+
+        return _mapper.Map<List<RestricaoModel>>(restricoes);
     }
 }

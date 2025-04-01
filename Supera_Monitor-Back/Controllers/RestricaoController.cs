@@ -31,6 +31,19 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
+        [HttpGet("all/{alunoId}")]
+        public ActionResult<List<RestricaoModel>> GetAllByAluno(int alunoId)
+        {
+            try {
+                var response = _restricaoService.GetAllByAluno(alunoId);
+
+                return Ok(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
+
         [HttpPost()]
         public ActionResult<ResponseModel> Insert(CreateRestricaoRequest model)
         {
@@ -67,7 +80,7 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
-        [HttpDelete("{restricaoId}")]
+        [HttpPatch("desativar/{restricaoId}")]
         public ActionResult<ResponseModel> Deactivate(int restricaoId)
         {
             try {
