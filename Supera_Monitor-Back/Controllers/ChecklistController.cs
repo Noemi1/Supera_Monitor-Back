@@ -58,18 +58,18 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
-        //[HttpGet("all/aula/{aulaId}")]
-        //public ActionResult<List<ChecklistsFromAlunoModel>> GetAllAlunoChecklistsByAulaId(int aulaId)
-        //{
-        //    try {
-        //        var response = _checklistService.GetAllAlunoChecklistsByAulaId(aulaId);
+        [HttpGet("all/aula/{aulaId}")]
+        public ActionResult<List<ChecklistsFromAlunoModel>> GetAllAlunoChecklistsByAulaId(int aulaId)
+        {
+            try {
+                var response = _checklistService.GetAllAlunoChecklistsByAulaId(aulaId);
 
-        //        return Ok(response);
-        //    } catch (Exception e) {
-        //        _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-        //        return StatusCode(500, e);
-        //    }
-        //}
+                return Ok(response);
+            } catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
 
         [HttpPost()]
         public ActionResult<ResponseModel> Insert(CreateChecklistItemRequest model)
@@ -143,14 +143,14 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
-        [HttpPatch("toggle-item/{alunoChecklistItemId}")]
-        public ActionResult<ResponseModel> ToggleAlunoChecklistItem(int alunoChecklistItemId)
+        [HttpPatch("toggle-item")]
+        public ActionResult<ResponseModel> ToggleAlunoChecklistItem(ToggleAlunoChecklistRequest model)
         {
             try {
-                var response = _checklistService.ToggleAlunoChecklistItem(alunoChecklistItemId);
+                var response = _checklistService.ToggleAlunoChecklistItem(model);
 
                 if (response.Success) {
-                    _logger.Log("PopulateAlunoChecklist", "Aluno_Checklist_Item", response, Account?.Id);
+                    _logger.Log("ToggleAlunoChecklistItem", "Aluno_Checklist_Item", response, Account?.Id);
                     return Ok(response);
                 }
 

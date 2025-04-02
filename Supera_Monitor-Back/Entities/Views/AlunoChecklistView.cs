@@ -20,4 +20,6 @@ public partial class AlunoChecklistView {
     public string Nome { get; set; } = null!;
 
     public int Ordem { get; set; }
+
+    public string? Observacoes { get; set; } = string.Empty;
 }

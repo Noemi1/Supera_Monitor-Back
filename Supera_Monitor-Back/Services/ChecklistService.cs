@@ -15,9 +15,9 @@ namespace Supera_Monitor_Back.Services {
         ResponseModel Update(UpdateChecklistItemRequest model);
         ResponseModel ToggleDeactivate(int checklistItemId);
 
-        //List<ChecklistsFromAlunoModel> GetAllAlunoChecklistsByAulaId(int aulaId);
+        List<ChecklistsFromAlunoModel> GetAllAlunoChecklistsByAulaId(int aulaId);
         ResponseModel PopulateAlunoChecklist(int alunoId);
-        ResponseModel ToggleAlunoChecklistItem(int alunoId);
+        ResponseModel ToggleAlunoChecklistItem(ToggleAlunoChecklistRequest model);
     }
 
     public class ChecklistService : IChecklistService {
@@ -237,36 +237,29 @@ namespace Supera_Monitor_Back.Services {
             return response;
         }
 
-        public ResponseModel ToggleAlunoChecklistItem(int alunoChecklistItemId)
+        public ResponseModel ToggleAlunoChecklistItem(ToggleAlunoChecklistRequest model)
         {
             ResponseModel response = new() { Success = false };
 
             try {
-                Aluno_Checklist_Item? alunoChecklistItem = _db.Aluno_Checklist_Items.Find(alunoChecklistItemId);
+                Aluno_Checklist_Item? item = _db.Aluno_Checklist_Items.Find(model.Aluno_Checklist_Item_Id);
 
-                if (alunoChecklistItem is null) {
+                if (item is null) {
                     return new ResponseModel { Message = "Item da checklist do aluno não encontrado" };
                 }
 
-                // É um toggle, então:
-                //  Se está finalizado, deve tirar os dados de finalização
-                //  Se não está finalizado, deve adicionar dados de finalização
-                if (alunoChecklistItem.Account_Finalizacao_Id.HasValue) {
-                    alunoChecklistItem.DataFinalizacao = null;
-                    alunoChecklistItem.Account_Finalizacao_Id = null;
-                } else {
-                    alunoChecklistItem.DataFinalizacao = TimeFunctions.HoraAtualBR();
-                    alunoChecklistItem.Account_Finalizacao_Id = _account.Id;
-                }
+                item.Account_Finalizacao_Id = item.Account_Finalizacao_Id.HasValue ? null : _account.Id;
+                item.DataFinalizacao = item.DataFinalizacao.HasValue ? null : TimeFunctions.HoraAtualBR();
+                item.Observacoes = model.Observacoes ?? item.Observacoes;
 
-                _db.Aluno_Checklist_Items.Update(alunoChecklistItem);
+                _db.Aluno_Checklist_Items.Update(item);
                 _db.SaveChanges();
 
                 response.Success = true;
                 response.Message = "Item da checklist foi atualizado com sucesso";
-                response.Object = _mapper.Map<AlunoChecklistItemModel>(alunoChecklistItem);
+                response.Object = _mapper.Map<AlunoChecklistItemModel>(item);
             } catch (Exception ex) {
-                response.Message = "Falha ao popular checklist do aluno: " + ex.ToString();
+                response.Message = $"Falha ao atualizar checklist item do aluno: {ex}";
             }
 
             return response;
