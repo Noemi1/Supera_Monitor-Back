@@ -50,12 +50,12 @@ public class RoteiroService : IRoteiroService {
             }
 
             // Não deve ser possível criar um roteiro em uma semana que já está associada a outro roteiro (nos roteiros ativos)
-            bool hasSemanaConflict = _db.Roteiros.Any(r =>
+            var roteiroConflict = _db.Roteiros.FirstOrDefault(r =>
                 r.Deactivated == null &&
                 r.Semana == model.Semana);
 
-            if (hasSemanaConflict) {
-                return new ResponseModel { Message = "A semana passada na requisição já possui um roteiro associado." };
+            if (roteiroConflict is not null) {
+                return new ResponseModel { Message = $"A semana {model.Semana} já possui um roteiro associado: '{roteiroConflict.Tema}'." };
             }
 
             // Verifica se o novo roteiro se sobrepõe a outro roteiro existente ativo
@@ -116,14 +116,14 @@ public class RoteiroService : IRoteiroService {
                 return new ResponseModel { Message = "Data de fim não pode ser anterior à data de início" };
             }
 
-            // Não deve ser possível criar um roteiro em uma semana que já está associada a outro roteiro (nos roteiros ativos)
-            bool hasSemanaConflict = _db.Roteiros.Any(r =>
+            // Não deve ser possível atualizar um roteiro em uma semana que já está associada a outro roteiro (nos roteiros ativos)
+            var roteiroConflict = _db.Roteiros.FirstOrDefault(r =>
                 r.Id != model.Id &&
                 r.Deactivated == null &&
                 r.Semana == model.Semana);
 
-            if (hasSemanaConflict) {
-                return new ResponseModel { Message = "A semana passada na requisição já possui um roteiro associado." };
+            if (roteiroConflict is not null) {
+                return new ResponseModel { Message = $"A semana {model.Semana} já possui um roteiro associado: '{roteiroConflict.Tema}'." };
             }
 
             // Validations passed
