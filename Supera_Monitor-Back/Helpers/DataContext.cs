@@ -334,7 +334,6 @@ public partial class DataContext : DbContext {
         modelBuilder.Entity<Aluno_Historico>(entity => {
             entity.ToTable("Aluno_Historico");
 
-            entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.Data).HasColumnType("datetime");
             entity.Property(e => e.Descricao).IsUnicode(false);
 
