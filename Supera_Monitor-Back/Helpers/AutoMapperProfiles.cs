@@ -71,6 +71,8 @@ namespace Supera_Monitor_Back.Helpers {
             CreateMap<Checklist_Item, ChecklistItemModel>();
             CreateMap<Aluno_Checklist_Item, AlunoChecklistItemModel>();
             CreateMap<AlunoList, AlunoListWithChecklist>();
+            CreateMap<Aluno_Historico, AlunoHistoricoModel>()
+                .ForMember(dest => dest.Account_Created, opt => opt.MapFrom(src => src.Account.Name));
 
             CreateMap<Sala, SalaModel>();
 
