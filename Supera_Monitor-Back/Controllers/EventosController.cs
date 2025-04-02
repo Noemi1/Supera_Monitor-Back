@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Supera_Monitor_Back.Entities;
+using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Eventos;
 using Supera_Monitor_Back.Models.Eventos.Aula;
@@ -38,7 +39,7 @@ public class EventosController : _BaseController {
     }
 
     [HttpPost("calendario")]
-    public ActionResult<List<EventoAulaModel>> GetCalendario(CalendarioRequest request)
+    public ActionResult<List<CalendarioEventoList>> GetCalendario(CalendarioRequest request)
     {
         try {
             var response = _eventoService.GetCalendario(request);

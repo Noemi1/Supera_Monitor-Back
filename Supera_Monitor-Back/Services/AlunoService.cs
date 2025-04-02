@@ -159,10 +159,10 @@ public class AlunoService : IAlunoService {
 
             // quando chegar o dia que isso dê pau, me perdoe. só deus sabe como tá a mente do palhaço
             var randomNumberGenerator = new Random();
-            int randomNumber;
+            string randomNumber;
 
             do {
-                randomNumber = randomNumberGenerator.Next(100000, 1000000);
+                randomNumber = randomNumberGenerator.Next(0, 100000).ToString("D5");
             } while (_db.Alunos.Any(a => a.RM == randomNumber.ToString()));
 
             Aluno aluno = new() {

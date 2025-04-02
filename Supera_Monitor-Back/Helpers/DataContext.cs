@@ -279,6 +279,9 @@ public partial class DataContext : DbContext {
                 .HasMaxLength(50)
                 .IsUnicode(false);
             entity.Property(e => e.LastUpdated).HasColumnType("datetime");
+            entity.Property(e => e.LoginApp)
+                .HasMaxLength(250)
+                .IsUnicode(false);
             entity.Property(e => e.Nome)
                 .HasMaxLength(250)
                 .IsUnicode(false);
@@ -290,6 +293,12 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
             entity.Property(e => e.Pessoa_Sexo)
                 .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.RM)
+                .HasMaxLength(5)
+                .IsUnicode(false);
+            entity.Property(e => e.SenhaApp)
+                .HasMaxLength(250)
                 .IsUnicode(false);
             entity.Property(e => e.Telefone)
                 .HasMaxLength(256)
@@ -345,7 +354,7 @@ public partial class DataContext : DbContext {
             entity.HasOne(d => d.Aluno).WithMany(p => p.Aluno_Historicos)
                 .HasForeignKey(d => d.Aluno_Id)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Aluno_Historico_Aluno_Historico");
+                .HasConstraintName("FK_Aluno_Historico_Aluno");
         });
 
         modelBuilder.Entity<Aluno_Restricao>(entity => {

@@ -2,7 +2,7 @@
 
 namespace Supera_Monitor_Back.Entities.Views;
 
-public partial class TurmaList : BaseList {
+public partial class TurmaList {
     public int Id { get; set; }
 
     public string Nome { get; set; } = null!;
@@ -13,7 +13,19 @@ public partial class TurmaList : BaseList {
 
     public int CapacidadeMaximaAlunos { get; set; }
 
+    public int? AlunosAtivos { get; set; }
+
     public int? Unidade_Id { get; set; }
+
+    public int Account_Created_Id { get; set; }
+
+    public string Account_Created { get; set; } = null!;
+
+    public DateTime Created { get; set; }
+
+    public DateTime? LastUpdated { get; set; }
+
+    public DateTime? Deactivated { get; set; }
 
     public int? Professor_Id { get; set; }
 
@@ -29,3 +41,4 @@ public partial class TurmaList : BaseList {
 
     public List<PerfilCognitivoModel> PerfilCognitivo { get; set; } = new();
 }
+

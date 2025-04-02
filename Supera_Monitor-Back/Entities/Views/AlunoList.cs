@@ -5,6 +5,8 @@ public partial class AlunoList {
 
     public int Pessoa_Id { get; set; }
 
+    public string? Nome { get; set; }
+
     public int? Checklist_Id { get; set; }
 
     public string? Checklist { get; set; }
@@ -12,8 +14,6 @@ public partial class AlunoList {
     public DateTime? DataInicioVigencia { get; set; }
 
     public DateTime? DataFimVigencia { get; set; }
-
-    public string? Nome { get; set; }
 
     public DateTime? DataNascimento { get; set; }
 
@@ -76,6 +76,12 @@ public partial class AlunoList {
     public int? PerfilCognitivo_Id { get; set; }
 
     public string PerfilCognitivo { get; set; } = null!;
+
+    public string? RM { get; set; }
+
+    public string? LoginApp { get; set; }
+
+    public string? SenhaApp { get; set; }
 
     public bool Active => !Deactivated.HasValue;
 

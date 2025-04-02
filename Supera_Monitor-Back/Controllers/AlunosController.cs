@@ -161,7 +161,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpGet("resumo/{alunoId}")]
-        public ActionResult<List<ApostilaList>> GetSummaryByAluno(int alunoId)
+        public ActionResult<ResponseModel> GetSummaryByAluno(int alunoId)
         {
             try {
                 var response = _alunoService.GetSummaryByAluno(alunoId);
