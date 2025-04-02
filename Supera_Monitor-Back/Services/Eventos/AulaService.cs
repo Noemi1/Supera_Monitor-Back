@@ -139,7 +139,7 @@ public class AulaService : IAulaService {
 
             Evento evento = new() {
                 Data = request.Data,
-                Descricao = request.Descricao ?? "Sem descrição",
+                Descricao = turma.Nome ?? request.Descricao ?? "Sem descrição",
                 Observacao = request.Observacao ?? "Sem observação",
                 Sala_Id = request.Sala_Id,
                 DuracaoMinutos = request.DuracaoMinutos,
@@ -458,7 +458,7 @@ public class AulaService : IAulaService {
 
             Evento evento = new() {
                 Data = request.Data,
-                Descricao = request.Descricao ?? "Aula extra",
+                Descricao = request.Descricao ?? "Aula Zero",
                 Observacao = request.Observacao ?? "Sem observação",
                 Sala_Id = request.Sala_Id,
                 DuracaoMinutos = request.DuracaoMinutos,
