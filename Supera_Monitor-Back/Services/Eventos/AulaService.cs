@@ -2,8 +2,10 @@
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Supera_Monitor_Back.Entities;
+using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
+using Supera_Monitor_Back.Models.Eventos;
 using Supera_Monitor_Back.Models.Eventos.Aula;
 
 namespace Supera_Monitor_Back.Services.Eventos;
@@ -11,6 +13,7 @@ namespace Supera_Monitor_Back.Services.Eventos;
 public interface IAulaService {
     public EventoAulaModel GetById(int aulaId);
     public List<EventoAulaModel> GetAll();
+    public List<Evento_Mes> AlunosAulas(int ano);
 
     public ResponseModel InsertAulaZero(CreateAulaZeroRequest request);
     public ResponseModel InsertAulaExtra(CreateAulaExtraRequest request);
@@ -756,5 +759,75 @@ public class AulaService : IAulaService {
         }
 
         return response;
+    }
+
+    public List<Evento_Mes> AlunosAulas(int ano)
+    {
+
+        //var meses = new List<string> { "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro" };
+        var roteiros = _db.Roteiros
+            .Where(x => x.DataInicio.Year == ano)
+            .OrderBy(x => x.DataInicio);
+        //var alunos = _db.AlunoLists.ToList();
+        List<CalendarioParticipacaoAlunoList> aulasAlunos = _db.CalendarioParticipacaoAlunoLists
+            .Where(x => x.Data.Year == ano)
+            .ToList();
+
+
+        //var response = new List<Evento_Aula_Aluno>();
+
+        //foreach (var aluno in alunos)
+        //{
+        var meses = new List<Evento_Mes>();
+
+        for (int mes = 1 ; mes <= 12 ; mes++) {
+            List<Roteiro> roteirosMes = roteiros
+                .Where(x => x.DataInicio.Month == mes)
+                .Include(x => x.Evento_Aulas)
+                .ToList();
+
+            List<Evento_Roteiro> eventosRoteiros = new List<Evento_Roteiro>();
+
+            foreach (Roteiro roteiro in roteirosMes) {
+                Evento_Roteiro eventoRoteiro = new Evento_Roteiro {
+                    Id = roteiro.Id,
+                    DataInicio = roteiro.DataInicio,
+                    DataFim = roteiro.DataFim,
+                    Semana = roteiro.Semana,
+                    Tema = roteiro.Tema,
+                    CorLegenda = roteiro.CorLegenda,
+                    Account_Created = roteiro.Account_Created.Name,
+                    Account_Created_Id = roteiro.Account_Created_Id,
+                    Created = roteiro.Created,
+                    Deactivated = roteiro.Deactivated,
+                    LastUpdated = roteiro.LastUpdated,
+                    Aulas = new List<CalendarioParticipacaoAlunoList>() { },
+                };
+                List<CalendarioParticipacaoAlunoList> aulasRoteiros = aulasAlunos
+                .Where(x => x.Roteiro_Id == roteiro.Id)
+                .ToList();
+
+
+                eventoRoteiro.Aulas = aulasRoteiros;
+                eventosRoteiros.Add(eventoRoteiro);
+
+
+            }
+
+
+            meses.Add(new Evento_Mes {
+                Mes = mes,
+                Roteiros = eventosRoteiros
+            });
+        }
+
+        //response.Add(new Evento_Aula_Aluno
+        //{
+        //	//Aluno = aluno,
+        //	Meses = meses
+        //});
+        //}
+        //return response;
+        return meses;
     }
 }

@@ -53,6 +53,8 @@ public partial class DataContext : DbContext {
 
     public virtual DbSet<CalendarioEventoList> CalendarioEventoLists { get; set; }
 
+    public virtual DbSet<CalendarioParticipacaoAlunoList> CalendarioParticipacaoAlunoLists { get; set; }
+
     public virtual DbSet<CalendarioList> CalendarioLists { get; set; }
 
     public virtual DbSet<Checklist> Checklists { get; set; }
@@ -589,6 +591,28 @@ public partial class DataContext : DbContext {
             entity.Property(e => e.Tema)
                 .HasMaxLength(250)
                 .IsUnicode(false);
+            entity.Property(e => e.Turma)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<CalendarioParticipacaoAlunoList>(entity => {
+            entity
+                .HasNoKey()
+                .ToView("CalendarioParticipacaoAlunoList");
+
+            entity.Property(e => e.Apostila_AH)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.Apostila_Abaco)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.Data).HasColumnType("datetime");
+            entity.Property(e => e.Deactivated).HasColumnType("datetime");
+            entity.Property(e => e.Descricao)
+                .HasMaxLength(250)
+                .IsUnicode(false);
+            entity.Property(e => e.Observacao).IsUnicode(false);
             entity.Property(e => e.Turma)
                 .HasMaxLength(100)
                 .IsUnicode(false);

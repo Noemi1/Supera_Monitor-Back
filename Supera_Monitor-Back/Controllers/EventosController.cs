@@ -283,4 +283,22 @@ public class EventosController : _BaseController {
             return StatusCode(500, e);
         }
     }
+
+    [HttpGet("aulas/alunos/{ano}")]
+    public ActionResult<List<Evento_Aula_Aluno>> AlunosAulas(int ano)
+    {
+        try {
+            // Se ano for menor que 2025, ele será ajustado para 2025
+            // Se ano for maior que o ano atual, ele será ajustado para o ano atual
+            // Se ano já estiver dentro do intervalo, ele permanece inalterado.
+            ano = Math.Clamp(ano, 2025, DateTime.Now.Year);
+
+            var response = _aulaService.AlunosAulas(ano);
+
+            return Ok(response);
+        } catch (Exception e) {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
 }
