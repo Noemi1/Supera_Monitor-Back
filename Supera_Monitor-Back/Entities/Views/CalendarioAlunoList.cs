@@ -5,7 +5,7 @@ public class CalendarioAlunoList {
 
     public int Aluno_Id { get; set; }
 
-    public int Aula_Id { get; set; }
+    public int Evento_Id { get; set; }
 
     public string? Checklist { get; set; }
 
@@ -19,9 +19,9 @@ public class CalendarioAlunoList {
 
     public int Turma_Id { get; set; }
 
-    public string Turma { get; set; } = null!;
+    public string? Turma { get; set; }
 
-    public int? ReposicaoDe_Aula_Id { get; set; }
+    public int? ReposicaoDe_Evento_Id { get; set; }
 
     public bool? Presente { get; set; }
 

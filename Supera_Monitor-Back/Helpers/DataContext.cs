@@ -55,6 +55,8 @@ public partial class DataContext : DbContext {
 
     public virtual DbSet<CalendarioParticipacaoAlunoList> CalendarioParticipacaoAlunoLists { get; set; }
 
+    public virtual DbSet<CalendarioProfessorList> CalendarioProfessorLists { get; set; }
+
     public virtual DbSet<CalendarioList> CalendarioLists { get; set; }
 
     public virtual DbSet<Checklist> Checklists { get; set; }
@@ -616,6 +618,17 @@ public partial class DataContext : DbContext {
             entity.Property(e => e.Turma)
                 .HasMaxLength(100)
                 .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<CalendarioProfessorList>(entity => {
+            entity
+                .HasNoKey()
+                .ToView("CalendarioProfessorList");
+
+            entity.Property(e => e.CorLegenda)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.Observacao).IsUnicode(false);
         });
 
         modelBuilder.Entity<Checklist>(entity => {

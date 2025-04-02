@@ -662,7 +662,7 @@ namespace Supera_Monitor_Back.Services {
                     .ToList();
 
                 List<CalendarioAlunoList> reposicoes = _db.CalendarioAlunoLists
-                    .Where(r => r.Aluno_Id == aluno.Id && r.ReposicaoDe_Aula_Id != null)
+                    .Where(r => r.Aluno_Id == aluno.Id && r.ReposicaoDe_Evento_Id != null)
                     .ToList();
 
                 List<CalendarioAlunoList> aulasFuturas = _db.CalendarioAlunoLists

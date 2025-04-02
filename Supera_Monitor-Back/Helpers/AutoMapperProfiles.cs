@@ -57,7 +57,7 @@ namespace Supera_Monitor_Back.Helpers {
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => -1))
                 .ForMember(dest => dest.Aluno_Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Aluno, opt => opt.MapFrom(src => src.Nome))
-                .ForMember(dest => dest.Aula_Id, opt => opt.MapFrom(src => -1));
+                .ForMember(dest => dest.Evento_Id, opt => opt.MapFrom(src => -1));
             //CreateMap<CalendarioList, CalendarioResponse>();
 
             CreateMap<Evento_Aula, AulaModel>()

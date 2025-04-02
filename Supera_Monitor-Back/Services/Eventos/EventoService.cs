@@ -393,7 +393,8 @@ public class EventoService : IEventoService {
 
         // Adicionar os alunos e perfis cognitivos às aulas instanciadas
         foreach (CalendarioEventoList evento in calendarioResponse) {
-            evento.Alunos = _db.CalendarioAlunoLists.Where(a => a.Aula_Id == evento.Id).ToList();
+            evento.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).ToList();
+            evento.Professores = _db.CalendarioProfessorLists.Where(e => e.Evento_Id == evento.Id).ToList();
 
             if (evento.Evento_Tipo_Id == ( int )EventoTipo.Aula || evento.Evento_Tipo_Id == ( int )EventoTipo.AulaExtra) {
                 var perfisCognitivos = _db.Evento_Aula_PerfilCognitivo_Rels
@@ -465,6 +466,16 @@ public class EventoService : IEventoService {
                     .ToList();
 
                 pseudoAula.Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos);
+
+                pseudoAula.Professores.Add(new CalendarioProfessorList {
+                    CorLegenda = turma.Professor.CorLegenda,
+                    Observacao = "",
+                    Evento_Id = pseudoAula.Id,
+                    Nome = turma.Professor.Account.Name,
+                    Account_Id = turma.Professor.Account.Id,
+                    Professor_Id = ( int )turma.Professor_Id,
+                    Presente = null,
+                });
 
                 List<Turma_PerfilCognitivo_Rel> turmaPerfisCognitivos = _db.Turma_PerfilCognitivo_Rels
                     .Where(p => p.Turma_Id == pseudoAula.Turma_Id)

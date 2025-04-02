@@ -62,6 +62,8 @@ public partial class CalendarioEventoList {
 
     public virtual ICollection<CalendarioAlunoList> Alunos { get; set; } = new List<CalendarioAlunoList>();
 
+    public virtual ICollection<CalendarioProfessorList> Professores { get; set; } = new List<CalendarioProfessorList>();
+
     public virtual ICollection<PerfilCognitivoModel> PerfilCognitivo { get; set; } = new List<PerfilCognitivoModel>();
 }
 
