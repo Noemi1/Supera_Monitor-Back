@@ -258,7 +258,7 @@ namespace Supera_Monitor_Back.Services {
             try {
                 Professor professor = _db.Professors.Find(professorId) ?? throw new Exception("IsProfessorAvailable : Professor não pode ser nulo");
 
-                TimeSpan twoHourInterval = TimeSpan.FromHours(2);
+                TimeSpan hourInterval = TimeSpan.FromHours(1);
 
                 // Verifica se o professor é responsável por uma turma que está ocupando o mesmo dia e horário
                 bool hasTurmaConflict = _db.Turmas
@@ -270,8 +270,8 @@ namespace Supera_Monitor_Back.Services {
                 )
                 .AsEnumerable() // Termina a query no banco, passando a responsabilidade do Any para o C#, queries do banco não lidam bem com TimeSpan
                 .Any(t =>
-                    Horario > t.Horario - twoHourInterval &&
-                    Horario < t.Horario + twoHourInterval
+                    Horario > t.Horario - hourInterval &&
+                    Horario < t.Horario + hourInterval
                 );
 
                 return hasTurmaConflict;
@@ -292,7 +292,7 @@ namespace Supera_Monitor_Back.Services {
                 // Verifica se há conflito de participação
                 bool hasParticipacaoConflict = _db.Evento_Participacao_Professors
                     .Where(e =>
-                        e.Id != IgnoredEventoId &&
+                        e.Evento_Id != IgnoredEventoId &&
                         e.Evento.Deactivated == null &&
                         e.Professor_Id == professor.Id &&
                         e.Evento.Data > TimeFunctions.HoraAtualBR() &&
