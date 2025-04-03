@@ -302,4 +302,21 @@ public class EventosController : _BaseController {
             return StatusCode(500, e);
         }
     }
+
+    [HttpPost("reagendar")]
+    public ActionResult<ResponseModel> Reagendar(ReagendarEventoRequest request)
+    {
+        try {
+            ResponseModel response = _eventoService.Reagendar(request);
+
+            if (response.Success) {
+                return Ok(response);
+            }
+
+            return BadRequest(response);
+        } catch (Exception e) {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
 }

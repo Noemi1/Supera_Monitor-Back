@@ -11,6 +11,8 @@ public interface ISalaService {
     ResponseModel Insert(CreateSalaRequest model);
     ResponseModel Update(UpdateSalaRequest model);
     ResponseModel Delete(int salaId);
+
+    bool IsSalaOccupied(int Sala_Id, DateTime date, int duracaoMinutos, int? ignoredEventoId);
 }
 
 
@@ -122,5 +124,21 @@ public class SalaService : ISalaService {
         }
 
         return response;
+    }
+
+    public bool IsSalaOccupied(int Sala_Id, DateTime date, int duracaoMinutos, int? ignoredEventoId)
+    {
+        var novoEventoInicio = date;
+        var novoEventoFim = date.AddMinutes(duracaoMinutos);
+
+        bool isSalaOccupied = _db.Eventos.Any(e =>
+            e.Id != ignoredEventoId
+            && e.Deactivated == null
+            && e.Sala_Id == Sala_Id
+            && e.Data < novoEventoFim // O evento existente começa antes do fim do novo evento
+            && e.Data.AddMinutes(e.DuracaoMinutos) > novoEventoInicio // O evento existente termina depois do início do novo evento
+        );
+
+        return isSalaOccupied;
     }
 }

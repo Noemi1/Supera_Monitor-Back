@@ -13,6 +13,7 @@ namespace Supera_Monitor_Back.Services.Eventos;
 public interface IEventoService {
     public ResponseModel Insert(CreateEventoRequest request, int eventoTipoId);
     public ResponseModel Update(UpdateEventoRequest request);
+    public ResponseModel Reagendar(ReagendarEventoRequest request);
     public ResponseModel Cancelar(int eventoId);
 
     public ResponseModel EnrollAluno(EnrollAlunoRequest request);
@@ -23,15 +24,17 @@ public class EventoService : IEventoService {
     private readonly DataContext _db;
     private readonly IMapper _mapper;
     private readonly IProfessorService _professorService;
+    private readonly ISalaService _salaService;
 
     private readonly Account? _account;
     private readonly IHttpContextAccessor? _httpContextAccessor;
 
-    public EventoService(DataContext db, IMapper mapper, IProfessorService professorService, IHttpContextAccessor httpContextAccessor)
+    public EventoService(DataContext db, IMapper mapper, IProfessorService professorService, ISalaService salaService, IHttpContextAccessor httpContextAccessor)
     {
         _db = db;
         _mapper = mapper;
         _professorService = professorService;
+        _salaService = salaService;
         _httpContextAccessor = httpContextAccessor;
         _account = ( Account? )_httpContextAccessor.HttpContext?.Items["Account"];
     }
@@ -110,7 +113,8 @@ public class EventoService : IEventoService {
                 bool hasParticipacaoConflict = _professorService.HasEventoParticipacaoConflict(
                     professorId: professor.Id,
                     Data: request.Data,
-                    IgnoredParticipacaoId: null
+                    DuracaoMinutos: request.DuracaoMinutos,
+                    IgnoredEventoId: null
                 );
 
                 if (hasParticipacaoConflict) {
@@ -125,16 +129,8 @@ public class EventoService : IEventoService {
                 return new ResponseModel { Message = "Sala não encontrada" };
             }
 
-            // Não devo poder registrar um evento em uma sala que está ocupada num intervalo de 2 horas antes ou depois
-            var duracaoBefore = request.Data.AddMinutes(-( int )request.DuracaoMinutos);
-            var duracaoAfter = request.Data.AddMinutes(( int )request.DuracaoMinutos);
-
-            bool isSalaOccupied = _db.Eventos.Any(e =>
-                e.Deactivated == null
-                && e.Sala_Id == request.Sala_Id
-                && e.Data.Date == request.Data.Date
-                && e.Data > duracaoBefore
-                && e.Data < duracaoAfter);
+            // Sala deve estar livre no horário do evento
+            bool isSalaOccupied = _salaService.IsSalaOccupied(request.Sala_Id, request.Data, request.DuracaoMinutos, null);
 
             if (isSalaOccupied) {
                 return new ResponseModel { Message = "Esta sala se encontra ocupada neste horário" };
@@ -275,7 +271,8 @@ public class EventoService : IEventoService {
                 bool hasParticipacaoConflict = _professorService.HasEventoParticipacaoConflict(
                     professorId: professor.Id,
                     Data: request.Data,
-                    IgnoredParticipacaoId: participacaoProfessor?.Id
+                    DuracaoMinutos: request.DuracaoMinutos,
+                    IgnoredEventoId: evento.Id
                 );
 
                 if (hasParticipacaoConflict) {
@@ -290,17 +287,8 @@ public class EventoService : IEventoService {
                 return new ResponseModel { Message = "Sala não encontrada" };
             }
 
-            // Não devo poder registrar um evento em uma sala que está ocupada num intervalo de 2 horas antes ou depois
-            var duracaoBefore = request.Data.AddMinutes(-( int )request.DuracaoMinutos);
-            var duracaoAfter = request.Data.AddMinutes(( int )request.DuracaoMinutos);
-
-            bool isSalaOccupied = _db.Eventos.Any(e =>
-                e.Id != evento.Id
-                && e.Deactivated == null
-                && e.Sala_Id == request.Sala_Id
-                && e.Data.Date == request.Data.Date
-                && e.Data > duracaoBefore
-                && e.Data < duracaoAfter);
+            // Sala deve estar livre no horário do evento
+            bool isSalaOccupied = _salaService.IsSalaOccupied(request.Sala_Id, request.Data, request.DuracaoMinutos, evento.Id);
 
             if (isSalaOccupied) {
                 return new ResponseModel { Message = "Esta sala se encontra ocupada neste horário" };
@@ -712,6 +700,86 @@ public class EventoService : IEventoService {
             response.Success = true;
         } catch (Exception ex) {
             response.Message = $"Falha ao cancelar evento: {ex}";
+        }
+
+        return response;
+    }
+
+    public ResponseModel Reagendar(ReagendarEventoRequest request)
+    {
+        ResponseModel response = new() { Success = false };
+
+        try {
+            Evento? evento = _db.Eventos
+                .Include(e => e.Evento_Participacao_AlunoEventos)
+                .Include(e => e.Evento_Participacao_Professors)
+                .FirstOrDefault(e => e.Id == request.Evento_Id);
+
+            if (evento is null) {
+                return new ResponseModel { Message = "Evento não encontrado." };
+            }
+
+            if (evento.Deactivated.HasValue) {
+                return new ResponseModel { Message = "Evento está desativado." };
+            }
+
+            if (request.Data <= TimeFunctions.HoraAtualBR()) {
+                return new ResponseModel { Message = "Não é possível reagendar um evento para uma data no passado." };
+            }
+
+            // Sala deve estar livre no horário do evento
+            bool isSalaOccupied = _salaService.IsSalaOccupied(request.Sala_Id, request.Data, evento.DuracaoMinutos, evento.Id);
+
+            if (isSalaOccupied) {
+                return new ResponseModel { Message = "Esta sala se encontra ocupada neste horário" };
+            }
+
+            // Todos os professores devem estar livres no horário do evento
+
+            List<Evento_Participacao_Professor> professorParticipacoes = evento.Evento_Participacao_Professors.ToList();
+
+            foreach (var participacao in professorParticipacoes) {
+                bool hasTurmaConflict = _professorService.HasTurmaTimeConflict(
+                    professorId: participacao.Professor_Id,
+                    DiaSemana: ( int )request.Data.DayOfWeek,
+                    Horario: request.Data.TimeOfDay,
+                    IgnoredTurmaId: null
+                );
+
+                if (hasTurmaConflict) {
+                    return new ResponseModel { Message = $"Professor ID: '{participacao.Professor_Id}' possui uma turma nesse mesmo horário" };
+                }
+
+                bool hasParticipacaoConflict = _professorService.HasEventoParticipacaoConflict(
+                    professorId: participacao.Professor_Id,
+                    Data: request.Data,
+                    DuracaoMinutos: evento.DuracaoMinutos,
+                    IgnoredEventoId: evento.Id
+                );
+
+                if (hasParticipacaoConflict) {
+                    return new ResponseModel { Message = $"Professor ID: {participacao.Professor_Id} possui participação em outro evento nesse mesmo horário" };
+                }
+            }
+            // Validations passed
+
+            var oldObject = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == evento.Id);
+
+            evento.Data = request.Data;
+            evento.Sala_Id = request.Sala_Id;
+            evento.Observacao = request.Observacao ?? evento.Observacao;
+
+            _db.Eventos.Update(evento);
+            _db.SaveChanges();
+
+            var responseObject = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == evento.Id);
+
+            response.Message = $"Evento foi reagendado com sucesso para o dia {responseObject?.Data:g}";
+            response.OldObject = oldObject;
+            response.Object = responseObject;
+            response.Success = true;
+        } catch (Exception ex) {
+            response.Message = $"Falha ao reagendar evento: {ex}";
         }
 
         return response;

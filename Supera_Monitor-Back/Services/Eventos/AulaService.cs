@@ -27,15 +27,17 @@ public class AulaService : IAulaService {
     private readonly DataContext _db;
     private readonly IMapper _mapper;
     private readonly IProfessorService _professorService;
+    private readonly ISalaService _salaService;
 
     private readonly Account? _account;
     private readonly IHttpContextAccessor? _httpContextAccessor;
 
-    public AulaService(DataContext db, IMapper mapper, IProfessorService professorService, IHttpContextAccessor httpContextAccessor)
+    public AulaService(DataContext db, IMapper mapper, IProfessorService professorService, ISalaService salaService, IHttpContextAccessor httpContextAccessor)
     {
         _db = db;
         _mapper = mapper;
         _professorService = professorService;
+        _salaService = salaService;
         _httpContextAccessor = httpContextAccessor;
         _account = ( Account? )_httpContextAccessor.HttpContext?.Items["Account"];
     }
@@ -95,19 +97,11 @@ public class AulaService : IAulaService {
                 return new ResponseModel { Message = "Sala não encontrada" };
             }
 
-            // Não devo poder permitir registro de uma aula em uma sala que está ocupada num intervalo de 2 horas antes ou depois
-            var duracaoBefore = request.Data.AddMinutes(-( int )request.DuracaoMinutos);
-            var duracaoAfter = request.Data.AddMinutes(( int )request.DuracaoMinutos);
-
-            bool isSalaOccupied = _db.Eventos.Any(e =>
-                e.Deactivated == null
-                && e.Sala_Id == request.Sala_Id
-                && e.Data.Date == request.Data.Date
-                && e.Data > duracaoBefore
-                && e.Data < duracaoAfter);
+            // Sala deve estar livre no horário do evento
+            bool isSalaOccupied = _salaService.IsSalaOccupied(request.Sala_Id, request.Data, request.DuracaoMinutos, null);
 
             if (isSalaOccupied) {
-                return new ResponseModel { Message = "Sala está ocupada nesse mesmo horário" };
+                return new ResponseModel { Message = "Esta sala se encontra ocupada neste horário" };
             }
 
             // Não devo poder criar turma com um roteiro que não existe
@@ -131,7 +125,8 @@ public class AulaService : IAulaService {
             bool hasParticipacaoConflict = _professorService.HasEventoParticipacaoConflict(
                 professorId: professor.Id,
                 Data: request.Data,
-                IgnoredParticipacaoId: null
+                DuracaoMinutos: request.DuracaoMinutos,
+                IgnoredEventoId: null
             );
 
             if (hasParticipacaoConflict) {
@@ -245,19 +240,11 @@ public class AulaService : IAulaService {
                 return new ResponseModel { Message = "Sala não encontrada" };
             }
 
-            // Não devo poder permitir registro de uma aula em uma sala que está ocupada num intervalo de horas antes ou depois
-            var duracaoBefore = request.Data.AddMinutes(-( int )request.DuracaoMinutos);
-            var duracaoAfter = request.Data.AddMinutes(( int )request.DuracaoMinutos);
-
-            bool isSalaOccupied = _db.Eventos.Any(e =>
-                e.Deactivated == null
-                && e.Sala_Id == request.Sala_Id
-                && e.Data.Date == request.Data.Date
-                && e.Data > duracaoBefore
-                && e.Data < duracaoAfter);
+            // Sala deve estar livre no horário do evento
+            bool isSalaOccupied = _salaService.IsSalaOccupied(request.Sala_Id, request.Data, request.DuracaoMinutos, null);
 
             if (isSalaOccupied) {
-                return new ResponseModel { Message = "Sala está ocupada nesse mesmo horário" };
+                return new ResponseModel { Message = "Esta sala se encontra ocupada neste horário" };
             }
 
             // Não devo poder criar turma com um roteiro que não existe
@@ -283,7 +270,8 @@ public class AulaService : IAulaService {
             bool hasParticipacaoConflict = _professorService.HasEventoParticipacaoConflict(
                 professorId: professor.Id,
                 Data: request.Data,
-                IgnoredParticipacaoId: null
+                DuracaoMinutos: request.DuracaoMinutos,
+                IgnoredEventoId: null
             );
 
             if (hasParticipacaoConflict) {
@@ -417,19 +405,11 @@ public class AulaService : IAulaService {
                 return new ResponseModel { Message = "Aluno já participou de uma aula zero" };
             }
 
-            // Não devo poder permitir registro de uma aula em uma sala que está ocupada num intervalo de request.DuracaoMinutos antes ou depois
-            var duracaoBefore = request.Data.AddMinutes(-( int )request.DuracaoMinutos);
-            var duracaoAfter = request.Data.AddMinutes(( int )request.DuracaoMinutos);
-
-            bool isSalaOccupied = _db.Eventos.Any(e =>
-                e.Deactivated == null
-                && e.Sala_Id == request.Sala_Id
-                && e.Data.Date == request.Data.Date
-                && e.Data > duracaoBefore
-                && e.Data < duracaoAfter);
+            // Sala deve estar livre no horário do evento
+            bool isSalaOccupied = _salaService.IsSalaOccupied(request.Sala_Id, request.Data, request.DuracaoMinutos, null);
 
             if (isSalaOccupied) {
-                return new ResponseModel { Message = "Sala está ocupada nesse mesmo horário" };
+                return new ResponseModel { Message = "Esta sala se encontra ocupada neste horário" };
             }
 
             // O professor associado não pode possuir conflitos de horário
@@ -448,7 +428,8 @@ public class AulaService : IAulaService {
             bool hasParticipacaoConflict = _professorService.HasEventoParticipacaoConflict(
                 professorId: professor.Id,
                 Data: request.Data,
-                IgnoredParticipacaoId: null
+                DuracaoMinutos: request.DuracaoMinutos,
+                IgnoredEventoId: null
             );
 
             if (hasParticipacaoConflict) {
@@ -550,22 +531,11 @@ public class AulaService : IAulaService {
                 return new ResponseModel { Message = "Sala não encontrada" };
             }
 
-            // Não devo poder permitir registro de uma aula em uma sala que está ocupada num intervalo de request.DuracaoMinutos antes ou depois
-
-
-            var duracaoBefore = request.Data.AddMinutes(-( int )request.DuracaoMinutos);
-            var duracaoAfter = request.Data.AddMinutes(( int )request.DuracaoMinutos);
-
-            bool isSalaOccupied = _db.Eventos.Any(e =>
-                e.Id != evento.Id
-                && e.Deactivated == null
-                && e.Sala_Id == request.Sala_Id
-                && e.Data.Date == request.Data.Date
-                && e.Data > duracaoBefore
-                && e.Data < duracaoAfter);
+            // Sala deve estar livre no horário do evento
+            bool isSalaOccupied = _salaService.IsSalaOccupied(request.Sala_Id, request.Data, request.DuracaoMinutos, evento.Id);
 
             if (isSalaOccupied) {
-                return new ResponseModel { Message = "Sala está ocupada nesse mesmo horário" };
+                return new ResponseModel { Message = "Esta sala se encontra ocupada neste horário" };
             }
 
             // Não devo poder atualizar turma com um roteiro que não existe
@@ -598,7 +568,8 @@ public class AulaService : IAulaService {
                 bool hasParticipacaoConflict = _professorService.HasEventoParticipacaoConflict(
                     professorId: professor.Id,
                     Data: request.Data,
-                    IgnoredParticipacaoId: participacaoProfessor?.Id
+                    DuracaoMinutos: request.DuracaoMinutos,
+                    IgnoredEventoId: evento.Id
                 );
 
                 if (hasParticipacaoConflict) {
@@ -713,7 +684,6 @@ public class AulaService : IAulaService {
                 .Include(e => e.Aluno)
                 .Where(e => listParticipacoes.Contains(e.Id))
                 .ToDictionary(p => p.Id);
-
 
             // Processar os registros / alunos / apostilas
             foreach (var item in request.Registros) {

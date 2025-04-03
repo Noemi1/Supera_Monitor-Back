@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Microsoft.EntityFrameworkCore;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
@@ -21,7 +20,7 @@ namespace Supera_Monitor_Back.Services {
         List<NivelCertificacaoModel> GetAllCertificacoes();
 
         bool HasTurmaTimeConflict(int professorId, int DiaSemana, TimeSpan Horario, int? IgnoredTurmaId);
-        bool HasEventoParticipacaoConflict(int professorId, DateTime Data, int? IgnoredParticipacaoId);
+        bool HasEventoParticipacaoConflict(int professorId, DateTime Data, int DuracaoMinutos, int? IgnoredEventoId);
     }
 
     public class ProfessorService : IProfessorService {
@@ -281,29 +280,25 @@ namespace Supera_Monitor_Back.Services {
             }
         }
 
-        public bool HasEventoParticipacaoConflict(int professorId, DateTime Data, int? IgnoredParticipacaoId)
+        public bool HasEventoParticipacaoConflict(int professorId, DateTime Data, int DuracaoMinutos, int? IgnoredEventoId)
         {
             try {
                 Professor professor = _db.Professors.Find(professorId) ?? throw new Exception("IsProfessorAvailable : Professor não pode ser nulo");
 
-                TimeSpan twoHourInterval = TimeSpan.FromHours(2);
+                // Definir intervalo do novo evento
+                DateTime novoEventoInicio = Data;
+                DateTime novoEventoFim = Data.AddMinutes(DuracaoMinutos);
 
-                // Verifica se o professor possui responsabilidade de participação em um evento que está ocupando o mesmo dia e horário
-
+                // Verifica se há conflito de participação
                 bool hasParticipacaoConflict = _db.Evento_Participacao_Professors
-                .Include(e => e.Evento)
-                .Where(e =>
-                    e.Evento.Deactivated == null &&
-                    e.Professor_Id == professor.Id &&
-                    e.Evento.Data > TimeFunctions.HoraAtualBR()
-                )
-                .AsEnumerable() // Termina a query no banco, passando a responsabilidade do Any para o C#, queries do banco não lidam bem com TimeSpan
-                .Any(e =>
-                    e.Id != IgnoredParticipacaoId && // Se estou reagendando uma aula, não devo considerar ela mesma como conflito
-                    Data.Day == e.Evento.Data.Day &&
-                    Data.TimeOfDay > e.Evento.Data.TimeOfDay - twoHourInterval &&
-                    Data.TimeOfDay < e.Evento.Data.TimeOfDay + twoHourInterval
-                );
+                    .Where(e =>
+                        e.Id != IgnoredEventoId &&
+                        e.Evento.Deactivated == null &&
+                        e.Professor_Id == professor.Id &&
+                        e.Evento.Data > TimeFunctions.HoraAtualBR() &&
+                        e.Evento.Data < novoEventoFim && // O evento existente começa antes do novo evento terminar
+                        e.Evento.Data.AddMinutes(e.Evento.DuracaoMinutos) > novoEventoInicio // O evento existente termina depois do novo evento começar
+                    ).Any();
 
                 return hasParticipacaoConflict;
             } catch (Exception ex) {
