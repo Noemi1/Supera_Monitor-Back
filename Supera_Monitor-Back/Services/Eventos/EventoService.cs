@@ -346,7 +346,7 @@ public class EventoService : IEventoService {
         DateTime now = TimeFunctions.HoraAtualBR();
 
         request.IntervaloDe ??= GetThisWeeksMonday(now); // Se não passar data inicio, considera a segunda-feira da semana atual
-        request.IntervaloAte ??= GetThisWeeksSaturday(now); // Se não passar data fim, considera o sábado da semana da data inicio
+        request.IntervaloAte ??= GetThisWeeksSaturday(( DateTime )request.IntervaloDe); // Se não passar data fim, considera o sábado da semana da data inicio
 
         if (request.IntervaloAte < request.IntervaloDe) {
             throw new Exception("Final do intervalo não pode ser antes do seu próprio início");
@@ -367,6 +367,11 @@ public class EventoService : IEventoService {
 
         // TODO: Filtro de perfil cognitivo
         if (request.Perfil_Cognitivo_Id.HasValue) {
+            // Eventos que contem o perfil cognitivo 
+            var eventosContemPerfilCognitivo = _db.Evento_Aula_PerfilCognitivo_Rels.Where(x => x.PerfilCognitivo_Id == request.Perfil_Cognitivo_Id);
+
+            eventos = eventos.Where(e => eventosContemPerfilCognitivo.Any(x => x.Evento_Aula_Id == e.Id));
+            turmas = turmas.Where(e => e.Turma_PerfilCognitivo_Rels.Any(x => x.Id == request.Perfil_Cognitivo_Id));
         }
 
         if (request.Turma_Id.HasValue) {
@@ -375,8 +380,11 @@ public class EventoService : IEventoService {
         }
 
         if (request.Professor_Id.HasValue) {
-            eventos = eventos.Where(e => e.Professor_Id != null && e.Professor_Id == request.Professor_Id);
+            // Busca o professor em evento.Professor_Id e evento.Evento_Participacao_Professor
+            var eventosContemProfessor = _db.Evento_Participacao_Professors.Where(x => x.Professor_Id == request.Professor_Id.Value);
+            eventos = eventos.Where(e => e.Professor_Id != null && (e.Professor_Id == request.Professor_Id || eventosContemProfessor.Any(x => x.Evento_Id == e.Id)));
             turmas = turmas.Where(t => t.Professor_Id == request.Professor_Id);
+            professores = professores.Where(x => x.Id == request.Professor_Id.Value);
         }
 
         if (request.Aluno_Id.HasValue) {
@@ -384,7 +392,9 @@ public class EventoService : IEventoService {
 
             if (aluno is not null) {
                 turmas = turmas.Where(t => t.Id == aluno.Turma_Id);
-                eventos = eventos.Where(e => _db.Evento_Participacao_Alunos.Any(p => p.Aluno_Id == request.Aluno_Id && p.Evento_Id == e.Id));
+                // Busca o aluno em evento.Evento_Participacao_Aluno fora do where de eventos, para fazer menos filtros
+                var eventosContemAlunos = _db.Evento_Participacao_Alunos.Where(x => x.Aluno_Id == request.Aluno_Id.Value);
+                eventos = eventos.Where(e => eventosContemAlunos.Any(p => p.Evento_Id == e.Id));
             }
         }
 
@@ -407,88 +417,158 @@ public class EventoService : IEventoService {
             }
         }
 
+        // Carrega lista de roteiros no intervalo selecionado
+        IQueryable<Roteiro> roteiros = _db.Roteiros.Where(x => x.DataInicio.Date <= request.IntervaloDe.Value.Date && x.DataFim.Date <= request.IntervaloAte.Value.Date);
+
         // Adicionar aulas não instanciadas ao retorno
         DateTime data = request.IntervaloDe.Value;
 
         // Adicionar todas as aulas não instanciadas - Aulas de turmas que tem horário marcado
         while (data < request.IntervaloAte) {
+            //
+            // Adiciona eventos recorrentes para reuniões e oficinas
+            //
+            var diaSemana = data.DayOfWeek;
+
+            //
+            // Adiciona Oficina - Se a já existe uma oficina agendada para segunda-feira, não vai adicionar
+            //
+            if (diaSemana == DayOfWeek.Monday) {
+                CalendarioEventoList? eventoOficina = calendarioResponse
+                    .FirstOrDefault(a => a.Data.Date == data.Date);
+
+                // Não usar mais o continue porque o método adiciona outros pseudo eventos
+                if (eventoOficina is null) {
+                    var roteiro = roteiros.FirstOrDefault(x => data.Date <= x.DataInicio.Date && data >= x.DataFim);
+                    CalendarioEventoList pseudoOficina = new() {
+                        Id = -1,
+                        Evento_Tipo_Id = ( int )EventoTipo.Oficina,
+                        Evento_Tipo = "Pseudo-Oficina",
+
+                        Descricao = "Oficina - Tema indefinido",
+                        DuracaoMinutos = 60,
+
+                        Roteiro_Id = roteiro is null ? -1 : roteiro.Id,
+                        Semana = roteiro?.Semana,
+                        Tema = roteiro?.Tema,
+
+                        Data = new DateTime(data.Year, data.Month, data.Day, 10, 0, 0),
+                        Finalizado = false,
+                        Sala_Id = -1,
+                    };
+                    calendarioResponse.Add(pseudoOficina);
+                }
+
+            }
+
+            //
+            // Adiciona Reunião - Se a já existe uma reunião agendada para a data, não vai adicionar
+            //
+            if (diaSemana == DayOfWeek.Monday || diaSemana == DayOfWeek.Tuesday || diaSemana == DayOfWeek.Friday) {
+                CalendarioEventoList? eventoReuniao = calendarioResponse.FirstOrDefault(a => a.Data.Date == data.Date);
+
+                // Não usar mais o continue porque o método adiciona outros pseudo eventos
+                if (eventoReuniao is null) {
+                    var descricao = diaSemana == DayOfWeek.Monday ? "Reunião Geral" : // Segunda-feira
+                                    diaSemana == DayOfWeek.Tuesday ? "Reunião Monitoramento" : // Terça-feira
+                                    "Reunião Pedagógica"; // Sexta-feira
+
+                    CalendarioEventoList pseudoReuniao = new() {
+                        Id = -1,
+                        Evento_Tipo_Id = ( int )EventoTipo.Reuniao,
+                        Evento_Tipo = "Pseudo-Reuniao",
+                        Data = new DateTime(data.Year, data.Month, data.Day, 12, 0, 0),
+                        Descricao = descricao,
+                        DuracaoMinutos = 60,
+                        Finalizado = false,
+                        Sala_Id = -1,
+                        Professores = professores.Select(professor => new CalendarioProfessorList {
+                            Evento_Id = -1,
+                            Professor_Id = professor.Id,
+                            Nome = professor.Account.Name,
+                            CorLegenda = professor.CorLegenda,
+                            Account_Id = professor.Account.Id,
+                        }).ToList()
+                    };
+                    calendarioResponse.Add(pseudoReuniao);
+                }
+            }
+
+
+            //
+            // Adicionar aulas da turma do dia que ainda não foram instanciadas
+            //
             List<Turma> turmasDoDia = turmas.Where(t => t.DiaSemana == ( int )data.DayOfWeek).ToList();
 
             foreach (Turma turma in turmasDoDia) {
+
                 // Se a turma já tem uma aula instanciada no mesmo horário, é uma aula repetida, então ignora e passa pra proxima
                 CalendarioEventoList? eventoAula = calendarioResponse.FirstOrDefault(a =>
                     ( int )a.Data.DayOfWeek == turma.DiaSemana &&
                     a.Data.TimeOfDay == turma.Horario &&
                     a.Turma_Id == turma.Id);
 
-                if (eventoAula is not null) {
-                    continue;
+                // Não usar mais o continue porque o método adiciona outros pseudo eventos
+                if (eventoAula is null) {
+                    var roteiro = roteiros.FirstOrDefault(x => data.Date <= x.DataInicio.Date && data >= x.DataFim);
+                    CalendarioEventoList pseudoAula = new() {
+                        Id = -1,
+                        Evento_Tipo_Id = ( int )EventoTipo.Aula,
+                        Evento_Tipo = "Pseudo-Aula",
+
+                        Descricao = turma.Nome, // Pseudo aulas ganham o nome da turma
+                        DuracaoMinutos = 120, // As pseudo aulas são de uma turma e duram 2h
+
+                        Roteiro_Id = roteiro is null ? -1 : roteiro.Id,
+                        Semana = roteiro?.Semana,
+                        Tema = roteiro?.Tema,
+
+                        Data = new DateTime(data.Year, data.Month, data.Day, turma.Horario!.Value.Hours, turma.Horario!.Value.Minutes, turma.Horario!.Value.Seconds),
+
+                        Turma_Id = turma.Id,
+                        Turma = turma.Nome,
+                        CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
+
+                        Professor_Id = turma.Professor_Id ?? -1,
+                        Professor = turma.Professor is not null ? turma.Professor.Account.Name : "Professor indefinido",
+                        CorLegenda = turma.Professor is not null ? turma.Professor.CorLegenda : "#000",
+
+                        Finalizado = false,
+                        Sala_Id = turma.Sala?.Id ?? -1,
+                        NumeroSala = turma.Sala?.NumeroSala,
+                        Andar = turma.Sala?.Andar,
+                    };
+
+                    // Na pseudo-aula, adicionar só os alunos da turma original
+                    List<AlunoList> alunos = _db.AlunoLists
+                        .Where(a => a.Turma_Id == turma.Id)
+                        .OrderBy(a => a.Nome)
+                        .ToList();
+
+                    pseudoAula.Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos);
+
+                    pseudoAula.Professores.Add(new CalendarioProfessorList {
+                        Evento_Id = pseudoAula.Id,
+                        Professor_Id = ( int )turma.Professor_Id,
+                        Nome = turma.Professor.Account.Name,
+                        CorLegenda = turma.Professor.CorLegenda,
+                        Presente = null,
+                        Observacao = "",
+                        Account_Id = turma.Professor.Account.Id,
+                    });
+
+                    List<PerfilCognitivo> perfisCognitivos = _db.Turma_PerfilCognitivo_Rels
+                        .Where(p => p.Turma_Id == pseudoAula.Turma_Id)
+                        .Include(p => p.PerfilCognitivo)
+                        .Select(p => p.PerfilCognitivo)
+                        .ToList();
+
+                    pseudoAula.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(perfisCognitivos);
+
+                    calendarioResponse.Add(pseudoAula);
                 }
 
-                CalendarioEventoList pseudoAula = new() {
-                    Id = -1,
-                    Evento_Tipo_Id = ( int )EventoTipo.Aula,
-                    Evento_Tipo = "Pseudo-Aula",
 
-                    Descricao = "",
-                    Observacao = "",
-                    DuracaoMinutos = 60,
-
-                    Roteiro_Id = -1,
-                    Semana = null,
-                    Tema = null,
-
-                    Data = new DateTime(data.Year, data.Month, data.Day, turma.Horario!.Value.Hours, turma.Horario!.Value.Minutes, turma.Horario!.Value.Seconds),
-
-                    Turma_Id = turma.Id,
-                    Turma = turma.Nome,
-                    CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
-
-                    Professor_Id = turma.Professor_Id ?? -1,
-                    Professor = turma.Professor is not null ? turma.Professor.Account.Name : "Professor indefinido",
-                    CorLegenda = turma.Professor is not null ? turma.Professor.CorLegenda : "#000",
-
-                    Deactivated = null,
-                    ReagendamentoDe_Evento_Id = null,
-                    Finalizado = false,
-                    Account_Created_Id = -1,
-                    Created = TimeFunctions.HoraAtualBR(),
-
-                    Sala_Id = turma.Sala?.Id ?? -1,
-                    NumeroSala = turma.Sala?.NumeroSala,
-                    Andar = turma.Sala?.Andar,
-                };
-
-                // Na pseudo-aula, adicionar só os alunos da turma original
-                List<AlunoList> alunos = _db.AlunoLists
-                    .Where(a => a.Turma_Id == turma.Id)
-                    .OrderBy(a => a.Nome)
-                    .ToList();
-
-                pseudoAula.Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos);
-
-                pseudoAula.Professores.Add(new CalendarioProfessorList {
-                    CorLegenda = turma.Professor.CorLegenda,
-                    Observacao = "",
-                    Evento_Id = pseudoAula.Id,
-                    Nome = turma.Professor.Account.Name,
-                    Account_Id = turma.Professor.Account.Id,
-                    Professor_Id = ( int )turma.Professor_Id,
-                    Presente = null,
-                });
-
-                List<Turma_PerfilCognitivo_Rel> turmaPerfisCognitivos = _db.Turma_PerfilCognitivo_Rels
-                    .Where(p => p.Turma_Id == pseudoAula.Turma_Id)
-                    .Include(p => p.PerfilCognitivo)
-                    .ToList();
-
-                List<PerfilCognitivo> perfisCognitivos = turmaPerfisCognitivos
-                    .Select(p => p.PerfilCognitivo)
-                    .ToList();
-
-                pseudoAula.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(perfisCognitivos);
-
-                calendarioResponse.Add(pseudoAula);
             }
 
             data = data.AddDays(1);
