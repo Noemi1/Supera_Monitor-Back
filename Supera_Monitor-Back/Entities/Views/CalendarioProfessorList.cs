@@ -5,6 +5,8 @@ public partial class CalendarioProfessorList {
 
     public string? Nome { get; set; }
 
+    public string? Telefone { get; set; }
+
     public string CorLegenda { get; set; } = null!;
 
     public int Account_Id { get; set; }

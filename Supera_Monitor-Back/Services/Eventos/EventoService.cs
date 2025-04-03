@@ -488,6 +488,7 @@ public class EventoService : IEventoService {
                             Nome = professor.Account.Name,
                             CorLegenda = professor.CorLegenda,
                             Account_Id = professor.Account.Id,
+                            Telefone = professor.Account.Phone
                         }).ToList()
                     };
                     calendarioResponse.Add(pseudoReuniao);
@@ -555,6 +556,7 @@ public class EventoService : IEventoService {
                         Presente = null,
                         Observacao = "",
                         Account_Id = turma.Professor.Account.Id,
+                        Telefone = turma.Professor.Account.Phone,
                     });
 
                     List<PerfilCognitivo> perfisCognitivos = _db.Turma_PerfilCognitivo_Rels
