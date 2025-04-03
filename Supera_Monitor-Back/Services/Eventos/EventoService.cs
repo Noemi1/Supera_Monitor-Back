@@ -353,7 +353,6 @@ public class EventoService : IEventoService {
             .Include(p => p.Account)
             .Where(p => p.Account.Deactivated == null);
 
-        // TODO: Filtro de perfil cognitivo
         if (request.Perfil_Cognitivo_Id.HasValue) {
             // Eventos que contem o perfil cognitivo 
             var eventosContemPerfilCognitivo = _db.Evento_Aula_PerfilCognitivo_Rels.Where(x => x.PerfilCognitivo_Id == request.Perfil_Cognitivo_Id);
@@ -423,11 +422,14 @@ public class EventoService : IEventoService {
             //
             if (diaSemana == DayOfWeek.Monday) {
                 CalendarioEventoList? eventoOficina = calendarioResponse
-                    .FirstOrDefault(a => a.Data.Date == data.Date);
+                    .FirstOrDefault(a =>
+                        a.Data.Date == data.Date
+                        && a.Evento_Tipo_Id == ( int )EventoTipo.Oficina);
 
                 // Não usar mais o continue porque o método adiciona outros pseudo eventos
                 if (eventoOficina is null) {
                     var roteiro = roteiros.FirstOrDefault(x => data.Date <= x.DataInicio.Date && data >= x.DataFim);
+
                     CalendarioEventoList pseudoOficina = new() {
                         Id = -1,
                         Evento_Tipo_Id = ( int )EventoTipo.Oficina,
@@ -453,7 +455,9 @@ public class EventoService : IEventoService {
             // Adiciona Reunião - Se a já existe uma reunião agendada para a data, não vai adicionar
             //
             if (diaSemana == DayOfWeek.Monday || diaSemana == DayOfWeek.Tuesday || diaSemana == DayOfWeek.Friday) {
-                CalendarioEventoList? eventoReuniao = calendarioResponse.FirstOrDefault(a => a.Data.Date == data.Date);
+                CalendarioEventoList? eventoReuniao = calendarioResponse.FirstOrDefault(a =>
+                    a.Data.Date == data.Date
+                    && a.Evento_Tipo_Id == ( int )EventoTipo.Reuniao);
 
                 // Não usar mais o continue porque o método adiciona outros pseudo eventos
                 if (eventoReuniao is null) {
