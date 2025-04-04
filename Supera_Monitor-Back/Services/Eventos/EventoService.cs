@@ -774,6 +774,7 @@ public class EventoService : IEventoService {
             evento.Observacao = request.Observacao ?? evento.Observacao;
 
             _db.Eventos.Update(evento);
+
             _db.SaveChanges();
 
             var responseObject = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == evento.Id);
