@@ -117,7 +117,7 @@ namespace Supera_Monitor_Back.Services {
                         Name = model.Nome,
                         Phone = model.Telefone,
                         Email = model.Email,
-                        Role_Id = ( int )Role.Teacher
+                        Role_Id = ( int )Role.Teacher,
                     };
 
                     ResponseModel createAccountResponse = _userService.Insert(createAccountRequest, ipAddress);
@@ -141,7 +141,7 @@ namespace Supera_Monitor_Back.Services {
                 response.Object = _db.ProfessorLists.FirstOrDefault(p => p.Id == professor.Id);
                 response.Success = true;
             } catch (Exception ex) {
-                response.Message = "Falha ao cadastrar professor: " + ex.ToString();
+                response.Message = $"Falha ao cadastrar professor: {ex}";
             }
 
             return response;
