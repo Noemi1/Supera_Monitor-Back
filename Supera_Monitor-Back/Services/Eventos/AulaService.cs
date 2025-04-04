@@ -115,7 +115,7 @@ public class AulaService : IAulaService {
                 professorId: professor.Id,
                 DiaSemana: ( int )request.Data.DayOfWeek,
                 Horario: request.Data.TimeOfDay,
-                IgnoredTurmaId: null
+                IgnoredTurmaId: request.Turma_Id
             );
 
             if (hasTurmaConflict) {

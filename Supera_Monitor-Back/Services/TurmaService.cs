@@ -127,10 +127,6 @@ public class TurmaService : ITurmaService {
                 return new ResponseModel { Message = "Sala não encontrada" };
             }
 
-            // Não devo permitir que duas turmas usem a mesma sala recorrentemente no mesmo horário
-            TimeSpan novoInicio = model.Horario;
-            TimeSpan novoFim = model.Horario.Add(TimeSpan.FromHours(2));
-
             TimeSpan twoHours = TimeSpan.FromHours(2);
 
             // Não devo permitir que duas turmas usem a mesma sala recorrentemente no mesmo horário
