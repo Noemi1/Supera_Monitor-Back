@@ -57,8 +57,6 @@ public partial class DataContext : DbContext {
 
     public virtual DbSet<CalendarioProfessorList> CalendarioProfessorLists { get; set; }
 
-    public virtual DbSet<CalendarioList> CalendarioLists { get; set; }
-
     public virtual DbSet<Checklist> Checklists { get; set; }
 
     public virtual DbSet<Checklist_Item> Checklist_Items { get; set; }
@@ -579,25 +577,6 @@ public partial class DataContext : DbContext {
             entity.Property(e => e.LastUpdated).HasColumnType("datetime");
             entity.Property(e => e.Observacao).IsUnicode(false);
             entity.Property(e => e.ReagendamentoDe_Evento).HasColumnType("datetime");
-            entity.Property(e => e.Tema)
-                .HasMaxLength(250)
-                .IsUnicode(false);
-            entity.Property(e => e.Turma)
-                .HasMaxLength(100)
-                .IsUnicode(false);
-        });
-
-        modelBuilder.Entity<CalendarioList>(entity => {
-            entity
-                .HasNoKey()
-                .ToView("CalendarioList");
-
-            entity.Property(e => e.CorLegenda)
-                .HasMaxLength(20)
-                .IsUnicode(false);
-            entity.Property(e => e.Data).HasColumnType("datetime");
-            entity.Property(e => e.Deactivated).HasColumnType("datetime");
-            entity.Property(e => e.Observacao).IsUnicode(false);
             entity.Property(e => e.Tema)
                 .HasMaxLength(250)
                 .IsUnicode(false);

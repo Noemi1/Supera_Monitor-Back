@@ -10,7 +10,7 @@ public partial class CalendarioEventoList {
 
     public DateTime Data { get; set; }
 
-    public int Sala_Id { get; set; }
+    public int? Sala_Id { get; set; }
 
     public string Descricao { get; set; } = null!;
 
@@ -54,7 +54,7 @@ public partial class CalendarioEventoList {
 
     public string Evento_Tipo { get; set; } = null!;
 
-    public int Account_Created_Id { get; set; }
+    public int? Account_Created_Id { get; set; }
 
     public string? Account_Created { get; set; }
 

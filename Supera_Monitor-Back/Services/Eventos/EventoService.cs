@@ -15,6 +15,7 @@ public interface IEventoService {
     public ResponseModel Update(UpdateEventoRequest request);
     public ResponseModel Reagendar(ReagendarEventoRequest request);
     public ResponseModel Cancelar(int eventoId);
+    public ResponseModel Finalizar(FinalizarEventoRequest request);
 
     public ResponseModel EnrollAluno(EnrollAlunoRequest request);
     public List<CalendarioEventoList> GetCalendario(CalendarioRequest request);
@@ -174,10 +175,6 @@ public class EventoService : IEventoService {
                 });
             }
 
-            if (participacoesAlunos.Any()) {
-                _db.Evento_Participacao_Alunos.AddRange(participacoesAlunos);
-            }
-
             var participacoesProfessores = professoresInRequest.Select(aluno => new Evento_Participacao_Professor {
                 Professor_Id = aluno.Id,
                 Evento_Id = evento.Id,
@@ -185,6 +182,30 @@ public class EventoService : IEventoService {
 
             if (participacoesProfessores.Any()) {
                 _db.Evento_Participacao_Professors.AddRange(participacoesProfessores);
+            }
+
+            foreach (var professor in professoresInRequest) {
+                bool hasTurmaConflict = _professorService.HasTurmaTimeConflict(
+                    professorId: professor.Id,
+                    DiaSemana: ( int )request.Data.DayOfWeek,
+                    Horario: request.Data.TimeOfDay,
+                    IgnoredTurmaId: null
+                );
+
+                if (hasTurmaConflict) {
+                    return new ResponseModel { Message = $"Professor: '{professor.Account.Name}' possui uma turma nesse mesmo horário" };
+                }
+
+                bool hasParticipacaoConflict = _professorService.HasEventoParticipacaoConflict(
+                    professorId: professor.Id,
+                    Data: request.Data,
+                    DuracaoMinutos: request.DuracaoMinutos,
+                    IgnoredEventoId: null
+                );
+
+                if (hasParticipacaoConflict) {
+                    return new ResponseModel { Message = $"Professor: {professor.Account.Name} possui participação em outro evento nesse mesmo horário" };
+                }
             }
 
             _db.SaveChanges();
@@ -438,13 +459,13 @@ public class EventoService : IEventoService {
                         Descricao = "Oficina - Tema indefinido",
                         DuracaoMinutos = 60,
 
-                        Roteiro_Id = roteiro is null ? -1 : roteiro.Id,
+                        Roteiro_Id = roteiro?.Id,
                         Semana = roteiro?.Semana,
                         Tema = roteiro?.Tema,
 
                         Data = new DateTime(data.Year, data.Month, data.Day, 10, 0, 0),
                         Finalizado = false,
-                        Sala_Id = -1,
+                        Sala_Id = null,
                     };
                     calendarioResponse.Add(pseudoOficina);
                 }
@@ -473,7 +494,7 @@ public class EventoService : IEventoService {
                         Descricao = descricao,
                         DuracaoMinutos = 60,
                         Finalizado = false,
-                        Sala_Id = -1,
+                        Sala_Id = null,
                         Professores = professores.Select(professor => new CalendarioProfessorList {
                             Evento_Id = -1,
                             Professor_Id = professor.Id,
@@ -512,7 +533,7 @@ public class EventoService : IEventoService {
                         Descricao = turma.Nome, // Pseudo aulas ganham o nome da turma
                         DuracaoMinutos = 120, // As pseudo aulas são de uma turma e duram 2h
 
-                        Roteiro_Id = roteiro is null ? -1 : roteiro.Id,
+                        Roteiro_Id = roteiro?.Id,
                         Semana = roteiro?.Semana,
                         Tema = roteiro?.Tema,
 
@@ -522,14 +543,14 @@ public class EventoService : IEventoService {
                         Turma = turma.Nome,
                         CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
 
-                        Professor_Id = turma.Professor_Id ?? -1,
-                        Professor = turma.Professor is not null ? turma.Professor.Account.Name : "Professor indefinido",
-                        CorLegenda = turma.Professor is not null ? turma.Professor.CorLegenda : "#000",
+                        Professor_Id = turma?.Professor_Id,
+                        Professor = turma?.Professor is not null ? turma.Professor.Account.Name : "Professor indefinido",
+                        CorLegenda = turma?.Professor is not null ? turma.Professor.CorLegenda : "#000",
 
                         Finalizado = false,
-                        Sala_Id = turma.Sala?.Id ?? -1,
-                        NumeroSala = turma.Sala?.NumeroSala,
-                        Andar = turma.Sala?.Andar,
+                        Sala_Id = turma?.Sala?.Id,
+                        NumeroSala = turma?.Sala?.NumeroSala,
+                        Andar = turma?.Sala?.Andar,
                     };
 
                     // Na pseudo-aula, adicionar só os alunos da turma original
@@ -785,6 +806,87 @@ public class EventoService : IEventoService {
             response.Success = true;
         } catch (Exception ex) {
             response.Message = $"Falha ao reagendar evento: {ex}";
+        }
+
+        return response;
+    }
+
+    public ResponseModel Finalizar(FinalizarEventoRequest request)
+    {
+        ResponseModel response = new() { Success = false };
+
+        try {
+            Evento? evento = _db.Eventos
+                .Include(e => e.Evento_Participacao_AlunoEventos)
+                .Include(e => e.Evento_Participacao_Professors)
+                .FirstOrDefault(e => e.Id == request.Evento_Id);
+
+            if (evento is null) {
+                return new ResponseModel { Message = "Evento não encontrado." };
+            }
+
+            if (evento.Deactivated.HasValue) {
+                return new ResponseModel { Message = $"Este evento foi cancelado às {evento.Deactivated.Value:g}" };
+            }
+
+            // Não devo poder realizar a chamada em um evento que está finalizado
+            if (evento.Finalizado) {
+                return new ResponseModel { Message = "Evento já está finalizado" };
+            }
+
+            // Validations passed
+
+            evento.Observacao = request.Observacao;
+            evento.Finalizado = true;
+            evento.LastUpdated = TimeFunctions.HoraAtualBR();
+
+            _db.Eventos.Update(evento);
+
+            foreach (ParticipacaoAlunoModel partAluno in request.Alunos) {
+                Evento_Participacao_Aluno? participacao = evento.Evento_Participacao_AlunoEventos.FirstOrDefault(p => p.Id == partAluno.Participacao_Id);
+
+                if (participacao is null) {
+                    return new ResponseModel { Message = $"Participação de aluno no evento ID: '{evento.Id}' Participacao_Id: '{partAluno.Participacao_Id}' não foi encontrada" };
+                }
+
+                if (participacao.Deactivated.HasValue) {
+                    return new ResponseModel { Message = $"Participação de aluno no evento ID: '{evento.Id}' Participacao_Id: '{partAluno.Participacao_Id}' está desativada" };
+                }
+
+                participacao.Observacao = partAluno.Observacao;
+                participacao.Presente = partAluno.Presente;
+                // TODO: Validar se as apostilas existem
+                // TODO: Validar se o aluno tem um kit que possui acesso às apostilas
+                participacao.Apostila_Abaco_Id = partAluno.Apostila_Abaco_Id;
+                participacao.NumeroPaginaAbaco = partAluno.NumeroPaginaAbaco;
+                participacao.Apostila_AH_Id = partAluno.Apostila_Ah_Id;
+                participacao.NumeroPaginaAH = partAluno.NumeroPaginaAh;
+
+                _db.Evento_Participacao_Alunos.Update(participacao);
+            }
+
+            foreach (ParticipacaoProfessorModel partProfessor in request.Professores) {
+                Evento_Participacao_Professor? participacao = evento.Evento_Participacao_Professors.FirstOrDefault(p => p.Id == partProfessor.Participacao_Id);
+
+                if (participacao is null) {
+                    return new ResponseModel { Message = $"Participação de professor no evento ID: '{evento.Id}' Participacao_Id: '{partProfessor.Participacao_Id}' não foi encontrada" };
+                }
+
+                participacao.Observacao = partProfessor.Observacao;
+                participacao.Presente = partProfessor.Presente;
+
+                _db.Evento_Participacao_Professors.Update(participacao);
+            }
+
+            _db.SaveChanges();
+
+            var responseObject = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == evento.Id);
+
+            response.Message = $"Evento foi finalizado com sucesso.";
+            response.Object = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == evento.Id);
+            response.Success = true;
+        } catch (Exception ex) {
+            response.Message = $"Falha ao finalizar evento: {ex}";
         }
 
         return response;

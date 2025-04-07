@@ -319,4 +319,21 @@ public class EventosController : _BaseController {
             return StatusCode(500, e);
         }
     }
+
+    [HttpPost("finalizar")]
+    public ActionResult<ResponseModel> Finalizar(FinalizarEventoRequest request)
+    {
+        try {
+            ResponseModel response = _eventoService.Finalizar(request);
+
+            if (response.Success) {
+                return Ok(response);
+            }
+
+            return BadRequest(response);
+        } catch (Exception e) {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
 }
