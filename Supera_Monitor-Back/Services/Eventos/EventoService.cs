@@ -585,14 +585,12 @@ public class EventoService : IEventoService {
 
                     calendarioResponse.Add(pseudoAula);
                 }
-
-
             }
 
             data = data.AddDays(1);
         }
 
-        // Adicionar alunos associados a todos os eventos
+        calendarioResponse = calendarioResponse.OrderBy(e => e.Data).ToList();
 
         return calendarioResponse;
     }
