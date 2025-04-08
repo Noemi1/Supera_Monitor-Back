@@ -133,6 +133,8 @@ public class SalaService : ISalaService {
 
         bool isSalaOccupied = _db.Eventos.Any(e =>
             e.Id != ignoredEventoId
+            && e.Id != ( int )SalasIgnoradas.SALA_ONLINE
+            && e.Id != ( int )SalasIgnoradas.SALA_DOS_PROFESSORES
             && e.Deactivated == null
             && e.Sala_Id == Sala_Id
             && e.Data < novoEventoFim // O evento existente começa antes do fim do novo evento
@@ -140,5 +142,10 @@ public class SalaService : ISalaService {
         );
 
         return isSalaOccupied;
+    }
+
+    enum SalasIgnoradas {
+        SALA_ONLINE = 13,
+        SALA_DOS_PROFESSORES = 14
     }
 }

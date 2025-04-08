@@ -19,6 +19,8 @@ public interface IEventoService {
 
     public ResponseModel EnrollAluno(EnrollAlunoRequest request);
     public List<CalendarioEventoList> GetCalendario(CalendarioRequest request);
+
+    public List<CalendarioEventoList> GetOficinas();
 }
 
 public class EventoService : IEventoService {
@@ -95,9 +97,9 @@ public class EventoService : IEventoService {
                 return new ResponseModel { Message = "Professor(es) não encontrado(s)" };
             }
 
-            if (request.Data < TimeFunctions.HoraAtualBR()) {
-                return new ResponseModel { Message = "Data do evento não pode ser no passado" };
-            }
+            //if (request.Data < TimeFunctions.HoraAtualBR()) {
+            //    return new ResponseModel { Message = "Data do evento não pode ser no passado" };
+            //}
 
             foreach (var professor in professoresInRequest) {
                 bool hasTurmaConflict = _professorService.HasTurmaTimeConflict(
@@ -562,6 +564,7 @@ public class EventoService : IEventoService {
                     pseudoAula.Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos);
 
                     pseudoAula.Professores.Add(new CalendarioProfessorList {
+                        Id = null,
                         Evento_Id = pseudoAula.Id,
                         Professor_Id = ( int )turma.Professor_Id,
                         Nome = turma.Professor.Account.Name,
@@ -890,5 +893,23 @@ public class EventoService : IEventoService {
         }
 
         return response;
+    }
+
+    public List<CalendarioEventoList> GetOficinas()
+    {
+        var oficinas = _db.CalendarioEventoLists
+            .Where(e =>
+                e.Evento_Tipo_Id == ( int )EventoTipo.Oficina
+                && e.Data > TimeFunctions.HoraAtualBR())
+            .OrderBy(e => e.Data)
+            .ToList();
+
+        foreach (var evento in oficinas) {
+            evento.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).ToList();
+
+            evento.Professores = _db.CalendarioProfessorLists.Where(e => e.Evento_Id == evento.Id).ToList();
+        }
+
+        return oficinas;
     }
 }

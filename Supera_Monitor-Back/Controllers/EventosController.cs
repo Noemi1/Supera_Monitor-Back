@@ -336,4 +336,17 @@ public class EventosController : _BaseController {
             return StatusCode(500, e);
         }
     }
+
+    [HttpGet("oficinas/all")]
+    public ActionResult<ResponseModel> GetOficinas()
+    {
+        try {
+            var response = _eventoService.GetOficinas();
+
+            return Ok(response);
+        } catch (Exception e) {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
 }
