@@ -194,12 +194,11 @@ public class AulaService : IAulaService {
             _db.Evento_Aula_PerfilCognitivo_Rels.AddRange(eventoAulaPerfisCognitivos);
             _db.SaveChanges();
 
-            var responseObject = _db.Eventos.Where(e => e.Id == evento.Id)
-                .ProjectTo<EventoAulaModel>(_mapper.ConfigurationProvider)
-                .AsNoTracking()
-                .First();
+            var responseObject = _db.CalendarioEventoLists.First(e => e.Id == evento.Id);
 
-            responseObject.Evento_Aula.PerfilCognitivo = _db.PerfilCognitivos
+            responseObject.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).ToList();
+            responseObject.Professores = _db.CalendarioProfessorLists.Where(p => p.Evento_Id == evento.Id).ToList();
+            responseObject.PerfilCognitivo = _db.PerfilCognitivos
                 .Where(p => eventoAulaPerfisCognitivos.Select(e => e.PerfilCognitivo_Id).Contains(p.Id))
                 .ProjectTo<PerfilCognitivoModel>(_mapper.ConfigurationProvider)
                 .ToList();
@@ -344,12 +343,11 @@ public class AulaService : IAulaService {
             _db.Evento_Aula_PerfilCognitivo_Rels.AddRange(eventoAulaPerfisCognitivos);
             _db.SaveChanges();
 
-            var responseObject = _db.Eventos.Where(e => e.Id == evento.Id)
-                .ProjectTo<EventoAulaModel>(_mapper.ConfigurationProvider)
-                .AsNoTracking()
-                .First();
+            var responseObject = _db.CalendarioEventoLists.First(e => e.Id == evento.Id);
 
-            responseObject.Evento_Aula.PerfilCognitivo = _db.PerfilCognitivos
+            responseObject.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).ToList();
+            responseObject.Professores = _db.CalendarioProfessorLists.Where(p => p.Evento_Id == evento.Id).ToList();
+            responseObject.PerfilCognitivo = _db.PerfilCognitivos
                 .Where(p => eventoAulaPerfisCognitivos.Select(e => e.PerfilCognitivo_Id).Contains(p.Id))
                 .ProjectTo<PerfilCognitivoModel>(_mapper.ConfigurationProvider)
                 .ToList();
@@ -484,10 +482,10 @@ public class AulaService : IAulaService {
             _db.Evento_Participacao_Alunos.Add(registro);
             _db.SaveChanges();
 
-            var responseObject = _db.Eventos.Where(e => e.Id == evento.Id)
-                .ProjectTo<EventoAulaModel>(_mapper.ConfigurationProvider)
-                .AsNoTracking()
-                .First();
+            var responseObject = _db.CalendarioEventoLists.First(e => e.Id == evento.Id);
+
+            responseObject.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).ToList();
+            responseObject.Professores = _db.CalendarioProfessorLists.Where(p => p.Evento_Id == evento.Id).ToList();
 
             response.Message = "Aula zero criada com sucesso";
             response.Object = responseObject;
@@ -626,12 +624,12 @@ public class AulaService : IAulaService {
 
             _db.SaveChanges();
 
-            var responseObject = _db.Eventos.Where(e => e.Id == evento.Id)
-                .ProjectTo<EventoAulaModel>(_mapper.ConfigurationProvider)
-                .AsNoTracking()
-                .First();
+            var responseObject = _db.CalendarioEventoLists.First(e => e.Id == evento.Id);
 
-            responseObject.Evento_Aula.PerfilCognitivo = _db.PerfilCognitivos
+            responseObject.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).ToList();
+            responseObject.Professores = _db.CalendarioProfessorLists.Where(p => p.Evento_Id == evento.Id).ToList();
+
+            responseObject.PerfilCognitivo = _db.PerfilCognitivos
                 .Where(p => eventoAulaPerfisCognitivos.Select(e => e.PerfilCognitivo_Id).Contains(p.Id))
                 .ProjectTo<PerfilCognitivoModel>(_mapper.ConfigurationProvider)
                 .ToList();
@@ -733,21 +731,14 @@ public class AulaService : IAulaService {
 
     public List<Evento_Mes> AlunosAulas(int ano)
     {
-
-        //var meses = new List<string> { "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro" };
         var roteiros = _db.Roteiros
             .Where(x => x.DataInicio.Year == ano)
             .OrderBy(x => x.DataInicio);
-        //var alunos = _db.AlunoLists.ToList();
+
         List<CalendarioParticipacaoAlunoList> aulasAlunos = _db.CalendarioParticipacaoAlunoLists
             .Where(x => x.Data.Year == ano)
             .ToList();
 
-
-        //var response = new List<Evento_Aula_Aluno>();
-
-        //foreach (var aluno in alunos)
-        //{
         var meses = new List<Evento_Mes>();
 
         for (int mes = 1 ; mes <= 12 ; mes++) {
@@ -756,10 +747,10 @@ public class AulaService : IAulaService {
                 .Include(x => x.Evento_Aulas)
                 .ToList();
 
-            List<Evento_Roteiro> eventosRoteiros = new List<Evento_Roteiro>();
+            List<Evento_Roteiro> eventosRoteiros = new();
 
             foreach (Roteiro roteiro in roteirosMes) {
-                Evento_Roteiro eventoRoteiro = new Evento_Roteiro {
+                Evento_Roteiro eventoRoteiro = new() {
                     Id = roteiro.Id,
                     DataInicio = roteiro.DataInicio,
                     DataFim = roteiro.DataFim,
@@ -773,17 +764,14 @@ public class AulaService : IAulaService {
                     LastUpdated = roteiro.LastUpdated,
                     Aulas = new List<CalendarioParticipacaoAlunoList>() { },
                 };
-                List<CalendarioParticipacaoAlunoList> aulasRoteiros = aulasAlunos
-                .Where(x => x.Roteiro_Id == roteiro.Id)
-                .ToList();
 
+                List<CalendarioParticipacaoAlunoList> aulasRoteiros = aulasAlunos
+                    .Where(x => x.Roteiro_Id == roteiro.Id)
+                    .ToList();
 
                 eventoRoteiro.Aulas = aulasRoteiros;
                 eventosRoteiros.Add(eventoRoteiro);
-
-
             }
-
 
             meses.Add(new Evento_Mes {
                 Mes = mes,
@@ -791,13 +779,6 @@ public class AulaService : IAulaService {
             });
         }
 
-        //response.Add(new Evento_Aula_Aluno
-        //{
-        //	//Aluno = aluno,
-        //	Meses = meses
-        //});
-        //}
-        //return response;
         return meses;
     }
 }

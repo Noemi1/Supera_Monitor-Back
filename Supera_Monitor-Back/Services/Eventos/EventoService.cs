@@ -6,7 +6,6 @@ using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Eventos;
-using Supera_Monitor_Back.Models.Eventos.Aula;
 
 namespace Supera_Monitor_Back.Services.Eventos;
 
@@ -212,10 +211,9 @@ public class EventoService : IEventoService {
 
             _db.SaveChanges();
 
-            var responseObject = _db.Eventos.Where(e => e.Id == evento.Id)
-                .ProjectTo<EventoModel>(_mapper.ConfigurationProvider)
-                .AsNoTracking()
-                .First();
+            var responseObject = _db.CalendarioEventoLists.First(e => e.Id == evento.Id);
+            responseObject.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).ToList();
+            responseObject.Professores = _db.CalendarioProfessorLists.Where(p => p.Evento_Id == evento.Id).ToList();
 
             response.Success = true;
             response.Message = $"Evento de '{responseObject.Evento_Tipo}' registrado com sucesso";
@@ -319,10 +317,7 @@ public class EventoService : IEventoService {
 
             // Validations passed
 
-            var oldObject = _db.Eventos.Where(e => e.Id == request.Id)
-                .ProjectTo<EventoModel>(_mapper.ConfigurationProvider)
-                .AsNoTracking()
-                .First();
+            var oldObject = _db.CalendarioEventoLists.First(e => e.Id == evento.Id);
 
             evento.Observacao = request.Observacao ?? request.Observacao;
             evento.Descricao = request.Descricao ?? evento.Descricao;
@@ -334,12 +329,11 @@ public class EventoService : IEventoService {
             _db.Eventos.Update(evento);
             _db.SaveChanges();
 
-            // Reinserir as participações dos envolvidos no evento por simplicidade
+            // TODO: Reinserir as participações
 
-            var responseObject = _db.Eventos.Where(e => e.Id == evento.Id)
-                .ProjectTo<EventoAulaModel>(_mapper.ConfigurationProvider)
-                .AsNoTracking()
-                .First();
+            var responseObject = _db.CalendarioEventoLists.First(e => e.Id == evento.Id);
+            responseObject.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).ToList();
+            responseObject.Professores = _db.CalendarioProfessorLists.Where(p => p.Evento_Id == evento.Id).ToList();
 
             response.Message = $"Evento de '{evento.Evento_Tipo}' atualizado com sucesso";
             response.OldObject = oldObject;
