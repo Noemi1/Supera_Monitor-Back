@@ -15,7 +15,7 @@ namespace Supera_Monitor_Back.Services {
         ResponseModel Update(UpdateChecklistItemRequest model);
         ResponseModel ToggleDeactivate(int checklistItemId);
 
-        List<ChecklistsFromAlunoModel> GetAllAlunoChecklistsByAulaId(int aulaId);
+        List<ChecklistsFromAlunoModel> GetAllAlunoChecklistsByEventoId(int eventoId);
         ResponseModel PopulateAlunoChecklist(int alunoId);
         ResponseModel ToggleAlunoChecklistItem(ToggleAlunoChecklistRequest model);
     }
@@ -265,10 +265,10 @@ namespace Supera_Monitor_Back.Services {
             return response;
         }
 
-        public List<ChecklistsFromAlunoModel> GetAllAlunoChecklistsByAulaId(int aulaId)
+        public List<ChecklistsFromAlunoModel> GetAllAlunoChecklistsByEventoId(int eventoId)
         {
             // Coletar lista de registros e os alunos que tem esses registros previamente p/ reduzir o número de chamadas ao banco
-            List<Evento_Participacao_Aluno> registros = _db.Evento_Participacao_Alunos.Where(p => p.Evento_Id == aulaId && p.Deactivated == null).ToList();
+            List<Evento_Participacao_Aluno> registros = _db.Evento_Participacao_Alunos.Where(p => p.Evento_Id == eventoId && p.Deactivated == null).ToList();
 
             List<int> alunoIds = registros.Select(r => r.Aluno_Id).ToList();
             List<AlunoList> alunos = _db.AlunoLists.Where(a => alunoIds.Contains(a.Id)).ToList();

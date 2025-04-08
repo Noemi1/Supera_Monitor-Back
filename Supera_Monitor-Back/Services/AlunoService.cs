@@ -499,7 +499,6 @@ public class AlunoService : IAlunoService {
                 return new ResponseModel { Message = "O aluno está desativado" };
             }
 
-
             Evento? eventoSource = _db.Eventos
                 .Include(e => e.Evento_Aula)
                 .Include(e => e.Evento_Participacao_AlunoEventos)

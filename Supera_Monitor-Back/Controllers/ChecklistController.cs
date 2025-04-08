@@ -58,11 +58,11 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
-        [HttpGet("all/aula/{aulaId}")]
-        public ActionResult<List<ChecklistsFromAlunoModel>> GetAllAlunoChecklistsByAulaId(int aulaId)
+        [HttpGet("all/evento/{eventoId}")]
+        public ActionResult<List<ChecklistsFromAlunoModel>> GetAllAlunoChecklistsByEventoId(int eventoId)
         {
             try {
-                var response = _checklistService.GetAllAlunoChecklistsByAulaId(aulaId);
+                var response = _checklistService.GetAllAlunoChecklistsByEventoId(eventoId);
 
                 return Ok(response);
             } catch (Exception e) {
