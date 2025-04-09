@@ -10,6 +10,7 @@ using Supera_Monitor_Back.Models.Eventos;
 namespace Supera_Monitor_Back.Services.Eventos;
 
 public interface IEventoService {
+    public CalendarioEventoList GetEventoById(int eventoId);
     public ResponseModel Insert(CreateEventoRequest request, int eventoTipoId);
     public ResponseModel Update(UpdateEventoRequest request);
     public ResponseModel Reagendar(ReagendarEventoRequest request);
@@ -271,9 +272,9 @@ public class EventoService : IEventoService {
                 return new ResponseModel { Message = "Professor(es) não encontrado(s)" };
             }
 
-            if (request.Data < TimeFunctions.HoraAtualBR()) {
-                return new ResponseModel { Message = "Data do evento não pode ser no passado" };
-            }
+            //if (request.Data < TimeFunctions.HoraAtualBR()) {
+            //    return new ResponseModel { Message = "Data do evento não pode ser no passado" };
+            //}
 
             foreach (var professor in professoresInRequest) {
                 bool hasTurmaConflict = _professorService.HasTurmaTimeConflict(
@@ -903,5 +904,23 @@ public class EventoService : IEventoService {
         }
 
         return oficinas;
+    }
+
+    public CalendarioEventoList GetEventoById(int eventoId)
+    {
+        CalendarioEventoList evento = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == eventoId) ?? throw new Exception("Evento não encontrado");
+
+        evento.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).ToList();
+        evento.Professores = _db.CalendarioProfessorLists.Where(e => e.Evento_Id == evento.Id).ToList();
+
+        var PerfisCognitivos = _db.Evento_Aula_PerfilCognitivo_Rels
+            .Where(p => p.Evento_Aula_Id == evento.Id)
+            .Include(p => p.PerfilCognitivo)
+            .Select(p => p.PerfilCognitivo)
+            .ToList();
+
+        evento.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(PerfisCognitivos);
+
+        return evento;
     }
 }

@@ -248,15 +248,18 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Item da checklist do aluno não encontrado" };
                 }
 
-                item.Account_Finalizacao_Id = item.Account_Finalizacao_Id.HasValue ? null : _account.Id;
-                item.DataFinalizacao = item.DataFinalizacao.HasValue ? null : TimeFunctions.HoraAtualBR();
+                if (item.DataFinalizacao is null) {
+                    item.Account_Finalizacao_Id = _account?.Id;
+                    item.DataFinalizacao = TimeFunctions.HoraAtualBR();
+                }
+
                 item.Observacoes = model.Observacoes ?? item.Observacoes;
 
                 _db.Aluno_Checklist_Items.Update(item);
                 _db.SaveChanges();
 
                 response.Success = true;
-                response.Message = "Item da checklist foi atualizado com sucesso";
+                response.Message = "Item da checklist do aluno foi atualizado com sucesso";
                 response.Object = _mapper.Map<AlunoChecklistItemModel>(item);
             } catch (Exception ex) {
                 response.Message = $"Falha ao atualizar checklist item do aluno: {ex}";

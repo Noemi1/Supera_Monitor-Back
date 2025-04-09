@@ -25,6 +25,19 @@ public class EventosController : _BaseController {
         _logger = logger;
     }
 
+    [HttpGet("{eventoId}")]
+    public ActionResult<List<EventoAulaModel>> GetEventoById(int eventoId)
+    {
+        try {
+            var response = _eventoService.GetEventoById(eventoId);
+
+            return Ok(response);
+        } catch (Exception e) {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
+
     [HttpGet("aulas/all")]
     public ActionResult<List<EventoAulaModel>> GetAll()
     {
