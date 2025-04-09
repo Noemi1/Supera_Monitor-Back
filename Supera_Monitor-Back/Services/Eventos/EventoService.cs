@@ -331,6 +331,28 @@ public class EventoService : IEventoService {
             _db.SaveChanges();
 
             // TODO: Reinserir as participações
+            // Remover participações antigas, tanto de professor quanto de aluno
+            //var participacoesAlunos = _db.Evento_Participacao_Alunos.Where(e => e.Evento_Id == evento.Id);
+            //_db.Evento_Participacao_Alunos.RemoveRange(participacoesAlunos);
+
+            //var participacoesProfessores = _db.Evento_Participacao_Professors.Where(e => e.Evento_Id == evento.Id);
+            //_db.Evento_Participacao_Professors.RemoveRange(participacoesProfessores);
+
+            //IEnumerable<Evento_Participacao_Professor> updatedParticipacoesProfessores = professoresInRequest
+            //    .Select(p => new Evento_Participacao_Professor {
+            //        Evento_Id = evento.Id,
+            //        Professor_Id = p.Id,
+            //        Observacao = null,
+            //        Presente = null
+            //    });
+
+            //IEnumerable<Evento_Participacao_Aluno> updatedParticipacoesAlunos = alunosInRequest
+            //    .Select(a => new Evento_Participacao_Aluno {
+            //        Evento_Id = evento.Id,
+            //        Observacao = null,
+            //        Presente = null,
+            //        ReposicaoDe_Evento_Id = a // Aqui tem um problema, reposição acompanha update?
+            //    });
 
             var responseObject = _db.CalendarioEventoLists.First(e => e.Id == evento.Id);
             responseObject.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).ToList();
@@ -423,7 +445,7 @@ public class EventoService : IEventoService {
         }
 
         // Carrega lista de roteiros no intervalo selecionado
-        IQueryable<Roteiro> roteiros = _db.Roteiros.Where(x => x.DataInicio.Date <= request.IntervaloDe.Value.Date && x.DataFim.Date <= request.IntervaloAte.Value.Date);
+        List<Roteiro> roteiros = _db.Roteiros.Where(x => x.DataInicio.Date <= request.IntervaloDe.Value.Date && x.DataFim.Date <= request.IntervaloAte.Value.Date).ToList();
 
         // Adicionar aulas não instanciadas ao retorno
         DateTime data = request.IntervaloDe.Value;
@@ -505,7 +527,6 @@ public class EventoService : IEventoService {
                 }
             }
 
-
             //
             // Adicionar aulas da turma do dia que ainda não foram instanciadas
             //
@@ -515,13 +536,13 @@ public class EventoService : IEventoService {
 
                 // Se a turma já tem uma aula instanciada no mesmo horário, é uma aula repetida, então ignora e passa pra proxima
                 CalendarioEventoList? eventoAula = calendarioResponse.FirstOrDefault(a =>
-                    ( int )a.Data.DayOfWeek == turma.DiaSemana &&
-                    a.Data.TimeOfDay == turma.Horario &&
+                    a.Data.Date == data.Date &&
                     a.Turma_Id == turma.Id);
 
                 // Não usar mais o continue porque o método adiciona outros pseudo eventos
                 if (eventoAula is null) {
                     var roteiro = roteiros.FirstOrDefault(x => data.Date <= x.DataInicio.Date && data >= x.DataFim);
+
                     CalendarioEventoList pseudoAula = new() {
                         Id = -1,
                         Evento_Tipo_Id = ( int )EventoTipo.Aula,
@@ -734,6 +755,7 @@ public class EventoService : IEventoService {
             Evento? evento = _db.Eventos
                 .Include(e => e.Evento_Participacao_AlunoEventos)
                 .Include(e => e.Evento_Participacao_Professors)
+                .Include(e => e.Evento_Aula)
                 .FirstOrDefault(e => e.Id == request.Evento_Id);
 
             if (evento is null) {
@@ -786,15 +808,81 @@ public class EventoService : IEventoService {
 
             var oldObject = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == evento.Id);
 
-            evento.Data = request.Data;
-            evento.Sala_Id = request.Sala_Id;
-            evento.Observacao = request.Observacao ?? evento.Observacao;
+            evento.Deactivated = TimeFunctions.HoraAtualBR();
 
             _db.Eventos.Update(evento);
 
+            Evento newEvento = new() {
+                Data = request.Data,
+                Observacao = request.Observacao ?? evento.Observacao,
+                Sala_Id = request.Sala_Id,
+                DuracaoMinutos = evento.DuracaoMinutos,
+                Evento_Tipo_Id = evento.Evento_Tipo_Id,
+                Account_Created_Id = evento.Account_Created_Id,
+                ReagendamentoDe_Evento_Id = evento.Id,
+                Descricao = evento.Descricao,
+
+                Created = TimeFunctions.HoraAtualBR(),
+                Deactivated = null,
+                Finalizado = false,
+            };
+
+            if (evento.Evento_Aula is not null) {
+                Evento_Aula newEventoAula = new() {
+                    CapacidadeMaximaAlunos = evento.Evento_Aula.CapacidadeMaximaAlunos,
+                    Professor_Id = evento.Evento_Aula.Professor_Id,
+                    Roteiro_Id = evento.Evento_Aula.Roteiro_Id,
+                    Turma_Id = evento.Evento_Aula.Turma_Id,
+                };
+
+                newEvento.Evento_Aula = newEventoAula;
+            }
+
+            _db.Add(newEvento);
             _db.SaveChanges();
 
-            var responseObject = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == evento.Id);
+            // Adicionar uma nova participação na data indicada no request, e em seguida desativar a participação original
+            foreach (var participacao in evento.Evento_Participacao_AlunoEventos) {
+                Evento_Participacao_Aluno newParticipacao = new() {
+                    Evento_Id = newEvento.Id,
+                    Aluno_Id = participacao.Aluno_Id,
+                    Observacao = participacao.Observacao,
+                    Presente = participacao.Presente,
+                    Apostila_Abaco_Id = participacao.Apostila_Abaco_Id,
+                    Apostila_AH_Id = participacao.Apostila_AH_Id,
+                    NumeroPaginaAbaco = participacao.NumeroPaginaAbaco,
+                    NumeroPaginaAH = participacao.NumeroPaginaAH,
+                    ReposicaoDe_Evento_Id = participacao.ReposicaoDe_Evento_Id,
+                    Deactivated = participacao.Deactivated,
+                };
+
+                _db.Evento_Participacao_Alunos.Add(newParticipacao);
+
+                participacao.Deactivated = TimeFunctions.HoraAtualBR();
+                _db.Evento_Participacao_Alunos.Update(participacao);
+            }
+
+            // Fazer o mesmo com a participação do professor
+            foreach (var participacao in evento.Evento_Participacao_Professors) {
+                Evento_Participacao_Professor newParticipacao = new() {
+                    Evento_Id = newEvento.Id,
+                    Professor_Id = participacao.Professor_Id,
+                    Observacao = participacao.Observacao,
+                    Presente = participacao.Presente,
+                    Deactivated = participacao.Deactivated,
+                };
+
+                _db.Evento_Participacao_Professors.Add(newParticipacao);
+
+                participacao.Deactivated = TimeFunctions.HoraAtualBR();
+                _db.Evento_Participacao_Professors.Update(participacao);
+            }
+
+            _db.SaveChanges();
+
+            var responseObject = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == newEvento.Id)!;
+            responseObject.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == newEvento.Id).ToList();
+            responseObject.Professores = _db.CalendarioProfessorLists.Where(p => p.Evento_Id == newEvento.Id).ToList();
 
             response.Message = $"Evento foi reagendado com sucesso para o dia {responseObject?.Data:g}";
             response.OldObject = oldObject;

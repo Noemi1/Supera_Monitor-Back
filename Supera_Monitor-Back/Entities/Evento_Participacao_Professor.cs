@@ -11,6 +11,8 @@ public partial class Evento_Participacao_Professor {
 
     public string? Observacao { get; set; }
 
+    public DateTime? Deactivated { get; set; }
+
     public virtual Evento Evento { get; set; } = null!;
 
     public virtual Professor Professor { get; set; } = null!;
