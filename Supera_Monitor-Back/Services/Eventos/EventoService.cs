@@ -396,9 +396,10 @@ public class EventoService : IEventoService {
         if (request.Perfil_Cognitivo_Id.HasValue) {
             // Eventos que contem o perfil cognitivo 
             var eventosContemPerfilCognitivo = _db.Evento_Aula_PerfilCognitivo_Rels.Where(x => x.PerfilCognitivo_Id == request.Perfil_Cognitivo_Id);
+            var turmasContemPerfilCognitivo = _db.Turma_PerfilCognitivo_Rels.Where(x => x.PerfilCognitivo_Id == request.Perfil_Cognitivo_Id);
 
             eventos = eventos.Where(e => eventosContemPerfilCognitivo.Any(x => x.Evento_Aula_Id == e.Id));
-            turmas = turmas.Where(e => e.Turma_PerfilCognitivo_Rels.Any(x => x.Id == request.Perfil_Cognitivo_Id));
+            turmas = turmas.Where(t => turmasContemPerfilCognitivo.Any(x => x.Turma_Id == t.Id));
         }
 
         if (request.Turma_Id.HasValue) {
