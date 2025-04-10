@@ -43,12 +43,11 @@ public class TurmaService : ITurmaService {
             throw new Exception("Turma não encontrada.");
         }
 
-        List<Turma_PerfilCognitivo_Rel> turmaPerfisCognitivos = _db.Turma_PerfilCognitivo_Rels
+        List<PerfilCognitivo> perfisCognitivos = _db.Turma_PerfilCognitivo_Rels
             .Where(p => p.Turma_Id == turma.Id)
             .Include(p => p.PerfilCognitivo)
+            .Select(p => p.PerfilCognitivo)
             .ToList();
-
-        List<PerfilCognitivo> perfisCognitivos = turmaPerfisCognitivos.Select(p => p.PerfilCognitivo).ToList();
 
         turma.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(perfisCognitivos);
 
@@ -172,9 +171,19 @@ public class TurmaService : ITurmaService {
 
             _db.SaveChanges();
 
+            var responseObject = _db.TurmaLists.First(t => t.Id == turma.Id);
+
+            List<PerfilCognitivo> perfis = _db.Turma_PerfilCognitivo_Rels
+                .Where(p => p.Turma_Id == turma.Id)
+                .Include(p => p.PerfilCognitivo)
+                .Select(p => p.PerfilCognitivo)
+                .ToList();
+
+            responseObject.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(perfis);
+
             response.Success = true;
             response.Message = "Turma cadastrada com sucesso";
-            response.Object = _db.TurmaLists.FirstOrDefault(t => t.Id == turma.Id);
+            response.Object = responseObject;
         } catch (Exception ex) {
             response.Message = $"Falha ao inserir nova turma: {ex}";
         }
