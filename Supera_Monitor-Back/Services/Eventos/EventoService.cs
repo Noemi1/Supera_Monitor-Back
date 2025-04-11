@@ -231,39 +231,12 @@ public class EventoService : IEventoService {
         ResponseModel response = new() { Success = false };
 
         try {
-            Evento? evento = _db.Eventos.FirstOrDefault(e => e.Id == request.Id);
+            Evento? evento = _db.Eventos
+                .Include(e => e.Evento_Tipo)
+                .FirstOrDefault(e => e.Id == request.Id);
 
             if (evento is null) {
                 return new ResponseModel { Message = "Evento não encontrado" };
-            }
-
-            int eventoTipoId = evento.Evento_Tipo_Id;
-
-            // Validação de quantidades de alunos/professores para cada tipo de evento
-            switch (eventoTipoId) {
-            case ( int )EventoTipo.Reuniao:
-                if (request.Alunos.Count != 0) {
-                    return new ResponseModel { Message = "Um evento de reunião não pode ter alunos associados" };
-                }
-                break;
-
-            case ( int )EventoTipo.Oficina:
-                break;
-
-            case ( int )EventoTipo.Superacao:
-                if (request.Alunos.Count != 1) {
-                    return new ResponseModel { Message = "Um evento de Superação só pode ter um aluno associado" };
-                }
-                break;
-
-            default:
-                return new ResponseModel { Message = "Internal Server Error : 'Tipo de evento inválido'" };
-            };
-
-            IQueryable<Aluno> alunosInRequest = _db.Alunos.Where(a => a.Deactivated == null && request.Alunos.Contains(a.Id));
-
-            if (alunosInRequest.Count() != request.Alunos.Count) {
-                return new ResponseModel { Message = "Aluno(s) não encontrado(s)" };
             }
 
             IQueryable<Professor> professoresInRequest = _db.Professors.Include(p => p.Account).Where(p => p.Account.Deactivated == null && request.Professores.Contains(p.Id));
@@ -279,8 +252,8 @@ public class EventoService : IEventoService {
             foreach (var professor in professoresInRequest) {
                 bool hasTurmaConflict = _professorService.HasTurmaTimeConflict(
                     professorId: professor.Id,
-                    DiaSemana: ( int )request.Data.DayOfWeek,
-                    Horario: request.Data.TimeOfDay,
+                    DiaSemana: ( int )evento.Data.DayOfWeek,
+                    Horario: evento.Data.TimeOfDay,
                     IgnoredTurmaId: null
                 );
 
@@ -292,7 +265,7 @@ public class EventoService : IEventoService {
 
                 bool hasParticipacaoConflict = _professorService.HasEventoParticipacaoConflict(
                     professorId: professor.Id,
-                    Data: request.Data,
+                    Data: evento.Data,
                     DuracaoMinutos: request.DuracaoMinutos,
                     IgnoredEventoId: evento.Id
                 );
@@ -310,7 +283,7 @@ public class EventoService : IEventoService {
             }
 
             // Sala deve estar livre no horário do evento
-            bool isSalaOccupied = _salaService.IsSalaOccupied(request.Sala_Id, request.Data, request.DuracaoMinutos, evento.Id);
+            bool isSalaOccupied = _salaService.IsSalaOccupied(request.Sala_Id, evento.Data, request.DuracaoMinutos, evento.Id);
 
             if (isSalaOccupied) {
                 return new ResponseModel { Message = "Esta sala se encontra ocupada neste horário" };
@@ -323,42 +296,42 @@ public class EventoService : IEventoService {
             evento.Observacao = request.Observacao ?? request.Observacao;
             evento.Descricao = request.Descricao ?? evento.Descricao;
             evento.Sala_Id = request.Sala_Id;
-            evento.Data = request.Data;
             evento.DuracaoMinutos = request.DuracaoMinutos;
             evento.LastUpdated = TimeFunctions.HoraAtualBR();
 
             _db.Eventos.Update(evento);
             _db.SaveChanges();
 
-            // TODO: Reinserir as participações
-            // Remover participações antigas, tanto de professor quanto de aluno
-            //var participacoesAlunos = _db.Evento_Participacao_Alunos.Where(e => e.Evento_Id == evento.Id);
-            //_db.Evento_Participacao_Alunos.RemoveRange(participacoesAlunos);
+            // IDS que preciso desativar
+            List<Evento_Participacao_Professor> participacoesToDeactivate = _db.Evento_Participacao_Professors.Where(p => !request.Professores.Contains(p.Professor_Id) && p.Evento_Id == evento.Id).ToList();
 
-            //var participacoesProfessores = _db.Evento_Participacao_Professors.Where(e => e.Evento_Id == evento.Id);
-            //_db.Evento_Participacao_Professors.RemoveRange(participacoesProfessores);
+            // IDS que existem
+            var idsExistentes = _db.Evento_Participacao_Professors.Where(p => p.Evento_Id == evento.Id).Select(p => p.Professor_Id).ToList();
 
-            //IEnumerable<Evento_Participacao_Professor> updatedParticipacoesProfessores = professoresInRequest
-            //    .Select(p => new Evento_Participacao_Professor {
-            //        Evento_Id = evento.Id,
-            //        Professor_Id = p.Id,
-            //        Observacao = null,
-            //        Presente = null
-            //    });
+            // IDS que preciso adicionar
+            List<int> participacoesToAdd = request.Professores.Where(id => !idsExistentes.Contains(id)).ToList();
 
-            //IEnumerable<Evento_Participacao_Aluno> updatedParticipacoesAlunos = alunosInRequest
-            //    .Select(a => new Evento_Participacao_Aluno {
-            //        Evento_Id = evento.Id,
-            //        Observacao = null,
-            //        Presente = null,
-            //        ReposicaoDe_Evento_Id = a // Aqui tem um problema, reposição acompanha update?
-            //    });
+            foreach (var participacao in participacoesToDeactivate) {
+                participacao.Deactivated = TimeFunctions.HoraAtualBR();
+                _db.Evento_Participacao_Professors.Update(participacao);
+            }
+
+            foreach (int professorId in participacoesToAdd) {
+                var participacao = new Evento_Participacao_Professor {
+                    Evento_Id = evento.Id,
+                    Professor_Id = professorId
+                };
+
+                _db.Evento_Participacao_Professors.Add(participacao);
+            }
+
+            _db.SaveChanges();
 
             var responseObject = _db.CalendarioEventoLists.First(e => e.Id == evento.Id);
             responseObject.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).ToList();
             responseObject.Professores = _db.CalendarioProfessorLists.Where(p => p.Evento_Id == evento.Id).ToList();
 
-            response.Message = $"Evento de '{evento.Evento_Tipo}' atualizado com sucesso";
+            response.Message = $"Evento de '{evento.Evento_Tipo.Nome}' atualizado com sucesso";
             response.OldObject = oldObject;
             response.Object = responseObject;
             response.Success = true;
