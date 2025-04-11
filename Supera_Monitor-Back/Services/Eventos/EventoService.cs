@@ -353,16 +353,16 @@ public class EventoService : IEventoService {
             throw new Exception("Final do intervalo não pode ser antes do seu próprio início");
         }
 
-        IQueryable<CalendarioEventoList> eventos = _db.CalendarioEventoLists
+        IQueryable<CalendarioEventoList> eventosQueryable = _db.CalendarioEventoLists
             .Where(e => e.Data.Date >= request.IntervaloDe.Value.Date && e.Data.Date <= request.IntervaloAte.Value.Date);
 
-        IQueryable<Turma> turmas = _db.Turmas
+        IQueryable<Turma> turmasQueryable = _db.Turmas
             .Where(t => t.Deactivated == null)
             .Include(t => t.Professor!)
             .ThenInclude(t => t.Account)
             .Include(t => t.Sala);
 
-        IQueryable<Professor> professores = _db.Professors
+        IQueryable<Professor> professoresQueryable = _db.Professors
             .Include(p => p.Account)
             .Where(p => p.Account.Deactivated == null);
 
@@ -371,36 +371,52 @@ public class EventoService : IEventoService {
             var eventosContemPerfilCognitivo = _db.Evento_Aula_PerfilCognitivo_Rels.Where(x => x.PerfilCognitivo_Id == request.Perfil_Cognitivo_Id);
             var turmasContemPerfilCognitivo = _db.Turma_PerfilCognitivo_Rels.Where(x => x.PerfilCognitivo_Id == request.Perfil_Cognitivo_Id);
 
-            eventos = eventos.Where(e => eventosContemPerfilCognitivo.Any(x => x.Evento_Aula_Id == e.Id));
-            turmas = turmas.Where(t => turmasContemPerfilCognitivo.Any(x => x.Turma_Id == t.Id));
+            eventosQueryable = eventosQueryable.Where(e => eventosContemPerfilCognitivo.Any(x => x.Evento_Aula_Id == e.Id));
+            turmasQueryable = turmasQueryable.Where(t => turmasContemPerfilCognitivo.Any(x => x.Turma_Id == t.Id));
         }
 
         if (request.Turma_Id.HasValue) {
-            eventos = eventos.Where(e => e.Turma_Id != null && e.Turma_Id == request.Turma_Id);
-            turmas = turmas.Where(t => t.Id == request.Turma_Id);
+            eventosQueryable = eventosQueryable.Where(e => e.Turma_Id != null && e.Turma_Id == request.Turma_Id);
+            turmasQueryable = turmasQueryable.Where(t => t.Id == request.Turma_Id);
         }
 
         if (request.Professor_Id.HasValue) {
             // Busca o professor em evento.Professor_Id e evento.Evento_Participacao_Professor
             var eventosContemProfessor = _db.Evento_Participacao_Professors.Where(x => x.Professor_Id == request.Professor_Id.Value);
-            eventos = eventos.Where(e => e.Professor_Id != null && (e.Professor_Id == request.Professor_Id || eventosContemProfessor.Any(x => x.Evento_Id == e.Id)));
-            turmas = turmas.Where(t => t.Professor_Id == request.Professor_Id);
-            professores = professores.Where(x => x.Id == request.Professor_Id.Value);
+            eventosQueryable = eventosQueryable.Where(e => e.Professor_Id != null && (e.Professor_Id == request.Professor_Id || eventosContemProfessor.Any(x => x.Evento_Id == e.Id)));
+            turmasQueryable = turmasQueryable.Where(t => t.Professor_Id == request.Professor_Id);
+            professoresQueryable = professoresQueryable.Where(x => x.Id == request.Professor_Id.Value);
         }
 
         if (request.Aluno_Id.HasValue) {
             var aluno = _db.Alunos.FirstOrDefault(a => a.Id == request.Aluno_Id);
 
             if (aluno is not null) {
-                turmas = turmas.Where(t => t.Id == aluno.Turma_Id);
+                turmasQueryable = turmasQueryable.Where(t => t.Id == aluno.Turma_Id);
                 // Busca o aluno em evento.Evento_Participacao_Aluno fora do where de eventos, para fazer menos filtros
                 var eventosContemAlunos = _db.Evento_Participacao_Alunos.Where(x => x.Aluno_Id == request.Aluno_Id.Value);
-                eventos = eventos.Where(e => eventosContemAlunos.Any(p => p.Evento_Id == e.Id));
+                eventosQueryable = eventosQueryable.Where(e => eventosContemAlunos.Any(p => p.Evento_Id == e.Id));
             }
         }
 
+        // Pré request de professores, turmas e perfis cognitivos das turmas
+        List<Turma> turmas = turmasQueryable.ToList();
+
+        List<Professor> professores = professoresQueryable.ToList();
+
+        List<int> turmaIds = turmas.Select(t => t.Id).ToList();
+
+        List<AlunoList> alunosFromTurmas = _db.AlunoLists
+            .Where(a => turmaIds.Contains(a.Turma_Id))
+            .ToList();
+
+        List<Turma_PerfilCognitivo_Rel> perfilCognitivoRelFromTurmas = _db.Turma_PerfilCognitivo_Rels
+            .Include(p => p.PerfilCognitivo)
+            .Where(p => turmaIds.Contains(p.Turma_Id))
+            .ToList();
+
         // Adicionar aulas instanciadas ao retorno
-        List<CalendarioEventoList> calendarioResponse = eventos.ToList();
+        List<CalendarioEventoList> calendarioResponse = eventosQueryable.ToList();
 
         // Adicionar os alunos e perfis cognitivos às aulas instanciadas
         foreach (CalendarioEventoList evento in calendarioResponse) {
@@ -546,7 +562,7 @@ public class EventoService : IEventoService {
                     };
 
                     // Na pseudo-aula, adicionar só os alunos da turma original
-                    List<AlunoList> alunos = _db.AlunoLists
+                    List<AlunoList> alunos = alunosFromTurmas
                         .Where(a => a.Turma_Id == turma.Id)
                         .OrderBy(a => a.Nome)
                         .ToList();
@@ -565,9 +581,8 @@ public class EventoService : IEventoService {
                         Telefone = turma.Professor.Account.Phone,
                     });
 
-                    List<PerfilCognitivo> perfisCognitivos = _db.Turma_PerfilCognitivo_Rels
+                    List<PerfilCognitivo> perfisCognitivos = perfilCognitivoRelFromTurmas
                         .Where(p => p.Turma_Id == pseudoAula.Turma_Id)
-                        .Include(p => p.PerfilCognitivo)
                         .Select(p => p.PerfilCognitivo)
                         .ToList();
 
