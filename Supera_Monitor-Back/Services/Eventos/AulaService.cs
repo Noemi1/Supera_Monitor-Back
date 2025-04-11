@@ -5,7 +5,6 @@ using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
-using Supera_Monitor_Back.Models.Eventos;
 using Supera_Monitor_Back.Models.Eventos.Aula;
 
 namespace Supera_Monitor_Back.Services.Eventos;
@@ -13,7 +12,7 @@ namespace Supera_Monitor_Back.Services.Eventos;
 public interface IAulaService {
     public EventoAulaModel GetById(int aulaId);
     public List<EventoAulaModel> GetAll();
-    public List<Evento_Mes> AlunosAulas(int ano);
+    public List<CalendarioParticipacaoAlunoList> AlunosAulas(int ano);
 
     public ResponseModel InsertAulaZero(CreateAulaZeroRequest request);
     public ResponseModel InsertAulaExtra(CreateAulaExtraRequest request);
@@ -729,56 +728,155 @@ public class AulaService : IAulaService {
         return response;
     }
 
-    public List<Evento_Mes> AlunosAulas(int ano)
+    public List<CalendarioParticipacaoAlunoList> AlunosAulas(int ano)
     {
-        var roteiros = _db.Roteiros
-            .Where(x => x.DataInicio.Year == ano)
-            .OrderBy(x => x.DataInicio);
 
-        List<CalendarioParticipacaoAlunoList> aulasAlunos = _db.CalendarioParticipacaoAlunoLists
+        DateTime intervaloDe = new DateTime(ano, 1, 1);
+        DateTime intervaloAte = intervaloDe.AddYears(1);
+
+
+        List<CalendarioParticipacaoAlunoList> response = _db.CalendarioParticipacaoAlunoLists
             .Where(x => x.Data.Year == ano)
             .ToList();
 
-        var meses = new List<Evento_Mes>();
+        List<Turma> turmas = _db.Turmas
+            .Where(t => t.Deactivated == null)
+            .Include(t => t.Alunos!).ThenInclude(x => x.Apostila_Abaco)
+            .Include(t => t.Alunos!).ThenInclude(x => x.Apostila_AH)
+            .Include(t => t.Professor!).ThenInclude(t => t.Account)
+            .Include(t => t.Sala)
+            .ToList();
 
-        for (int mes = 1 ; mes <= 12 ; mes++) {
-            List<Roteiro> roteirosMes = roteiros
-                .Where(x => x.DataInicio.Month == mes)
-                .Include(x => x.Evento_Aulas)
-                .ToList();
+        List<AlunoList> alunos = _db.AlunoLists.Where(t => t.Deactivated == null)
+            .ToList();
 
-            List<Evento_Roteiro> eventosRoteiros = new();
 
-            foreach (Roteiro roteiro in roteirosMes) {
-                Evento_Roteiro eventoRoteiro = new() {
-                    Id = roteiro.Id,
-                    DataInicio = roteiro.DataInicio,
-                    DataFim = roteiro.DataFim,
-                    Semana = roteiro.Semana,
-                    Tema = roteiro.Tema,
-                    CorLegenda = roteiro.CorLegenda,
-                    Account_Created = roteiro.Account_Created.Name,
-                    Account_Created_Id = roteiro.Account_Created_Id,
-                    Created = roteiro.Created,
-                    Deactivated = roteiro.Deactivated,
-                    LastUpdated = roteiro.LastUpdated,
-                    Aulas = new List<CalendarioParticipacaoAlunoList>() { },
-                };
+        List<Roteiro> roteiros = _db.Roteiros
+            .Where(x => x.DataInicio.Date >= intervaloDe.Date && x.DataFim.Date <= intervaloAte.Date)
+            .ToList();
 
-                List<CalendarioParticipacaoAlunoList> aulasRoteiros = aulasAlunos
-                    .Where(x => x.Roteiro_Id == roteiro.Id)
-                    .ToList();
+        #region Roteiros
+        List<string> meses = new List<string>() { "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro" };
+        int index = 1;
+        int semanaCount = 0;
 
-                eventoRoteiro.Aulas = aulasRoteiros;
-                eventosRoteiros.Add(eventoRoteiro);
+        //
+        // Monta os roteiros
+        // Se o mês tiver menos que 4 roteiros cadastrados, completa com 4
+        //
+
+        foreach (string mes in meses) {
+            var roteirosMes = roteiros.Where(x => x.DataInicio.Month == index).ToList();
+            Roteiro lastRoteiro;
+            int lastSemana;
+            List<DateTime> lastIntervalo = new List<DateTime>();
+
+
+            if (roteirosMes.Count > 0) {
+                lastRoteiro = roteirosMes[roteirosMes.Count - 1];
+                lastSemana = lastRoteiro.Semana;
+                lastIntervalo = new List<DateTime>() { lastRoteiro.DataInicio, lastRoteiro.DataFim };
+            } else {
+                DateTime inicio = new DateTime(ano, index, 1);
+                DateTime fim = inicio.AddDays(7);
+                lastIntervalo = new List<DateTime>() { inicio, fim };
+                lastSemana = 0;
+            }
+            if (roteirosMes.Count < 4) {
+                int diff = 4 - roteirosMes.Count;
+                for (int i = 1 ; i <= diff ; i++) {
+
+                    roteiros.Add(new Roteiro() {
+                        Id = -1,
+                        Account_Created_Id = -1,
+                        CorLegenda = "black",
+                        Semana = ++lastSemana,
+                        Tema = "Tema indefinido",
+                        Created = DateTime.Now,
+                        LastUpdated = null,
+                        Deactivated = null,
+                        DataInicio = lastIntervalo[0].AddDays(7),
+                        DataFim = lastIntervalo[1].AddDays(7),
+                        Evento_Aulas = new List<Evento_Aula>() { }
+                    });
+                }
+            }
+            index += 1;
+        }
+        #endregion
+
+
+        roteiros = roteiros.OrderBy(x => x.DataInicio).ToList();
+        foreach (Roteiro roteiro in roteiros) {
+            foreach (Turma turma in turmas) {
+                CalendarioParticipacaoAlunoList? existe = response.FirstOrDefault(a =>
+                    a.Roteiro_Id == roteiro.Id &&
+                    a.Turma_Id == turma.Id);
+
+
+                if (existe is null) {
+                    int diasAteDiaSemana = (( int )turma.DiaSemana - ( int )roteiro.DataInicio.DayOfWeek + 7) % 7;
+                    DateTime proximoDia = roteiro.DataInicio.AddDays(diasAteDiaSemana == 0 ? 7 : diasAteDiaSemana);
+                    var data = proximoDia;
+
+
+                    var alunosTurma = alunos.Where(x => x.Turma_Id == turma.Id).ToList();
+                    foreach (var aluno in alunosTurma) {
+                        if ((!aluno.DataInicioVigencia.HasValue || aluno.DataInicioVigencia.Value.Date <= data.Date)
+                            && (!aluno.DataFimVigencia.HasValue || aluno.DataFimVigencia.Value.Date >= data.Date)) {
+                            CalendarioParticipacaoAlunoList pseudoParticipacao = new CalendarioParticipacaoAlunoList {
+                                Id = -1,
+                                Aluno_Id = aluno.Id,
+                                Aluno = aluno.Nome!,
+                                Checklist_Id = aluno.Checklist_Id,
+                                Checklist = aluno.Checklist,
+                                Evento_Id = -1,
+                                Evento_Tipo_Id = ( int )EventoTipo.Aula,
+                                Data = new DateTime(data.Year, data.Month, data.Day, turma!.Horario!.Value.Hours, turma.Horario.Value.Minutes, 0),
+                                Descricao = turma.Nome,
+                                DuracaoMinutos = 120,
+                                Finalizado = false,
+                                Roteiro_Id = roteiro.Id,
+
+                                Presente = null,
+                                ReposicaoDe_Evento_Id = null,
+                                ReagendamentoDe_Evento_Id = null,
+                                Deactivated = null,
+                                Observacao = null,
+
+                                Apostila_Abaco = aluno.Apostila_Abaco,
+                                Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
+                                NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
+
+                                Apostila_AH = aluno.Apostila_AH,
+                                Apostila_AH_Id = aluno.Apostila_AH_Id,
+                                NumeroPaginaAH = aluno.NumeroPaginaAH,
+
+                                Turma_Id = turma.Id,
+                                Turma = turma.Nome,
+                                CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
+
+                                Professor_Id = turma?.Professor_Id,
+                                Professor = turma?.Professor is not null ? turma.Professor.Account.Name : "Professor indefinido",
+                                CorLegenda = turma?.Professor is not null ? turma.Professor.CorLegenda : "#000",
+
+                                Sala_Id = turma?.Sala_Id,
+                                NumeroSala = turma?.Sala?.NumeroSala,
+                                Andar = turma?.Sala?.Andar,
+
+                            };
+                            response.Add(pseudoParticipacao);
+                        }
+                    }
+
+                }
             }
 
-            meses.Add(new Evento_Mes {
-                Mes = mes,
-                Roteiros = eventosRoteiros
-            });
         }
 
-        return meses;
+
+        response = response.OrderBy(x => x.Data).ToList();
+
+        return response;
     }
 }
