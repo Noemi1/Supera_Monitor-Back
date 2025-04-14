@@ -1,0 +1,9 @@
+﻿using Supera_Monitor_Back.Entities.Views;
+
+namespace Supera_Monitor_Back.Models.Eventos;
+
+public class Dashboard {
+    public bool Show { get; set; }
+    public CalendarioEventoList Aula { get; set; } = null!;
+    public CalendarioAlunoList Participacao { get; set; } = null!;
+}
