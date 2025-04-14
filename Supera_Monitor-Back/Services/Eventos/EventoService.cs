@@ -14,7 +14,7 @@ public interface IEventoService {
     public ResponseModel Insert(CreateEventoRequest request, int eventoTipoId);
     public ResponseModel Update(UpdateEventoRequest request);
     public ResponseModel Reagendar(ReagendarEventoRequest request);
-    public ResponseModel Cancelar(int eventoId);
+    public ResponseModel Cancelar(CancelarEventoRequest request);
     public ResponseModel Finalizar(FinalizarEventoRequest request);
 
     public ResponseModel EnrollAluno(EnrollAlunoRequest request);
@@ -701,12 +701,12 @@ public class EventoService : IEventoService {
         return response;
     }
 
-    public ResponseModel Cancelar(int eventoId)
+    public ResponseModel Cancelar(CancelarEventoRequest request)
     {
         ResponseModel response = new() { Success = false };
 
         try {
-            Evento? evento = _db.Eventos.FirstOrDefault(e => e.Id == eventoId);
+            Evento? evento = _db.Eventos.FirstOrDefault(e => e.Id == request.Id);
 
             if (evento is null) {
                 return new ResponseModel { Message = "Evento não encontrado." };
@@ -719,6 +719,7 @@ public class EventoService : IEventoService {
             // Validations passed
 
             evento.Deactivated = TimeFunctions.HoraAtualBR();
+            evento.Observacao = request.Observacao;
 
             _db.Eventos.Update(evento);
             _db.SaveChanges();

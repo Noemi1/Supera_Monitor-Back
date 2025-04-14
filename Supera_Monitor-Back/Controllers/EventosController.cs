@@ -281,11 +281,11 @@ public class EventosController : _BaseController {
         }
     }
 
-    [HttpPost("cancelar/{eventoId}")]
-    public ActionResult<ResponseModel> Cancelar(int eventoId)
+    [HttpPost("cancelar")]
+    public ActionResult<ResponseModel> Cancelar(CancelarEventoRequest request)
     {
         try {
-            ResponseModel response = _eventoService.Cancelar(eventoId);
+            ResponseModel response = _eventoService.Cancelar(request);
 
             if (response.Success) {
                 return Ok(response);
