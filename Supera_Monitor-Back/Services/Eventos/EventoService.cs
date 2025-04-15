@@ -412,6 +412,24 @@ public class EventoService : IEventoService {
             .Where(a => turmaIds.Contains(a.Turma_Id))
             .ToList();
 
+        List<int> alunosEmPrimeiraAulaIds = new();
+
+        // Identificar quais desses alunos estão fazendo a primeira aula
+        foreach (AlunoList aluno in alunosFromTurmas) {
+            var participacoesAluno = _db.Evento_Participacao_Alunos
+                .Include(p => p.Evento)
+                .Where(p =>
+                    p.Aluno_Id == aluno.Id
+                    && p.Deactivated == null
+                    && p.Evento.Evento_Tipo_Id == ( int )EventoTipo.Aula);
+
+            if (participacoesAluno.Count() <= 1) {
+                alunosEmPrimeiraAulaIds.Add(aluno.Id);
+            }
+        }
+
+        // Se o aluno não tem nenhuma participação
+
         List<Turma_PerfilCognitivo_Rel> perfilCognitivoRelFromTurmas = _db.Turma_PerfilCognitivo_Rels
             .Include(p => p.PerfilCognitivo)
             .Where(p => turmaIds.Contains(p.Turma_Id))
@@ -480,7 +498,6 @@ public class EventoService : IEventoService {
                     };
                     calendarioResponse.Add(pseudoOficina);
                 }
-
             }
 
             //
@@ -525,11 +542,10 @@ public class EventoService : IEventoService {
             List<Turma> turmasDoDia = turmas.Where(t => t.DiaSemana == ( int )data.DayOfWeek).ToList();
 
             foreach (Turma turma in turmasDoDia) {
-
                 // Se a turma já tem uma aula instanciada no mesmo horário, é uma aula repetida, então ignora e passa pra proxima
                 CalendarioEventoList? eventoAula = calendarioResponse.FirstOrDefault(a =>
-                    a.Data.Date == data.Date &&
-                    a.Turma_Id == turma.Id);
+                    a.Data.Date == data.Date
+                    && a.Turma_Id == turma.Id);
 
                 // Não usar mais o continue porque o método adiciona outros pseudo eventos
                 if (eventoAula is null) {
@@ -598,6 +614,29 @@ public class EventoService : IEventoService {
         }
 
         calendarioResponse = calendarioResponse.OrderBy(e => e.Data).ToList();
+
+        // Inserir flag de primeira aula para os alunos
+        foreach (CalendarioEventoList evento in calendarioResponse) {
+
+            // Evita ficar processando se não tiver alunos pra marcar que é primeira aula
+            if (alunosEmPrimeiraAulaIds.Count == 0) {
+                break;
+            }
+
+            foreach (var aluno in evento.Alunos) {
+                var alunoList = alunosFromTurmas.First(a => a.Id == aluno.Aluno_Id);
+
+                // Se a data do evento está a mais de 14 dias da data de inicio de vigencia do aluno, não considera como aluno novo 
+                if (alunoList.DataInicioVigencia != null && alunoList.DataInicioVigencia.Value.AddDays(14) <= evento.Data) {
+                    continue;
+                }
+
+                if (alunosEmPrimeiraAulaIds.Contains(aluno.Aluno_Id)) {
+                    aluno.PrimeiraAula = true;
+                    alunosEmPrimeiraAulaIds.Remove(aluno.Aluno_Id);
+                }
+            }
+        }
 
         return calendarioResponse;
     }

@@ -576,7 +576,6 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
             entity.Property(e => e.LastUpdated).HasColumnType("datetime");
             entity.Property(e => e.Observacao).IsUnicode(false);
-            entity.Property(e => e.ReagendamentoDe_Evento).HasColumnType("datetime");
             entity.Property(e => e.Tema)
                 .HasMaxLength(250)
                 .IsUnicode(false);

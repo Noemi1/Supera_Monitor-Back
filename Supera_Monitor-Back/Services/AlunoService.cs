@@ -540,9 +540,9 @@ public class AlunoService : IAlunoService {
                 return new ResponseModel { Message = "Não é possível marcar reposição para uma aula finalizada" };
             }
 
-            if (eventoDest.Data < TimeFunctions.HoraAtualBR()) {
-                return new ResponseModel { Message = "Não é possível marcar reposição para uma aula no passado" };
-            }
+            //if (eventoDest.Data < TimeFunctions.HoraAtualBR()) {
+            //    return new ResponseModel { Message = "Não é possível marcar reposição para uma aula no passado" };
+            //}
 
             if (eventoDest.Deactivated != null) {
                 return new ResponseModel { Message = "Não é possível marcar reposição em uma aula desativada" };

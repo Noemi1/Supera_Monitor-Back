@@ -1,4 +1,6 @@
-﻿namespace Supera_Monitor_Back.Entities.Views;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Supera_Monitor_Back.Entities.Views;
 
 public class CalendarioAlunoList {
     public int Id { get; set; }
@@ -49,5 +51,6 @@ public class CalendarioAlunoList {
 
     public string PerfilCognitivo { get; set; } = null!;
 
-    public bool FlagAlunoNovo => false;
+    [NotMapped]
+    public bool PrimeiraAula { get; set; } = false;
 }

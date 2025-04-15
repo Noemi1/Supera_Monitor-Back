@@ -28,7 +28,7 @@ public partial class CalendarioEventoList {
 
     public int? ReagendamentoDe_Evento_Id { get; set; }
 
-    public DateTime? ReagendamentoDe_Evento { get; set; }
+    public int? ReagendamentoPara_Evento_Id { get; set; }
 
     public int? Professor_Id { get; set; }
 
@@ -66,4 +66,3 @@ public partial class CalendarioEventoList {
 
     public virtual ICollection<PerfilCognitivoModel> PerfilCognitivo { get; set; } = new List<PerfilCognitivoModel>();
 }
-
