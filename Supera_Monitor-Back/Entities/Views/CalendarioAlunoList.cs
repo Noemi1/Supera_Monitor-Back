@@ -15,15 +15,23 @@ public class CalendarioAlunoList {
 
     public string? Aluno { get; set; }
 
+    public DateTime? DataNascimento { get; set; }
+
     public string? Celular { get; set; }
 
     public string? Aluno_Foto { get; set; }
 
     public int Turma_Id { get; set; }
 
+    public DateTime? DataInicioVigencia { get; set; }
+
+    public DateTime? DataFimVigencia { get; set; }
+
     public string? Turma { get; set; }
 
     public int? ReposicaoDe_Evento_Id { get; set; }
+
+    public int? ReposicaoPara_Evento_Id { get; set; }
 
     public bool? Presente { get; set; }
 

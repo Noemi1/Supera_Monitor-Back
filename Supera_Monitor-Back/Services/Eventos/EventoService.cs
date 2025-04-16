@@ -837,8 +837,6 @@ public class EventoService : IEventoService {
             }
             // Validations passed
 
-            var oldObject = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == evento.Id);
-
             evento.Deactivated = TimeFunctions.HoraAtualBR();
 
             _db.Eventos.Update(evento);
@@ -914,6 +912,8 @@ public class EventoService : IEventoService {
             var responseObject = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == newEvento.Id)!;
             responseObject.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == newEvento.Id).ToList();
             responseObject.Professores = _db.CalendarioProfessorLists.Where(p => p.Evento_Id == newEvento.Id).ToList();
+
+            var oldObject = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == evento.Id);
 
             response.Message = $"Evento foi reagendado com sucesso para o dia {responseObject?.Data:g}";
             response.OldObject = oldObject;
