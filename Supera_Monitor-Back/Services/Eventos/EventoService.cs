@@ -412,21 +412,21 @@ public class EventoService : IEventoService {
             .Where(a => turmaIds.Contains(a.Turma_Id))
             .ToList();
 
-        List<int> alunosEmPrimeiraAulaIds = new();
-
-        // Identificar quais desses alunos estão fazendo a primeira aula
-        foreach (AlunoList aluno in alunosFromTurmas) {
-            var participacoesAluno = _db.Evento_Participacao_Alunos
-                .Include(p => p.Evento)
-                .Where(p =>
-                    p.Aluno_Id == aluno.Id
-                    && p.Deactivated == null
-                    && p.Evento.Evento_Tipo_Id == ( int )EventoTipo.Aula);
-
-            if (participacoesAluno.Count() <= 1) {
-                alunosEmPrimeiraAulaIds.Add(aluno.Id);
-            }
-        }
+        List<int> alunosEmPrimeiraAulaIds = _db.AlunoLists
+            .Where(a => turmaIds.Contains(a.Turma_Id))
+            .Select(a => new
+            {
+                AlunoId = a.Id,
+                Participacoes = _db.Evento_Participacao_Alunos
+                    .Where(p =>
+                        p.Aluno_Id == a.Id &&
+                        p.Deactivated == null &&
+                        p.Evento.Evento_Tipo_Id == ( int )EventoTipo.Aula)
+                    .Count()
+            })
+            .Where(x => x.Participacoes <= 1)
+            .Select(x => x.AlunoId)
+            .ToList();
 
         // Se o aluno não tem nenhuma participação
 
