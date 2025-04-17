@@ -79,8 +79,17 @@ public class AlunoService : IAlunoService {
 
         List<AlunoListWithChecklist> alunosWithChecklist = _mapper.Map<List<AlunoListWithChecklist>>(alunos);
 
+        List<int> alunoIds = alunosWithChecklist.Select(a => a.Id).ToList();
+
+        List<AlunoChecklistView> listAlunoChecklistView = _db.AlunoChecklistViews
+            .Where(c => alunoIds.Contains(c.Aluno_Id))
+            .ToList();
+
         foreach (var alunoList in alunosWithChecklist) {
-            alunoList.AlunoChecklist = _checklistService.GetAllByAlunoId(alunoList.Id);
+            alunoList.AlunoChecklist = listAlunoChecklistView.Where(a => alunoList.Id == a.Aluno_Id)
+                .OrderBy(c => c.Checklist_Id)
+                .ThenBy(c => c.Ordem)
+                .ToList();
         }
 
         return alunosWithChecklist;
