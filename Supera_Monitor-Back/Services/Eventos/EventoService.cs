@@ -884,9 +884,11 @@ public class EventoService : IEventoService {
                         Andar = turma?.Sala?.Andar,
                     };
 
-                    // Na pseudo-aula, adicionar só os alunos da turma original
+                    // Na pseudo-aula, adicionar só os alunos da turma original após o início de sua vigência
                     List<AlunoList> alunos = alunosFromTurmas
-                        .Where(a => a.Turma_Id == turma.Id)
+                        .Where(
+                            a => a.Turma_Id == turma.Id
+                            && a.DataInicioVigencia.Value.Date <= data.Date)
                         .OrderBy(a => a.Nome)
                         .ToList();
 
