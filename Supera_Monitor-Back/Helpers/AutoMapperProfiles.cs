@@ -74,6 +74,8 @@ namespace Supera_Monitor_Back.Helpers {
             CreateMap<Aluno_Historico, AlunoHistoricoModel>()
                 .ForMember(dest => dest.Account_Created, opt => opt.MapFrom(src => src.Account.Name));
 
+            CreateMap<CalendarioEventoList, CalendarioEventoList>();
+
             CreateMap<Sala, SalaModel>();
 
             CreateMap<Aluno_Restricao, RestricaoModel>()
