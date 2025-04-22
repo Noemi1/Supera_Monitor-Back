@@ -64,6 +64,19 @@ public class EventosController : _BaseController {
         }
     }
 
+    [HttpPost("calendario/alt")]
+    public ActionResult<List<CalendarioEventoList>> GetCalendarioAlternative(CalendarioRequest request)
+    {
+        try {
+            var response = _eventoService.GetCalendarioAlternative(request);
+
+            return Ok(response);
+        } catch (Exception e) {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
+
     [HttpGet("aulas/{aulaId}")]
     public ActionResult<List<EventoAulaModel>> GetById(int aulaId)
     {
