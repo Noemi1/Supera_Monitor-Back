@@ -39,6 +39,8 @@ public partial class Aluno {
 
     public int? NumeroPaginaAbaco { get; set; }
 
+    public DateTime? PrimeiraAula { get; set; }
+
     public virtual ICollection<Aluno_Checklist_Item> Aluno_Checklist_Items { get; set; } = new List<Aluno_Checklist_Item>();
 
     public virtual ICollection<Aluno_Historico> Aluno_Historicos { get; set; } = new List<Aluno_Historico>();

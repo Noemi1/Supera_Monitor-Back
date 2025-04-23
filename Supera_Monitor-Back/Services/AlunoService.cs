@@ -174,6 +174,13 @@ public class AlunoService : IAlunoService {
                 randomNumber = randomNumberGenerator.Next(0, 100000).ToString("D5");
             } while (_db.Alunos.Any(a => a.RM == randomNumber.ToString()));
 
+
+            // Navegar até o dia da semana da primeira aula partindo do início da vigência
+            DateTime dataPrimeiraAula = model.DataInicioVigencia;
+            while (( int )dataPrimeiraAula.DayOfWeek != turmaDestino.DiaSemana) {
+                dataPrimeiraAula = dataPrimeiraAula.AddDays(1);
+            }
+
             Aluno aluno = new() {
                 Aluno_Foto = model.Aluno_Foto,
                 DataInicioVigencia = model.DataInicioVigencia,
@@ -191,6 +198,7 @@ public class AlunoService : IAlunoService {
                 Created = TimeFunctions.HoraAtualBR(),
                 LastUpdated = null,
                 Deactivated = null,
+                PrimeiraAula = dataPrimeiraAula,
                 AspNetUsers_Created_Id = model.AspNetUsers_Created_Id,
             };
 
@@ -598,6 +606,13 @@ public class AlunoService : IAlunoService {
             }
 
             // Validations passed
+
+            // Se for a primeira aula do aluno, atualizar a data de primeira aula para a data da aula destino
+            if (eventoSource.Data == aluno.PrimeiraAula) {
+                aluno.PrimeiraAula = eventoDest.Data;
+            }
+
+            _db.Alunos.Update(aluno);
 
             // Amarrar o novo registro à aula sendo reposta
             Evento_Participacao_Aluno registroDest = new() {

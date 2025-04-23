@@ -622,29 +622,6 @@ public class EventoService : IEventoService {
 
         calendarioResponse = calendarioResponse.OrderBy(e => e.Data).ToList();
 
-        // Inserir flag de primeira aula para os alunos
-        foreach (CalendarioEventoList evento in calendarioResponse) {
-
-            // Evita ficar processando se não tiver alunos pra marcar que é primeira aula
-            if (alunosEmPrimeiraAulaIds.Count == 0) {
-                break;
-            }
-
-            foreach (var aluno in evento.Alunos) {
-                var alunoList = alunosFromTurmas.First(a => a.Id == aluno.Aluno_Id);
-
-                // Se a data do evento está a mais de 14 dias da data de inicio de vigencia do aluno, não considera como aluno novo 
-                if (alunoList.DataInicioVigencia != null && alunoList.DataInicioVigencia.Value.AddDays(14) <= evento.Data) {
-                    continue;
-                }
-
-                if (alunosEmPrimeiraAulaIds.Contains(aluno.Aluno_Id)) {
-                    aluno.PrimeiraAula = true;
-                    alunosEmPrimeiraAulaIds.Remove(aluno.Aluno_Id);
-                }
-            }
-        }
-
         return calendarioResponse;
     }
 
@@ -921,29 +898,6 @@ public class EventoService : IEventoService {
         }
 
         calendarioResponse = calendarioResponse.OrderBy(e => e.Data).ToList();
-
-        // Inserir flag de primeira aula para os alunos
-        foreach (CalendarioEventoList evento in calendarioResponse) {
-
-            // Evita ficar processando se não tiver alunos pra marcar que é primeira aula
-            if (alunosEmPrimeiraAulaIds.Count == 0) {
-                break;
-            }
-
-            foreach (var aluno in evento.Alunos) {
-                var alunoList = alunosFromTurmas.First(a => a.Id == aluno.Aluno_Id);
-
-                // Se a data do evento está a mais de 14 dias da data de inicio de vigencia do aluno, não considera como aluno novo 
-                if (alunoList.DataInicioVigencia != null && alunoList.DataInicioVigencia.Value.AddDays(14) <= evento.Data) {
-                    continue;
-                }
-
-                if (alunosEmPrimeiraAulaIds.Contains(aluno.Aluno_Id)) {
-                    aluno.PrimeiraAula = true;
-                    alunosEmPrimeiraAulaIds.Remove(aluno.Aluno_Id);
-                }
-            }
-        }
 
         return calendarioResponse;
     }
@@ -1240,6 +1194,7 @@ public class EventoService : IEventoService {
         try {
             Evento? evento = _db.Eventos
                 .Include(e => e.Evento_Participacao_AlunoEventos)
+                .ThenInclude(e => e.Aluno)
                 .Include(e => e.Evento_Participacao_Professors)
                 .FirstOrDefault(e => e.Id == request.Evento_Id);
 
@@ -1275,6 +1230,19 @@ public class EventoService : IEventoService {
                     return new ResponseModel { Message = $"Participação de aluno no evento ID: '{evento.Id}' Participacao_Id: '{partAluno.Participacao_Id}' está desativada" };
                 }
 
+                // Se o evento for a primeira aula do aluno e ocorrer uma falta, deve atualizar a data da PrimeiraAula do aluno para a proxima aula da turma a partir da data do evento atual
+                if (participacao.Aluno.PrimeiraAula == evento.Data && partAluno.Presente == false) {
+                    Turma turma = _db.Turmas.Single(t => t.Id == participacao.Aluno.Turma_Id);
+
+                    DateTime data = evento.Data;
+
+                    do {
+                        data = data.AddDays(1);
+                    } while (( int )data.DayOfWeek != turma.DiaSemana);
+
+                    participacao.Aluno.PrimeiraAula = data;
+                }
+
                 participacao.Observacao = partAluno.Observacao;
                 participacao.Presente = partAluno.Presente;
                 // TODO: Validar se as apostilas existem
@@ -1284,7 +1252,7 @@ public class EventoService : IEventoService {
                 participacao.Apostila_AH_Id = partAluno.Apostila_Ah_Id;
                 participacao.NumeroPaginaAH = partAluno.NumeroPaginaAh;
 
-                _db.Evento_Participacao_Alunos.Update(participacao);
+                _db.Update(participacao);
             }
 
             foreach (ParticipacaoProfessorModel partProfessor in request.Professores) {
@@ -1435,8 +1403,7 @@ public class EventoService : IEventoService {
 		
 		roteiros = roteiros.OrderBy(x => x.DataInicio).ToList();
 
-		foreach (Roteiro roteiro in roteiros)
-		{
+        foreach (Roteiro roteiro in roteiros) {
 
 			foreach (Turma turma in turmas)
 			{
@@ -1541,6 +1508,7 @@ public class EventoService : IEventoService {
 								Checklist = aluno.Checklist,
 								DataInicioVigencia = aluno.DataInicioVigencia,
 								DataFimVigencia = aluno.DataFimVigencia,
+								PrimeiraAula = aluno.PrimeiraAula,
 
 								Apostila_Abaco = aluno.Apostila_Abaco,
 								Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
