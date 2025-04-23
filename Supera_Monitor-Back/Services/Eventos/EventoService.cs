@@ -23,7 +23,7 @@ public interface IEventoService {
 
     public List<CalendarioEventoList> GetOficinas();
 
-	public List<Dashboard> Dashboard(int ano);
+	public List<Dashboard> Dashboard(DashboardRequest request);
 }
 
 public class EventoService : IEventoService {
@@ -1350,20 +1350,20 @@ public class EventoService : IEventoService {
         return evento;
     }
 
-	public List<Dashboard> Dashboard(int ano)
+	public List<Dashboard> Dashboard(DashboardRequest request)
 	{
 
-		DateTime intervaloDe = new DateTime(ano, 1, 1);
-		DateTime intervaloAte = intervaloDe.AddYears(1);
+		DateTime intervaloDe = new DateTime(request.Ano, request.Mes, 1);
+		DateTime intervaloAte = intervaloDe.AddMonths(1).AddDays(-1);
 
 		List<Dashboard> response = new();
 
 		List<CalendarioEventoList> eventos = _db.CalendarioEventoLists
-			.Where(x => x.Data.Year == ano && x.Evento_Tipo_Id == (int)EventoTipo.Aula)
-			.OrderBy(x => x.Data)
-			.ToList();
-
-		var a = eventos.Find(x => x.Id == 279);
+											.Where(x =>  x.Data.Date >= intervaloDe.Date 
+														&& x.Data.Date <= intervaloAte.Date 
+														&& x.Evento_Tipo_Id == (int)EventoTipo.Aula)
+											.OrderBy(x => x.Data)
+											.ToList();
 
 		List<CalendarioAlunoList> participacoes = _db.CalendarioAlunoLists.ToList();
 
@@ -1382,71 +1382,57 @@ public class EventoService : IEventoService {
 
 
 		List<Roteiro> roteiros = _db.Roteiros
-			.Where(x => x.DataInicio.Date >= intervaloDe.Date && x.DataFim.Date <= intervaloAte.Date)
+			.Where(x => x.DataInicio.Month == request.Mes && x.DataInicio.Year == request.Ano)
+			//.Where(x => x.DataInicio.Date >= intervaloDe.Date && x.DataFim.Date <= intervaloAte.Date)
 			.OrderBy(x => x.DataInicio)
 			.ToList();
 
-		//
-		// Monta os roteiros
-		// Se o mês tiver menos que 4 roteiros cadastrados, completa com 4
-		//
-		#region Roteiros
-		List<string> meses = new List<string>() { "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro" };
-
-		Roteiro lastRoteiro;
-		int lastSemana;
-		List<DateTime> lastIntervalo = new List<DateTime>();
-		int mesIndex = 1;
-
-		foreach (string mesString in meses)
+		if (roteiros.Count < 4)
 		{
-			var roteirosMes = roteiros.Where(x => x.DataInicio.Month == mesIndex).ToList();
+			int diff = 4 - roteiros.Count;
 
-			if (roteirosMes.Count > 0)
+			Roteiro lastRoteiro;
+			int lastSemana;
+			List<DateTime> lastIntervalo = new List<DateTime>();
+
+			if (roteiros.Count > 0)
 			{
-				lastRoteiro = roteirosMes[roteirosMes.Count - 1];
-				lastSemana = lastRoteiro.Semana;
+				lastRoteiro = roteiros.Last();
 				lastIntervalo = new List<DateTime>() { lastRoteiro.DataInicio, lastRoteiro.DataFim };
 			}
 			else
 			{
-				DateTime inicio = new DateTime(ano, mesIndex, 1);
-				DateTime fim = inicio.AddDays(7);
-				lastIntervalo = new List<DateTime>() { inicio, fim };
-				lastSemana = 0;
-			}
+				lastRoteiro = _db.Roteiros.OrderBy(x => x.DataInicio).LastOrDefault(x => x.DataInicio.Date <= intervaloDe.Date);
+				lastIntervalo = new List<DateTime>() { intervaloDe.AddDays(-7), intervaloDe.AddDays(-1) };
 
-			if (roteirosMes.Count < 4)
+			}
+			
+			lastSemana = lastRoteiro?.Semana ?? 0;
+
+			for (int i = 1; i <= diff; i++)
 			{
-				int diff = 4 - roteirosMes.Count;
+				DateTime inicio = lastIntervalo[0].AddDays(7);
+				DateTime fim = lastIntervalo[1].AddDays(7);
 
-				for (int i = 1; i <= diff; i++)
+				roteiros.Add(new Roteiro()
 				{
-					DateTime inicio = lastIntervalo[0].AddDays(7);
-					DateTime fim = lastIntervalo[1].AddDays(7);
+					Id = -1,
+					Account_Created_Id = -1,
+					CorLegenda = "black",
+					Semana = ++lastSemana,
+					Tema = "Tema indefinido",
+					Created = DateTime.Now,
+					LastUpdated = null,
+					Deactivated = null,
+					DataInicio = inicio,
+					DataFim = fim,
+					Evento_Aulas = new List<Evento_Aula>() { }
+				});
 
-					roteiros.Add(new Roteiro()
-					{
-						Id = -1,
-						Account_Created_Id = -1,
-						CorLegenda = "black",
-						Semana = ++lastSemana,
-						Tema = "Tema indefinido",
-						Created = DateTime.Now,
-						LastUpdated = null,
-						Deactivated = null,
-						DataInicio = inicio,
-						DataFim = fim,
-						Evento_Aulas = new List<Evento_Aula>() { }
-					});
-
-					lastIntervalo = new List<DateTime>() { inicio, fim };
-				}
+				lastIntervalo = new List<DateTime>() { inicio, fim };
 			}
-			mesIndex += 1;
 		}
-		#endregion
-
+		
 		roteiros = roteiros.OrderBy(x => x.DataInicio).ToList();
 
 		foreach (Roteiro roteiro in roteiros)
@@ -1461,7 +1447,7 @@ public class EventoService : IEventoService {
 
 
 				// Recupera o próximo data do dia da semana da turma a partir do inicio do roteiro
-				var diff = 6 - (int)roteiroWeek + turma.DiaSemana;
+				var diff = 7 - (int)roteiroWeek + turma.DiaSemana;
 				DateTime data = roteiro.DataInicio.AddDays(diff);
 
 
@@ -1587,8 +1573,10 @@ public class EventoService : IEventoService {
 
 							response.Add(dashboard);
 						}
-					}
+					} else
+					{
 
+					}
 				}
 			}
 		}
