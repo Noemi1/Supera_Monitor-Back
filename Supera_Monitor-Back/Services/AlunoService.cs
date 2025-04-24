@@ -174,7 +174,6 @@ public class AlunoService : IAlunoService {
                 randomNumber = randomNumberGenerator.Next(0, 100000).ToString("D5");
             } while (_db.Alunos.Any(a => a.RM == randomNumber.ToString()));
 
-
             // Navegar até o dia da semana da primeira aula partindo do início da vigência
             DateTime dataPrimeiraAula = model.DataInicioVigencia;
             while (( int )dataPrimeiraAula.DayOfWeek != turmaDestino.DiaSemana) {
