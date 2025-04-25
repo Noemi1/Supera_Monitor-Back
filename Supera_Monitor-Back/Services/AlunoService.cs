@@ -167,13 +167,18 @@ public class AlunoService : IAlunoService {
             // Validations passed
 
             // quando chegar o dia que isso dê pau, me perdoe. só deus sabe como tá a mente do palhaço
-            var randomNumberGenerator = new Random();
-            string randomNumber;
+            Random RNG= new();
+            string randomRM;
+
+            List<string> existingRMS = _db.Alunos
+                .Where(a => a.RM != null)
+                .Select(a => a.RM!)
+                .ToList();
 
             do {
-                randomNumber = randomNumberGenerator.Next(0, 100000).ToString("D5");
-            } while (_db.Alunos.Any(a => a.RM == randomNumber.ToString()));
-
+                randomRM = RNG.Next(0, 100000).ToString("D5");
+            } while (existingRMS.Any(rm => rm == randomRM));
+            
             // Navegar até o dia da semana da primeira aula partindo do início da vigência
             DateTime dataPrimeiraAula = model.DataInicioVigencia;
             while (( int )dataPrimeiraAula.DayOfWeek != turmaDestino.DiaSemana) {
@@ -189,8 +194,8 @@ public class AlunoService : IAlunoService {
 
                 Apostila_Kit_Id = model.Apostila_Kit_Id,
 
-                RM = randomNumber.ToString(),
-                LoginApp = pessoa.Email ?? $"{randomNumber}@supera",
+                RM = randomRM.ToString(),
+                LoginApp = pessoa.Email ?? $"{randomRM}@supera",
                 SenhaApp = "Super@123",
                 Pessoa_Id = model.Pessoa_Id,
 
@@ -322,12 +327,19 @@ public class AlunoService : IAlunoService {
                 }
             }
 
+            // Garantir que RM é unico pra cada aluno
+            bool rmIsAlreadyTaken = _db.Alunos.Any(a => a.RM == model.RM && a.Id != model.Id);
+            
+            if (rmIsAlreadyTaken) {
+                return new ResponseModel { Message = "RM já existe" };
+            }
+
             // Validations passed
 
             // Atualizando dados de Aluno
             aluno.RM = model.RM;
-            aluno.LoginApp = model.LoginApp;
-            aluno.SenhaApp = model.SenhaApp;
+            aluno.LoginApp = model.LoginApp ?? aluno.LoginApp;
+            aluno.SenhaApp = model.SenhaApp ?? aluno.SenhaApp;
             aluno.PerfilCognitivo_Id = model.PerfilCognitivo_Id;
 
             aluno.Turma_Id = model.Turma_Id;

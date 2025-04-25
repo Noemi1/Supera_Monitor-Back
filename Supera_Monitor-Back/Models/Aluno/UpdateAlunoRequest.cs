@@ -14,8 +14,8 @@ public class UpdateAlunoRequest {
     public int? Apostila_Kit_Id { get; set; }
 
     public string RM { get; set; } = string.Empty;
-    public string LoginApp { get; set; } = string.Empty;
-    public string SenhaApp { get; set; } = string.Empty;
+    public string? LoginApp { get; set; } = string.Empty;
+    public string? SenhaApp { get; set; } = string.Empty;
 
     // Alterar dados da entidade Pessoa
     public string? Nome { get; set; } = string.Empty;
