@@ -196,7 +196,7 @@ public class AlunoService : IAlunoService {
 
                 RM = randomRM.ToString(),
                 LoginApp = pessoa.Email ?? $"{randomRM}@supera",
-                SenhaApp = "Super@123",
+                SenhaApp = "Supera@123",
                 Pessoa_Id = model.Pessoa_Id,
 
                 Created = TimeFunctions.HoraAtualBR(),
