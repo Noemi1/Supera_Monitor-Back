@@ -23,7 +23,7 @@ public interface IEventoService {
 
     public List<CalendarioEventoList> GetOficinas();
 
-	public List<Dashboard> Dashboard(DashboardRequest request);
+    public List<Dashboard> Dashboard(DashboardRequest request);
 }
 
 public class EventoService : IEventoService {
@@ -35,18 +35,16 @@ public class EventoService : IEventoService {
     private readonly Account? _account;
     private readonly IHttpContextAccessor? _httpContextAccessor;
 
-    public EventoService(DataContext db, IMapper mapper, IProfessorService professorService, ISalaService salaService, IHttpContextAccessor httpContextAccessor)
-    {
+    public EventoService(DataContext db, IMapper mapper, IProfessorService professorService, ISalaService salaService, IHttpContextAccessor httpContextAccessor) {
         _db = db;
         _mapper = mapper;
         _professorService = professorService;
         _salaService = salaService;
         _httpContextAccessor = httpContextAccessor;
-        _account = ( Account? )_httpContextAccessor.HttpContext?.Items["Account"];
+        _account = (Account?)_httpContextAccessor.HttpContext?.Items["Account"];
     }
 
-    public ResponseModel Insert(CreateEventoRequest request, int eventoTipoId)
-    {
+    public ResponseModel Insert(CreateEventoRequest request, int eventoTipoId) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -55,38 +53,21 @@ public class EventoService : IEventoService {
             string eventoTipo;
 
             switch (eventoTipoId) {
-            case ( int )EventoTipo.Reuniao:
-                if (request.Alunos.Count != 0) {
-                    return new ResponseModel { Message = "Um evento de reunião não pode ter alunos associados" };
-                }
-                eventoTipo = "Reunião";
-                break;
+                case (int)EventoTipo.Reuniao:
+                    if (request.Alunos.Count != 0) {
+                        return new ResponseModel { Message = "Um evento de reunião não pode ter alunos associados" };
+                    }
+                    eventoTipo = "Reunião";
+                    break;
 
-            case ( int )EventoTipo.Oficina:
-                eventoTipo = "Oficina";
-                break;
+                case (int)EventoTipo.Oficina:
+                    eventoTipo = "Oficina";
+                    break;
 
-            case ( int )EventoTipo.AulaZero:
-                if (request.Alunos.Count != 1) {
-                    return new ResponseModel { Message = "Um evento de aula zero deve ter exatamente um aluno associado" };
-                }
-
-                if (request.Professores.Count != 1) {
-                    return new ResponseModel { Message = "Um evento de aula zero deve ter exatamente um professor associado" };
-                }
-                eventoTipo = "Aula Zero";
-                break;
-
-            case ( int )EventoTipo.Superacao:
-                if (request.Alunos.Count != 1) {
-                    return new ResponseModel { Message = "Um evento de Superação só pode ter um aluno associado" };
-                }
-                eventoTipo = "Superação";
-                break;
-
-            default:
-                return new ResponseModel { Message = "Internal Server Error : 'Tipo de evento inválido'" };
-            };
+                default:
+                    return new ResponseModel { Message = "Internal Server Error : 'Tipo de evento inválido'" };
+            }
+            ;
 
             IQueryable<Aluno> alunosInRequest = _db.Alunos.Where(a => a.Deactivated == null && request.Alunos.Contains(a.Id));
 
@@ -107,7 +88,7 @@ public class EventoService : IEventoService {
             foreach (var professor in professoresInRequest) {
                 bool hasTurmaConflict = _professorService.HasTurmaTimeConflict(
                     professorId: professor.Id,
-                    DiaSemana: ( int )request.Data.DayOfWeek,
+                    DiaSemana: (int)request.Data.DayOfWeek,
                     Horario: request.Data.TimeOfDay,
                     IgnoredTurmaId: null
                 );
@@ -144,7 +125,8 @@ public class EventoService : IEventoService {
 
             // Validations passed
 
-            Evento evento = new() {
+            Evento evento = new()
+            {
                 Data = request.Data,
                 Descricao = request.Descricao ?? "Evento sem descrição",
                 Observacao = request.Observacao ?? "Sem observação",
@@ -164,7 +146,8 @@ public class EventoService : IEventoService {
             _db.SaveChanges();
 
             // Adicionar as participações dos envolvidos no evento - Alunos e Professores
-            var participacoesAlunos = alunosInRequest.Select(aluno => new Evento_Participacao_Aluno {
+            var participacoesAlunos = alunosInRequest.Select(aluno => new Evento_Participacao_Aluno
+            {
                 Aluno_Id = aluno.Id,
                 Evento_Id = evento.Id,
             });
@@ -172,7 +155,8 @@ public class EventoService : IEventoService {
             foreach (var participacao in participacoesAlunos) {
                 _db.Evento_Participacao_Alunos.Add(participacao);
 
-                _db.Aluno_Historicos.Add(new Aluno_Historico {
+                _db.Aluno_Historicos.Add(new Aluno_Historico
+                {
                     Account_Id = _account.Id,
                     Aluno_Id = participacao.Aluno_Id,
                     Data = evento.Data,
@@ -180,7 +164,8 @@ public class EventoService : IEventoService {
                 });
             }
 
-            var participacoesProfessores = professoresInRequest.Select(aluno => new Evento_Participacao_Professor {
+            var participacoesProfessores = professoresInRequest.Select(aluno => new Evento_Participacao_Professor
+            {
                 Professor_Id = aluno.Id,
                 Evento_Id = evento.Id,
             });
@@ -192,7 +177,7 @@ public class EventoService : IEventoService {
             foreach (var professor in professoresInRequest) {
                 bool hasTurmaConflict = _professorService.HasTurmaTimeConflict(
                     professorId: professor.Id,
-                    DiaSemana: ( int )request.Data.DayOfWeek,
+                    DiaSemana: (int)request.Data.DayOfWeek,
                     Horario: request.Data.TimeOfDay,
                     IgnoredTurmaId: null
                 );
@@ -222,15 +207,15 @@ public class EventoService : IEventoService {
             response.Success = true;
             response.Message = $"Evento de '{responseObject.Evento_Tipo}' registrado com sucesso";
             response.Object = responseObject;
-        } catch (Exception ex) {
-            response.Message = $"Falha ao inserir evento de tipo '{( int )eventoTipoId}': {ex}";
+        }
+        catch (Exception ex) {
+            response.Message = $"Falha ao inserir evento de tipo '{(int)eventoTipoId}': {ex}";
         }
 
         return response;
     }
 
-    public ResponseModel Update(UpdateEventoRequest request)
-    {
+    public ResponseModel Update(UpdateEventoRequest request) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -255,7 +240,7 @@ public class EventoService : IEventoService {
             foreach (var professor in professoresInRequest) {
                 bool hasTurmaConflict = _professorService.HasTurmaTimeConflict(
                     professorId: professor.Id,
-                    DiaSemana: ( int )evento.Data.DayOfWeek,
+                    DiaSemana: (int)evento.Data.DayOfWeek,
                     Horario: evento.Data.TimeOfDay,
                     IgnoredTurmaId: null
                 );
@@ -320,7 +305,8 @@ public class EventoService : IEventoService {
             }
 
             foreach (int professorId in participacoesToAdd) {
-                var participacao = new Evento_Participacao_Professor {
+                var participacao = new Evento_Participacao_Professor
+                {
                     Evento_Id = evento.Id,
                     Professor_Id = professorId
                 };
@@ -338,19 +324,19 @@ public class EventoService : IEventoService {
             response.OldObject = oldObject;
             response.Object = responseObject;
             response.Success = true;
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Falha ao atualizar evento ID: '{request.Id}' | {ex}";
         }
 
         return response;
     }
 
-    public List<CalendarioEventoList> GetCalendarioAlternative(CalendarioRequest request)
-    {
+    public List<CalendarioEventoList> GetCalendarioAlternative(CalendarioRequest request) {
         DateTime now = TimeFunctions.HoraAtualBR();
 
         request.IntervaloDe ??= GetThisWeeksMonday(now); // Se não passar data inicio, considera a segunda-feira da semana atual
-        request.IntervaloAte ??= GetThisWeeksSaturday(( DateTime )request.IntervaloDe); // Se não passar data fim, considera o sábado da semana da data inicio
+        request.IntervaloAte ??= GetThisWeeksSaturday((DateTime)request.IntervaloDe); // Se não passar data fim, considera o sábado da semana da data inicio
 
         if (request.IntervaloAte < request.IntervaloDe) {
             throw new Exception("Final do intervalo não pode ser antes do seu próprio início");
@@ -422,7 +408,7 @@ public class EventoService : IEventoService {
                     .Where(p =>
                         p.Aluno_Id == a.Id &&
                         p.Deactivated == null &&
-                        p.Evento.Evento_Tipo_Id == ( int )EventoTipo.Aula)
+                        p.Evento.Evento_Tipo_Id == (int)EventoTipo.Aula)
                     .Count()
             })
             .Where(x => x.Participacoes <= 1)
@@ -460,26 +446,28 @@ public class EventoService : IEventoService {
          *      Sexta-feira      12:00 Reunião Pedagógica
          */
 
-        for (int dayOfWeek = 0 ; dayOfWeek < daysInWeek ; dayOfWeek++) {
+        for (int dayOfWeek = 0; dayOfWeek < daysInWeek; dayOfWeek++) {
             List<Turma> turmasDoDia = turmas.Where(t => t.DiaSemana == dayOfWeek).ToList();
 
             // Adicionando reuniões
-            if (dayOfWeek == ( int )DayOfWeek.Monday || dayOfWeek == ( int )DayOfWeek.Tuesday || dayOfWeek == ( int )DayOfWeek.Friday) {
+            if (dayOfWeek == (int)DayOfWeek.Monday || dayOfWeek == (int)DayOfWeek.Tuesday || dayOfWeek == (int)DayOfWeek.Friday) {
                 var description =
-                    dayOfWeek == ( int )DayOfWeek.Monday ? "Reunião Geral" :
-                    dayOfWeek == ( int )DayOfWeek.Tuesday ? "Reunião de Monitoramento" :
+                    dayOfWeek == (int)DayOfWeek.Monday ? "Reunião Geral" :
+                    dayOfWeek == (int)DayOfWeek.Tuesday ? "Reunião de Monitoramento" :
                     "Reunião Pedagógica";
 
-                CalendarioEventoList pseudoMeeting = new() {
+                CalendarioEventoList pseudoMeeting = new()
+                {
                     Id = -1,
-                    Evento_Tipo_Id = ( int )EventoTipo.Reuniao,
+                    Evento_Tipo_Id = (int)EventoTipo.Reuniao,
                     Evento_Tipo = "Pseudo-Reuniao",
                     Data = new DateTime(999, 1, 1, 12, 0, 0),
                     Descricao = description,
                     DuracaoMinutos = 60,
                     Finalizado = false,
                     Sala_Id = null,
-                    Professores = professores.Select(professor => new CalendarioProfessorList {
+                    Professores = professores.Select(professor => new CalendarioProfessorList
+                    {
                         Evento_Id = -1,
                         Professor_Id = professor.Id,
                         Nome = professor.Account.Name,
@@ -493,10 +481,11 @@ public class EventoService : IEventoService {
             }
 
             // Adicionando oficinas
-            if (dayOfWeek == ( int )DayOfWeek.Monday) {
-                CalendarioEventoList pseudoWorkshop = new() {
+            if (dayOfWeek == (int)DayOfWeek.Monday) {
+                CalendarioEventoList pseudoWorkshop = new()
+                {
                     Id = -1,
-                    Evento_Tipo_Id = ( int )EventoTipo.Oficina,
+                    Evento_Tipo_Id = (int)EventoTipo.Oficina,
                     Evento_Tipo = "Pseudo-Oficina",
 
                     Descricao = "Oficina - Tema indefinido",
@@ -516,9 +505,10 @@ public class EventoService : IEventoService {
 
             // Adicionando aulas de turmas
             foreach (var turma in turmasDoDia) {
-                CalendarioEventoList pseudoClass = new() {
+                CalendarioEventoList pseudoClass = new()
+                {
                     Id = -1,
-                    Evento_Tipo_Id = ( int )EventoTipo.Aula,
+                    Evento_Tipo_Id = (int)EventoTipo.Aula,
                     Evento_Tipo = "Pseudo-Aula",
 
                     Descricao = turma.Nome, // Pseudo aulas ganham o nome da turma
@@ -552,10 +542,11 @@ public class EventoService : IEventoService {
 
                 pseudoClass.Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos).OrderBy(a => a.Aluno).ToList();
 
-                pseudoClass.Professores.Add(new CalendarioProfessorList {
+                pseudoClass.Professores.Add(new CalendarioProfessorList
+                {
                     Id = null,
                     Evento_Id = pseudoClass.Id,
-                    Professor_Id = ( int )turma.Professor_Id,
+                    Professor_Id = (int)turma.Professor_Id,
                     Nome = turma.Professor.Account.Name,
                     CorLegenda = turma.Professor.CorLegenda,
                     Presente = null,
@@ -590,7 +581,7 @@ public class EventoService : IEventoService {
         DateTime data = request.IntervaloDe.Value;
 
         while (data < request.IntervaloAte) {
-            int diaDaSemana = ( int )data.DayOfWeek;
+            int diaDaSemana = (int)data.DayOfWeek;
 
             // Pegar os eventos a adicionar para aquele dia da semana
             List<CalendarioEventoList> eventsToAdd = recurringWeeklyEvents[diaDaSemana].ToList();
@@ -626,12 +617,11 @@ public class EventoService : IEventoService {
     }
 
 
-    public List<CalendarioEventoList> GetCalendario(CalendarioRequest request)
-    {
+    public List<CalendarioEventoList> GetCalendario(CalendarioRequest request) {
         DateTime now = TimeFunctions.HoraAtualBR();
 
         request.IntervaloDe ??= GetThisWeeksMonday(now); // Se não passar data inicio, considera a segunda-feira da semana atual
-        request.IntervaloAte ??= GetThisWeeksSaturday(( DateTime )request.IntervaloDe); // Se não passar data fim, considera o sábado da semana da data inicio
+        request.IntervaloAte ??= GetThisWeeksSaturday((DateTime)request.IntervaloDe); // Se não passar data fim, considera o sábado da semana da data inicio
 
         if (request.IntervaloAte < request.IntervaloDe) {
             throw new Exception("Final do intervalo não pode ser antes do seu próprio início");
@@ -703,7 +693,7 @@ public class EventoService : IEventoService {
                     .Where(p =>
                         p.Aluno_Id == a.Id &&
                         p.Deactivated == null &&
-                        p.Evento.Evento_Tipo_Id == ( int )EventoTipo.Aula)
+                        p.Evento.Evento_Tipo_Id == (int)EventoTipo.Aula)
                     .Count()
             })
             .Where(x => x.Participacoes <= 1)
@@ -725,7 +715,7 @@ public class EventoService : IEventoService {
             evento.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).OrderBy(a => a.Aluno).ToList();
             evento.Professores = _db.CalendarioProfessorLists.Where(e => e.Evento_Id == evento.Id).ToList();
 
-            if (evento.Evento_Tipo_Id == ( int )EventoTipo.Aula || evento.Evento_Tipo_Id == ( int )EventoTipo.AulaExtra) {
+            if (evento.Evento_Tipo_Id == (int)EventoTipo.Aula || evento.Evento_Tipo_Id == (int)EventoTipo.AulaExtra) {
                 var perfisCognitivos = _db.Evento_Aula_PerfilCognitivo_Rels
                     .Where(p => p.Evento_Aula_Id == evento.Id)
                     .Include(p => p.PerfilCognitivo)
@@ -756,15 +746,16 @@ public class EventoService : IEventoService {
                 CalendarioEventoList? eventoOficina = calendarioResponse
                     .FirstOrDefault(a =>
                         a.Data.Date == data.Date
-                        && a.Evento_Tipo_Id == ( int )EventoTipo.Oficina);
+                        && a.Evento_Tipo_Id == (int)EventoTipo.Oficina);
 
                 // Não usar mais o continue porque o método adiciona outros pseudo eventos
                 if (eventoOficina is null) {
                     var roteiro = roteiros.FirstOrDefault(x => data.Date <= x.DataInicio.Date && data >= x.DataFim);
 
-                    CalendarioEventoList pseudoOficina = new() {
+                    CalendarioEventoList pseudoOficina = new()
+                    {
                         Id = -1,
-                        Evento_Tipo_Id = ( int )EventoTipo.Oficina,
+                        Evento_Tipo_Id = (int)EventoTipo.Oficina,
                         Evento_Tipo = "Pseudo-Oficina",
 
                         Descricao = "Oficina - Tema indefinido",
@@ -788,7 +779,7 @@ public class EventoService : IEventoService {
             if (diaSemana == DayOfWeek.Monday || diaSemana == DayOfWeek.Tuesday || diaSemana == DayOfWeek.Friday) {
                 CalendarioEventoList? eventoReuniao = calendarioResponse.FirstOrDefault(a =>
                     a.Data.Date == data.Date
-                    && a.Evento_Tipo_Id == ( int )EventoTipo.Reuniao);
+                    && a.Evento_Tipo_Id == (int)EventoTipo.Reuniao);
 
                 // Não usar mais o continue porque o método adiciona outros pseudo eventos
                 if (eventoReuniao is null) {
@@ -796,16 +787,18 @@ public class EventoService : IEventoService {
                                     diaSemana == DayOfWeek.Tuesday ? "Reunião Monitoramento" : // Terça-feira
                                     "Reunião Pedagógica"; // Sexta-feira
 
-                    CalendarioEventoList pseudoReuniao = new() {
+                    CalendarioEventoList pseudoReuniao = new()
+                    {
                         Id = -1,
-                        Evento_Tipo_Id = ( int )EventoTipo.Reuniao,
+                        Evento_Tipo_Id = (int)EventoTipo.Reuniao,
                         Evento_Tipo = "Pseudo-Reuniao",
                         Data = new DateTime(data.Year, data.Month, data.Day, 12, 0, 0),
                         Descricao = descricao,
                         DuracaoMinutos = 60,
                         Finalizado = false,
                         Sala_Id = null,
-                        Professores = professores.Select(professor => new CalendarioProfessorList {
+                        Professores = professores.Select(professor => new CalendarioProfessorList
+                        {
                             Evento_Id = -1,
                             Professor_Id = professor.Id,
                             Nome = professor.Account.Name,
@@ -821,7 +814,7 @@ public class EventoService : IEventoService {
             //
             // Adicionar aulas da turma do dia que ainda não foram instanciadas
             //
-            List<Turma> turmasDoDia = turmas.Where(t => t.DiaSemana == ( int )data.DayOfWeek).ToList();
+            List<Turma> turmasDoDia = turmas.Where(t => t.DiaSemana == (int)data.DayOfWeek).ToList();
 
             foreach (Turma turma in turmasDoDia) {
                 // Se a turma já tem uma aula instanciada no mesmo horário, é uma aula repetida, então ignora e passa pra proxima
@@ -833,9 +826,10 @@ public class EventoService : IEventoService {
                 if (eventoAula is null) {
                     var roteiro = roteiros.FirstOrDefault(x => data.Date <= x.DataInicio.Date && data >= x.DataFim);
 
-                    CalendarioEventoList pseudoAula = new() {
+                    CalendarioEventoList pseudoAula = new()
+                    {
                         Id = -1,
-                        Evento_Tipo_Id = ( int )EventoTipo.Aula,
+                        Evento_Tipo_Id = (int)EventoTipo.Aula,
                         Evento_Tipo = "Pseudo-Aula",
 
                         Descricao = turma.Nome, // Pseudo aulas ganham o nome da turma
@@ -871,10 +865,11 @@ public class EventoService : IEventoService {
 
                     pseudoAula.Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos).OrderBy(a => a.Aluno).ToList();
 
-                    pseudoAula.Professores.Add(new CalendarioProfessorList {
+                    pseudoAula.Professores.Add(new CalendarioProfessorList
+                    {
                         Id = null,
                         Evento_Id = pseudoAula.Id,
-                        Professor_Id = ( int )turma.Professor_Id,
+                        Professor_Id = (int)turma.Professor_Id,
                         Nome = turma.Professor.Account.Name,
                         CorLegenda = turma.Professor.CorLegenda,
                         Presente = null,
@@ -902,20 +897,17 @@ public class EventoService : IEventoService {
         return calendarioResponse;
     }
 
-    private static DateTime GetThisWeeksMonday(DateTime date)
-    {
-        var response = date.AddDays(-( int )date.DayOfWeek);
+    private static DateTime GetThisWeeksMonday(DateTime date) {
+        var response = date.AddDays(-(int)date.DayOfWeek);
         return response.AddDays(1);
     }
 
-    private static DateTime GetThisWeeksSaturday(DateTime date)
-    {
-        var response = date.AddDays(-( int )date.DayOfWeek);
+    private static DateTime GetThisWeeksSaturday(DateTime date) {
+        var response = date.AddDays(-(int)date.DayOfWeek);
         return response.AddDays(6);
     }
 
-    public ResponseModel EnrollAluno(EnrollAlunoRequest request)
-    {
+    public ResponseModel EnrollAluno(EnrollAlunoRequest request) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -950,40 +942,44 @@ public class EventoService : IEventoService {
 
             // Dependendo do tipo de evento, não deve poder inscrever mais um aluno
             switch (evento.Evento_Tipo_Id) {
-            case ( int )EventoTipo.Aula:
-                if (amountOfAlunosEnrolled >= evento.Evento_Aula!.CapacidadeMaximaAlunos) {
-                    return new ResponseModel { Message = "Este evento de aula se encontra lotado." };
-                }
-                break;
+                case (int)EventoTipo.Aula:
+                    if (amountOfAlunosEnrolled >= evento.Evento_Aula!.CapacidadeMaximaAlunos) {
+                        return new ResponseModel { Message = "Este evento de aula se encontra lotado." };
+                    }
+                    break;
 
-            case ( int )EventoTipo.AulaExtra:
-                if (amountOfAlunosEnrolled >= evento.Evento_Aula!.CapacidadeMaximaAlunos) {
-                    return new ResponseModel { Message = "Este evento de aula extra se encontra lotado." };
-                }
-                break;
+                case (int)EventoTipo.AulaExtra:
+                    if (amountOfAlunosEnrolled >= evento.Evento_Aula!.CapacidadeMaximaAlunos) {
+                        return new ResponseModel { Message = "Este evento de aula extra se encontra lotado." };
+                    }
+                    break;
 
-            case ( int )EventoTipo.AulaZero:
-                if (amountOfAlunosEnrolled >= 1) {
-                    return new ResponseModel { Message = "Este evento de aula zero se encontra lotado." };
-                }
-                break;
+                case (int)EventoTipo.AulaZero:
+                    // Se o aluno sendo inscrito já participou de uma aula zero, não deve permitir a inscrição
+                    bool alunoAlreadyParticipated = _db.Evento_Participacao_Alunos
+                        .Include(p => p.Evento)
+                        .Any(p =>
+                            p.Aluno_Id == aluno.Id
+                            && p.Evento.Evento_Tipo_Id == (int)EventoTipo.AulaZero
+                            && p.Evento.Deactivated == null);
 
-            case ( int )EventoTipo.Reuniao:
-                return new ResponseModel { Message = "Não é possível inscrever alunos em uma reunião." };
+                    if (alunoAlreadyParticipated) {
+                        return new ResponseModel { Message = $"Este aluno já participou de uma aula zero." };
+                    }
 
-            case ( int )EventoTipo.Superacao:
-                if (amountOfAlunosEnrolled >= 1) {
-                    return new ResponseModel { Message = "Este evento de Superação se encontra lotado." };
-                }
-                break;
+                    break;
 
-            default:
-                break;
+                case (int)EventoTipo.Reuniao:
+                    return new ResponseModel { Message = "Não é possível inscrever alunos em uma reunião." };
+
+                default:
+                    break;
             }
 
             // Validations passed
 
-            Evento_Participacao_Aluno newParticipacao = new() {
+            Evento_Participacao_Aluno newParticipacao = new()
+            {
                 Evento_Id = evento.Id,
                 Aluno_Id = aluno.Id,
             };
@@ -994,15 +990,15 @@ public class EventoService : IEventoService {
             response.Message = $"Aluno foi inscrito no evento com sucesso";
             response.Object = newParticipacao;
             response.Success = true;
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Falha ao inscrever aluno no evento: {ex}";
         }
 
         return response;
     }
 
-    public ResponseModel Cancelar(CancelarEventoRequest request)
-    {
+    public ResponseModel Cancelar(CancelarEventoRequest request) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -1032,15 +1028,15 @@ public class EventoService : IEventoService {
             response.Message = $"Evento foi cancelado com sucesso";
             response.Object = responseObject;
             response.Success = true;
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Falha ao cancelar evento: {ex}";
         }
 
         return response;
     }
 
-    public ResponseModel Reagendar(ReagendarEventoRequest request)
-    {
+    public ResponseModel Reagendar(ReagendarEventoRequest request) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -1076,7 +1072,7 @@ public class EventoService : IEventoService {
             foreach (var participacao in professorParticipacoes) {
                 bool hasTurmaConflict = _professorService.HasTurmaTimeConflict(
                     professorId: participacao.Professor_Id,
-                    DiaSemana: ( int )request.Data.DayOfWeek,
+                    DiaSemana: (int)request.Data.DayOfWeek,
                     Horario: request.Data.TimeOfDay,
                     IgnoredTurmaId: null
                 );
@@ -1102,7 +1098,8 @@ public class EventoService : IEventoService {
 
             _db.Eventos.Update(evento);
 
-            Evento newEvento = new() {
+            Evento newEvento = new()
+            {
                 Data = request.Data,
                 Observacao = request.Observacao ?? evento.Observacao,
                 Sala_Id = request.Sala_Id,
@@ -1118,7 +1115,8 @@ public class EventoService : IEventoService {
             };
 
             if (evento.Evento_Aula is not null) {
-                Evento_Aula newEventoAula = new() {
+                Evento_Aula newEventoAula = new()
+                {
                     CapacidadeMaximaAlunos = evento.Evento_Aula.CapacidadeMaximaAlunos,
                     Professor_Id = evento.Evento_Aula.Professor_Id,
                     Roteiro_Id = evento.Evento_Aula.Roteiro_Id,
@@ -1133,7 +1131,8 @@ public class EventoService : IEventoService {
 
             // Adicionar uma nova participação na data indicada no request, e em seguida desativar a participação original
             foreach (var participacao in evento.Evento_Participacao_AlunoEventos) {
-                Evento_Participacao_Aluno newParticipacao = new() {
+                Evento_Participacao_Aluno newParticipacao = new()
+                {
                     Evento_Id = newEvento.Id,
                     Aluno_Id = participacao.Aluno_Id,
                     Observacao = participacao.Observacao,
@@ -1154,7 +1153,8 @@ public class EventoService : IEventoService {
 
             // Fazer o mesmo com a participação do professor
             foreach (var participacao in evento.Evento_Participacao_Professors) {
-                Evento_Participacao_Professor newParticipacao = new() {
+                Evento_Participacao_Professor newParticipacao = new()
+                {
                     Evento_Id = newEvento.Id,
                     Professor_Id = participacao.Professor_Id,
                     Observacao = participacao.Observacao,
@@ -1180,15 +1180,15 @@ public class EventoService : IEventoService {
             response.OldObject = oldObject;
             response.Object = responseObject;
             response.Success = true;
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Falha ao reagendar evento: {ex}";
         }
 
         return response;
     }
 
-    public ResponseModel Finalizar(FinalizarEventoRequest request)
-    {
+    public ResponseModel Finalizar(FinalizarEventoRequest request) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -1238,7 +1238,7 @@ public class EventoService : IEventoService {
 
                     do {
                         data = data.AddDays(1);
-                    } while (( int )data.DayOfWeek != turma.DiaSemana);
+                    } while ((int)data.DayOfWeek != turma.DiaSemana);
 
                     participacao.Aluno.PrimeiraAula = data;
                 }
@@ -1275,18 +1275,18 @@ public class EventoService : IEventoService {
             response.Message = $"Evento foi finalizado com sucesso.";
             response.Object = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == evento.Id);
             response.Success = true;
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Falha ao finalizar evento: {ex}";
         }
 
         return response;
     }
 
-    public List<CalendarioEventoList> GetOficinas()
-    {
+    public List<CalendarioEventoList> GetOficinas() {
         var oficinas = _db.CalendarioEventoLists
             .Where(e =>
-                e.Evento_Tipo_Id == ( int )EventoTipo.Oficina
+                e.Evento_Tipo_Id == (int)EventoTipo.Oficina
                 && e.Data > TimeFunctions.HoraAtualBR())
             .OrderBy(e => e.Data)
             .ToList();
@@ -1300,8 +1300,7 @@ public class EventoService : IEventoService {
         return oficinas;
     }
 
-    public CalendarioEventoList GetEventoById(int eventoId)
-    {
+    public CalendarioEventoList GetEventoById(int eventoId) {
         CalendarioEventoList evento = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == eventoId) ?? throw new Exception("Evento não encontrado");
 
         evento.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).ToList();
@@ -1318,239 +1317,225 @@ public class EventoService : IEventoService {
         return evento;
     }
 
-	public List<Dashboard> Dashboard(DashboardRequest request)
-	{
+    public List<Dashboard> Dashboard(DashboardRequest request) {
 
-		DateTime intervaloDe = new DateTime(request.Ano, request.Mes, 1);
-		DateTime intervaloAte = intervaloDe.AddMonths(1).AddDays(-1);
+        DateTime intervaloDe = new DateTime(request.Ano, request.Mes, 1);
+        DateTime intervaloAte = intervaloDe.AddMonths(1).AddDays(-1);
 
-		List<Dashboard> response = new();
+        List<Dashboard> response = new();
 
-		List<CalendarioEventoList> eventos = _db.CalendarioEventoLists
-											.Where(x =>  x.Data.Date >= intervaloDe.Date 
-														&& x.Data.Date <= intervaloAte.Date 
-														&& x.Evento_Tipo_Id == (int)EventoTipo.Aula)
-											.OrderBy(x => x.Data)
-											.ToList();
+        List<CalendarioEventoList> eventos = _db.CalendarioEventoLists
+                                            .Where(x => x.Data.Date >= intervaloDe.Date
+                                                        && x.Data.Date <= intervaloAte.Date
+                                                        && x.Evento_Tipo_Id == (int)EventoTipo.Aula)
+                                            .OrderBy(x => x.Data)
+                                            .ToList();
 
-		List<CalendarioAlunoList> participacoes = _db.CalendarioAlunoLists.ToList();
-
-
-		List<Turma> turmas = _db.Turmas
-			.Where(t => t.Deactivated == null)
-			.Include(t => t.Alunos!).ThenInclude(x => x.Apostila_Abaco)
-			.Include(t => t.Alunos!).ThenInclude(x => x.Apostila_AH)
-			.Include(t => t.Professor!).ThenInclude(t => t.Account)
-			.Include(t => t.Sala)
-			.OrderBy(x => x.Id)
-			.ToList();
-
-		List<AlunoList> alunos = _db.AlunoLists.Where(t => t.Deactivated == null)
-			.ToList();
+        List<CalendarioAlunoList> participacoes = _db.CalendarioAlunoLists.ToList();
 
 
-		List<Roteiro> roteiros = _db.Roteiros
-			.Where(x => x.DataInicio.Month == request.Mes && x.DataInicio.Year == request.Ano)
-			//.Where(x => x.DataInicio.Date >= intervaloDe.Date && x.DataFim.Date <= intervaloAte.Date)
-			.OrderBy(x => x.DataInicio)
-			.ToList();
+        List<Turma> turmas = _db.Turmas
+            .Where(t => t.Deactivated == null)
+            .Include(t => t.Alunos!).ThenInclude(x => x.Apostila_Abaco)
+            .Include(t => t.Alunos!).ThenInclude(x => x.Apostila_AH)
+            .Include(t => t.Professor!).ThenInclude(t => t.Account)
+            .Include(t => t.Sala)
+            .OrderBy(x => x.Id)
+            .ToList();
 
-		if (roteiros.Count < 4)
-		{
-			int diff = 4 - roteiros.Count;
+        List<AlunoList> alunos = _db.AlunoLists.Where(t => t.Deactivated == null)
+            .ToList();
 
-			Roteiro lastRoteiro;
-			int lastSemana;
-			List<DateTime> lastIntervalo = new List<DateTime>();
 
-			if (roteiros.Count > 0)
-			{
-				lastRoteiro = roteiros.Last();
-				lastIntervalo = new List<DateTime>() { lastRoteiro.DataInicio, lastRoteiro.DataFim };
-			}
-			else
-			{
-				lastRoteiro = _db.Roteiros.OrderBy(x => x.DataInicio).LastOrDefault(x => x.DataInicio.Date <= intervaloDe.Date);
-				lastIntervalo = new List<DateTime>() { intervaloDe.AddDays(-7), intervaloDe.AddDays(-1) };
+        List<Roteiro> roteiros = _db.Roteiros
+            .Where(x => x.DataInicio.Month == request.Mes && x.DataInicio.Year == request.Ano)
+            //.Where(x => x.DataInicio.Date >= intervaloDe.Date && x.DataFim.Date <= intervaloAte.Date)
+            .OrderBy(x => x.DataInicio)
+            .ToList();
 
-			}
-			
-			lastSemana = lastRoteiro?.Semana ?? 0;
+        if (roteiros.Count < 4) {
+            int diff = 4 - roteiros.Count;
 
-			for (int i = 1; i <= diff; i++)
-			{
-				DateTime inicio = lastIntervalo[0].AddDays(7);
-				DateTime fim = lastIntervalo[1].AddDays(7);
+            Roteiro lastRoteiro;
+            int lastSemana;
+            List<DateTime> lastIntervalo = new List<DateTime>();
 
-				roteiros.Add(new Roteiro()
-				{
-					Id = -1,
-					Account_Created_Id = -1,
-					CorLegenda = "black",
-					Semana = ++lastSemana,
-					Tema = "Tema indefinido",
-					Created = DateTime.Now,
-					LastUpdated = null,
-					Deactivated = null,
-					DataInicio = inicio,
-					DataFim = fim,
-					Evento_Aulas = new List<Evento_Aula>() { }
-				});
+            if (roteiros.Count > 0) {
+                lastRoteiro = roteiros.Last();
+                lastIntervalo = new List<DateTime>() { lastRoteiro.DataInicio, lastRoteiro.DataFim };
+            }
+            else {
+                lastRoteiro = _db.Roteiros.OrderBy(x => x.DataInicio).LastOrDefault(x => x.DataInicio.Date <= intervaloDe.Date);
+                lastIntervalo = new List<DateTime>() { intervaloDe.AddDays(-7), intervaloDe.AddDays(-1) };
 
-				lastIntervalo = new List<DateTime>() { inicio, fim };
-			}
-		}
-		
-		roteiros = roteiros.OrderBy(x => x.DataInicio).ToList();
+            }
+
+            lastSemana = lastRoteiro?.Semana ?? 0;
+
+            for (int i = 1; i <= diff; i++) {
+                DateTime inicio = lastIntervalo[0].AddDays(7);
+                DateTime fim = lastIntervalo[1].AddDays(7);
+
+                roteiros.Add(new Roteiro()
+                {
+                    Id = -1,
+                    Account_Created_Id = -1,
+                    CorLegenda = "black",
+                    Semana = ++lastSemana,
+                    Tema = "Tema indefinido",
+                    Created = DateTime.Now,
+                    LastUpdated = null,
+                    Deactivated = null,
+                    DataInicio = inicio,
+                    DataFim = fim,
+                    Evento_Aulas = new List<Evento_Aula>() { }
+                });
+
+                lastIntervalo = new List<DateTime>() { inicio, fim };
+            }
+        }
+
+        roteiros = roteiros.OrderBy(x => x.DataInicio).ToList();
 
         foreach (Roteiro roteiro in roteiros) {
 
-			foreach (Turma turma in turmas)
-			{
+            foreach (Turma turma in turmas) {
 
-				// Encontra a Data da aula da turma naquela semana do roteiro
-				List<AlunoList> alunosTurma = alunos.Where(x => x.Turma_Id == turma.Id).ToList();
-				DayOfWeek roteiroWeek = roteiro.DataInicio.DayOfWeek;
-
-
-				// Recupera o próximo data do dia da semana da turma a partir do inicio do roteiro
-				var diff = 7 - (int)roteiroWeek + turma.DiaSemana;
-				DateTime data = roteiro.DataInicio.AddDays(diff);
+                // Encontra a Data da aula da turma naquela semana do roteiro
+                List<AlunoList> alunosTurma = alunos.Where(x => x.Turma_Id == turma.Id).ToList();
+                DayOfWeek roteiroWeek = roteiro.DataInicio.DayOfWeek;
 
 
-				// se a data do dia da semana estiver antes do inicio do roteiro ou depois do fim do roteiro
-				// ou seja, fora do intervalo, procura a data mais próxima a partir do domingo da semana do roteiro
-				if (data.Date < roteiro.DataInicio.Date || data.Date > roteiro.DataFim.Date)
-				{
-					DateTime domingo = roteiro.DataInicio.AddDays(-(int)roteiroWeek);
-					data = domingo.AddDays(turma.DiaSemana);
-				}
-
-				// Calcular primeira Aula
-				int diaSemanaTurma = (int)turma.DiaSemana;
+                // Recupera o próximo data do dia da semana da turma a partir do inicio do roteiro
+                var diff = 7 - (int)roteiroWeek + turma.DiaSemana;
+                DateTime data = roteiro.DataInicio.AddDays(diff);
 
 
-				List<CalendarioEventoList>? aulas = eventos.Where(a => a.Roteiro_Id == roteiro.Id && a.Turma_Id == turma.Id).ToList();
-				if (aulas.Count > 0)
-				{
+                // se a data do dia da semana estiver antes do inicio do roteiro ou depois do fim do roteiro
+                // ou seja, fora do intervalo, procura a data mais próxima a partir do domingo da semana do roteiro
+                if (data.Date < roteiro.DataInicio.Date || data.Date > roteiro.DataFim.Date) {
+                    DateTime domingo = roteiro.DataInicio.AddDays(-(int)roteiroWeek);
+                    data = domingo.AddDays(turma.DiaSemana);
+                }
 
-					foreach (CalendarioEventoList aula in aulas)
-					{
+                // Calcular primeira Aula
+                int diaSemanaTurma = (int)turma.DiaSemana;
 
 
-						var participacoesAula = participacoes.Where(x => x.Evento_Id == aula.Id).ToList();
+                List<CalendarioEventoList>? aulas = eventos.Where(a => a.Roteiro_Id == roteiro.Id && a.Turma_Id == turma.Id).ToList();
+                if (aulas.Count > 0) {
 
-						foreach (CalendarioAlunoList participacao in participacoesAula)
-						{
+                    foreach (CalendarioEventoList aula in aulas) {
 
-							DateTime? dataInicioVigencia = participacao.DataInicioVigencia.Value;
-							DateTime novaData = dataInicioVigencia.Value.AddDays(diff);
 
-							Dashboard dashboard = new()
-							{
-								Show = true,
-								Roteiro_Id = roteiro.Id,
-								Aluno_Id = participacao.Aluno_Id,
-								PrimeiraAula = novaData.Date == data.Date,
-								Aula = aula,
-								Participacao = participacao,
-							};
-							response.Add(dashboard);
-						}
+                        var participacoesAula = participacoes.Where(x => x.Evento_Id == aula.Id).ToList();
 
-					}
+                        foreach (CalendarioAlunoList participacao in participacoesAula) {
 
-				}
-				else
-				{
-					if (data.Date >= roteiro.DataInicio.Date && data.Date <= roteiro.DataFim.Date)
-					{
+                            DateTime? dataInicioVigencia = participacao.DataInicioVigencia.Value;
+                            DateTime novaData = dataInicioVigencia.Value.AddDays(diff);
 
-						CalendarioEventoList pseudoAula = new()
-						{
-							Id = -1,
-							Data = new DateTime(data.Year, data.Month, data.Day, turma!.Horario!.Value.Hours, turma.Horario.Value.Minutes, 0),
-							Descricao = turma.Nome,
-							Evento_Tipo_Id = (int)EventoTipo.Aula,
+                            Dashboard dashboard = new()
+                            {
+                                Show = true,
+                                Roteiro_Id = roteiro.Id,
+                                Aluno_Id = participacao.Aluno_Id,
+                                PrimeiraAula = novaData.Date == data.Date,
+                                Aula = aula,
+                                Participacao = participacao,
+                            };
+                            response.Add(dashboard);
+                        }
 
-							DuracaoMinutos = 120,
-							Finalizado = false,
-							Roteiro_Id = roteiro.Id,
-							ReagendamentoDe_Evento_Id = null,
-							Deactivated = null,
-							Observacao = null,
+                    }
 
-							Professor_Id = turma?.Professor_Id,
-							Professor = turma?.Professor is not null ? turma.Professor.Account.Name : "Professor indefinido",
-							CorLegenda = turma?.Professor is not null ? turma.Professor.CorLegenda : "#000",
+                }
+                else {
+                    if (data.Date >= roteiro.DataInicio.Date && data.Date <= roteiro.DataFim.Date) {
 
-							Sala_Id = turma?.Sala_Id,
-							NumeroSala = turma?.Sala?.NumeroSala,
-							Andar = turma?.Sala?.Andar,
+                        CalendarioEventoList pseudoAula = new()
+                        {
+                            Id = -1,
+                            Data = new DateTime(data.Year, data.Month, data.Day, turma!.Horario!.Value.Hours, turma.Horario.Value.Minutes, 0),
+                            Descricao = turma.Nome,
+                            Evento_Tipo_Id = (int)EventoTipo.Aula,
 
-							Turma_Id = turma.Id,
-							Turma = turma.Nome,
-							CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
+                            DuracaoMinutos = 120,
+                            Finalizado = false,
+                            Roteiro_Id = roteiro.Id,
+                            ReagendamentoDe_Evento_Id = null,
+                            Deactivated = null,
+                            Observacao = null,
 
-						};
+                            Professor_Id = turma?.Professor_Id,
+                            Professor = turma?.Professor is not null ? turma.Professor.Account.Name : "Professor indefinido",
+                            CorLegenda = turma?.Professor is not null ? turma.Professor.CorLegenda : "#000",
 
-						foreach (var aluno in alunosTurma)
-						{
+                            Sala_Id = turma?.Sala_Id,
+                            NumeroSala = turma?.Sala?.NumeroSala,
+                            Andar = turma?.Sala?.Andar,
 
-							CalendarioAlunoList pseudoParticipacao = new()
-							{
-								Id = -1,
-								Evento_Id = -1,
-								Aluno_Id = aluno.Id,
-								Aluno = aluno.Nome!,
-								Celular = aluno.Celular!,
-								Checklist_Id = aluno.Checklist_Id,
-								Checklist = aluno.Checklist,
-								DataInicioVigencia = aluno.DataInicioVigencia,
-								DataFimVigencia = aluno.DataFimVigencia,
-								PrimeiraAula = aluno.PrimeiraAula,
+                            Turma_Id = turma.Id,
+                            Turma = turma.Nome,
+                            CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
 
-								Apostila_Abaco = aluno.Apostila_Abaco,
-								Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
-								NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
+                        };
 
-								Apostila_AH = aluno.Apostila_AH,
-								Apostila_AH_Id = aluno.Apostila_AH_Id,
-								NumeroPaginaAH = aluno.NumeroPaginaAH,
+                        foreach (var aluno in alunosTurma) {
 
-								Turma_Id = turma.Id,
-								Turma = turma.Nome,
-							};
+                            CalendarioAlunoList pseudoParticipacao = new()
+                            {
+                                Id = -1,
+                                Evento_Id = -1,
+                                Aluno_Id = aluno.Id,
+                                Aluno = aluno.Nome!,
+                                Celular = aluno.Celular!,
+                                Checklist_Id = aluno.Checklist_Id,
+                                Checklist = aluno.Checklist,
+                                DataInicioVigencia = aluno.DataInicioVigencia,
+                                DataFimVigencia = aluno.DataFimVigencia,
+                                PrimeiraAula = aluno.PrimeiraAula,
 
-							Dashboard dashboard = new()
-							{
-								Roteiro_Id = roteiro.Id,
-								Aluno_Id = aluno.Id,
-								Participacao = pseudoParticipacao,
-								Aula = pseudoAula
-							};
+                                Apostila_Abaco = aluno.Apostila_Abaco,
+                                Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
+                                NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
 
-							// Se o aluno não estiver vigente naquela data, não insere aula/participação para ele
-							if ((aluno.DataInicioVigencia.HasValue && data.Date >= aluno.DataInicioVigencia.Value.Date) && (!aluno.DataFimVigencia.HasValue || data.Date <= aluno.DataFimVigencia.Value.Date))
-							{
-								DateTime? dataInicioVigencia = aluno.DataInicioVigencia.Value;
-								DateTime novaData = dataInicioVigencia.Value.AddDays(diff);
-								dashboard.PrimeiraAula = novaData.Date == data.Date;
-								dashboard.Show = true;
-							}
+                                Apostila_AH = aluno.Apostila_AH,
+                                Apostila_AH_Id = aluno.Apostila_AH_Id,
+                                NumeroPaginaAH = aluno.NumeroPaginaAH,
 
-							response.Add(dashboard);
-						}
-					} else
-					{
+                                Turma_Id = turma.Id,
+                                Turma = turma.Nome,
+                            };
 
-					}
-				}
-			}
-		}
+                            Dashboard dashboard = new()
+                            {
+                                Roteiro_Id = roteiro.Id,
+                                Aluno_Id = aluno.Id,
+                                Participacao = pseudoParticipacao,
+                                Aula = pseudoAula
+                            };
 
-		response = response.OrderByDescending(x => x.Aula.Data).ToList();
+                            // Se o aluno não estiver vigente naquela data, não insere aula/participação para ele
+                            if ((aluno.DataInicioVigencia.HasValue && data.Date >= aluno.DataInicioVigencia.Value.Date) && (!aluno.DataFimVigencia.HasValue || data.Date <= aluno.DataFimVigencia.Value.Date)) {
+                                DateTime? dataInicioVigencia = aluno.DataInicioVigencia.Value;
+                                DateTime novaData = dataInicioVigencia.Value.AddDays(diff);
+                                dashboard.PrimeiraAula = novaData.Date == data.Date;
+                                dashboard.Show = true;
+                            }
 
-		return response;
-	}
+                            response.Add(dashboard);
+                        }
+                    }
+                    else {
+
+                    }
+                }
+            }
+        }
+
+        response = response.OrderByDescending(x => x.Aula.Data).ToList();
+
+        return response;
+    }
 }

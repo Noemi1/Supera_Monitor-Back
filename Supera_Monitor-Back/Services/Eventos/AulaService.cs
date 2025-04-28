@@ -31,18 +31,16 @@ public class AulaService : IAulaService {
     private readonly Account? _account;
     private readonly IHttpContextAccessor? _httpContextAccessor;
 
-    public AulaService(DataContext db, IMapper mapper, IProfessorService professorService, ISalaService salaService, IHttpContextAccessor httpContextAccessor)
-    {
+    public AulaService(DataContext db, IMapper mapper, IProfessorService professorService, ISalaService salaService, IHttpContextAccessor httpContextAccessor) {
         _db = db;
         _mapper = mapper;
         _professorService = professorService;
         _salaService = salaService;
         _httpContextAccessor = httpContextAccessor;
-        _account = ( Account? )_httpContextAccessor.HttpContext?.Items["Account"];
+        _account = (Account?)_httpContextAccessor.HttpContext?.Items["Account"];
     }
 
-    public EventoAulaModel GetById(int aulaId)
-    {
+    public EventoAulaModel GetById(int aulaId) {
         var aula = _db.Eventos
             .Where(e => e.Id == aulaId)
             .ProjectTo<EventoAulaModel>(_mapper.ConfigurationProvider)
@@ -52,10 +50,9 @@ public class AulaService : IAulaService {
         return aula is null ? throw new Exception("Aula não encontrada") : aula;
     }
 
-    public List<EventoAulaModel> GetAll()
-    {
+    public List<EventoAulaModel> GetAll() {
         List<EventoAulaModel> aulas = _db.Eventos
-            .Where(e => e.Evento_Tipo_Id == ( int )EventoTipo.Aula)
+            .Where(e => e.Evento_Tipo_Id == (int)EventoTipo.Aula)
             .ProjectTo<EventoAulaModel>(_mapper.ConfigurationProvider)
             .AsNoTracking()
             .ToList();
@@ -63,8 +60,7 @@ public class AulaService : IAulaService {
         return aulas;
     }
 
-    public ResponseModel InsertAulaForTurma(CreateAulaTurmaRequest request)
-    {
+    public ResponseModel InsertAulaForTurma(CreateAulaTurmaRequest request) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -112,7 +108,7 @@ public class AulaService : IAulaService {
 
             bool hasTurmaConflict = _professorService.HasTurmaTimeConflict(
                 professorId: professor.Id,
-                DiaSemana: ( int )request.Data.DayOfWeek,
+                DiaSemana: (int)request.Data.DayOfWeek,
                 Horario: request.Data.TimeOfDay,
                 IgnoredTurmaId: request.Turma_Id
             );
@@ -134,15 +130,17 @@ public class AulaService : IAulaService {
 
             // Validations passed
 
-            Evento evento = new() {
+            Evento evento = new()
+            {
                 Data = request.Data,
                 Descricao = turma.Nome ?? request.Descricao ?? "Sem descrição",
                 Observacao = request?.Observacao,
                 Sala_Id = request.Sala_Id,
                 DuracaoMinutos = request.DuracaoMinutos,
 
-                Evento_Tipo_Id = ( int )EventoTipo.Aula,
-                Evento_Aula = new Evento_Aula {
+                Evento_Tipo_Id = (int)EventoTipo.Aula,
+                Evento_Aula = new Evento_Aula
+                {
                     Roteiro_Id = request.Roteiro_Id,
                     Turma_Id = turma.Id,
                     CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
@@ -167,7 +165,8 @@ public class AulaService : IAulaService {
             .ToList();
 
             // Inserir participação do professor
-            Evento_Participacao_Professor participacaoProfessor = new() {
+            Evento_Participacao_Professor participacaoProfessor = new()
+            {
                 Evento_Id = evento.Id,
                 Professor_Id = professor.Id,
             };
@@ -175,7 +174,8 @@ public class AulaService : IAulaService {
             _db.Evento_Participacao_Professors.Add(participacaoProfessor);
             _db.SaveChanges();
 
-            IEnumerable<Evento_Participacao_Aluno> registros = alunos.Select(aluno => new Evento_Participacao_Aluno {
+            IEnumerable<Evento_Participacao_Aluno> registros = alunos.Select(aluno => new Evento_Participacao_Aluno
+            {
                 Evento_Id = evento.Id,
                 Aluno_Id = aluno.Id,
                 Presente = null,
@@ -185,7 +185,8 @@ public class AulaService : IAulaService {
             _db.SaveChanges();
 
             // Pegar os perfis cognitivos passados no request e criar as entidades de Aula_PerfilCognitivo
-            IEnumerable<Evento_Aula_PerfilCognitivo_Rel> eventoAulaPerfisCognitivos = request.PerfilCognitivo.Select(perfilCognitivoId => new Evento_Aula_PerfilCognitivo_Rel {
+            IEnumerable<Evento_Aula_PerfilCognitivo_Rel> eventoAulaPerfisCognitivos = request.PerfilCognitivo.Select(perfilCognitivoId => new Evento_Aula_PerfilCognitivo_Rel
+            {
                 PerfilCognitivo_Id = perfilCognitivoId,
                 Evento_Aula_Id = evento.Id,
             });
@@ -205,15 +206,15 @@ public class AulaService : IAulaService {
             response.Message = $"Evento de aula para a turma '{turma.Nome}' registrado com sucesso";
             response.Object = responseObject;
             response.Success = true;
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Falha ao registrar evento de aula: {ex}";
         }
 
         return response;
     }
 
-    public ResponseModel InsertAulaExtra(CreateAulaExtraRequest request)
-    {
+    public ResponseModel InsertAulaExtra(CreateAulaExtraRequest request) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -256,7 +257,7 @@ public class AulaService : IAulaService {
 
             bool hasTurmaConflict = _professorService.HasTurmaTimeConflict(
                 professorId: professor.Id,
-                DiaSemana: ( int )request.Data.DayOfWeek,
+                DiaSemana: (int)request.Data.DayOfWeek,
                 Horario: request.Data.TimeOfDay,
                 IgnoredTurmaId: null
             );
@@ -289,15 +290,17 @@ public class AulaService : IAulaService {
 
             // Validations passed
 
-            Evento evento = new() {
+            Evento evento = new()
+            {
                 Data = request.Data,
                 Descricao = request.Descricao ?? "Aula extra",
                 Observacao = request?.Observacao,
                 Sala_Id = request.Sala_Id,
                 DuracaoMinutos = request.DuracaoMinutos,
 
-                Evento_Tipo_Id = ( int )EventoTipo.AulaExtra,
-                Evento_Aula = new Evento_Aula {
+                Evento_Tipo_Id = (int)EventoTipo.AulaExtra,
+                Evento_Aula = new Evento_Aula
+                {
                     Roteiro_Id = request.Roteiro_Id,
                     Turma_Id = null,
                     CapacidadeMaximaAlunos = request.CapacidadeMaximaAlunos,
@@ -316,7 +319,8 @@ public class AulaService : IAulaService {
             _db.SaveChanges();
 
             // Inserir participação do professor
-            Evento_Participacao_Professor participacaoProfessor = new() {
+            Evento_Participacao_Professor participacaoProfessor = new()
+            {
                 Evento_Id = evento.Id,
                 Professor_Id = professor.Id,
             };
@@ -325,7 +329,8 @@ public class AulaService : IAulaService {
             _db.SaveChanges();
 
             // Inserir os registros dos alunos passados na requisição
-            IEnumerable<Evento_Participacao_Aluno> registros = request.Alunos.Select(alunoId => new Evento_Participacao_Aluno {
+            IEnumerable<Evento_Participacao_Aluno> registros = request.Alunos.Select(alunoId => new Evento_Participacao_Aluno
+            {
                 Aluno_Id = alunoId,
                 Evento_Id = evento.Id,
                 Presente = null,
@@ -334,7 +339,8 @@ public class AulaService : IAulaService {
             _db.Evento_Participacao_Alunos.AddRange(registros);
 
             // Pegar os perfis cognitivos passados na requisição e criar as entidades de Aula_PerfilCognitivo
-            IEnumerable<Evento_Aula_PerfilCognitivo_Rel> eventoAulaPerfisCognitivos = request.PerfilCognitivo.Select(perfilId => new Evento_Aula_PerfilCognitivo_Rel {
+            IEnumerable<Evento_Aula_PerfilCognitivo_Rel> eventoAulaPerfisCognitivos = request.PerfilCognitivo.Select(perfilId => new Evento_Aula_PerfilCognitivo_Rel
+            {
                 Evento_Aula_Id = evento.Id,
                 PerfilCognitivo_Id = perfilId
             });
@@ -354,15 +360,15 @@ public class AulaService : IAulaService {
             response.Message = "Aula extra criada com sucesso";
             response.Object = responseObject;
             response.Success = true;
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Falha ao registrar aula extra: {ex}";
         }
 
         return response;
     }
 
-    public ResponseModel InsertAulaZero(CreateAulaZeroRequest request)
-    {
+    public ResponseModel InsertAulaZero(CreateAulaZeroRequest request) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -393,10 +399,13 @@ public class AulaService : IAulaService {
                 return new ResponseModel { Message = "Sala não encontrada" };
             }
 
-            // Se o aluno já participou de alguma aula zero, então não deve ser possível criar novamente
+            // Se o aluno já participou de alguma aula zero, então não deve ser possível inscrevê-lo novamente
             bool alunoAlreadyParticipated = _db.Evento_Participacao_Alunos
                 .Include(p => p.Evento)
-                .Any(p => p.Aluno_Id == aluno.Id && p.Evento.Evento_Tipo_Id == ( int )EventoTipo.AulaZero);
+                .Any(p =>
+                    p.Aluno_Id == aluno.Id
+                    && p.Evento.Evento_Tipo_Id == (int)EventoTipo.AulaZero
+                    && p.Evento.Deactivated == null);
 
             if (alunoAlreadyParticipated) {
                 return new ResponseModel { Message = "Aluno já participou de uma aula zero" };
@@ -413,7 +422,7 @@ public class AulaService : IAulaService {
 
             bool hasTurmaConflict = _professorService.HasTurmaTimeConflict(
                 professorId: professor.Id,
-                DiaSemana: ( int )request.Data.DayOfWeek,
+                DiaSemana: (int)request.Data.DayOfWeek,
                 Horario: request.Data.TimeOfDay,
                 IgnoredTurmaId: null
             );
@@ -437,15 +446,17 @@ public class AulaService : IAulaService {
 
             Roteiro? roteiro = _db.Roteiros.FirstOrDefault(r => request.Data.Date >= r.DataInicio.Date && request.Data.Date <= r.DataFim.Date);
 
-            Evento evento = new() {
+            Evento evento = new()
+            {
                 Data = request.Data,
                 Descricao = request.Descricao ?? "Aula Zero",
                 Observacao = request?.Observacao,
                 Sala_Id = request.Sala_Id,
                 DuracaoMinutos = request.DuracaoMinutos,
 
-                Evento_Tipo_Id = ( int )EventoTipo.AulaZero,
-                Evento_Aula = new Evento_Aula {
+                Evento_Tipo_Id = (int)EventoTipo.AulaZero,
+                Evento_Aula = new Evento_Aula
+                {
                     Turma_Id = null,
                     CapacidadeMaximaAlunos = 1,
                     Professor_Id = request.Professor_Id,
@@ -464,7 +475,8 @@ public class AulaService : IAulaService {
             _db.SaveChanges();
 
             // Inserir participação do professor
-            Evento_Participacao_Professor participacaoProfessor = new() {
+            Evento_Participacao_Professor participacaoProfessor = new()
+            {
                 Evento_Id = evento.Id,
                 Professor_Id = professor.Id,
             };
@@ -472,7 +484,8 @@ public class AulaService : IAulaService {
             _db.Evento_Participacao_Professors.Add(participacaoProfessor);
 
             // Inserir o registro do aluno passado na requisição
-            Evento_Participacao_Aluno registro = new() {
+            Evento_Participacao_Aluno registro = new()
+            {
                 Aluno_Id = aluno.Id,
                 Evento_Id = evento.Id,
                 Presente = null,
@@ -489,15 +502,15 @@ public class AulaService : IAulaService {
             response.Message = "Aula zero criada com sucesso";
             response.Object = responseObject;
             response.Success = true;
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Falha ao registrar aula zero: {ex}";
         }
 
         return response;
     }
 
-    public ResponseModel Update(UpdateAulaRequest request)
-    {
+    public ResponseModel Update(UpdateAulaRequest request) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -551,7 +564,7 @@ public class AulaService : IAulaService {
             if (evento.Evento_Aula.Professor_Id != request.Professor_Id) {
                 bool hasTurmaConflict = _professorService.HasTurmaTimeConflict(
                     professorId: professor.Id,
-                    DiaSemana: ( int )request.Data.DayOfWeek,
+                    DiaSemana: (int)request.Data.DayOfWeek,
                     Horario: request.Data.TimeOfDay,
                     IgnoredTurmaId: evento.Evento_Aula.Turma_Id
                 );
@@ -599,7 +612,8 @@ public class AulaService : IAulaService {
             _db.SaveChanges();
 
             // Pegar os perfis cognitivos passados no request e criar as entidades de Aula_PerfilCognitivo
-            IEnumerable<Evento_Aula_PerfilCognitivo_Rel> eventoAulaPerfisCognitivos = request.PerfilCognitivo.Select(perfilId => new Evento_Aula_PerfilCognitivo_Rel {
+            IEnumerable<Evento_Aula_PerfilCognitivo_Rel> eventoAulaPerfisCognitivos = request.PerfilCognitivo.Select(perfilId => new Evento_Aula_PerfilCognitivo_Rel
+            {
                 Evento_Aula_Id = evento.Id,
                 PerfilCognitivo_Id = perfilId
             });
@@ -614,7 +628,8 @@ public class AulaService : IAulaService {
             }
 
             // Remover participação antiga e inserir nova participação do professor
-            Evento_Participacao_Professor newParticipacaoProfessor = new() {
+            Evento_Participacao_Professor newParticipacaoProfessor = new()
+            {
                 Evento_Id = evento.Id,
                 Professor_Id = professor.Id,
             };
@@ -636,15 +651,15 @@ public class AulaService : IAulaService {
             response.Message = "Evento de aula atualizado com sucesso";
             response.Object = responseObject;
             response.Success = true;
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Falha ao atualizar evento de aula: {ex}";
         }
 
         return response;
     }
 
-    public ResponseModel Chamada(ChamadaRequest request)
-    {
+    public ResponseModel Chamada(ChamadaRequest request) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -721,15 +736,15 @@ public class AulaService : IAulaService {
             response.Message = "Chamada realizada com sucesso";
             response.Object = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == evento.Id);
             response.Success = true;
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Falha ao realizar a chamada: {ex}";
         }
 
         return response;
     }
 
-    public List<CalendarioParticipacaoAlunoList> AlunosAulas(int ano)
-    {
+    public List<CalendarioParticipacaoAlunoList> AlunosAulas(int ano) {
         DateTime intervaloDe = new(ano, 1, 1);
         DateTime intervaloAte = intervaloDe.AddYears(1);
 
@@ -772,7 +787,8 @@ public class AulaService : IAulaService {
                 lastRoteiro = roteirosMes[roteirosMes.Count - 1];
                 lastSemana = lastRoteiro.Semana;
                 lastIntervalo = new List<DateTime>() { lastRoteiro.DataInicio, lastRoteiro.DataFim };
-            } else {
+            }
+            else {
                 DateTime inicio = new DateTime(ano, index, 1);
                 DateTime fim = inicio.AddDays(7);
                 lastIntervalo = new List<DateTime>() { inicio, fim };
@@ -782,8 +798,9 @@ public class AulaService : IAulaService {
             if (roteirosMes.Count < 4) {
                 int diff = 4 - roteirosMes.Count;
 
-                for (int i = 1 ; i <= diff ; i++) {
-                    roteiros.Add(new Roteiro() {
+                for (int i = 1; i <= diff; i++) {
+                    roteiros.Add(new Roteiro()
+                    {
                         Id = -1,
                         Account_Created_Id = -1,
                         CorLegenda = "black",
@@ -819,7 +836,7 @@ public class AulaService : IAulaService {
                 }
 
                 if (existe is null) {
-                    int diasAteDiaSemana = (( int )turma.DiaSemana - ( int )roteiro.DataInicio.DayOfWeek + 7) % 7;
+                    int diasAteDiaSemana = ((int)turma.DiaSemana - (int)roteiro.DataInicio.DayOfWeek + 7) % 7;
                     DateTime proximoDia = roteiro.DataInicio.AddDays(diasAteDiaSemana == 0 ? 7 : diasAteDiaSemana);
                     var data = proximoDia;
 
@@ -832,14 +849,15 @@ public class AulaService : IAulaService {
                         var datx = new DateTime(data.Year, data.Month, data.Day, turma!.Horario!.Value.Hours, turma.Horario.Value.Minutes, 0);
                         Console.WriteLine($"Criando pseudo participacao: {datx:g}");
 
-                        CalendarioParticipacaoAlunoList pseudoParticipacao = new CalendarioParticipacaoAlunoList {
+                        CalendarioParticipacaoAlunoList pseudoParticipacao = new CalendarioParticipacaoAlunoList
+                        {
                             Id = -1,
                             Aluno_Id = aluno.Id,
                             Aluno = aluno.Nome!,
                             Checklist_Id = aluno.Checklist_Id,
                             Checklist = aluno.Checklist,
                             Evento_Id = -1,
-                            Evento_Tipo_Id = ( int )EventoTipo.Aula,
+                            Evento_Tipo_Id = (int)EventoTipo.Aula,
                             Data = new DateTime(data.Year, data.Month, data.Day, turma!.Horario!.Value.Hours, turma.Horario.Value.Minutes, 0),
                             Descricao = turma.Nome,
                             DuracaoMinutos = 120,
