@@ -22,16 +22,14 @@ public class RestricaoService : IRestricaoService {
     private readonly Account? _account;
     private readonly IHttpContextAccessor? _httpContextAccessor;
 
-    public RestricaoService(DataContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor)
-    {
+    public RestricaoService(DataContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor) {
         _db = db;
         _mapper = mapper;
         _httpContextAccessor = httpContextAccessor;
-        _account = ( Account? )_httpContextAccessor?.HttpContext?.Items["Account"];
+        _account = (Account?)_httpContextAccessor?.HttpContext?.Items["Account"];
     }
 
-    public RestricaoModel Get(int restricaoId)
-    {
+    public RestricaoModel Get(int restricaoId) {
         Aluno_Restricao? restricao = _db.Aluno_Restricaos.Find(restricaoId);
 
         if (restricao is null) {
@@ -41,19 +39,19 @@ public class RestricaoService : IRestricaoService {
         return _mapper.Map<RestricaoModel>(restricao);
     }
 
-    public List<RestricaoModel> GetAll()
-    {
+    public List<RestricaoModel> GetAll() {
         List<Aluno_Restricao> listRestricoes = _db.Aluno_Restricaos.ToList();
 
         return _mapper.Map<List<RestricaoModel>>(listRestricoes);
     }
 
-    public ResponseModel Insert(CreateRestricaoRequest model)
-    {
+    public ResponseModel Insert(CreateRestricaoRequest model) {
         ResponseModel response = new() { Success = false };
 
         try {
-            Aluno? aluno = _db.Alunos.Find(model.Aluno_Id);
+            Aluno? aluno = _db.Alunos
+                .Include(a => a.Pessoa)
+                .FirstOrDefault(a => a.Id == model.Aluno_Id);
 
             if (aluno is null) {
                 return new ResponseModel { Message = "Aluno não encontrado" };
@@ -63,7 +61,8 @@ public class RestricaoService : IRestricaoService {
                 return new ResponseModel { Message = "Descrição da restrição não pode ser nula/vazia" };
             }
 
-            Aluno_Restricao newRestricao = new() {
+            Aluno_Restricao newRestricao = new()
+            {
                 Descricao = model.Descricao,
                 Aluno_Id = model.Aluno_Id,
 
@@ -78,15 +77,15 @@ public class RestricaoService : IRestricaoService {
             response.Success = true;
             response.Message = $"Restrição criada com sucesso";
             response.Object = _mapper.Map<RestricaoModel>(newRestricao);
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Não foi possível criar a restrição: {ex}";
         }
 
         return response;
     }
 
-    public ResponseModel Update(UpdateRestricaoRequest model)
-    {
+    public ResponseModel Update(UpdateRestricaoRequest model) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -111,15 +110,15 @@ public class RestricaoService : IRestricaoService {
             response.Message = "Restrição atualizada com sucesso";
             response.Object = _mapper.Map<RestricaoModel>(restricao);
             response.OldObject = _mapper.Map<RestricaoModel>(oldRestricao);
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Não foi possível atualizar a restrição: {ex}";
         }
 
         return response;
     }
 
-    public ResponseModel Deactivate(int restricaoId)
-    {
+    public ResponseModel Deactivate(int restricaoId) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -141,19 +140,19 @@ public class RestricaoService : IRestricaoService {
             response.Success = true;
             response.Object = _mapper.Map<RestricaoModel>(restricao);
             response.Message = "Restrição desativada com sucesso";
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = "Não foi possível desativar a restrição: " + ex.ToString();
         }
 
         return response;
     }
 
-    public List<RestricaoModel> GetAllByAluno(int alunoId)
-    {
+    public List<RestricaoModel> GetAllByAluno(int alunoId) {
         List<Aluno_Restricao> restricoes = _db.Aluno_Restricaos
             .Include(r => r.Aluno)
             .ThenInclude(r => r.Pessoa)
-            .Where(r => r.Aluno_Id == alunoId)
+            .Where(r => r.Aluno_Id == alunoId && r.Deactivated == null)
             .ToList();
 
         return _mapper.Map<List<RestricaoModel>>(restricoes);
