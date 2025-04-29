@@ -290,6 +290,26 @@ public class AulaService : IAulaService {
 
             // Validations passed
 
+            Evento? eventoReagendado = _db.Eventos
+                .Include(e => e.Evento_Participacao_Professors)
+                .Include(e => e.Evento_Participacao_AlunoEventos)
+                .FirstOrDefault(e => e.Id == request.ReagendamentoDe_Evento_Id);
+
+            if (eventoReagendado is not null) {
+                eventoReagendado.Deactivated = TimeFunctions.HoraAtualBR();
+
+                // Desativar participação dos alunos e professores
+                foreach (var alunoReagendado in eventoReagendado.Evento_Participacao_AlunoEventos) {
+                    alunoReagendado.Deactivated = TimeFunctions.HoraAtualBR();
+                }
+
+                foreach (var professorReagendado in eventoReagendado.Evento_Participacao_Professors) {
+                    professorReagendado.Deactivated = TimeFunctions.HoraAtualBR();
+                }
+
+                _db.Update(eventoReagendado);
+            }
+
             Evento evento = new()
             {
                 Data = request.Data,
@@ -311,7 +331,7 @@ public class AulaService : IAulaService {
                 LastUpdated = null,
                 Deactivated = null,
                 Finalizado = false,
-                ReagendamentoDe_Evento_Id = null,
+                ReagendamentoDe_Evento_Id = eventoReagendado?.Id,
                 Account_Created_Id = _account.Id,
             };
 

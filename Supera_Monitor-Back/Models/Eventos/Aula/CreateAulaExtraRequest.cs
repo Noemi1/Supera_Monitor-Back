@@ -12,6 +12,7 @@ public class CreateAulaExtraRequest {
     public int CapacidadeMaximaAlunos { get; set; }
 
     public List<int> Alunos { get; set; } = new List<int>();
-
     public List<int> PerfilCognitivo { get; set; } = new List<int>();
+
+    public int? ReagendamentoDe_Evento_Id { get; set; }
 }
