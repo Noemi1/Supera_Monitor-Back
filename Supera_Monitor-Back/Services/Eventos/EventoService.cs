@@ -150,6 +150,12 @@ public class EventoService : IEventoService {
             {
                 Aluno_Id = aluno.Id,
                 Evento_Id = evento.Id,
+
+                // Inserir o progresso do aluno no evento
+                Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
+                NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
+                Apostila_AH_Id = aluno.Apostila_AH_Id,
+                NumeroPaginaAH = aluno.NumeroPaginaAH,
             });
 
             foreach (var participacao in participacoesAlunos) {
@@ -1211,6 +1217,25 @@ public class EventoService : IEventoService {
                 return new ResponseModel { Message = "Evento já está finalizado" };
             }
 
+            // Valida que as apostilas existem
+            List<Apostila> existingApostilas = _db.Apostilas.ToList();
+
+            List<int> apostilasAbacoIds = request.Alunos.Select(p => p.Apostila_Abaco_Id).ToList();
+            List<int> apostilasAhIds = request.Alunos.Select(p => p.Apostila_Ah_Id).ToList();
+
+            // Verifica se as apostilas passadas na requisição existem
+            foreach (int apostilaId in apostilasAbacoIds) {
+                if (!existingApostilas.Any(a => a.Id == apostilaId)) {
+                    return new ResponseModel { Message = $"Apostila Abaco ID: '{apostilaId}' não existe" };
+                }
+            }
+
+            foreach (int apostilaId in apostilasAhIds) {
+                if (!existingApostilas.Any(a => a.Id == apostilaId)) {
+                    return new ResponseModel { Message = $"Apostila AH ID: '{apostilaId}' não existe" };
+                }
+            }
+
             // Validations passed
 
             evento.Observacao = request.Observacao;
@@ -1230,6 +1255,71 @@ public class EventoService : IEventoService {
                     return new ResponseModel { Message = $"Participação de aluno no evento ID: '{evento.Id}' Participacao_Id: '{partAluno.Participacao_Id}' está desativada" };
                 }
 
+                // Alunos devem possuir as apostilas em que estão tentando marcar progresso
+
+                var alunoApostilaKitId = participacao.Aluno.Apostila_Kit_Id;
+
+                if (alunoApostilaKitId == null) {
+                    return new ResponseModel { Message = $"Aluno ID: '{participacao.Aluno_Id}' não possui kit de apostilas" };
+                }
+
+                bool alunoHasApostilaAbaco = _db.Apostila_Kit_Rels.Any(a =>
+                   a.Apostila_Kit_Id == alunoApostilaKitId
+                   && a.Apostila_Id == partAluno.Apostila_Abaco_Id);
+
+                bool alunoHasApostilaAh = _db.Apostila_Kit_Rels.Any(a =>
+                    a.Apostila_Kit_Id == alunoApostilaKitId
+                    && a.Apostila_Id == partAluno.Apostila_Ah_Id);
+
+                // Para poder atualizar, o kit de apostilas do aluno deve possuir a apostila Abaco e a apostila AH passadas na requisição
+
+                if (!alunoHasApostilaAbaco) {
+                    return new ResponseModel { Message = $"Aluno ID: '{participacao.Aluno_Id}' não possui a apostila Abaco ID: '{partAluno.Apostila_Abaco_Id}'" };
+                }
+
+                if (!alunoHasApostilaAh) {
+                    return new ResponseModel { Message = $"Aluno ID: '{participacao.Aluno_Id}' não possui a apostila AH ID: '{partAluno.Apostila_Ah_Id}'" };
+                }
+
+                // Se a apostila não muda, não deve permitir que o aluno regresse nas páginas
+                // TODO: Deveria fazer essa comparação com as informações em Aluno ou Participação?
+                bool apostilaAbacoChanged = participacao.Apostila_Abaco_Id != partAluno.Apostila_Abaco_Id;
+                if (!apostilaAbacoChanged) {
+                    if (partAluno.NumeroPaginaAbaco < participacao.NumeroPaginaAbaco) {
+                        return new ResponseModel { Message = $"Progresso da Apostila Abaco não pode regredir: Participacao ID {participacao.Id}" };
+                    }
+                }
+
+                bool apostilaAhChanged = participacao.Apostila_AH_Id != partAluno.Apostila_Ah_Id;
+                if (!apostilaAhChanged) {
+                    if (partAluno.NumeroPaginaAh < participacao.NumeroPaginaAH) {
+                        return new ResponseModel { Message = $"Progresso da Apostila AH não pode regredir: Participacao ID {participacao.Id}" };
+                    }
+                }
+
+                // Não deve ser possível atualizar além do tamanho máximo da apostila
+                int totalPaginasAbaco = existingApostilas.Find(a => a.Id == partAluno.Apostila_Abaco_Id)!.NumeroTotalPaginas;
+                int totalPaginasAh = existingApostilas.Find(a => a.Id == partAluno.Apostila_Ah_Id)!.NumeroTotalPaginas;
+
+                if (partAluno.NumeroPaginaAbaco > totalPaginasAbaco) {
+                    return new ResponseModel { Message = $"Número de páginas da apostila Abaco não pode ser maior que o total de páginas: Participacao ID {participacao.Id}" };
+                }
+
+                if (partAluno.NumeroPaginaAh > totalPaginasAh) {
+                    return new ResponseModel { Message = $"Número de páginas da apostila AH não pode ser maior que o total de páginas: Participacao ID {participacao.Id}" };
+                }
+
+                // Atualizar tanto a participação quanto o aluno
+                participacao.Apostila_Abaco_Id = partAluno.Apostila_Abaco_Id;
+                participacao.NumeroPaginaAbaco = partAluno.NumeroPaginaAbaco;
+                participacao.Aluno.Apostila_Abaco_Id = partAluno.Apostila_Abaco_Id;
+                participacao.Aluno.NumeroPaginaAbaco = partAluno.NumeroPaginaAbaco;
+
+                participacao.Apostila_AH_Id = partAluno.Apostila_Ah_Id;
+                participacao.NumeroPaginaAH = partAluno.NumeroPaginaAh;
+                participacao.Aluno.Apostila_AH_Id = partAluno.Apostila_Ah_Id;
+                participacao.Aluno.NumeroPaginaAH = partAluno.NumeroPaginaAh;
+
                 // Se o evento for a primeira aula do aluno e ocorrer uma falta, deve atualizar a data da PrimeiraAula do aluno para a proxima aula da turma a partir da data do evento atual
                 if (participacao.Aluno.PrimeiraAula == evento.Data && partAluno.Presente == false) {
                     Turma turma = _db.Turmas.Single(t => t.Id == participacao.Aluno.Turma_Id);
@@ -1245,12 +1335,6 @@ public class EventoService : IEventoService {
 
                 participacao.Observacao = partAluno.Observacao;
                 participacao.Presente = partAluno.Presente;
-                // TODO: Validar se as apostilas existem
-                // TODO: Validar se o aluno tem um kit que possui acesso às apostilas
-                participacao.Apostila_Abaco_Id = partAluno.Apostila_Abaco_Id;
-                participacao.NumeroPaginaAbaco = partAluno.NumeroPaginaAbaco;
-                participacao.Apostila_AH_Id = partAluno.Apostila_Ah_Id;
-                participacao.NumeroPaginaAH = partAluno.NumeroPaginaAh;
 
                 _db.Update(participacao);
             }

@@ -179,6 +179,11 @@ public class AulaService : IAulaService {
                 Evento_Id = evento.Id,
                 Aluno_Id = aluno.Id,
                 Presente = null,
+
+                Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
+                NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
+                Apostila_AH_Id = aluno.Apostila_AH_Id,
+                NumeroPaginaAH = aluno.NumeroPaginaAH,
             });
 
             _db.Evento_Participacao_Alunos.AddRange(registros);
@@ -277,14 +282,9 @@ public class AulaService : IAulaService {
                 return new ResponseModel { Message = $"Professor: {professor.Account.Name} possui participação em outro evento nesse mesmo horário" };
             }
 
-            var alunoIds = _db.Alunos
-                .Where(a => request.Alunos.Contains(a.Id))
-                .Select(a => a.Id)
-                .ToHashSet();
+            IQueryable<Aluno> alunosInRequest = _db.Alunos.Where(a => a.Deactivated == null && request.Alunos.Contains(a.Id));
 
-            bool allAlunosValid = request.Alunos.All(id => alunoIds.Contains(id));
-
-            if (!allAlunosValid) {
+            if (alunosInRequest.Count() != request.Alunos.Count) {
                 return new ResponseModel { Message = "Aluno(s) não encontrado(s)" };
             }
 
@@ -293,8 +293,8 @@ public class AulaService : IAulaService {
             Evento evento = new()
             {
                 Data = request.Data,
-                Descricao = request.Descricao ?? "Aula extra",
-                Observacao = request?.Observacao,
+                Descricao = request.Descricao ?? "Turma extra",
+                Observacao = request.Observacao,
                 Sala_Id = request.Sala_Id,
                 DuracaoMinutos = request.DuracaoMinutos,
 
@@ -329,11 +329,16 @@ public class AulaService : IAulaService {
             _db.SaveChanges();
 
             // Inserir os registros dos alunos passados na requisição
-            IEnumerable<Evento_Participacao_Aluno> registros = request.Alunos.Select(alunoId => new Evento_Participacao_Aluno
+            IEnumerable<Evento_Participacao_Aluno> registros = alunosInRequest.Select(aluno => new Evento_Participacao_Aluno
             {
-                Aluno_Id = alunoId,
+                Aluno_Id = aluno.Id,
                 Evento_Id = evento.Id,
                 Presente = null,
+
+                Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
+                NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
+                Apostila_AH_Id = aluno.Apostila_AH_Id,
+                NumeroPaginaAH = aluno.NumeroPaginaAH,
             });
 
             _db.Evento_Participacao_Alunos.AddRange(registros);
@@ -489,6 +494,11 @@ public class AulaService : IAulaService {
                 Aluno_Id = aluno.Id,
                 Evento_Id = evento.Id,
                 Presente = null,
+
+                Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
+                NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
+                Apostila_AH_Id = aluno.Apostila_AH_Id,
+                NumeroPaginaAH = aluno.NumeroPaginaAH,
             };
 
             _db.Evento_Participacao_Alunos.Add(registro);

@@ -179,6 +179,22 @@ public class AlunoService : IAlunoService {
                 dataPrimeiraAula = dataPrimeiraAula.AddDays(1);
             }
 
+            // Coletar as primeiras apostilas Abaco e Ah do kit do aluno
+            var primeiraApostilaAbaco = _db.Apostila_Kit_Rels
+                .Include(a => a.Apostila)
+                .FirstOrDefault(a =>
+                    a.Apostila_Kit_Id == model.Apostila_Kit_Id
+                    && a.Apostila.Apostila_Tipo_Id == (int)ApostilaTipo.Abaco
+                    && a.Apostila.Ordem == 1);
+
+            var primeiraApostilaAh = _db.Apostila_Kit_Rels
+                .Include(a => a.Apostila)
+                .FirstOrDefault(a =>
+                    a.Apostila_Kit_Id == model.Apostila_Kit_Id
+                    && a.Apostila.Apostila_Tipo_Id == (int)ApostilaTipo.AH
+                    && a.Apostila.Ordem == 1);
+
+
             Aluno aluno = new()
             {
                 Aluno_Foto = model.Aluno_Foto,
@@ -188,6 +204,12 @@ public class AlunoService : IAlunoService {
                 PerfilCognitivo_Id = model.PerfilCognitivo_Id,
 
                 Apostila_Kit_Id = model.Apostila_Kit_Id,
+
+                Apostila_Abaco_Id = primeiraApostilaAbaco?.Apostila_Id,
+                NumeroPaginaAbaco = primeiraApostilaAbaco is not null ? 0 : null,
+
+                Apostila_AH_Id = primeiraApostilaAh?.Apostila_Id,
+                NumeroPaginaAH = primeiraApostilaAh is not null ? 0 : null,
 
                 RM = randomRM.ToString(),
                 LoginApp = pessoa.Email ?? $"{randomRM}@supera",

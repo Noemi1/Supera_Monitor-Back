@@ -5,3 +5,8 @@ public partial class Apostila_Tipo {
 
     public string Nome { get; set; } = null!;
 }
+
+public enum ApostilaTipo {
+    Abaco = 1,
+    AH = 2
+}
