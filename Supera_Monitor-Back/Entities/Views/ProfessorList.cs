@@ -19,13 +19,17 @@ public partial class ProfessorList : BaseList {
 
     public DateTime? DataNascimento { get; set; }
 
+    public TimeSpan? ExpedienteInicio { get; set; }
+
+    public TimeSpan? ExpedienteFim { get; set; }
+
     public int? Professor_NivelCertificacao_Id { get; set; }
 
     public string? Professor_NivelCertificacao { get; set; }
 
     // 365.25 para considerar anos bissextos
     public int Idade => DataNascimento.HasValue
-        ? ( int )((DateTime.Today - DataNascimento.Value).TotalDays / 365.25)
+        ? (int)((DateTime.Today - DataNascimento.Value).TotalDays / 365.25)
         : 0;
 
     public bool Aniversario => DataNascimento.HasValue

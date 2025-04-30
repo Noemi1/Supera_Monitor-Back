@@ -28,15 +28,13 @@ namespace Supera_Monitor_Back.Services {
         private readonly IMapper _mapper;
         private readonly IUserService _userService;
 
-        public ProfessorService(DataContext db, IMapper mapper, IUserService userService)
-        {
+        public ProfessorService(DataContext db, IMapper mapper, IUserService userService) {
             _db = db;
             _mapper = mapper;
             _userService = userService;
         }
 
-        public ProfessorList Get(int professorId)
-        {
+        public ProfessorList Get(int professorId) {
             ProfessorList? professor = _db.ProfessorLists.FirstOrDefault(p => p.Id == professorId);
 
             if (professor == null) {
@@ -47,23 +45,31 @@ namespace Supera_Monitor_Back.Services {
             return professor;
         }
 
-        public List<ProfessorList> GetAll()
-        {
+        public List<ProfessorList> GetAll() {
             List<ProfessorList> professores = _db.ProfessorLists.OrderBy(p => p.Nome).ToList();
 
             return professores;
         }
 
-        public ResponseModel Insert(CreateProfessorRequest model, string ipAddress)
-        {
+        public ResponseModel Insert(CreateProfessorRequest model, string ipAddress) {
             ResponseModel response = new() { Success = false };
 
             try {
-                Professor professor = new() {
+                Professor professor = new()
+                {
                     DataInicio = model.DataInicio,
                     CorLegenda = model.CorLegenda,
                     DataNascimento = model.DataNascimento,
+                    ExpedienteInicio = model.ExpedienteInicio,
+                    ExpedienteFim = model.ExpedienteFim,
                 };
+
+                // Considerando que ExpedienteInicio e ExpedienteFim podem ser null, se forem passados na requisição, horário de fim não pode ser antes do horário de início
+                if (professor.ExpedienteInicio != null && professor.ExpedienteFim != null) {
+                    if (professor.ExpedienteInicio > professor.ExpedienteFim) {
+                        return new ResponseModel { Message = "Horário de expediente inválido" };
+                    }
+                }
 
                 // Só atribuir o nivel de certificacao passado na requisição se este existir, caso contrário, nulo
                 bool NivelCertificacaoExists = _db.Professor_NivelCertificacaos.Any(n => n.Id == model.Professor_NivelCertificacao_Id);
@@ -89,12 +95,13 @@ namespace Supera_Monitor_Back.Services {
 
                     // Atualizar dados do usuário, inserindo Role, mas se for admin, não deve alterar
                     // Os outros dados são iguais, então só repassá-los
-                    UpdateAccountRequest updateAccountRequest = new() {
+                    UpdateAccountRequest updateAccountRequest = new()
+                    {
                         Id = accountToAssign.Id,
                         Name = accountToAssign.Name,
                         Email = accountToAssign.Email,
                         Phone = accountToAssign.Phone,
-                        Role_Id = accountToAssign.Role_Id == ( int )Role.Admin ? ( int )Role.Admin : ( int )Role.Teacher
+                        Role_Id = accountToAssign.Role_Id == (int)Role.Admin ? (int)Role.Admin : (int)Role.Teacher
                     };
 
                     ResponseModel updateAccountResponse = _userService.Update(updateAccountRequest);
@@ -102,7 +109,8 @@ namespace Supera_Monitor_Back.Services {
                     if (updateAccountResponse.Success == false) {
                         return updateAccountResponse;
                     }
-                } else {
+                }
+                else {
                     if (string.IsNullOrEmpty(model.Nome)) {
                         return new ResponseModel { Message = "Nome não deve ser vazio" };
                     }
@@ -113,11 +121,12 @@ namespace Supera_Monitor_Back.Services {
                         return new ResponseModel { Message = "Email não deve ser vazio" };
                     }
 
-                    CreateAccountRequest createAccountRequest = new() {
+                    CreateAccountRequest createAccountRequest = new()
+                    {
                         Name = model.Nome,
                         Phone = model.Telefone,
                         Email = model.Email,
-                        Role_Id = ( int )Role.Teacher,
+                        Role_Id = (int)Role.Teacher,
                     };
 
                     ResponseModel createAccountResponse = _userService.Insert(createAccountRequest, ipAddress);
@@ -140,15 +149,15 @@ namespace Supera_Monitor_Back.Services {
                 response.Message = "Professor cadastrado com sucesso";
                 response.Object = _db.ProfessorLists.FirstOrDefault(p => p.Id == professor.Id);
                 response.Success = true;
-            } catch (Exception ex) {
+            }
+            catch (Exception ex) {
                 response.Message = $"Falha ao cadastrar professor: {ex}";
             }
 
             return response;
         }
 
-        public ResponseModel Update(UpdateProfessorRequest model)
-        {
+        public ResponseModel Update(UpdateProfessorRequest model) {
             ResponseModel response = new() { Success = false };
 
             try {
@@ -162,6 +171,13 @@ namespace Supera_Monitor_Back.Services {
 
                 if (account == null) {
                     return new ResponseModel { Message = "Conta não encontrada" };
+                }
+
+                // Considerando que ExpedienteInicio e ExpedienteFim podem ser null, se forem passados na requisição, horário de fim não pode ser antes do horário de início
+                if (model.ExpedienteInicio != null && model.ExpedienteFim != null) {
+                    if (model.ExpedienteInicio > model.ExpedienteFim) {
+                        return new ResponseModel { Message = "Horário de expediente inválido" };
+                    }
                 }
 
                 response.OldObject = _db.ProfessorLists.SingleOrDefault(p => p.Id == professor.Id);
@@ -181,6 +197,8 @@ namespace Supera_Monitor_Back.Services {
                 professor.DataInicio = model.DataInicio;
                 professor.CorLegenda = model.CorLegenda;
                 professor.DataNascimento = model.DataNascimento;
+                professor.ExpedienteInicio = model.ExpedienteInicio;
+                professor.ExpedienteFim = model.ExpedienteFim;
 
                 _db.Professors.Update(professor);
                 _db.SaveChanges();
@@ -188,15 +206,15 @@ namespace Supera_Monitor_Back.Services {
                 response.Message = "Professor atualizado com sucesso";
                 response.Object = _db.ProfessorLists.FirstOrDefault(p => p.Id == professor.Id);
                 response.Success = true;
-            } catch (Exception ex) {
+            }
+            catch (Exception ex) {
                 response.Message = "Ocorreu um erro ao atualizar professor" + ex.ToString();
             }
 
             return response;
         }
 
-        public ResponseModel Delete(int professorId)
-        {
+        public ResponseModel Delete(int professorId) {
             ResponseModel response = new() { Success = false };
 
             try {
@@ -215,22 +233,21 @@ namespace Supera_Monitor_Back.Services {
 
                 response.Message = "Turma excluída com sucesso";
                 response.Success = true;
-            } catch (Exception ex) {
+            }
+            catch (Exception ex) {
                 response.Message = "Falha ao deletar professor: " + ex.ToString();
             }
 
             return response;
         }
 
-        public List<ApostilaList> GetAllApostilas()
-        {
+        public List<ApostilaList> GetAllApostilas() {
             List<ApostilaList> apostilas = _db.ApostilaLists.ToList();
 
             return apostilas;
         }
 
-        public List<KitResponse> GetAllKits()
-        {
+        public List<KitResponse> GetAllKits() {
             List<Apostila_Kit> listApostilaKits = _db.Apostila_Kits.ToList();
 
             List<KitResponse> listKitResponse = _mapper.Map<List<KitResponse>>(listApostilaKits);
@@ -246,15 +263,13 @@ namespace Supera_Monitor_Back.Services {
             return listKitResponse;
         }
 
-        public List<NivelCertificacaoModel> GetAllCertificacoes()
-        {
+        public List<NivelCertificacaoModel> GetAllCertificacoes() {
             List<Professor_NivelCertificacao> certificacoes = _db.Professor_NivelCertificacaos.ToList();
 
             return _mapper.Map<List<NivelCertificacaoModel>>(certificacoes);
         }
 
-        public bool HasTurmaTimeConflict(int professorId, int DiaSemana, TimeSpan Horario, int? IgnoredTurmaId = null)
-        {
+        public bool HasTurmaTimeConflict(int professorId, int DiaSemana, TimeSpan Horario, int? IgnoredTurmaId = null) {
             try {
                 Professor professor = _db.Professors.Find(professorId) ?? throw new Exception("IsProfessorAvailable : Professor não pode ser nulo");
 
@@ -275,13 +290,13 @@ namespace Supera_Monitor_Back.Services {
                 );
 
                 return hasTurmaConflict;
-            } catch (Exception ex) {
+            }
+            catch (Exception ex) {
                 throw new Exception($"Falha ao resgatar conflitos de turma do professor | {ex}");
             }
         }
 
-        public bool HasEventoParticipacaoConflict(int professorId, DateTime Data, int DuracaoMinutos, int? IgnoredEventoId)
-        {
+        public bool HasEventoParticipacaoConflict(int professorId, DateTime Data, int DuracaoMinutos, int? IgnoredEventoId) {
             try {
                 Professor professor = _db.Professors.Find(professorId) ?? throw new Exception("IsProfessorAvailable : Professor não pode ser nulo");
 
@@ -301,7 +316,8 @@ namespace Supera_Monitor_Back.Services {
                     ).Any();
 
                 return hasParticipacaoConflict;
-            } catch (Exception ex) {
+            }
+            catch (Exception ex) {
                 throw new Exception($"Falha ao resgatar conflitos de participação do professor | {ex}");
             }
         }

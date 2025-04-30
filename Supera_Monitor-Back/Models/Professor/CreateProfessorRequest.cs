@@ -8,6 +8,8 @@
         public string CorLegenda { get; set; } = string.Empty;
         public DateTime DataInicio { get; set; }
         public DateTime DataNascimento { get; set; }
+        public TimeSpan? ExpedienteInicio { get; set; }
+        public TimeSpan? ExpedienteFim { get; set; }
 
         public int Professor_NivelCertificacao_Id { get; set; }
     }
