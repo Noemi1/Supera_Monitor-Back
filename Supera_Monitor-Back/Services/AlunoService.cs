@@ -246,7 +246,7 @@ public class AlunoService : IAlunoService {
                 // Aula não deve registrar aluno se estiver em sua capacidade máxima e nesse caso, -> considera os alunos de reposição <-
                 var alunosInEventoAula = evento.Evento_Participacao_AlunoEventos.Count(p => p.Deactivated != null);
 
-                if (alunosInEventoAula >= evento.Evento_Aula!.CapacidadeMaximaAlunos) {
+                if (alunosInEventoAula >= evento.CapacidadeMaximaAlunos) {
                     continue;
                 }
 
@@ -433,7 +433,7 @@ public class AlunoService : IAlunoService {
                     // Aula não deve registrar aluno se estiver em sua capacidade máxima e nesse caso, -> considera os alunos de reposição <-
                     int amountOfAlunosInAula = evento.Evento_Participacao_AlunoEventos.Count(p => p.Deactivated == null);
 
-                    if (amountOfAlunosInAula >= evento.Evento_Aula!.CapacidadeMaximaAlunos) {
+                    if (amountOfAlunosInAula >= evento.CapacidadeMaximaAlunos) {
                         continue;
                     }
 
@@ -621,7 +621,7 @@ public class AlunoService : IAlunoService {
             int registrosAtivos = eventoDest.Evento_Participacao_AlunoEventos.Count(p => p.Deactivated == null);
 
             // O evento deve ter espaço para comportar o aluno
-            if (registrosAtivos >= eventoDest.Evento_Aula.CapacidadeMaximaAlunos) {
+            if (registrosAtivos >= eventoDest.CapacidadeMaximaAlunos) {
                 return new ResponseModel { Message = "Esse evento de aula já está em sua capacidade máxima" };
             }
 

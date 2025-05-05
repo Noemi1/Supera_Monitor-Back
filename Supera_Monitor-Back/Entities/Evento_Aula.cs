@@ -7,8 +7,6 @@ public partial class Evento_Aula {
 
     public int? Turma_Id { get; set; }
 
-    public int CapacidadeMaximaAlunos { get; set; }
-
     public int? Roteiro_Id { get; set; }
 
     public virtual ICollection<Evento_Aula_PerfilCognitivo_Rel> Evento_Aula_PerfilCognitivo_Rels { get; set; } = new List<Evento_Aula_PerfilCognitivo_Rel>();

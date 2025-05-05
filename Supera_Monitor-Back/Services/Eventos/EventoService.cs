@@ -123,6 +123,10 @@ public class EventoService : IEventoService {
                 return new ResponseModel { Message = "Esta sala se encontra ocupada neste horário" };
             }
 
+            if (request.CapacidadeMaximaAlunos < 0) {
+                return new ResponseModel { Message = "Capacidade máxima de alunos inválida" };
+            }
+
             // Validations passed
 
             Evento evento = new()
@@ -131,6 +135,7 @@ public class EventoService : IEventoService {
                 Descricao = request.Descricao ?? "Evento sem descrição",
                 Observacao = request.Observacao ?? "Sem observação",
                 DuracaoMinutos = request.DuracaoMinutos,
+                CapacidadeMaximaAlunos = request.CapacidadeMaximaAlunos,
                 Finalizado = false,
 
                 Sala_Id = request.Sala_Id,
@@ -227,6 +232,7 @@ public class EventoService : IEventoService {
         try {
             Evento? evento = _db.Eventos
                 .Include(e => e.Evento_Tipo)
+                .Include(e => e.Evento_Participacao_AlunoEventos)
                 .FirstOrDefault(e => e.Id == request.Id);
 
             if (evento is null) {
@@ -283,6 +289,12 @@ public class EventoService : IEventoService {
                 return new ResponseModel { Message = "Esta sala se encontra ocupada neste horário" };
             }
 
+            int alunosInEvento = evento.Evento_Participacao_AlunoEventos.Count(e => e.Deactivated == null);
+
+            if (request.CapacidadeMaximaAlunos < alunosInEvento) {
+                return new ResponseModel { Message = "Número máximo de alunos excedido" };
+            }
+
             // Validations passed
 
             var oldObject = _db.CalendarioEventoLists.First(e => e.Id == evento.Id);
@@ -291,6 +303,7 @@ public class EventoService : IEventoService {
             evento.Descricao = request.Descricao ?? evento.Descricao;
             evento.Sala_Id = request.Sala_Id;
             evento.DuracaoMinutos = request.DuracaoMinutos;
+            evento.CapacidadeMaximaAlunos = request.CapacidadeMaximaAlunos;
             evento.LastUpdated = TimeFunctions.HoraAtualBR();
 
             _db.Eventos.Update(evento);
@@ -763,6 +776,7 @@ public class EventoService : IEventoService {
                         Id = -1,
                         Evento_Tipo_Id = (int)EventoTipo.Oficina,
                         Evento_Tipo = "Pseudo-Oficina",
+                        CapacidadeMaximaAlunos = 12,
 
                         Descricao = "Oficina - Tema indefinido",
                         DuracaoMinutos = 60,
@@ -803,6 +817,7 @@ public class EventoService : IEventoService {
                         DuracaoMinutos = 60,
                         Finalizado = false,
                         Sala_Id = null,
+                        CapacidadeMaximaAlunos = 0,
                         Professores = professores.Select(professor => new CalendarioProfessorList
                         {
                             Evento_Id = -1,
@@ -949,13 +964,13 @@ public class EventoService : IEventoService {
             // Dependendo do tipo de evento, não deve poder inscrever mais um aluno
             switch (evento.Evento_Tipo_Id) {
                 case (int)EventoTipo.Aula:
-                    if (amountOfAlunosEnrolled >= evento.Evento_Aula!.CapacidadeMaximaAlunos) {
+                    if (amountOfAlunosEnrolled >= evento.CapacidadeMaximaAlunos) {
                         return new ResponseModel { Message = "Este evento de aula se encontra lotado." };
                     }
                     break;
 
                 case (int)EventoTipo.AulaExtra:
-                    if (amountOfAlunosEnrolled >= evento.Evento_Aula!.CapacidadeMaximaAlunos) {
+                    if (amountOfAlunosEnrolled >= evento.CapacidadeMaximaAlunos) {
                         return new ResponseModel { Message = "Este evento de aula extra se encontra lotado." };
                     }
                     break;
@@ -1114,6 +1129,7 @@ public class EventoService : IEventoService {
                 Account_Created_Id = evento.Account_Created_Id,
                 ReagendamentoDe_Evento_Id = evento.Id,
                 Descricao = evento.Descricao,
+                CapacidadeMaximaAlunos = evento.CapacidadeMaximaAlunos,
 
                 Created = TimeFunctions.HoraAtualBR(),
                 Deactivated = null,
@@ -1123,7 +1139,6 @@ public class EventoService : IEventoService {
             if (evento.Evento_Aula is not null) {
                 Evento_Aula newEventoAula = new()
                 {
-                    CapacidadeMaximaAlunos = evento.Evento_Aula.CapacidadeMaximaAlunos,
                     Professor_Id = evento.Evento_Aula.Professor_Id,
                     Roteiro_Id = evento.Evento_Aula.Roteiro_Id,
                     Turma_Id = evento.Evento_Aula.Turma_Id,

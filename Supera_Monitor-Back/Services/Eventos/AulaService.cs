@@ -137,13 +137,13 @@ public class AulaService : IAulaService {
                 Observacao = request?.Observacao,
                 Sala_Id = request.Sala_Id,
                 DuracaoMinutos = request.DuracaoMinutos,
+                CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
 
                 Evento_Tipo_Id = (int)EventoTipo.Aula,
                 Evento_Aula = new Evento_Aula
                 {
                     Roteiro_Id = request.Roteiro_Id,
                     Turma_Id = turma.Id,
-                    CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
                     Professor_Id = request.Professor_Id,
                 },
 
@@ -288,6 +288,10 @@ public class AulaService : IAulaService {
                 return new ResponseModel { Message = "Aluno(s) não encontrado(s)" };
             }
 
+            if (alunosInRequest.Count() > request.CapacidadeMaximaAlunos) {
+                return new ResponseModel { Message = "Número máximo de alunos excedido" };
+            }
+
             // Validations passed
 
             Evento? eventoReagendado = _db.Eventos
@@ -317,13 +321,13 @@ public class AulaService : IAulaService {
                 Observacao = request.Observacao,
                 Sala_Id = request.Sala_Id,
                 DuracaoMinutos = request.DuracaoMinutos,
+                CapacidadeMaximaAlunos = request.CapacidadeMaximaAlunos,
 
                 Evento_Tipo_Id = (int)EventoTipo.AulaExtra,
                 Evento_Aula = new Evento_Aula
                 {
                     Roteiro_Id = request.Roteiro_Id,
                     Turma_Id = null,
-                    CapacidadeMaximaAlunos = request.CapacidadeMaximaAlunos,
                     Professor_Id = request.Professor_Id,
                 },
 
@@ -480,10 +484,10 @@ public class AulaService : IAulaService {
                 DuracaoMinutos = request.DuracaoMinutos,
 
                 Evento_Tipo_Id = (int)EventoTipo.AulaZero,
+                CapacidadeMaximaAlunos = 1,
                 Evento_Aula = new Evento_Aula
                 {
                     Turma_Id = null,
-                    CapacidadeMaximaAlunos = 1,
                     Professor_Id = request.Professor_Id,
                     Roteiro_Id = roteiro?.Id,
                 },
@@ -544,7 +548,10 @@ public class AulaService : IAulaService {
         ResponseModel response = new() { Success = false };
 
         try {
-            Evento? evento = _db.Eventos.Include(e => e.Evento_Aula).FirstOrDefault(e => e.Id == request.Id);
+            Evento? evento = _db.Eventos
+                .Include(e => e.Evento_Aula)
+                .Include(e => e.Evento_Participacao_AlunoEventos)
+                .FirstOrDefault(e => e.Id == request.Id);
 
             // Não devo poder atualizar uma aula que não existe
             if (evento == null) {
@@ -617,6 +624,12 @@ public class AulaService : IAulaService {
                 }
             }
 
+            int alunosInEvento = evento.Evento_Participacao_AlunoEventos.Count(e => e.Deactivated == null);
+
+            if (request.CapacidadeMaximaAlunos < alunosInEvento) {
+                return new ResponseModel { Message = "Número máximo de alunos excedido" };
+            }
+
             // Validations passed
 
             evento.Observacao = request.Observacao ?? request.Observacao;
@@ -624,6 +637,7 @@ public class AulaService : IAulaService {
             evento.Sala_Id = request.Sala_Id;
             evento.Data = request.Data;
             evento.DuracaoMinutos = request.DuracaoMinutos;
+            evento.CapacidadeMaximaAlunos = request.CapacidadeMaximaAlunos;
 
             evento.LastUpdated = TimeFunctions.HoraAtualBR();
 

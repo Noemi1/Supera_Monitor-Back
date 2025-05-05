@@ -17,21 +17,18 @@ namespace Supera_Monitor_Back.Services {
         private readonly DataContext _db;
         private readonly Account? _account;
 
-        public ListaEsperaService(DataContext db, IHttpContextAccessor httpContextAccessor)
-        {
+        public ListaEsperaService(DataContext db, IHttpContextAccessor httpContextAccessor) {
             _db = db;
-            _account = ( Account? )httpContextAccessor.HttpContext?.Items["Account"];
+            _account = (Account?)httpContextAccessor.HttpContext?.Items["Account"];
         }
 
-        public List<AulaEsperaList> GetAllByAulaId(int aulaId)
-        {
+        public List<AulaEsperaList> GetAllByAulaId(int aulaId) {
             List<AulaEsperaList> listaEspera = _db.AulaEsperaLists.Where(x => x.Aula_Id == aulaId).ToList();
 
             return listaEspera;
         }
 
-        public ResponseModel Insert(CreateEsperaRequest model)
-        {
+        public ResponseModel Insert(CreateEsperaRequest model) {
             ResponseModel response = new() { Success = false };
 
             try {
@@ -70,7 +67,8 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "O aluno em questão já está na lista de espera" };
                 }
 
-                Aula_ListaEspera newEspera = new() {
+                Aula_ListaEspera newEspera = new()
+                {
                     Aluno_Id = model.Aluno_Id,
                     Aula_Id = model.Aula_Id,
                     Created = TimeFunctions.HoraAtualBR(),
@@ -83,15 +81,15 @@ namespace Supera_Monitor_Back.Services {
                 response.Success = true;
                 response.Message = "Aluno foi inserido na lista de espera com sucesso";
                 response.Object = _db.AulaEsperaLists.AsNoTracking().FirstOrDefault(x => x.Id == newEspera.Id);
-            } catch (Exception ex) {
+            }
+            catch (Exception ex) {
                 response.Message = $"Falha ao inserir aluno na lista de espera: {ex}";
             }
 
             return response;
         }
 
-        public ResponseModel Promote(int listaEsperaId)
-        {
+        public ResponseModel Promote(int listaEsperaId) {
             ResponseModel response = new() { Success = false };
 
             try {
@@ -117,11 +115,12 @@ namespace Supera_Monitor_Back.Services {
                 // Deve-se verificar se a aula tem espaço antes de promover o registro
                 int registrosInAula = eventoDestino.Evento_Participacao_AlunoEventos.Count(p => p.Deactivated == null);
 
-                if (registrosInAula >= eventoDestino.Evento_Aula.CapacidadeMaximaAlunos) {
+                if (registrosInAula >= eventoDestino.CapacidadeMaximaAlunos) {
                     return new ResponseModel { Message = "Não é possível promover o aluno para a aula, a aula já está em capacidade máxima" };
                 }
 
-                Evento_Participacao_Aluno promotedRegistro = new() {
+                Evento_Participacao_Aluno promotedRegistro = new()
+                {
                     Aluno_Id = espera.Aluno_Id,
                     Evento_Id = espera.Aula_Id,
                 };
@@ -134,14 +133,14 @@ namespace Supera_Monitor_Back.Services {
                 response.Success = true;
                 response.Message = "Aluno foi promovido para a aula com sucesso";
                 response.Object = _db.CalendarioAlunoLists.AsNoTracking().FirstOrDefault(a => a.Id == promotedRegistro.Id);
-            } catch (Exception ex) {
+            }
+            catch (Exception ex) {
                 response.Message = $"Falha ao promover aluno da lista de espera para a aula: {ex}";
             }
             return response;
         }
 
-        public ResponseModel Remove(int listaEsperaId)
-        {
+        public ResponseModel Remove(int listaEsperaId) {
             ResponseModel response = new() { Success = false };
 
             try {
@@ -168,7 +167,8 @@ namespace Supera_Monitor_Back.Services {
 
                 response.Success = true;
                 response.Message = "Aluno foi removido da lista de espera com sucesso";
-            } catch (Exception ex) {
+            }
+            catch (Exception ex) {
                 response.Message = "Falha ao remover aluno da lista de espera: " + ex.ToString();
             }
             return response;
