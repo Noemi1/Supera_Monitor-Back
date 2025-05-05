@@ -1281,21 +1281,20 @@ public class EventoService : IEventoService {
                     return new ResponseModel { Message = $"Aluno ID: '{participacao.Aluno_Id}' não possui a apostila AH ID: '{partAluno.Apostila_Ah_Id}'" };
                 }
 
-                // Se a apostila não muda, não deve permitir que o aluno regresse nas páginas
-                // TODO: Deveria fazer essa comparação com as informações em Aluno ou Participação?
-                bool apostilaAbacoChanged = participacao.Apostila_Abaco_Id != partAluno.Apostila_Abaco_Id;
-                if (!apostilaAbacoChanged) {
-                    if (partAluno.NumeroPaginaAbaco < participacao.NumeroPaginaAbaco) {
-                        return new ResponseModel { Message = $"Progresso da Apostila Abaco não pode regredir: Participacao ID {participacao.Id}" };
-                    }
-                }
+                // Desativado: Se a apostila não muda, não deve permitir que o aluno regresse nas páginas
+                //bool apostilaAbacoChanged = participacao.Apostila_Abaco_Id != partAluno.Apostila_Abaco_Id;
+                //if (!apostilaAbacoChanged) {
+                //    if (partAluno.NumeroPaginaAbaco < participacao.NumeroPaginaAbaco) {
+                //        return new ResponseModel { Message = $"Progresso da Apostila Abaco não pode regredir: Participacao ID {participacao.Id}" };
+                //    }
+                //}
 
-                bool apostilaAhChanged = participacao.Apostila_AH_Id != partAluno.Apostila_Ah_Id;
-                if (!apostilaAhChanged) {
-                    if (partAluno.NumeroPaginaAh < participacao.NumeroPaginaAH) {
-                        return new ResponseModel { Message = $"Progresso da Apostila AH não pode regredir: Participacao ID {participacao.Id}" };
-                    }
-                }
+                //bool apostilaAhChanged = participacao.Apostila_AH_Id != partAluno.Apostila_Ah_Id;
+                //if (!apostilaAhChanged) {
+                //    if (partAluno.NumeroPaginaAh < participacao.NumeroPaginaAH) {
+                //        return new ResponseModel { Message = $"Progresso da Apostila AH não pode regredir: Participacao ID {participacao.Id}" };
+                //    }
+                //}
 
                 // Não deve ser possível atualizar além do tamanho máximo da apostila
                 int totalPaginasAbaco = existingApostilas.Find(a => a.Id == partAluno.Apostila_Abaco_Id)!.NumeroTotalPaginas;
