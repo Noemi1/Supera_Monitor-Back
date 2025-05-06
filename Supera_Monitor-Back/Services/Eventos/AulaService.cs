@@ -401,6 +401,12 @@ public class AulaService : IAulaService {
         ResponseModel response = new() { Success = false };
 
         try {
+            IQueryable<Aluno> alunosInRequest = _db.Alunos.Where(a => a.Deactivated == null && request.Alunos.Contains(a.Id));
+
+            if (alunosInRequest.Count() != request.Alunos.Count) {
+                return new ResponseModel { Message = "Aluno(s) não encontrado(s)" };
+            }
+
             // Não devo poder registrar uma aula com um professor que não existe
             Professor? professor = _db.Professors
                 .Include(p => p.Account)
@@ -415,12 +421,6 @@ public class AulaService : IAulaService {
                 return new ResponseModel { Message = "Este professor está desativado" };
             }
 
-            Aluno? aluno = _db.Alunos.FirstOrDefault(a => a.Id == request.Aluno_Id);
-
-            if (aluno is null) {
-                return new ResponseModel { Message = "Aluno não encontrado" };
-            }
-
             // Não devo poder registrar uma aula em uma sala que não existe
             bool salaExists = _db.Salas.Any(s => s.Id == request.Sala_Id);
 
@@ -428,16 +428,18 @@ public class AulaService : IAulaService {
                 return new ResponseModel { Message = "Sala não encontrada" };
             }
 
-            // Se o aluno já participou de alguma aula zero, então não deve ser possível inscrevê-lo novamente
-            bool alunoAlreadyParticipated = _db.Evento_Participacao_Alunos
-                .Include(p => p.Evento)
-                .Any(p =>
-                    p.Aluno_Id == aluno.Id
-                    && p.Evento.Evento_Tipo_Id == (int)EventoTipo.AulaZero
-                    && p.Evento.Deactivated == null);
+            foreach (var aluno in alunosInRequest) {
+                // Se o aluno já participou de alguma aula zero, então não deve ser possível inscrevê-lo novamente
+                bool alunoAlreadyParticipated = _db.Evento_Participacao_Alunos
+                    .Include(p => p.Evento)
+                    .Any(p =>
+                        p.Aluno_Id == aluno.Id
+                        && p.Evento.Evento_Tipo_Id == (int)EventoTipo.AulaZero
+                        && p.Evento.Deactivated == null);
 
-            if (alunoAlreadyParticipated) {
-                return new ResponseModel { Message = "Aluno já participou de uma aula zero" };
+                if (alunoAlreadyParticipated) {
+                    return new ResponseModel { Message = $"Aluno ID: '{aluno.Id}' já participou de aula zero ou possui uma agendada." };
+                }
             }
 
             // Sala deve estar livre no horário do evento
@@ -503,6 +505,31 @@ public class AulaService : IAulaService {
             _db.Add(evento);
             _db.SaveChanges();
 
+            // Adicionar as participações dos envolvidos no evento - Alunos e Professores
+            var participacoesAlunos = alunosInRequest.Select(aluno => new Evento_Participacao_Aluno
+            {
+                Aluno_Id = aluno.Id,
+                Evento_Id = evento.Id,
+
+                // Inserir o progresso do aluno no evento
+                Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
+                NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
+                Apostila_AH_Id = aluno.Apostila_AH_Id,
+                NumeroPaginaAH = aluno.NumeroPaginaAH,
+            });
+
+            foreach (var participacao in participacoesAlunos) {
+                _db.Evento_Participacao_Alunos.Add(participacao);
+
+                _db.Aluno_Historicos.Add(new Aluno_Historico
+                {
+                    Account_Id = _account.Id,
+                    Aluno_Id = participacao.Aluno_Id,
+                    Data = evento.Data,
+                    Descricao = $"Aluno foi inscrito em um evento 'Aula Zero' no dia {evento.Data:G}"
+                });
+            }
+
             // Inserir participação do professor
             Evento_Participacao_Professor participacaoProfessor = new()
             {
@@ -511,21 +538,6 @@ public class AulaService : IAulaService {
             };
 
             _db.Evento_Participacao_Professors.Add(participacaoProfessor);
-
-            // Inserir o registro do aluno passado na requisição
-            Evento_Participacao_Aluno registro = new()
-            {
-                Aluno_Id = aluno.Id,
-                Evento_Id = evento.Id,
-                Presente = null,
-
-                Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
-                NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
-                Apostila_AH_Id = aluno.Apostila_AH_Id,
-                NumeroPaginaAH = aluno.NumeroPaginaAH,
-            };
-
-            _db.Evento_Participacao_Alunos.Add(registro);
             _db.SaveChanges();
 
             var responseObject = _db.CalendarioEventoLists.First(e => e.Id == evento.Id);
