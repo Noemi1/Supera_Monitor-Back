@@ -282,7 +282,9 @@ public class AulaService : IAulaService {
                 return new ResponseModel { Message = $"Professor: {professor.Account.Name} possui participação em outro evento nesse mesmo horário" };
             }
 
-            IQueryable<Aluno> alunosInRequest = _db.Alunos.Where(a => a.Deactivated == null && request.Alunos.Contains(a.Id));
+            List<int> alunoIds = request.Alunos.Select(a => a.Aluno_Id).ToList();
+
+            IQueryable<Aluno> alunosInRequest = _db.Alunos.Where(a => a.Deactivated == null && alunoIds.Contains(a.Id));
 
             if (alunosInRequest.Count() != request.Alunos.Count) {
                 return new ResponseModel { Message = "Aluno(s) não encontrado(s)" };
@@ -358,6 +360,7 @@ public class AulaService : IAulaService {
                 Aluno_Id = aluno.Id,
                 Evento_Id = evento.Id,
                 Presente = null,
+                ReposicaoDe_Evento_Id = request.Alunos.First(a => a.Aluno_Id == aluno.Id).Evento_Id,
 
                 Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
                 NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,

@@ -11,8 +11,13 @@ public class CreateAulaExtraRequest {
     public int Roteiro_Id { get; set; }
     public int CapacidadeMaximaAlunos { get; set; }
 
-    public List<int> Alunos { get; set; } = new List<int>();
+    public List<ReposicaoAlunoModel> Alunos { get; set; } = new List<ReposicaoAlunoModel>();
     public List<int> PerfilCognitivo { get; set; } = new List<int>();
 
     public int? ReagendamentoDe_Evento_Id { get; set; }
+}
+
+public class ReposicaoAlunoModel {
+    public int Aluno_Id { get; set; }
+    public int Evento_Id { get; set; }
 }

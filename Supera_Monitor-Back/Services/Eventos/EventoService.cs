@@ -1720,11 +1720,19 @@ public class EventoService : IEventoService {
                 case (int)EventoTipo.Aula:
                     shouldCreateEventoAula = true;
 
-                    Turma? turmaInRequest = _db.Turmas.FirstOrDefault(t => t.Id == request.Turma_Id);
+                    Turma? turmaInRequest = _db.Turmas
+                        .Include(t => t.Alunos)
+                        .FirstOrDefault(t => t.Id == request.Turma_Id);
 
                     if (turmaInRequest is null) {
                         return new ResponseModel { Message = "Turma não encontrada" };
                     }
+
+                    // Ignorar alunos da requisição, pois os alunos estão cadastrados na turma
+                    request.Alunos = turmaInRequest.Alunos
+                        .Where(a => a.Deactivated == null)
+                        .Select(a => a.Id)
+                        .ToList();
 
                     break;
 
