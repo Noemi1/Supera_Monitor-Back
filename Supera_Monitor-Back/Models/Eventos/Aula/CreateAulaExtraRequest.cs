@@ -19,5 +19,5 @@ public class CreateAulaExtraRequest {
 
 public class ReposicaoAlunoModel {
     public int Aluno_Id { get; set; }
-    public int Evento_Id { get; set; }
+    public int ReposicaoDe_Evento_Id { get; set; }
 }

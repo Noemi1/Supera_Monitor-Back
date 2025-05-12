@@ -360,7 +360,7 @@ public class AulaService : IAulaService {
                 Aluno_Id = aluno.Id,
                 Evento_Id = evento.Id,
                 Presente = null,
-                ReposicaoDe_Evento_Id = request.Alunos.First(a => a.Aluno_Id == aluno.Id).Evento_Id,
+                ReposicaoDe_Evento_Id = request.Alunos.First(a => a.Aluno_Id == aluno.Id).ReposicaoDe_Evento_Id,
 
                 Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
                 NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
