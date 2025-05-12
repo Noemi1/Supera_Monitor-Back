@@ -1678,6 +1678,10 @@ public class EventoService : IEventoService {
             bool shouldCreateEventoAula = false;
             Evento_Tipo? eventoTipo = _db.Evento_Tipos.Find(request.Evento_Tipo_Id);
 
+            if (eventoTipo is null) {
+                return new ResponseModel { Message = "Tipo de evento não encontrado" };
+            }
+
             switch (request.Evento_Tipo_Id) {
                 case (int)EventoTipo.Oficina:
                     break;
@@ -1872,7 +1876,16 @@ public class EventoService : IEventoService {
                 NumeroPaginaAH = aluno.NumeroPaginaAH,
             });
 
+            IEnumerable<Aluno_Historico> historicosAlunos = alunosInRequest.Select(aluno => new Aluno_Historico
+            {
+                Aluno_Id = aluno.Id,
+                Account_Id = _account.Id,
+                Descricao = $"Aluno foi inscrito no evento de {eventoTipo.Nome} '{newEvento.Descricao}' às {newEvento.Data:g}",
+                Data = newEvento.Data,
+            });
+
             _db.Evento_Participacao_Alunos.AddRange(participacoesAlunos);
+            _db.Aluno_Historicos.AddRange(historicosAlunos);
 
             // Pegar os perfis cognitivos passados na requisição e mapear as entidades de Evento_Aula_PerfilCognitivo
             IEnumerable<Evento_Aula_PerfilCognitivo_Rel> eventoAulaPerfisCognitivos = perfisCognitivosInRequest.Select(perfil => new Evento_Aula_PerfilCognitivo_Rel

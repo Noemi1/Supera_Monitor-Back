@@ -20,4 +20,3 @@ public class NewEventoRequest {
     public List<int> Professores { get; set; } = new();
     public List<int> Alunos { get; set; } = new();
 }
-
