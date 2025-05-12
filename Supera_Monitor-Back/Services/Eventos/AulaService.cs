@@ -99,12 +99,15 @@ public class AulaService : IAulaService {
                 return new ResponseModel { Message = "Esta sala se encontra ocupada neste horário" };
             }
 
-            // Não devo poder criar turma com um roteiro que não existe
-            bool roteiroExists = _db.Roteiros.Any(r => r.Id == request.Roteiro_Id);
+            Roteiro? roteiro = _db.Roteiros.Find(request.Roteiro_Id);
 
-            if (!roteiroExists) {
+            // Não devo poder criar aula de turma com um roteiro que não existe
+            if (request.Roteiro_Id.HasValue && roteiro is null) {
                 return new ResponseModel { Message = "Roteiro não encontrado" };
             }
+
+            // Se não foi passado um roteiro na requisição, então buscar o roteiro da data da aula, senão continua null
+            roteiro ??= _db.Roteiros.FirstOrDefault(r => request.Data.Date >= r.DataInicio.Date && request.Data.Date <= r.DataFim.Date);
 
             bool hasTurmaConflict = _professorService.HasTurmaTimeConflict(
                 professorId: professor.Id,
@@ -142,7 +145,7 @@ public class AulaService : IAulaService {
                 Evento_Tipo_Id = (int)EventoTipo.Aula,
                 Evento_Aula = new Evento_Aula
                 {
-                    Roteiro_Id = request.Roteiro_Id,
+                    Roteiro_Id = roteiro?.Id,
                     Turma_Id = turma.Id,
                     Professor_Id = request.Professor_Id,
                 },
@@ -189,8 +192,13 @@ public class AulaService : IAulaService {
             _db.Evento_Participacao_Alunos.AddRange(registros);
             _db.SaveChanges();
 
-            // Pegar os perfis cognitivos passados no request e criar as entidades de Aula_PerfilCognitivo
-            IEnumerable<Evento_Aula_PerfilCognitivo_Rel> eventoAulaPerfisCognitivos = request.PerfilCognitivo.Select(perfilCognitivoId => new Evento_Aula_PerfilCognitivo_Rel
+            var turmaPerfisCognitivos = _db.Turma_PerfilCognitivo_Rels
+                .Where(t => t.Turma_Id == turma.Id)
+                .Select(t => t.PerfilCognitivo_Id)
+                .ToList();
+
+            // Pegar os perfis cognitivos da turma e criar as entidades de Aula_PerfilCognitivo
+            IEnumerable<Evento_Aula_PerfilCognitivo_Rel> eventoAulaPerfisCognitivos = turmaPerfisCognitivos.Select(perfilCognitivoId => new Evento_Aula_PerfilCognitivo_Rel
             {
                 PerfilCognitivo_Id = perfilCognitivoId,
                 Evento_Aula_Id = evento.Id,
