@@ -27,7 +27,7 @@ public partial class AlunoChecklistItemList {
 
     public DateTime? DataFinalizacao { get; set; }
 
-    public string Account_Finalizacao { get; set; } = null!;
+    public string? Account_Finalizacao { get; set; }
 
     public int Turma_Id { get; set; }
 
@@ -35,11 +35,7 @@ public partial class AlunoChecklistItemList {
 
     public int? Professor_Id { get; set; }
 
-    public string Professor { get; set; } = null!;
+    public string? Professor { get; set; }
 
     public string CorLegenda { get; set; } = null!;
 }
-
-
-
-

@@ -765,7 +765,9 @@ public class AlunoService : IAlunoService {
     }
 
     public List<AlunoChecklistItemList> GetAlunoChecklistItemList(AlunoChecklistItemListRequest request) {
-        IQueryable<AlunoChecklistItemList> listQueryable = _db.AlunoChecklistItemLists.AsQueryable();
+        IQueryable<AlunoChecklistItemList> listQueryable = _db.AlunoChecklistItemLists
+            .Where(a => a.Finalizado == 0)
+            .AsQueryable();
 
         if (request.Turma_Id.HasValue) {
             listQueryable = listQueryable.Where(a => a.Turma_Id == request.Turma_Id);
