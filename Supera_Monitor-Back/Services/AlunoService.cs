@@ -13,6 +13,7 @@ public interface IAlunoService {
     AlunoList Get(int alunoId);
     List<AlunoList> GetAll();
     List<AlunoListWithChecklist> GetAllWithChecklist();
+    List<AlunoChecklistItemList> GetAlunoChecklistItemList(AlunoChecklistItemListRequest request);
     ResponseModel Insert(CreateAlunoRequest model);
     ResponseModel Update(UpdateAlunoRequest model);
     ResponseModel ToggleDeactivate(int alunoId);
@@ -761,5 +762,23 @@ public class AlunoService : IAlunoService {
             .ToList();
 
         return _mapper.Map<List<AlunoHistoricoModel>>(historicos);
+    }
+
+    public List<AlunoChecklistItemList> GetAlunoChecklistItemList(AlunoChecklistItemListRequest request) {
+        IQueryable<AlunoChecklistItemList> listQueryable = _db.AlunoChecklistItemLists.AsQueryable();
+
+        if (request.Turma_Id.HasValue) {
+            listQueryable = listQueryable.Where(a => a.Turma_Id == request.Turma_Id);
+        }
+
+        if (request.Professor_Id.HasValue) {
+            listQueryable = listQueryable.Where(a => a.Professor_Id == request.Professor_Id);
+        }
+
+        if (request.Aluno_Id.HasValue) {
+            listQueryable = listQueryable.Where(a => a.Aluno_Id == request.Aluno_Id);
+        }
+
+        return listQueryable.ToList();
     }
 }

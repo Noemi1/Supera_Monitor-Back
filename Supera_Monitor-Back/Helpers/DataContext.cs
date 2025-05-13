@@ -17,6 +17,8 @@ public partial class DataContext : DbContext {
 
     public virtual DbSet<Aluno> Alunos { get; set; }
 
+    public virtual DbSet<AlunoChecklistItemList> AlunoChecklistItemLists { get; set; }
+
     public virtual DbSet<AlunoChecklistView> AlunoChecklistViews { get; set; }
 
     public virtual DbSet<AlunoList> AlunoLists { get; set; }
@@ -229,6 +231,35 @@ public partial class DataContext : DbContext {
                 .HasForeignKey(d => d.Turma_Id)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Aluno_Turma");
+        });
+
+        modelBuilder.Entity<AlunoChecklistItemList>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToView("AlunoChecklistItemList");
+
+            entity.Property(e => e.Aluno)
+                .HasMaxLength(250)
+                .IsUnicode(false);
+            entity.Property(e => e.Celular)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.Checklist)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.Checklist_Item)
+                .HasMaxLength(250)
+                .IsUnicode(false);
+            entity.Property(e => e.CorLegenda)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.DataFinalizacao).HasColumnType("datetime");
+            entity.Property(e => e.Observacoes).IsUnicode(false);
+            entity.Property(e => e.Prazo).HasColumnType("date");
+            entity.Property(e => e.Turma)
+                .HasMaxLength(100)
+                .IsUnicode(false);
         });
 
         modelBuilder.Entity<AlunoChecklistView>(entity =>
