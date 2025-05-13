@@ -360,21 +360,25 @@ public class AulaService : IAulaService {
             };
 
             _db.Evento_Participacao_Professors.Add(participacaoProfessor);
-            _db.SaveChanges();
 
             // Inserir os registros dos alunos passados na requisição
-            IEnumerable<Evento_Participacao_Aluno> registros = alunosInRequest.Select(aluno => new Evento_Participacao_Aluno
-            {
-                Aluno_Id = aluno.Id,
-                Evento_Id = evento.Id,
-                Presente = null,
-                ReposicaoDe_Evento_Id = request.Alunos.First(a => a.Aluno_Id == aluno.Id).ReposicaoDe_Evento_Id,
+            IEnumerable<Evento_Participacao_Aluno> registros = alunosInRequest
+                .AsEnumerable()
+                .Select(aluno => new Evento_Participacao_Aluno
+                {
+                    Aluno_Id = aluno.Id,
+                    Evento_Id = evento.Id,
+                    Presente = null,
+                    ReposicaoDe_Evento_Id = request.Alunos
+                        .Where(a => a.Aluno_Id == aluno.Id)
+                        .Select(a => a.ReposicaoDe_Evento_Id)
+                        .FirstOrDefault(),
 
-                Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
-                NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
-                Apostila_AH_Id = aluno.Apostila_AH_Id,
-                NumeroPaginaAH = aluno.NumeroPaginaAH,
-            });
+                    Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
+                    NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
+                    Apostila_AH_Id = aluno.Apostila_AH_Id,
+                    NumeroPaginaAH = aluno.NumeroPaginaAH,
+                });
 
             _db.Evento_Participacao_Alunos.AddRange(registros);
 
