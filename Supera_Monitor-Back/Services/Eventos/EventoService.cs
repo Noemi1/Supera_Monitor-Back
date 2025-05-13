@@ -1423,7 +1423,6 @@ public class EventoService : IEventoService {
 
         return evento;
     }
-
     public List<Dashboard> Dashboard(DashboardRequest request) {
 
         DateTime intervaloDe = new DateTime(request.Ano, request.Mes, 1);
@@ -1441,17 +1440,19 @@ public class EventoService : IEventoService {
         List<CalendarioAlunoList> participacoes = _db.CalendarioAlunoLists.ToList();
 
 
-        List<Turma> turmas = _db.Turmas
-            .Where(t => t.Deactivated == null)
-            .Include(t => t.Alunos!).ThenInclude(x => x.Apostila_Abaco)
-            .Include(t => t.Alunos!).ThenInclude(x => x.Apostila_AH)
-            .Include(t => t.Professor!).ThenInclude(t => t.Account)
-            .Include(t => t.Sala)
-            .OrderBy(x => x.Id)
-            .ToList();
+        var turmasQueryable = _db.Turmas
+            .Where(t => t.Deactivated == null);
+        //.Include(t => t.Alunos!).ThenInclude(x => x.Apostila_Abaco)
+        //.Include(t => t.Alunos!).ThenInclude(x => x.Apostila_AH)
+        //.Include(t => t.Professor!).ThenInclude(t => t.Account)
+        //.Include(t => t.Sala)
+        //.OrderBy(x => x.Id)
+        //.ToList();
 
-        List<AlunoList> alunos = _db.AlunoLists.Where(t => t.Deactivated == null)
-            .ToList();
+
+        var alunosQueryable = _db.AlunoLists
+            .Where(t => t.Deactivated == null);
+        //.ToList();
 
 
         List<Roteiro> roteiros = _db.Roteiros
@@ -1459,6 +1460,26 @@ public class EventoService : IEventoService {
             //.Where(x => x.DataInicio.Date >= intervaloDe.Date && x.DataFim.Date <= intervaloAte.Date)
             .OrderBy(x => x.DataInicio)
             .ToList();
+
+        if (request.Turma_Id.HasValue) {
+            turmasQueryable = turmasQueryable.Where(x => x.Id == request.Turma_Id.Value);
+            alunosQueryable = alunosQueryable.Where(x => x.Turma_Id == request.Turma_Id.Value);
+        }
+
+        if (request.Professor_Id.HasValue) {
+            turmasQueryable = turmasQueryable.Where(x => x.Professor_Id == request.Professor_Id.Value);
+            var turmasId = turmasQueryable.Select(x => x.Id);
+            alunosQueryable = alunosQueryable.Where(x => turmasId.Contains(x.Turma_Id));
+        }
+
+        List<AlunoList> alunos = alunosQueryable.OrderBy(x => x.Nome).ToList();
+        List<Turma> turmas = turmasQueryable
+                                //.Include(t => t.Alunos!).ThenInclude(x => x.Apostila_Abaco)
+                                //.Include(t => t.Alunos!).ThenInclude(x => x.Apostila_AH)
+                                //.Include(t => t.Professor!).ThenInclude(t => t.Account)
+                                //.Include(t => t.Sala)
+                                .OrderBy(x => x.Nome)
+                                .ToList();
 
         if (roteiros.Count < 4) {
             int diff = 4 - roteiros.Count;
@@ -1505,9 +1526,7 @@ public class EventoService : IEventoService {
         roteiros = roteiros.OrderBy(x => x.DataInicio).ToList();
 
         foreach (Roteiro roteiro in roteiros) {
-
             foreach (Turma turma in turmas) {
-
                 // Encontra a Data da aula da turma naquela semana do roteiro
                 List<AlunoList> alunosTurma = alunos.Where(x => x.Turma_Id == turma.Id).ToList();
                 DayOfWeek roteiroWeek = roteiro.DataInicio.DayOfWeek;
