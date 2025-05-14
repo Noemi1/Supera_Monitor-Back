@@ -174,11 +174,13 @@ public class AlunoService : IAlunoService {
                 randomRM = RNG.Next(0, 100000).ToString("D5");
             } while (existingRMS.Any(rm => rm == randomRM));
 
+            // Desativado, primeiraAula foi pro request !?
             // Navegar até o dia da semana da primeira aula partindo do início da vigência
-            DateTime dataPrimeiraAula = model.DataInicioVigencia;
-            while ((int)dataPrimeiraAula.DayOfWeek != turmaDestino.DiaSemana) {
-                dataPrimeiraAula = dataPrimeiraAula.AddDays(1);
-            }
+            //DateTime dataPrimeiraAula = model.DataInicioVigencia;
+            //while ((int)dataPrimeiraAula.DayOfWeek != turmaDestino.DiaSemana) {
+            //    dataPrimeiraAula = dataPrimeiraAula.AddDays(1);
+            //}
+            DateTime? dataPrimeiraAula = model.PrimeiraAula;
 
             // Coletar as primeiras apostilas Abaco e Ah do kit do aluno
             var primeiraApostilaAbaco = _db.Apostila_Kit_Rels
@@ -285,7 +287,6 @@ public class AlunoService : IAlunoService {
         ResponseModel response = new() { Success = false };
 
         try {
-
             Aluno? aluno = _db.Alunos
                 .Include(a => a.Pessoa)
                 .FirstOrDefault(a => a.Id == model.Id);
@@ -367,6 +368,7 @@ public class AlunoService : IAlunoService {
             aluno.Apostila_Kit_Id = model.Apostila_Kit_Id;
             aluno.DataInicioVigencia = model.DataInicioVigencia ?? aluno.DataInicioVigencia;
             aluno.DataFimVigencia = model.DataFimVigencia ?? aluno.DataFimVigencia;
+            aluno.PrimeiraAula = model.PrimeiraAula ?? aluno.PrimeiraAula;
 
             // Atualizando dados de Pessoa
             aluno.Pessoa.Nome = model.Nome ?? aluno.Pessoa.Nome;

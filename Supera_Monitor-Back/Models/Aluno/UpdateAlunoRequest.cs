@@ -9,6 +9,7 @@ public class UpdateAlunoRequest {
 
     public DateTime? DataInicioVigencia { get; set; }
     public DateTime? DataFimVigencia { get; set; }
+    public DateTime? PrimeiraAula { get; set; }
 
     public string? Aluno_Foto { get; set; }
     public int? Apostila_Kit_Id { get; set; }
