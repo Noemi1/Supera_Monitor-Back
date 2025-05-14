@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Reflection;
+using Microsoft.AspNetCore.Mvc;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Restricao;
 using Supera_Monitor_Back.Services;
-using System.Reflection;
 
 namespace Supera_Monitor_Back.Controllers {
     [Authorize(Entities.Role.Admin, Entities.Role.Teacher, Entities.Role.Assistant)]
@@ -12,41 +12,39 @@ namespace Supera_Monitor_Back.Controllers {
         private readonly IRestricaoService _restricaoService;
         private readonly ILogService _logger;
 
-        public RestricaoController(IRestricaoService restricaoService, ILogService logger)
-        {
+        public RestricaoController(IRestricaoService restricaoService, ILogService logger) {
             _restricaoService = restricaoService;
             _logger = logger;
         }
 
         [HttpGet("all")]
-        public ActionResult<ResponseModel> GetAll()
-        {
+        public ActionResult<ResponseModel> GetAll() {
             try {
                 var response = _restricaoService.GetAll();
 
                 return Ok(response);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
 
         [HttpGet("all/{alunoId}")]
-        public ActionResult<List<RestricaoModel>> GetAllByAluno(int alunoId)
-        {
+        public ActionResult<List<RestricaoModel>> GetAllByAluno(int alunoId) {
             try {
                 var response = _restricaoService.GetAllByAluno(alunoId);
 
                 return Ok(response);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
 
         [HttpPost()]
-        public ActionResult<ResponseModel> Insert(CreateRestricaoRequest model)
-        {
+        public ActionResult<ResponseModel> Insert(CreateRestricaoRequest model) {
             try {
                 var response = _restricaoService.Insert(model);
 
@@ -56,15 +54,15 @@ namespace Supera_Monitor_Back.Controllers {
                 }
 
                 return BadRequest(response);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
 
         [HttpPut()]
-        public ActionResult<ResponseModel> Update(UpdateRestricaoRequest model)
-        {
+        public ActionResult<ResponseModel> Update(UpdateRestricaoRequest model) {
             try {
                 var response = _restricaoService.Update(model);
 
@@ -74,17 +72,17 @@ namespace Supera_Monitor_Back.Controllers {
                 }
 
                 return BadRequest(response);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
 
-        [HttpPatch("desativar/{restricaoId}")]
-        public ActionResult<ResponseModel> Deactivate(int restricaoId)
-        {
+        [HttpPatch("toggle-active/{restricaoId}")]
+        public ActionResult<ResponseModel> ToggleActive(int restricaoId) {
             try {
-                var response = _restricaoService.Deactivate(restricaoId);
+                var response = _restricaoService.ToggleActive(restricaoId);
 
                 if (response.Success) {
                     _logger.Log("Deactivate", "Aluno_Restricao", response, Account?.Id);
@@ -92,7 +90,8 @@ namespace Supera_Monitor_Back.Controllers {
                 }
 
                 return BadRequest(response);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }

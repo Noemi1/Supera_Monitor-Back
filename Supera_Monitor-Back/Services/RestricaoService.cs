@@ -13,7 +13,7 @@ public interface IRestricaoService {
     List<RestricaoModel> GetAllByAluno(int alunoId);
     ResponseModel Insert(CreateRestricaoRequest model);
     ResponseModel Update(UpdateRestricaoRequest model);
-    ResponseModel Deactivate(int restricaoId);
+    ResponseModel ToggleActive(int restricaoId);
 }
 
 public class RestricaoService : IRestricaoService {
@@ -118,7 +118,7 @@ public class RestricaoService : IRestricaoService {
         return response;
     }
 
-    public ResponseModel Deactivate(int restricaoId) {
+    public ResponseModel ToggleActive(int restricaoId) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -128,11 +128,7 @@ public class RestricaoService : IRestricaoService {
                 return new ResponseModel { Message = "Restrição não encontrada" };
             }
 
-            if (restricao.Deactivated.HasValue) {
-                return new ResponseModel { Message = "Restrição já está desativada" };
-            }
-
-            restricao.Deactivated = TimeFunctions.HoraAtualBR();
+            restricao.Deactivated = restricao.Deactivated.HasValue ? null : TimeFunctions.HoraAtualBR();
 
             _db.Aluno_Restricaos.Update(restricao);
             _db.SaveChanges();
