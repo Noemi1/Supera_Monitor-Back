@@ -498,7 +498,9 @@ public class EventoService : IEventoService {
                         Nome = professor.Account.Name,
                         CorLegenda = professor.CorLegenda,
                         Account_Id = professor.Account.Id,
-                        Telefone = professor.Account.Phone
+                        Telefone = professor.Account.Phone,
+                        ExpedienteFim = professor.ExpedienteFim,
+                        ExpedienteInicio = professor.ExpedienteInicio,
                     }).ToList()
                 };
 
@@ -578,6 +580,8 @@ public class EventoService : IEventoService {
                     Observacao = "",
                     Account_Id = turma.Professor.Account.Id,
                     Telefone = turma.Professor.Account.Phone,
+                    ExpedienteInicio = turma.Professor.ExpedienteInicio,
+                    ExpedienteFim = turma.Professor.ExpedienteFim,
                 });
 
                 List<PerfilCognitivo> perfisCognitivos = perfilCognitivoRelFromTurmas
@@ -835,7 +839,9 @@ public class EventoService : IEventoService {
                             Nome = professor.Account.Name,
                             CorLegenda = professor.CorLegenda,
                             Account_Id = professor.Account.Id,
-                            Telefone = professor.Account.Phone
+                            Telefone = professor.Account.Phone,
+                            ExpedienteFim = professor.ExpedienteFim,
+                            ExpedienteInicio = professor.ExpedienteInicio,
                         }).ToList()
                     };
 
@@ -910,6 +916,8 @@ public class EventoService : IEventoService {
                         Observacao = "",
                         Account_Id = turma.Professor.Account.Id,
                         Telefone = turma.Professor.Account.Phone,
+                        ExpedienteFim = turma.Professor.ExpedienteFim,
+                        ExpedienteInicio = turma.Professor.ExpedienteInicio,
                     });
 
                     List<PerfilCognitivo> perfisCognitivos = perfilCognitivoRelFromTurmas

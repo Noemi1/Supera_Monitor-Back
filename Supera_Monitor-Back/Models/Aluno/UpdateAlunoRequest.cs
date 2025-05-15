@@ -13,6 +13,7 @@ public class UpdateAlunoRequest {
 
     public string? Aluno_Foto { get; set; }
     public int? Apostila_Kit_Id { get; set; }
+    public bool? RestricaoMobilidade { get; set; }
 
     public string RM { get; set; } = string.Empty;
     public string? LoginApp { get; set; } = string.Empty;

@@ -8,6 +8,7 @@ public class CreateAlunoRequest {
 
     public DateTime DataInicioVigencia { get; set; }
     public DateTime? DataFimVigencia { get; set; }
+    public bool RestricaoMobilidade { get; set; }
     public DateTime? PrimeiraAula { get; set; }
 
     public string? Aluno_Foto { get; set; }

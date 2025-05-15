@@ -18,4 +18,8 @@ public partial class CalendarioProfessorList {
     public bool? Presente { get; set; }
 
     public string? Observacao { get; set; }
+
+    public TimeSpan? ExpedienteInicio { get; set; }
+
+    public TimeSpan? ExpedienteFim { get; set; }
 }

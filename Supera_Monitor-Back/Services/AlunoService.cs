@@ -205,12 +205,12 @@ public class AlunoService : IAlunoService {
                 DataFimVigencia = model.DataFimVigencia,
                 Turma_Id = turmaDestino.Id,
                 PerfilCognitivo_Id = model.PerfilCognitivo_Id,
+                RestricaoMobilidade = model.RestricaoMobilidade,
 
                 Apostila_Kit_Id = model.Apostila_Kit_Id,
 
                 Apostila_Abaco_Id = primeiraApostilaAbaco?.Apostila_Id,
                 NumeroPaginaAbaco = primeiraApostilaAbaco is not null ? 0 : null,
-
                 Apostila_AH_Id = primeiraApostilaAh?.Apostila_Id,
                 NumeroPaginaAH = primeiraApostilaAh is not null ? 0 : null,
 
@@ -369,6 +369,7 @@ public class AlunoService : IAlunoService {
             aluno.DataInicioVigencia = model.DataInicioVigencia ?? aluno.DataInicioVigencia;
             aluno.DataFimVigencia = model.DataFimVigencia ?? aluno.DataFimVigencia;
             aluno.PrimeiraAula = model.PrimeiraAula ?? aluno.PrimeiraAula;
+            aluno.RestricaoMobilidade = model.RestricaoMobilidade ?? aluno.RestricaoMobilidade;
 
             // Atualizando dados de Pessoa
             aluno.Pessoa.Nome = model.Nome ?? aluno.Pessoa.Nome;
