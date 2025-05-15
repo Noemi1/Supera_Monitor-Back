@@ -66,6 +66,10 @@ public class EventoService : IEventoService {
                     eventoTipo = "Oficina";
                     break;
 
+                case (int)EventoTipo.Superacao:
+                    eventoTipo = "Superação";
+                    break;
+
                 default:
                     return new ResponseModel { Message = "Internal Server Error : 'Tipo de evento inválido'" };
             }
