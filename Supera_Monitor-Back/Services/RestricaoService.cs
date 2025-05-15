@@ -148,7 +148,7 @@ public class RestricaoService : IRestricaoService {
         List<Aluno_Restricao> restricoes = _db.Aluno_Restricaos
             .Include(r => r.Aluno)
             .ThenInclude(r => r.Pessoa)
-            .Where(r => r.Aluno_Id == alunoId && r.Deactivated == null)
+            .Where(r => r.Aluno_Id == alunoId)
             .ToList();
 
         return _mapper.Map<List<RestricaoModel>>(restricoes);
