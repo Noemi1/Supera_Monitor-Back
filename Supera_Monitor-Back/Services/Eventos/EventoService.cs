@@ -1616,7 +1616,6 @@ public class EventoService : IEventoService {
                             Turma_Id = turma.Id,
                             Turma = turma.Nome,
                             CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
-
                         };
 
                         foreach (var aluno in alunosTurma) {
@@ -1633,6 +1632,7 @@ public class EventoService : IEventoService {
                                 DataInicioVigencia = aluno.DataInicioVigencia,
                                 DataFimVigencia = aluno.DataFimVigencia,
                                 PrimeiraAula = aluno.PrimeiraAula,
+                                RestricaoMobilidade = aluno.RestricaoMobilidade,
 
                                 Apostila_Abaco = aluno.Apostila_Abaco,
                                 Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,

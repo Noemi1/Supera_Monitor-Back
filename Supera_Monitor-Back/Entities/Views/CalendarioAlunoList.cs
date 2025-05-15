@@ -27,6 +27,8 @@ public class CalendarioAlunoList {
 
     public DateTime? PrimeiraAula { get; set; }
 
+    public bool? RestricaoMobilidade { get; set; }
+
     public string? Turma { get; set; }
 
     public int? ReposicaoDe_Evento_Id { get; set; }

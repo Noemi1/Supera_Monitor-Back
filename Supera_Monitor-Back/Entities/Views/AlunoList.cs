@@ -17,6 +17,8 @@ public partial class AlunoList {
 
     public DateTime? PrimeiraAula { get; set; }
 
+    public bool? RestricaoMobilidade { get; set; }
+
     public DateTime? DataNascimento { get; set; }
 
     public string? Celular { get; set; }
