@@ -8,7 +8,7 @@ public class CreateAulaExtraRequest {
     public int Professor_Id { get; set; }
     public int DuracaoMinutos { get; set; }
 
-    public int Roteiro_Id { get; set; }
+    public int? Roteiro_Id { get; set; }
     public int CapacidadeMaximaAlunos { get; set; }
 
     public List<ReposicaoAlunoModel> Alunos { get; set; } = new List<ReposicaoAlunoModel>();
