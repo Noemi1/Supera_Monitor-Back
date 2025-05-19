@@ -801,7 +801,7 @@ public class EventoService : IEventoService {
                     };
 
                     // Se está aplicado um filtro de professor ou turma, não deve mostrar pseudo-oficinas, já que esses dados ainda não estão definidos
-                    if (request.Professor_Id is null && request.Turma_Id is null) {
+                    if (request.Professor_Id is null && request.Turma_Id is null && request.Aluno_Id is null) {
                         calendarioResponse.Add(pseudoOficina);
                     }
                 }
@@ -845,7 +845,7 @@ public class EventoService : IEventoService {
                         }).ToList()
                     };
 
-                    if (request.Turma_Id is null) {
+                    if (request.Turma_Id is null && request.Aluno_Id is null) {
                         calendarioResponse.Add(pseudoReuniao);
                     }
                 }
