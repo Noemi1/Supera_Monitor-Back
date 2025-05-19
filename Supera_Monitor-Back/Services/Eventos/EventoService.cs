@@ -1676,9 +1676,7 @@ public class EventoService : IEventoService {
 							// Se o aluno não estiver vigente naquela data, não insere aula/participação para ele
 							if ((aluno.DataInicioVigencia.HasValue && data.Date >= aluno.DataInicioVigencia.Value.Date) && (!aluno.DataFimVigencia.HasValue || data.Date <= aluno.DataFimVigencia.Value.Date))
 							{
-								DateTime? dataInicioVigencia = aluno.DataInicioVigencia.Value;
-								DateTime novaData = dataInicioVigencia.Value.AddDays(diff);
-								dashboard.PrimeiraAula = novaData.Date == data.Date;
+								dashboard.PrimeiraAula = aluno.PrimeiraAula.Value.Date == data.Date;
 								dashboard.Show = true;
 							}
 
