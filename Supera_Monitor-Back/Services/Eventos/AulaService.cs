@@ -259,11 +259,13 @@ public class AulaService : IAulaService {
                 return new ResponseModel { Message = "Esta sala se encontra ocupada neste horário" };
             }
 
-            // Não devo poder criar turma com um roteiro que não existe
-            bool roteiroExists = _db.Roteiros.Any(r => r.Id == request.Roteiro_Id);
+            // Não devo poder criar aula de turma com um roteiro que não existe, mas deve poder criar com roteiro nulo
+            if (request.Roteiro_Id.HasValue) {
+                bool roteiroExists = _db.Roteiros.Any(r => r.Id == request.Roteiro_Id);
 
-            if (!roteiroExists) {
-                return new ResponseModel { Message = "Roteiro não encontrado" };
+                if (!roteiroExists) {
+                    return new ResponseModel { Message = "Roteiro não encontrado" };
+                }
             }
 
             // O professor associado não pode possuir conflitos de horário
