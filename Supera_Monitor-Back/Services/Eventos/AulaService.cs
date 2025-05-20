@@ -10,7 +10,7 @@ using Supera_Monitor_Back.Models.Eventos.Aula;
 namespace Supera_Monitor_Back.Services.Eventos;
 
 public interface IAulaService {
-    public EventoAulaModel GetById(int aulaId);
+    public CalendarioEventoList? GetById(int aulaId);
     public List<EventoAulaModel> GetAll();
     public List<CalendarioParticipacaoAlunoList> AlunosAulas(int ano);
 
@@ -40,14 +40,22 @@ public class AulaService : IAulaService {
         _account = (Account?)_httpContextAccessor.HttpContext?.Items["Account"];
     }
 
-    public EventoAulaModel GetById(int aulaId) {
-        var aula = _db.Eventos
-            .Where(e => e.Id == aulaId)
-            .ProjectTo<EventoAulaModel>(_mapper.ConfigurationProvider)
-            .AsNoTracking()
-            .FirstOrDefault();
+    public CalendarioEventoList? GetById(int aulaId) {
+        var eventoAula = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == aulaId);
 
-        return aula is null ? throw new Exception("Aula não encontrada") : aula;
+        if (eventoAula is not null) {
+            var aulaPerfisCognitivos = _db.Aula_PerfilCognitivo_Rels
+                .Include(p => p.PerfilCognitivo)
+                .Where(e => e.Aula_Id == aulaId)
+                .Select(e => e.PerfilCognitivo)
+                .ToList();
+
+            eventoAula.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(aulaPerfisCognitivos);
+            eventoAula.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == aulaId).ToList();
+            eventoAula.Professores = _db.CalendarioProfessorLists.Where(p => p.Evento_Id == aulaId).ToList();
+        }
+
+        return eventoAula;
     }
 
     public List<EventoAulaModel> GetAll() {

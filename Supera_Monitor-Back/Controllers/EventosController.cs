@@ -94,9 +94,13 @@ public class EventosController : _BaseController {
     }
 
     [HttpGet("aulas/{aulaId}")]
-    public ActionResult<List<EventoAulaModel>> GetById(int aulaId) {
+    public ActionResult<CalendarioEventoList> GetById(int aulaId) {
         try {
             var response = _aulaService.GetById(aulaId);
+
+            if (response is null) {
+                return NotFound("Aula não encontrada");
+            }
 
             return Ok(response);
         }
