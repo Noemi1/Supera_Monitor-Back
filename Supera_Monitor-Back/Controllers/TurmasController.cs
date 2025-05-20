@@ -1,9 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Reflection;
+using Microsoft.AspNetCore.Mvc;
 using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Turma;
 using Supera_Monitor_Back.Services;
-using System.Reflection;
 
 namespace Supera_Monitor_Back.Controllers {
     [Authorize(Entities.Role.Admin, Entities.Role.Teacher, Entities.Role.Assistant)]
@@ -13,54 +13,52 @@ namespace Supera_Monitor_Back.Controllers {
         private readonly ITurmaService _turmaService;
         private readonly ILogService _logger;
 
-        public TurmasController(ITurmaService turmaService, ILogService logService)
-        {
+        public TurmasController(ITurmaService turmaService, ILogService logService) {
             _turmaService = turmaService;
             _logger = logService;
         }
 
         [HttpGet("{turmaId}")]
-        public ActionResult<TurmaList> Get(int turmaId)
-        {
+        public ActionResult<TurmaList> Get(int turmaId) {
             try {
                 var response = _turmaService.Get(turmaId);
 
                 return Ok(response);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
 
         [HttpGet("all")]
-        public ActionResult<List<TurmaList>> GetAll()
-        {
+        public ActionResult<List<TurmaList>> GetAll() {
             try {
                 var response = _turmaService.GetAll();
 
                 return Ok(response);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
 
         [HttpGet("perfil/all")]
-        public ActionResult<List<PerfilCognitivoModel>> GetAllPerfisCognitivos()
-        {
+        public ActionResult<List<PerfilCognitivoModel>> GetAllPerfisCognitivos() {
             try {
                 var response = _turmaService.GetAllPerfisCognitivos();
 
                 return Ok(response);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e.Message);
             }
         }
 
         [HttpPost()]
-        public ActionResult<ResponseModel> Insert(CreateTurmaRequest model)
-        {
+        public ActionResult<ResponseModel> Insert(CreateTurmaRequest model) {
             try {
                 var response = _turmaService.Insert(model);
 
@@ -71,15 +69,15 @@ namespace Supera_Monitor_Back.Controllers {
                 }
 
                 return BadRequest(response);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
 
         [HttpPut()]
-        public ActionResult<ResponseModel> Update(UpdateTurmaRequest model)
-        {
+        public ActionResult<ResponseModel> Update(UpdateTurmaRequest model) {
             try {
                 var response = _turmaService.Update(model);
 
@@ -89,7 +87,8 @@ namespace Supera_Monitor_Back.Controllers {
                 }
 
                 return BadRequest(response);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
@@ -97,8 +96,7 @@ namespace Supera_Monitor_Back.Controllers {
 
         [Authorize(Entities.Role.Admin)]
         [HttpDelete("{turmaId}")]
-        public ActionResult<ResponseModel> Delete(int turmaId)
-        {
+        public ActionResult<ResponseModel> Delete(int turmaId) {
             try {
                 var response = _turmaService.Delete(turmaId);
 
@@ -108,26 +106,25 @@ namespace Supera_Monitor_Back.Controllers {
                 }
 
                 return BadRequest(response.Message);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
 
         [HttpPatch("toggle-active/{Id}")]
-        public ActionResult<ResponseModel> ToggleDeactivate(int Id)
-        {
+        public ActionResult<ResponseModel> ToggleDeactivate(int Id) {
             try {
                 ResponseModel response = _turmaService.ToggleDeactivate(Id, GetIpAddressFromHeaders());
 
                 if (response.Success) {
-                    string action = response.Object!.Active ? "Enable" : "Disable";
-                    _logger.Log(action, "Turma", response, Account?.Id);
                     return Ok(response);
                 }
 
                 return BadRequest(response);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
