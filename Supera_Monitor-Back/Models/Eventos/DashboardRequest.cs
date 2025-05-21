@@ -5,4 +5,5 @@ public class DashboardRequest {
     public int Mes { get; set; }
     public int? Turma_Id { get; set; }
     public int? Professor_Id { get; set; }
+    public int? Aluno_Id { get; set; }
 }

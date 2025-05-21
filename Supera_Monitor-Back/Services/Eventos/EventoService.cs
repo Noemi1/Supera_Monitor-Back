@@ -1477,15 +1477,21 @@ public class EventoService : IEventoService {
 
 		if (request.Turma_Id.HasValue)
 		{
-			turmasQueryable = turmasQueryable;//.Where(x => x.Id == request.Turma_Id.Value);
 			alunosQueryable = alunosQueryable.Where(x => x.Turma_Id == request.Turma_Id.Value);
+			//turmasQueryable = turmasQueryable;//.Where(x => x.Id == request.Turma_Id.Value);
 		}
+
+		
+		if (request.Aluno_Id.HasValue)
+		{
+			alunosQueryable = alunosQueryable.Where(x => x.Id == request.Aluno_Id.Value);
+		}
+
 
 		if (request.Professor_Id.HasValue)
 		{
-			//turmasQueryable = turmasQueryable.Where(x => x.Professor_Id == request.Professor_Id.Value);
-			//var turmasId = turmasQueryable.Select(x => x.Id);
-			//alunosQueryable = alunosQueryable.Where(x => turmasId.Contains(x.Turma_Id));
+			alunosQueryable = alunosQueryable.Where(x => x.Professor_Id == request.Professor_Id.Value);
+			//turmasQueryable = turmasQueryable.Where(x => x.Id == request.Professor_Id.Value);
 		}
 
 		List<AlunoList> alunos = alunosQueryable.OrderBy(x => x.Nome).ToList();
