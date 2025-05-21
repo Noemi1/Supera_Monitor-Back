@@ -281,9 +281,26 @@ public class EventosController : _BaseController {
     }
 
     [HttpPost("inscrever")]
-    public ActionResult<ResponseModel> EnrollAluno(EnrollAlunoRequest request) {
+    public ActionResult<ResponseModel> InsertParticipacao(InsertParticipacaoRequest request) {
         try {
-            var response = _eventoService.EnrollAluno(request);
+            var response = _eventoService.InsertParticipacao(request);
+
+            if (response.Success == false) {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
+        }
+        catch (Exception e) {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
+
+    [HttpDelete("remover")]
+    public ActionResult<ResponseModel> RemoveParticipacao(int participacaoId) {
+        try {
+            var response = _eventoService.RemoveParticipacao(participacaoId);
 
             if (response.Success == false) {
                 return BadRequest(response);

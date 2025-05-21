@@ -657,7 +657,11 @@ public class AlunoService : IAlunoService {
                 Aluno_Id = aluno.Id,
                 Evento_Id = eventoDest.Id,
                 ReposicaoDe_Evento_Id = eventoSource.Id,
-                Observacao = model.Observacao
+                Observacao = model.Observacao,
+                Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
+                NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
+                Apostila_AH_Id = aluno.Apostila_AH_Id,
+                NumeroPaginaAH = aluno.NumeroPaginaAH,
             };
 
             // Se a reposição for feita após o horário da aula, ocasiona falta
