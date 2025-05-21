@@ -1602,7 +1602,7 @@ public class EventoService : IEventoService {
                                 Show = true,
                                 Roteiro_Id = roteiro.Id,
                                 Aluno_Id = participacao.Aluno_Id,
-                                PrimeiraAula = participacao.PrimeiraAula.HasValue ? participacao.PrimeiraAula.Value.Date == data.Date : null,
+                                PrimeiraAula = participacao.PrimeiraAula.HasValue ? participacao.PrimeiraAula.Value.Date == data.Date : false,
                                 Aula = aula,
                                 Participacao = participacao,
                             };
