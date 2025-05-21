@@ -1486,10 +1486,13 @@ public class EventoService : IEventoService {
                                             .OrderBy(x => x.Data)
                                             .ToList();
 
-        List<CalendarioAlunoList> participacoes = _db.CalendarioAlunoLists.ToList();
 
 
-        var turmasQueryable = _db.Turmas
+		var eventosQueryable = _db.CalendarioAlunoLists.AsQueryable();
+
+		var participacoesQueryable = _db.CalendarioAlunoLists.AsQueryable();
+
+		var turmasQueryable = _db.Turmas
             .Where(t => t.Deactivated == null);
 
         var alunosQueryable = _db.AlunoLists
@@ -1509,6 +1512,7 @@ public class EventoService : IEventoService {
 		if (request.Aluno_Id.HasValue)
 		{
 			alunosQueryable = alunosQueryable.Where(x => x.Id == request.Aluno_Id.Value);
+			participacoesQueryable = participacoesQueryable.Where(x => x.Aluno_Id == request.Aluno_Id.Value);
 		}
 
 
@@ -1519,8 +1523,9 @@ public class EventoService : IEventoService {
 
         List<AlunoList> alunos = alunosQueryable.OrderBy(x => x.Nome).ToList();
         List<Turma> turmas = turmasQueryable.OrderBy(x => x.Nome).ToList();
+		List<CalendarioAlunoList> participacoes = participacoesQueryable.ToList();
 
-        if (roteiros.Count < 4) {
+		if (roteiros.Count < 4) {
             int diff = 4 - roteiros.Count;
 
             Roteiro lastRoteiro;
