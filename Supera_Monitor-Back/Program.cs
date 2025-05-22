@@ -61,17 +61,17 @@ builder.Services.AddSwaggerGen();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment()) {
+//if (app.Environment.IsDevelopment()) {
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+//}
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseCors(option => option
     .SetIsOriginAllowed(x => true)
-    .WithOrigins("http://localhost:4200")
+    .WithOrigins("http://localhost:4200", "https://supera-monitor-front.vercel.app")
     .AllowAnyMethod()
     .AllowAnyHeader()
     .AllowCredentials()
