@@ -35,7 +35,13 @@ public partial class AlunoChecklistItemList {
 
     public int? Professor_Id { get; set; }
 
+    public int DiaSemana { get; set; }
+
+    public TimeSpan? Horario { get; set; }
+
     public string? Professor { get; set; }
 
     public string CorLegenda { get; set; } = null!;
+
+    public string? Email { get; set; }
 }
