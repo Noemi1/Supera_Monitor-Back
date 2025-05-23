@@ -39,6 +39,8 @@ public partial class AlunoChecklistItemList {
 
     public TimeSpan? Horario { get; set; }
 
+    public string? LinkGrupo { get; set; }
+
     public string? Professor { get; set; }
 
     public string CorLegenda { get; set; } = null!;

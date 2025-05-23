@@ -256,6 +256,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
             entity.Property(e => e.DataFinalizacao).HasColumnType("datetime");
             entity.Property(e => e.Observacoes).IsUnicode(false);
+            entity.Property(e => e.LinkGrupo).IsUnicode(false);
             entity.Property(e => e.Prazo).HasColumnType("date");
             entity.Property(e => e.Turma)
                 .HasMaxLength(100)
@@ -1135,6 +1136,8 @@ public partial class DataContext : DbContext {
         {
             entity.ToTable("Turma");
 
+            entity.Property(e => e.LinkGrupo).IsUnicode(false);
+
             entity.Property(e => e.Nome)
                 .HasMaxLength(100)
                 .IsUnicode(false);
@@ -1162,6 +1165,7 @@ public partial class DataContext : DbContext {
             entity.Property(e => e.CorLegenda)
                 .HasMaxLength(20)
                 .IsUnicode(false);
+            entity.Property(e => e.LinkGrupo).IsUnicode(false);
             entity.Property(e => e.Nome)
                 .HasMaxLength(100)
                 .IsUnicode(false);

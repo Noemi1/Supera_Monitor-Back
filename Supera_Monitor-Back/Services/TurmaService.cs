@@ -27,16 +27,14 @@ public class TurmaService : ITurmaService {
     private readonly Account? _account;
     private readonly IProfessorService _professorService;
 
-    public TurmaService(DataContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor, IProfessorService professorService)
-    {
+    public TurmaService(DataContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor, IProfessorService professorService) {
         _db = db;
         _mapper = mapper;
-        _account = ( Account? )httpContextAccessor.HttpContext?.Items["Account"];
+        _account = (Account?)httpContextAccessor.HttpContext?.Items["Account"];
         _professorService = professorService;
     }
 
-    public TurmaList Get(int turmaId)
-    {
+    public TurmaList Get(int turmaId) {
         TurmaList? turma = _db.TurmaLists.AsNoTracking().FirstOrDefault(t => t.Id == turmaId);
 
         if (turma == null) {
@@ -54,8 +52,7 @@ public class TurmaService : ITurmaService {
         return turma;
     }
 
-    public List<TurmaList> GetAll()
-    {
+    public List<TurmaList> GetAll() {
         List<TurmaList> turmas = _db.TurmaLists.OrderBy(t => t.Nome).ToList();
 
         // Obtém todos os perfis cognitivos do banco de dados
@@ -81,15 +78,13 @@ public class TurmaService : ITurmaService {
         return turmas;
     }
 
-    public List<PerfilCognitivoModel> GetAllPerfisCognitivos()
-    {
+    public List<PerfilCognitivoModel> GetAllPerfisCognitivos() {
         List<PerfilCognitivo> profiles = _db.PerfilCognitivos.ToList();
 
         return _mapper.Map<List<PerfilCognitivoModel>>(profiles);
     }
 
-    public ResponseModel Insert(CreateTurmaRequest model)
-    {
+    public ResponseModel Insert(CreateTurmaRequest model) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -135,7 +130,7 @@ public class TurmaService : ITurmaService {
                     && t.DiaSemana == model.DiaSemana
                     && t.Sala_Id == model.Sala_Id)
                 .AsEnumerable()
-                .Any(t => (( TimeSpan )t.Horario! - model.Horario).Duration() < TimeSpan.FromHours(2));
+                .Any(t => ((TimeSpan)t.Horario! - model.Horario).Duration() < TimeSpan.FromHours(2));
 
             if (salaIsAlreadyOccupied) {
                 return new ResponseModel { Message = "Sala já está ocupada nesse horário" };
@@ -161,7 +156,8 @@ public class TurmaService : ITurmaService {
             _db.SaveChanges();
 
             foreach (int perfilCognitivoId in perfisCognitivos) {
-                Turma_PerfilCognitivo_Rel newTurmaPerfilCognitivoRel = new() {
+                Turma_PerfilCognitivo_Rel newTurmaPerfilCognitivoRel = new()
+                {
                     Turma_Id = turma.Id,
                     PerfilCognitivo_Id = perfilCognitivoId
                 };
@@ -184,15 +180,15 @@ public class TurmaService : ITurmaService {
             response.Success = true;
             response.Message = "Turma cadastrada com sucesso";
             response.Object = responseObject;
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Falha ao inserir nova turma: {ex}";
         }
 
         return response;
     }
 
-    public ResponseModel Update(UpdateTurmaRequest model)
-    {
+    public ResponseModel Update(UpdateTurmaRequest model) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -248,7 +244,7 @@ public class TurmaService : ITurmaService {
                     && t.DiaSemana == model.DiaSemana
                     && t.Sala_Id == model.Sala_Id)
                 .AsEnumerable()
-                .Any(t => (( TimeSpan )t.Horario! - model.Horario).Duration() < TimeSpan.FromHours(2));
+                .Any(t => ((TimeSpan)t.Horario! - model.Horario).Duration() < TimeSpan.FromHours(2));
 
             if (salaIsAlreadyOccupied) {
                 return new ResponseModel { Message = "Sala já está ocupada nesse horário" };
@@ -271,6 +267,7 @@ public class TurmaService : ITurmaService {
             turma.Horario = model.Horario;
             turma.DiaSemana = model.DiaSemana;
             turma.CapacidadeMaximaAlunos = model.CapacidadeMaximaAlunos;
+            turma.LinkGrupo = model.LinkGrupo ?? turma.LinkGrupo;
 
             turma.Sala_Id = model.Sala_Id;
             turma.Unidade_Id = model.Unidade_Id;
@@ -292,7 +289,8 @@ public class TurmaService : ITurmaService {
             _db.SaveChanges();
 
             foreach (int perfilCognitivoId in perfisCognitivos) {
-                Turma_PerfilCognitivo_Rel newTurmaPerfilRel = new() {
+                Turma_PerfilCognitivo_Rel newTurmaPerfilRel = new()
+                {
                     Turma_Id = turma.Id,
                     PerfilCognitivo_Id = perfilCognitivoId,
                 };
@@ -314,15 +312,15 @@ public class TurmaService : ITurmaService {
             response.Message = "Turma atualizada com sucesso";
             response.Object = newObject;
             response.OldObject = oldObject;
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Falha ao atualizar a turma: {ex}";
         }
 
         return response;
     }
 
-    public ResponseModel Delete(int turmaId)
-    {
+    public ResponseModel Delete(int turmaId) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -346,22 +344,21 @@ public class TurmaService : ITurmaService {
 
             response.Message = "Turma excluída com sucesso";
             response.Success = true;
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Falha ao excluir turma: {ex}";
         }
 
         return response;
     }
 
-    public List<AlunoList> GetAllAlunosByTurma(int turmaId)
-    {
+    public List<AlunoList> GetAllAlunosByTurma(int turmaId) {
         List<AlunoList> alunos = _db.AlunoLists.Where(a => a.Turma_Id == turmaId).ToList();
 
         return alunos;
     }
 
-    public ResponseModel ToggleDeactivate(int turmaId, string ipAddress)
-    {
+    public ResponseModel ToggleDeactivate(int turmaId, string ipAddress) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -386,7 +383,8 @@ public class TurmaService : ITurmaService {
             response.Success = true;
             response.Object = _db.TurmaLists.AsNoTracking().FirstOrDefault(t => t.Id == turma.Id);
             response.Message = $"Turma {actionResult} com sucesso.";
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Falha ao desativar turma: {ex}";
         }
 

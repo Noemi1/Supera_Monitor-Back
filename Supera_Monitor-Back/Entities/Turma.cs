@@ -25,6 +25,8 @@ public partial class Turma {
 
     public int? Sala_Id { get; set; }
 
+    public string? LinkGrupo { get; set; }
+
     public virtual Account Account_Created { get; set; } = null!;
 
     public virtual ICollection<Aluno> Alunos { get; set; } = new List<Aluno>();

@@ -17,6 +17,8 @@ public partial class TurmaList {
 
     public int? Unidade_Id { get; set; }
 
+    public string? LinkGrupo { get; set; }
+
     public int Account_Created_Id { get; set; }
 
     public string Account_Created { get; set; } = null!;

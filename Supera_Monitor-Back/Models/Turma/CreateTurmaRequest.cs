@@ -7,6 +7,7 @@ public class CreateTurmaRequest {
     public int CapacidadeMaximaAlunos { get; set; }
 
     public int Unidade_Id { get; set; }
+    public String? LinkGrupo { get; set; }
 
     public int Sala_Id { get; set; }
     public int Professor_Id { get; set; }
