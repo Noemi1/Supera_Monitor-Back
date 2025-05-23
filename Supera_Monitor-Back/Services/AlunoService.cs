@@ -10,7 +10,7 @@ using Supera_Monitor_Back.Services.Email;
 namespace Supera_Monitor_Back.Services;
 
 public interface IAlunoService {
-    AlunoList Get(int alunoId);
+    AlunoListWithChecklist Get(int alunoId);
     List<AlunoList> GetAll();
     List<AlunoListWithChecklist> GetAllWithChecklist();
     List<AlunoChecklistItemList> GetAlunoChecklistItemList(AlunoChecklistItemListRequest request);
@@ -48,16 +48,24 @@ public class AlunoService : IAlunoService {
         _account = (Account?)httpContextAccessor?.HttpContext?.Items["Account"];
     }
 
-    public AlunoList Get(int alunoId) {
+    public AlunoListWithChecklist Get(int alunoId) {
         AlunoList? aluno = _db.AlunoLists.AsNoTracking().SingleOrDefault(a => a.Id == alunoId);
 
         if (aluno is null) {
             throw new Exception("Aluno não encontrado");
         }
 
-        aluno.Restricoes = _db.AlunoRestricaoLists.Where(ar => ar.Aluno_Id == aluno.Id && ar.Deactivated == null).ToList();
+        AlunoListWithChecklist alunoListWithChecklist = _mapper.Map<AlunoListWithChecklist>(aluno);
 
-        return aluno;
+        alunoListWithChecklist.AlunoChecklist = _db.AlunoChecklistViews
+            .Where(a => a.Aluno_Id == alunoListWithChecklist.Id)
+            .ToList();
+
+        alunoListWithChecklist.Restricoes = _db.AlunoRestricaoLists
+            .Where(ar => ar.Aluno_Id == aluno.Id && ar.Deactivated == null)
+            .ToList();
+
+        return alunoListWithChecklist;
     }
 
     public List<AlunoList> GetAll() {
