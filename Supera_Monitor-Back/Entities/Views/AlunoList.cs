@@ -88,6 +88,8 @@ public partial class AlunoList {
     public string? SenhaApp { get; set; }
 
     public bool Active => !Deactivated.HasValue;
+	public string? LinkGrupo { get; set; }
 
-    public virtual ICollection<AlunoRestricaoList> Restricoes { get; set; } = new List<AlunoRestricaoList>();
+
+	public virtual ICollection<AlunoRestricaoList> Restricoes { get; set; } = new List<AlunoRestricaoList>();
 }
