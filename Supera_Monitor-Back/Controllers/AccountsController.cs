@@ -1,10 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Reflection;
+using Microsoft.AspNetCore.Mvc;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Accounts;
 using Supera_Monitor_Back.Services;
-using System.Reflection;
 
 namespace Supera_Monitor_Back.Controllers {
     [ApiController]
@@ -18,8 +18,7 @@ namespace Supera_Monitor_Back.Controllers {
             IAccountService accountService,
             DataContext db,
             ILogService logger
-            )
-        {
+            ) {
             _accountService = accountService;
             _db = db;
             _logger = logger;
@@ -32,8 +31,7 @@ namespace Supera_Monitor_Back.Controllers {
          * Should be disabled in production
          */
         [HttpGet("dbcheck")]
-        public async Task<ActionResult> CheckConnection()
-        {
+        public async Task<ActionResult> CheckConnection() {
             try {
                 var canConnect = await _db.Database.CanConnectAsync();
 
@@ -42,7 +40,8 @@ namespace Supera_Monitor_Back.Controllers {
                 }
 
                 return BadRequest("Couldn't connect to database.");
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 return StatusCode(500, $"Database check failed: {e.Message}");
             }
         }
@@ -52,9 +51,9 @@ namespace Supera_Monitor_Back.Controllers {
         Should be disabled in production
         */
         [HttpPost("register")]
-        public ActionResult CreateAccount(RegisterRequest model)
-        {
-            Account account = new() {
+        public ActionResult CreateAccount(RegisterRequest model) {
+            Account account = new()
+            {
                 Name = model.Name,
                 AcceptTerms = model.AcceptTerms,
                 PasswordHash = _accountService.Hash(model.Password),
@@ -77,21 +76,20 @@ namespace Supera_Monitor_Back.Controllers {
         #region CONTROLLER ROUTES
 
         [HttpPost("authenticate")]
-        public ActionResult<AuthenticateResponse> Authenticate(AuthenticateRequest model)
-        {
+        public ActionResult<AuthenticateResponse> Authenticate(AuthenticateRequest model) {
             try {
                 var response = _accountService.Authenticate(model, GetIpAddressFromHeaders());
                 SetTokenCookie(response.RefreshToken);
                 return Ok(response);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
 
         [HttpPost("refresh-token")]
-        public ActionResult<AuthenticateResponse> RefreshToken()
-        {
+        public ActionResult<AuthenticateResponse> RefreshToken() {
             try {
                 var refreshToken = Request.Cookies["refreshToken"];
 
@@ -102,7 +100,8 @@ namespace Supera_Monitor_Back.Controllers {
                 var response = _accountService.RefreshToken(refreshToken, GetIpAddressFromHeaders());
                 SetTokenCookie(response.RefreshToken);
                 return Ok(response);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, $"Ocorreu um erro inesperado: {e.Message}");
             }
@@ -110,8 +109,7 @@ namespace Supera_Monitor_Back.Controllers {
 
         [Authorize]
         [HttpPost("revoke-token")]
-        public ActionResult<ResponseModel> RevokeToken()
-        {
+        public ActionResult<ResponseModel> RevokeToken() {
             try {
                 var token = Request.Cookies["refreshToken"];
 
@@ -127,7 +125,7 @@ namespace Supera_Monitor_Back.Controllers {
                 var ownsToken = Account.OwnsToken(token);
 
                 // Users can only revoke their own tokens and admins can revoke any token
-                if (!ownsToken && Account.Role_Id != ( int )Role.Admin) {
+                if (!ownsToken && Account.Role_Id != (int)Role.Admin) {
                     return Unauthorized(new { message = $"Não autorizado, não foi possível anular o token {token}" });
                 }
 
@@ -140,15 +138,15 @@ namespace Supera_Monitor_Back.Controllers {
                 }
 
                 return BadRequest(response);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
 
         [HttpPost("forgot-password")]
-        public ActionResult<ResponseModel> ForgotPassword(ForgotPasswordRequest model)
-        {
+        public ActionResult<ResponseModel> ForgotPassword(ForgotPasswordRequest model) {
             try {
                 ResponseModel response = _accountService.ForgotPassword(model, Request.Headers["origin"]!);
 
@@ -165,15 +163,15 @@ namespace Supera_Monitor_Back.Controllers {
                 }
 
                 return Ok(response);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
 
         [HttpPost("reset-password")]
-        public ActionResult<ResponseModel> ResetPassword([FromBody] ResetPasswordRequest model)
-        {
+        public ActionResult<ResponseModel> ResetPassword([FromBody] ResetPasswordRequest model) {
             try {
                 ResponseModel response = _accountService.ResetPassword(model);
 
@@ -182,7 +180,8 @@ namespace Supera_Monitor_Back.Controllers {
                 }
 
                 return Ok(response);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
@@ -190,8 +189,7 @@ namespace Supera_Monitor_Back.Controllers {
 
         [Authorize]
         [HttpPost("change-password")]
-        public ActionResult<ResponseModel> ChangePassword(ChangePasswordRequest model)
-        {
+        public ActionResult<ResponseModel> ChangePassword(ChangePasswordRequest model) {
             try {
                 ResponseModel response = _accountService.ChangePassword(model);
 
@@ -200,7 +198,8 @@ namespace Supera_Monitor_Back.Controllers {
                 }
 
                 return Ok(response);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
@@ -208,8 +207,7 @@ namespace Supera_Monitor_Back.Controllers {
 
         [Authorize]
         [HttpPost("update-account")]
-        public ActionResult<ResponseModel> UpdateAccount(UpdateAccountRequest model)
-        {
+        public ActionResult<ResponseModel> UpdateAccount(UpdateAccountRequest model) {
             try {
                 ResponseModel response = _accountService.UpdateAccount(model);
 
@@ -218,15 +216,15 @@ namespace Supera_Monitor_Back.Controllers {
                 }
 
                 return Ok(response);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
 
         [HttpPost("verify-email")]
-        public ActionResult<ResponseModel> VerifyEmail(VerifyEmailRequest model)
-        {
+        public ActionResult<ResponseModel> VerifyEmail(VerifyEmailRequest model) {
             try {
                 ResponseModel response = _accountService.VerifyEmail(model.Token);
 
@@ -235,7 +233,8 @@ namespace Supera_Monitor_Back.Controllers {
                 }
 
                 return Ok(response);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
@@ -245,9 +244,9 @@ namespace Supera_Monitor_Back.Controllers {
 
         #region HELPER FUNCTIONS
 
-        private void SetTokenCookie(string token)
-        {
-            var cookieOptions = new CookieOptions {
+        private void SetTokenCookie(string token) {
+            var cookieOptions = new CookieOptions
+            {
                 HttpOnly = true,
                 Expires = TimeFunctions.HoraAtualBR().AddDays(7),
                 IsEssential = true,
