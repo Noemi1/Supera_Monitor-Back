@@ -27,7 +27,11 @@ public partial class Evento {
 
     public int? ReagendamentoDe_Evento_Id { get; set; }
 
-    public int CapacidadeMaximaAlunos { get; set; }
+    public int? CapacidadeMaximaAlunos { get; set; }
+
+    public virtual ICollection<Aluno> AlunoAulasZero { get; set; } = new List<Aluno>();
+
+    public virtual ICollection<Aluno> AlunoPrimeirasAulas { get; set; } = new List<Aluno>();
 
     public virtual Evento_Aula? Evento_Aula { get; set; }
 

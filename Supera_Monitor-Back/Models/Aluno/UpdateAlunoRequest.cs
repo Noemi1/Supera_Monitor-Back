@@ -4,12 +4,14 @@ public class UpdateAlunoRequest {
     public int Id { get; set; }
 
     // Alterar dados da entidade Aluno
-    public int Turma_Id { get; set; }
+    public int? Turma_Id { get; set; }
     public int PerfilCognitivo_Id { get; set; }
 
     public DateTime? DataInicioVigencia { get; set; }
     public DateTime? DataFimVigencia { get; set; }
-    public DateTime? PrimeiraAula { get; set; }
+
+    public int? PrimeiraAula_Id { get; set; }
+    public int? AulaZero_Id { get; set; }
 
     public string? Aluno_Foto { get; set; }
     public int? Apostila_Kit_Id { get; set; }

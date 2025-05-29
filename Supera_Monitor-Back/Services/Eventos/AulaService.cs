@@ -163,7 +163,7 @@ public class AulaService : IAulaService {
                 Deactivated = null,
                 Finalizado = false,
                 ReagendamentoDe_Evento_Id = null,
-                Account_Created_Id = _account.Id,
+                Account_Created_Id = _account!.Id,
             };
 
             _db.Add(evento);
@@ -346,8 +346,8 @@ public class AulaService : IAulaService {
                 Evento_Tipo_Id = (int)EventoTipo.AulaExtra,
                 Evento_Aula = new Evento_Aula
                 {
-                    Roteiro_Id = request.Roteiro_Id,
                     Turma_Id = null,
+                    Roteiro_Id = request.Roteiro_Id,
                     Professor_Id = request.Professor_Id,
                 },
 
@@ -356,7 +356,7 @@ public class AulaService : IAulaService {
                 Deactivated = null,
                 Finalizado = false,
                 ReagendamentoDe_Evento_Id = eventoReagendado?.Id,
-                Account_Created_Id = _account.Id,
+                Account_Created_Id = _account!.Id,
             };
 
             _db.Add(evento);
@@ -453,16 +453,9 @@ public class AulaService : IAulaService {
                 return new ResponseModel { Message = "Sala não encontrada" };
             }
 
+            // Se algum aluno já participou de alguma aula zero, não deve ser possível inscrevê-lo novamente
             foreach (var aluno in alunosInRequest) {
-                // Se o aluno já participou de alguma aula zero, então não deve ser possível inscrevê-lo novamente
-                bool alunoAlreadyParticipated = _db.Evento_Participacao_Alunos
-                    .Include(p => p.Evento)
-                    .Any(p =>
-                        p.Aluno_Id == aluno.Id
-                        && p.Evento.Evento_Tipo_Id == (int)EventoTipo.AulaZero
-                        && p.Evento.Deactivated == null);
-
-                if (alunoAlreadyParticipated) {
+                if (aluno.AulaZero_Id != null) {
                     return new ResponseModel { Message = $"Aluno ID: '{aluno.Id}' já participou de aula zero ou possui uma agendada." };
                 }
             }
@@ -515,8 +508,8 @@ public class AulaService : IAulaService {
                 Evento_Aula = new Evento_Aula
                 {
                     Turma_Id = null,
-                    Professor_Id = request.Professor_Id,
                     Roteiro_Id = roteiro?.Id,
+                    Professor_Id = request.Professor_Id,
                 },
 
                 Created = TimeFunctions.HoraAtualBR(),
@@ -524,35 +517,37 @@ public class AulaService : IAulaService {
                 Deactivated = null,
                 Finalizado = false,
                 ReagendamentoDe_Evento_Id = null,
-                Account_Created_Id = _account.Id,
+                Account_Created_Id = _account!.Id,
             };
 
             _db.Add(evento);
             _db.SaveChanges();
 
-            // Adicionar as participações dos envolvidos no evento - Alunos e Professores
-            var participacoesAlunos = alunosInRequest.Select(aluno => new Evento_Participacao_Aluno
-            {
-                Aluno_Id = aluno.Id,
-                Evento_Id = evento.Id,
+            List<Evento_Participacao_Aluno> participacoesAlunos = [];
+            List<Aluno_Historico> historicos = [];
 
-                // Inserir o progresso do aluno no evento
-                Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
-                NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
-                Apostila_AH_Id = aluno.Apostila_AH_Id,
-                NumeroPaginaAH = aluno.NumeroPaginaAH,
-            });
+            // Inserir progressos dos alunos no evento, associar evento à aula zero e gerar entidade de log
+            foreach (var aluno in alunosInRequest) {
+                participacoesAlunos.Add(new Evento_Participacao_Aluno
+                {
+                    Aluno_Id = aluno.Id,
+                    Evento_Id = evento.Id,
+                    Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
+                    NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
+                    Apostila_AH_Id = aluno.Apostila_AH_Id,
+                    NumeroPaginaAH = aluno.NumeroPaginaAH,
+                });
 
-            foreach (var participacao in participacoesAlunos) {
-                _db.Evento_Participacao_Alunos.Add(participacao);
-
-                _db.Aluno_Historicos.Add(new Aluno_Historico
+                historicos.Add(new Aluno_Historico
                 {
                     Account_Id = _account.Id,
-                    Aluno_Id = participacao.Aluno_Id,
+                    Aluno_Id = aluno.Id,
                     Data = evento.Data,
                     Descricao = $"Aluno foi inscrito em um evento 'Aula Zero' no dia {evento.Data:G}"
                 });
+
+                aluno.AulaZero_Id = evento.Id;
+                _db.Alunos.Update(aluno);
             }
 
             // Inserir participação do professor
@@ -563,10 +558,12 @@ public class AulaService : IAulaService {
             };
 
             _db.Evento_Participacao_Professors.Add(participacaoProfessor);
+            _db.Evento_Participacao_Alunos.AddRange(participacoesAlunos);
+            _db.Aluno_Historicos.AddRange(historicos);
+
             _db.SaveChanges();
 
             var responseObject = _db.CalendarioEventoLists.First(e => e.Id == evento.Id);
-
             responseObject.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).ToList();
             responseObject.Professores = _db.CalendarioProfessorLists.Where(p => p.Evento_Id == evento.Id).ToList();
 

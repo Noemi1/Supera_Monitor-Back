@@ -5,7 +5,7 @@ public partial class Aluno {
 
     public int Pessoa_Id { get; set; }
 
-    public int Turma_Id { get; set; }
+    public int? Turma_Id { get; set; }
 
     public string? Aluno_Foto { get; set; }
 
@@ -39,9 +39,11 @@ public partial class Aluno {
 
     public int? NumeroPaginaAbaco { get; set; }
 
-    public DateTime? PrimeiraAula { get; set; }
-
     public bool? RestricaoMobilidade { get; set; }
+
+    public int? AulaZero_Id { get; set; }
+
+    public int? PrimeiraAula_Id { get; set; }
 
     public virtual ICollection<Aluno_Checklist_Item> Aluno_Checklist_Items { get; set; } = new List<Aluno_Checklist_Item>();
 
@@ -55,11 +57,15 @@ public partial class Aluno {
 
     public virtual Apostila_Kit? Apostila_Kit { get; set; }
 
+    public virtual Evento? AulaZero { get; set; }
+
     public virtual ICollection<Aula_ListaEspera> Aula_ListaEsperas { get; set; } = new List<Aula_ListaEspera>();
 
     public virtual ICollection<Evento_Participacao_Aluno> Evento_Participacao_Alunos { get; set; } = new List<Evento_Participacao_Aluno>();
 
     public virtual Pessoa Pessoa { get; set; } = null!;
+
+    public virtual Evento? PrimeiraAula { get; set; }
 
     public virtual Turma Turma { get; set; } = null!;
 

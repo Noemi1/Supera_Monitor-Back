@@ -49,6 +49,8 @@ public partial class Account {
 
     public virtual ICollection<Aula_ListaEspera> Aula_ListaEsperas { get; set; } = new List<Aula_ListaEspera>();
 
+    public virtual ICollection<Evento_Participacao_Aluno_Contato> Evento_Participacao_Aluno_Contatos { get; set; } = new List<Evento_Participacao_Aluno_Contato>();
+
     public virtual ICollection<Account> InverseAccount_Created { get; set; } = new List<Account>();
 
     public virtual ICollection<Log> Logs { get; set; } = new List<Log>();
@@ -63,8 +65,7 @@ public partial class Account {
 
     public virtual ICollection<Turma> Turmas { get; set; } = new List<Turma>();
 
-    public bool OwnsToken(string token)
-    {
+    public bool OwnsToken(string token) {
         var list = this.AccountRefreshTokens.ToList().Find(x => x.Token == token) != null;
         return list;
     }

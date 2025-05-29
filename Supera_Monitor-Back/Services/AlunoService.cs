@@ -127,28 +127,24 @@ public class AlunoService : IAlunoService {
                 return new ResponseModel { Message = "Pessoa já tem um aluno cadastrado em seu nome" };
             }
 
-            // Aluno só pode ser cadastrado em uma turma válida
-            bool turmaExists = _db.Turmas.Any(t => t.Id == model.Turma_Id);
-
-            if (!turmaExists) {
-                return new ResponseModel { Message = "Turma não encontrada" };
-            }
-
-            // Aluno só pode ser inserido em uma turma válida
+            // Aluno não deve poder ser cadastrado em uma turma inválida, mas deve poder ser cadastrado sem turma
             Turma? turmaDestino = _db.Turmas
                 .Include(t => t.Alunos)
                 .FirstOrDefault(t => t.Id == model.Turma_Id);
 
             if (turmaDestino is null) {
-                return new ResponseModel { Message = "Turma não encontrada" };
+                if (model.Turma_Id.HasValue) {
+                    return new ResponseModel { Message = "Turma não encontrada" };
+                }
             }
 
-            // Aluno só pode ser inserido em uma turma que não está cheia
-            // Não considera reposição, pois não estamos olhando para uma aula específica
-            int amountOfAlunosInTurmaDestino = turmaDestino.Alunos.Count;
+            // Se turma existir, não pode estar cheia
+            if (turmaDestino is not null) {
+                int amountOfAlunosInTurmaDestino = turmaDestino.Alunos.Count;
 
-            if (amountOfAlunosInTurmaDestino >= turmaDestino.CapacidadeMaximaAlunos) {
-                return new ResponseModel { Message = "Turma já está em sua capacidade máxima" };
+                if (amountOfAlunosInTurmaDestino >= turmaDestino.CapacidadeMaximaAlunos) {
+                    return new ResponseModel { Message = "Turma já está em sua capacidade máxima" };
+                }
             }
 
             // O aluno não pode receber um kit que não existe, mas pode receber kit nulo
@@ -163,7 +159,7 @@ public class AlunoService : IAlunoService {
             // Não deve ser possível inserir um aluno com um perfil cognitivo que não existe
             bool perfilCognitivoExists = _db.PerfilCognitivos.Any(p => p.Id == model.PerfilCognitivo_Id);
 
-            if (perfilCognitivoExists == false) {
+            if (!perfilCognitivoExists) {
                 return new ResponseModel { Message = "Não é possível inserir um aluno com um perfil cognitivo que não existe" };
             }
 
@@ -182,14 +178,6 @@ public class AlunoService : IAlunoService {
                 randomRM = RNG.Next(0, 100000).ToString("D5");
             } while (existingRMS.Any(rm => rm == randomRM));
 
-            // Desativado, primeiraAula foi pro request !?
-            // Navegar até o dia da semana da primeira aula partindo do início da vigência
-            //DateTime dataPrimeiraAula = model.DataInicioVigencia;
-            //while ((int)dataPrimeiraAula.DayOfWeek != turmaDestino.DiaSemana) {
-            //    dataPrimeiraAula = dataPrimeiraAula.AddDays(1);
-            //}
-            DateTime? dataPrimeiraAula = model.PrimeiraAula;
-
             // Coletar as primeiras apostilas Abaco e Ah do kit do aluno
             var primeiraApostilaAbaco = _db.Apostila_Kit_Rels
                 .Include(a => a.Apostila)
@@ -205,18 +193,14 @@ public class AlunoService : IAlunoService {
                     && a.Apostila.Apostila_Tipo_Id == (int)ApostilaTipo.AH
                     && a.Apostila.Ordem == 1);
 
-
             Aluno aluno = new()
             {
                 Aluno_Foto = model.Aluno_Foto,
                 DataInicioVigencia = model.DataInicioVigencia,
                 DataFimVigencia = model.DataFimVigencia,
-                Turma_Id = turmaDestino.Id,
-                PerfilCognitivo_Id = model.PerfilCognitivo_Id,
                 RestricaoMobilidade = model.RestricaoMobilidade,
 
                 Apostila_Kit_Id = model.Apostila_Kit_Id,
-
                 Apostila_Abaco_Id = primeiraApostilaAbaco?.Apostila_Id,
                 NumeroPaginaAbaco = primeiraApostilaAbaco is not null ? 0 : null,
                 Apostila_AH_Id = primeiraApostilaAh?.Apostila_Id,
@@ -225,13 +209,18 @@ public class AlunoService : IAlunoService {
                 RM = randomRM.ToString(),
                 LoginApp = pessoa.Email ?? $"{randomRM}@supera",
                 SenhaApp = "Supera@123",
+
+                Turma_Id = turmaDestino?.Id,
                 Pessoa_Id = model.Pessoa_Id,
+                PerfilCognitivo_Id = model.PerfilCognitivo_Id,
+                AspNetUsers_Created_Id = model.AspNetUsers_Created_Id,
 
                 Created = TimeFunctions.HoraAtualBR(),
                 LastUpdated = null,
                 Deactivated = null,
-                PrimeiraAula = dataPrimeiraAula,
-                AspNetUsers_Created_Id = model.AspNetUsers_Created_Id,
+
+                AulaZero_Id = null,
+                PrimeiraAula_Id = null,
             };
 
             _db.Add(aluno);
@@ -239,7 +228,7 @@ public class AlunoService : IAlunoService {
 
             ResponseModel populateChecklistResponse = _checklistService.PopulateAlunoChecklist(aluno.Id);
 
-            if (populateChecklistResponse.Success == false) {
+            if (!populateChecklistResponse.Success) {
                 return populateChecklistResponse;
             }
 
@@ -250,6 +239,7 @@ public class AlunoService : IAlunoService {
                     e.Evento_Aula != null
                     && e.Data >= TimeFunctions.HoraAtualBR()
                     && e.Evento_Aula.Turma_Id == aluno.Turma_Id)
+                .OrderBy(e => e.Data)
                 .ToList();
 
             // Inserir novos registros deste aluno nas aulas futuras da turma destino
@@ -274,7 +264,7 @@ public class AlunoService : IAlunoService {
             {
                 Aluno_Id = aluno.Id,
                 Descricao = "Aluno cadastrado",
-                Account_Id = _account.Id,
+                Account_Id = _account!.Id,
                 Data = TimeFunctions.HoraAtualBR(),
             });
 
@@ -363,6 +353,18 @@ public class AlunoService : IAlunoService {
                 return new ResponseModel { Message = "RM já existe" };
             }
 
+            Evento? aulaZero = _db.Eventos.Find(model.AulaZero_Id);
+
+            if (model.AulaZero_Id.HasValue && aulaZero is null) {
+                return new ResponseModel { Message = "Aula zero não encontrada" };
+            }
+
+            Evento? primeiraAula = _db.Eventos.Find(model.PrimeiraAula_Id);
+
+            if (model.PrimeiraAula_Id.HasValue && aulaZero is null) {
+                return new ResponseModel { Message = "Primeira aula não encontrada" };
+            }
+
             // Validations passed
 
             // Atualizando dados de Aluno
@@ -370,13 +372,14 @@ public class AlunoService : IAlunoService {
             aluno.LoginApp = model.LoginApp ?? aluno.LoginApp;
             aluno.SenhaApp = model.SenhaApp ?? aluno.SenhaApp;
             aluno.PerfilCognitivo_Id = model.PerfilCognitivo_Id;
+            aluno.PrimeiraAula_Id = model.PrimeiraAula_Id;
+            aluno.AulaZero_Id = model.AulaZero_Id;
 
             aluno.Turma_Id = model.Turma_Id;
             aluno.Aluno_Foto = model.Aluno_Foto;
             aluno.Apostila_Kit_Id = model.Apostila_Kit_Id;
             aluno.DataInicioVigencia = model.DataInicioVigencia ?? aluno.DataInicioVigencia;
             aluno.DataFimVigencia = model.DataFimVigencia ?? aluno.DataFimVigencia;
-            aluno.PrimeiraAula = model.PrimeiraAula ?? aluno.PrimeiraAula;
             aluno.RestricaoMobilidade = model.RestricaoMobilidade ?? aluno.RestricaoMobilidade;
 
             // Atualizando dados de Pessoa
@@ -456,7 +459,7 @@ public class AlunoService : IAlunoService {
                 {
                     Aluno_Id = aluno.Id,
                     Descricao = $"Aluno foi transferido da turma ID: '{oldObject?.Turma_Id}' para a turma ID: '{aluno.Turma_Id}'",
-                    Account_Id = _account.Id,
+                    Account_Id = _account!.Id,
                     Data = TimeFunctions.HoraAtualBR(),
                 });
             }
@@ -653,8 +656,8 @@ public class AlunoService : IAlunoService {
             // Validations passed
 
             // Se for a primeira aula do aluno, atualizar a data de primeira aula para a data da aula destino
-            if (eventoSource.Data == aluno.PrimeiraAula) {
-                aluno.PrimeiraAula = eventoDest.Data;
+            if (eventoSource.Id == aluno.PrimeiraAula_Id) {
+                aluno.PrimeiraAula_Id = eventoDest.Id;
             }
 
             _db.Alunos.Update(aluno);
@@ -687,7 +690,7 @@ public class AlunoService : IAlunoService {
             {
                 Aluno_Id = aluno.Id,
                 Descricao = $"Reposição agendada: O aluno agendou reposição do dia '{eventoSource.Data:G}' para o dia '{eventoDest.Data:G}' com a turma {eventoDest.Evento_Aula?.Turma_Id.ToString() ?? "Extra"}",
-                Account_Id = _account.Id,
+                Account_Id = _account!.Id,
                 Data = TimeFunctions.HoraAtualBR(),
             });
 
@@ -747,6 +750,7 @@ public class AlunoService : IAlunoService {
             response.Success = true;
             response.Object = new SummaryModel
             {
+                Aluno_Id = aluno.Id,
                 Turma_Id = aluno.Turma_Id,
 
                 Faltas = faltas,

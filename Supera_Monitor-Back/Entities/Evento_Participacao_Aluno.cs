@@ -31,5 +31,8 @@ public partial class Evento_Participacao_Aluno {
 
     public virtual Evento Evento { get; set; } = null!;
 
+    public virtual ICollection<Evento_Participacao_Aluno_Contato> Evento_Participacao_Aluno_Contatos { get; set; } = new List<Evento_Participacao_Aluno_Contato>();
+
     public virtual Evento? ReposicaoDe_Evento { get; set; }
 }
+

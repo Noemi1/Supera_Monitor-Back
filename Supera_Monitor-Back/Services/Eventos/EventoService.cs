@@ -152,7 +152,7 @@ public class EventoService : IEventoService {
                 LastUpdated = null,
                 Deactivated = null,
                 Evento_Tipo_Id = eventoTipoId,
-                Account_Created_Id = _account.Id
+                Account_Created_Id = _account!.Id
             };
 
             _db.Eventos.Add(evento);
@@ -984,7 +984,6 @@ public class EventoService : IEventoService {
 
             int amountOfAlunosEnrolled = _db.Evento_Participacao_Alunos.Count(a => a.Evento_Id == evento.Id);
 
-            // Dependendo do tipo de evento, não deve poder inscrever mais um aluno
             switch (evento.Evento_Tipo_Id) {
                 case (int)EventoTipo.Aula:
                     if (amountOfAlunosEnrolled >= evento.CapacidadeMaximaAlunos) {
@@ -1392,17 +1391,17 @@ public class EventoService : IEventoService {
                 participacao.Aluno.NumeroPaginaAH = partAluno.NumeroPaginaAh;
 
                 // Se o evento for a primeira aula do aluno e ocorrer uma falta, deve atualizar a data da PrimeiraAula do aluno para a proxima aula da turma a partir da data do evento atual
-                if (participacao.Aluno.PrimeiraAula == evento.Data && partAluno.Presente == false) {
-                    Turma turma = _db.Turmas.Single(t => t.Id == participacao.Aluno.Turma_Id);
+                //if (participacao.Aluno.PrimeiraAula == evento.Data && partAluno.Presente == false) {
+                //    Turma turma = _db.Turmas.Single(t => t.Id == participacao.Aluno.Turma_Id);
 
-                    DateTime data = evento.Data;
+                //    DateTime data = evento.Data;
 
-                    do {
-                        data = data.AddDays(1);
-                    } while ((int)data.DayOfWeek != turma.DiaSemana);
+                //    do {
+                //        data = data.AddDays(1);
+                //    } while ((int)data.DayOfWeek != turma.DiaSemana);
 
-                    participacao.Aluno.PrimeiraAula = data;
-                }
+                //    participacao.Aluno.PrimeiraAula = data;
+                //}
 
                 participacao.Observacao = partAluno.Observacao;
                 participacao.Presente = partAluno.Presente;
@@ -1488,11 +1487,11 @@ public class EventoService : IEventoService {
 
 
 
-		var eventosQueryable = _db.CalendarioAlunoLists.AsQueryable();
+        var eventosQueryable = _db.CalendarioAlunoLists.AsQueryable();
 
-		var participacoesQueryable = _db.CalendarioAlunoLists.AsQueryable();
+        var participacoesQueryable = _db.CalendarioAlunoLists.AsQueryable();
 
-		var turmasQueryable = _db.Turmas
+        var turmasQueryable = _db.Turmas
             .Where(t => t.Deactivated == null);
 
         var alunosQueryable = _db.AlunoLists
@@ -1503,29 +1502,26 @@ public class EventoService : IEventoService {
             .OrderBy(x => x.DataInicio)
             .ToList();
 
-		if (request.Turma_Id.HasValue)
-		{
-			alunosQueryable = alunosQueryable.Where(x => x.Turma_Id == request.Turma_Id.Value);
-		}
-
-		
-		if (request.Aluno_Id.HasValue)
-		{
-			alunosQueryable = alunosQueryable.Where(x => x.Id == request.Aluno_Id.Value);
-			participacoesQueryable = participacoesQueryable.Where(x => x.Aluno_Id == request.Aluno_Id.Value);
-		}
+        if (request.Turma_Id.HasValue) {
+            alunosQueryable = alunosQueryable.Where(x => x.Turma_Id == request.Turma_Id.Value);
+        }
 
 
-		if (request.Professor_Id.HasValue)
-		{
-			alunosQueryable = alunosQueryable.Where(x => x.Professor_Id == request.Professor_Id.Value);
-		}
+        if (request.Aluno_Id.HasValue) {
+            alunosQueryable = alunosQueryable.Where(x => x.Id == request.Aluno_Id.Value);
+            participacoesQueryable = participacoesQueryable.Where(x => x.Aluno_Id == request.Aluno_Id.Value);
+        }
+
+
+        if (request.Professor_Id.HasValue) {
+            alunosQueryable = alunosQueryable.Where(x => x.Professor_Id == request.Professor_Id.Value);
+        }
 
         List<AlunoList> alunos = alunosQueryable.OrderBy(x => x.Nome).ToList();
         List<Turma> turmas = turmasQueryable.OrderBy(x => x.Nome).ToList();
-		List<CalendarioAlunoList> participacoes = participacoesQueryable.ToList();
+        List<CalendarioAlunoList> participacoes = participacoesQueryable.ToList();
 
-		if (roteiros.Count < 4) {
+        if (roteiros.Count < 4) {
             int diff = 4 - roteiros.Count;
 
             Roteiro lastRoteiro;
