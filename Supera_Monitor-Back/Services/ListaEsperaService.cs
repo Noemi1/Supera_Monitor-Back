@@ -34,7 +34,7 @@ namespace Supera_Monitor_Back.Services {
             try {
                 Evento? evento = _db.Eventos
                     .Include(e => e.Evento_Aula)
-                    .Include(e => e.Evento_Participacao_AlunoEventos)
+                    .Include(e => e.Evento_Participacao_Alunos)
                     .FirstOrDefault(e => e.Id == model.Aula_Id);
 
                 if (evento is null) {
@@ -52,7 +52,7 @@ namespace Supera_Monitor_Back.Services {
                 }
 
                 // Se o aluno já possui um registro na aula, não faz sentido que ele entre na lista de espera
-                bool registroAlreadyExists = evento.Evento_Participacao_AlunoEventos.Any(p => p.Aluno_Id == aluno.Id);
+                bool registroAlreadyExists = evento.Evento_Participacao_Alunos.Any(p => p.Aluno_Id == aluno.Id);
 
                 if (registroAlreadyExists == true) {
                     return new ResponseModel { Message = "O aluno já está registrado na aula" };
@@ -101,7 +101,7 @@ namespace Supera_Monitor_Back.Services {
 
                 Evento? eventoDestino = _db.Eventos
                     .Include(e => e.Evento_Aula)
-                    .Include(e => e.Evento_Participacao_AlunoEventos)
+                    .Include(e => e.Evento_Participacao_Alunos)
                     .FirstOrDefault(a => a.Id == espera.Aula_Id);
 
                 if (eventoDestino is null) {
@@ -113,7 +113,7 @@ namespace Supera_Monitor_Back.Services {
                 }
 
                 // Deve-se verificar se a aula tem espaço antes de promover o registro
-                int registrosInAula = eventoDestino.Evento_Participacao_AlunoEventos.Count(p => p.Deactivated == null);
+                int registrosInAula = eventoDestino.Evento_Participacao_Alunos.Count(p => p.Deactivated == null);
 
                 if (registrosInAula >= eventoDestino.CapacidadeMaximaAlunos) {
                     return new ResponseModel { Message = "Não é possível promover o aluno para a aula, a aula já está em capacidade máxima" };

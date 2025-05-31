@@ -234,7 +234,7 @@ public class AlunoService : IAlunoService {
 
             List<Evento> eventoAulasTurmaDestino = _db.Eventos
                 .Include(e => e.Evento_Aula)
-                .Include(e => e.Evento_Participacao_AlunoEventos)
+                .Include(e => e.Evento_Participacao_Alunos)
                 .Where(e =>
                     e.Evento_Aula != null
                     && e.Data >= TimeFunctions.HoraAtualBR()
@@ -245,7 +245,8 @@ public class AlunoService : IAlunoService {
             // Inserir novos registros deste aluno nas aulas futuras da turma destino
             foreach (Evento evento in eventoAulasTurmaDestino) {
                 // Aula não deve registrar aluno se estiver em sua capacidade máxima e nesse caso, -> considera os alunos de reposição <-
-                var alunosInEventoAula = evento.Evento_Participacao_AlunoEventos.Count(p => p.Deactivated != null);
+                var alunosInEventoAula = evento.Evento_Participacao_Alunos
+                    .Count(p => p.Deactivated != null);
 
                 if (alunosInEventoAula >= evento.CapacidadeMaximaAlunos) {
                     continue;
@@ -361,7 +362,7 @@ public class AlunoService : IAlunoService {
 
             Evento? primeiraAula = _db.Eventos.Find(model.PrimeiraAula_Id);
 
-            if (model.PrimeiraAula_Id.HasValue && aulaZero is null) {
+            if (model.PrimeiraAula_Id.HasValue && primeiraAula is null) {
                 return new ResponseModel { Message = "Primeira aula não encontrada" };
             }
 
@@ -429,7 +430,7 @@ public class AlunoService : IAlunoService {
 
                 List<Evento> eventosTurmaDestino = _db.Eventos
                     .Include(e => e.Evento_Aula)
-                    .Include(e => e.Evento_Participacao_AlunoEventos)
+                    .Include(e => e.Evento_Participacao_Alunos)
                     .Where(e =>
                         e.Evento_Aula != null
                         && e.Data >= TimeFunctions.HoraAtualBR()
@@ -446,7 +447,7 @@ public class AlunoService : IAlunoService {
                     };
 
                     // Aula não deve registrar aluno se estiver em sua capacidade máxima e nesse caso, -> considera os alunos de reposição <-
-                    int amountOfAlunosInAula = evento.Evento_Participacao_AlunoEventos.Count(p => p.Deactivated == null);
+                    int amountOfAlunosInAula = evento.Evento_Participacao_Alunos.Count(p => p.Deactivated == null);
 
                     if (amountOfAlunosInAula >= evento.CapacidadeMaximaAlunos) {
                         continue;
@@ -566,7 +567,7 @@ public class AlunoService : IAlunoService {
 
             Evento? eventoSource = _db.Eventos
                 .Include(e => e.Evento_Aula)
-                .Include(e => e.Evento_Participacao_AlunoEventos)
+                .Include(e => e.Evento_Participacao_Alunos)
                 .FirstOrDefault(e => e.Id == model.Source_Aula_Id);
 
             if (eventoSource is null) {
@@ -578,7 +579,7 @@ public class AlunoService : IAlunoService {
             }
 
             Evento? eventoDest = _db.Eventos
-                .Include(e => e.Evento_Participacao_AlunoEventos)
+                .Include(e => e.Evento_Participacao_Alunos)
                 .Include(e => e.Evento_Aula!)
                 .ThenInclude(e => e.Turma)
                 .FirstOrDefault(e => e.Evento_Aula != null && e.Id == model.Dest_Aula_Id);
@@ -617,7 +618,7 @@ public class AlunoService : IAlunoService {
                 return new ResponseModel { Message = "A data da aula destino não pode ultrapassar 30 dias de diferença da aula original" };
             }
 
-            bool registroAlreadyExists = eventoDest.Evento_Participacao_AlunoEventos.Any(p => p.Aluno_Id == aluno.Id);
+            bool registroAlreadyExists = eventoDest.Evento_Participacao_Alunos.Any(p => p.Aluno_Id == aluno.Id);
 
             if (registroAlreadyExists) {
                 return new ResponseModel { Message = "Aluno já está cadastrado no evento destino" };
@@ -633,14 +634,14 @@ public class AlunoService : IAlunoService {
                 return new ResponseModel { Message = "O perfil cognitivo da aula não é adequado para este aluno" };
             }
 
-            int registrosAtivos = eventoDest.Evento_Participacao_AlunoEventos.Count(p => p.Deactivated == null);
+            int registrosAtivos = eventoDest.Evento_Participacao_Alunos.Count(p => p.Deactivated == null);
 
             // O evento deve ter espaço para comportar o aluno
             if (registrosAtivos >= eventoDest.CapacidadeMaximaAlunos) {
                 return new ResponseModel { Message = "Esse evento de aula já está em sua capacidade máxima" };
             }
 
-            Evento_Participacao_Aluno? registroSource = eventoSource.Evento_Participacao_AlunoEventos.FirstOrDefault(p =>
+            Evento_Participacao_Aluno? registroSource = eventoSource.Evento_Participacao_Alunos.FirstOrDefault(p =>
                 p.Deactivated == null
                 && p.Aluno_Id == aluno.Id
                 && p.Evento_Id == eventoSource.Id);

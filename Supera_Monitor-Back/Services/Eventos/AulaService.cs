@@ -114,7 +114,7 @@ public class AulaService : IAulaService {
                 return new ResponseModel { Message = "Roteiro não encontrado" };
             }
 
-            // Se não foi passado um roteiro na requisição, então buscar o roteiro da data da aula, senão continua null
+            // Se foi passado um roteiro na requisição, então buscar o roteiro da data da aula, senão continua null
             roteiro ??= _db.Roteiros.FirstOrDefault(r => request.Data.Date >= r.DataInicio.Date && request.Data.Date <= r.DataFim.Date);
 
             bool hasTurmaConflict = _professorService.HasTurmaTimeConflict(
@@ -316,14 +316,14 @@ public class AulaService : IAulaService {
 
             Evento? eventoReagendado = _db.Eventos
                 .Include(e => e.Evento_Participacao_Professors)
-                .Include(e => e.Evento_Participacao_AlunoEventos)
+                .Include(e => e.Evento_Participacao_Alunos)
                 .FirstOrDefault(e => e.Id == request.ReagendamentoDe_Evento_Id);
 
             if (eventoReagendado is not null) {
                 eventoReagendado.Deactivated = TimeFunctions.HoraAtualBR();
 
                 // Desativar participação dos alunos e professores
-                foreach (var alunoReagendado in eventoReagendado.Evento_Participacao_AlunoEventos) {
+                foreach (var alunoReagendado in eventoReagendado.Evento_Participacao_Alunos) {
                     alunoReagendado.Deactivated = TimeFunctions.HoraAtualBR();
                 }
 
@@ -393,11 +393,12 @@ public class AulaService : IAulaService {
             _db.Evento_Participacao_Alunos.AddRange(registros);
 
             // Pegar os perfis cognitivos passados na requisição e criar as entidades de Aula_PerfilCognitivo
-            IEnumerable<Evento_Aula_PerfilCognitivo_Rel> eventoAulaPerfisCognitivos = request.PerfilCognitivo.Select(perfilId => new Evento_Aula_PerfilCognitivo_Rel
-            {
-                Evento_Aula_Id = evento.Id,
-                PerfilCognitivo_Id = perfilId
-            });
+            IEnumerable<Evento_Aula_PerfilCognitivo_Rel> eventoAulaPerfisCognitivos =
+                request.PerfilCognitivo.Select(perfilId => new Evento_Aula_PerfilCognitivo_Rel
+                {
+                    Evento_Aula_Id = evento.Id,
+                    PerfilCognitivo_Id = perfilId
+                });
 
             _db.Evento_Aula_PerfilCognitivo_Rels.AddRange(eventoAulaPerfisCognitivos);
             _db.SaveChanges();
@@ -584,7 +585,7 @@ public class AulaService : IAulaService {
         try {
             Evento? evento = _db.Eventos
                 .Include(e => e.Evento_Aula)
-                .Include(e => e.Evento_Participacao_AlunoEventos)
+                .Include(e => e.Evento_Participacao_Alunos)
                 .FirstOrDefault(e => e.Id == request.Id);
 
             // Não devo poder atualizar uma aula que não existe
@@ -658,7 +659,7 @@ public class AulaService : IAulaService {
                 }
             }
 
-            int alunosInEvento = evento.Evento_Participacao_AlunoEventos.Count(e => e.Deactivated == null);
+            int alunosInEvento = evento.Evento_Participacao_Alunos.Count(e => e.Deactivated == null);
 
             if (request.CapacidadeMaximaAlunos < alunosInEvento) {
                 return new ResponseModel { Message = "Número máximo de alunos excedido" };

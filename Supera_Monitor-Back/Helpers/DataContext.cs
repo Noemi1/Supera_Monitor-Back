@@ -783,7 +783,7 @@ public partial class DataContext : DbContext {
                 .HasForeignKey(d => d.Apostila_Abaco_Id)
                 .HasConstraintName("FK_Evento_Participacao_Aluno_ApostilaAbaco");
 
-            entity.HasOne(d => d.Evento).WithMany(p => p.Evento_Participacao_AlunoEventos)
+            entity.HasOne(d => d.Evento).WithMany(p => p.Evento_Participacao_Alunos)
                 .HasForeignKey(d => d.Evento_Id)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Evento_Participacao_Aluno_Evento");

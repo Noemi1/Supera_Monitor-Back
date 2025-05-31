@@ -5,6 +5,7 @@ using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Eventos;
 using Supera_Monitor_Back.Models.Eventos.Aula;
+using Supera_Monitor_Back.Models.Eventos.Dtos;
 using Supera_Monitor_Back.Services;
 using Supera_Monitor_Back.Services.Eventos;
 
@@ -25,9 +26,9 @@ public class EventosController : _BaseController {
     }
 
     [HttpPost("criar")]
-    public ActionResult<ResponseModel> Create(NewEventoRequest request) {
+    public ActionResult<ResponseModel> CreateEvent(CreateEventDto dto) {
         try {
-            var response = _eventoService.Create(request);
+            var response = _eventoService.CreateEvent(dto);
 
             if (response.Success == false) {
                 return BadRequest(response);
