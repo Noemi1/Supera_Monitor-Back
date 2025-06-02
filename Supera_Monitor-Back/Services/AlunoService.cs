@@ -25,6 +25,7 @@ public interface IAlunoService {
     List<AlunoHistoricoModel> GetHistoricoById(int alunoId);
 
     ResponseModel Reposicao(ReposicaoRequest model);
+    ResponseModel PrimeiraAula(PrimeiraAulaRequest model);
 }
 
 public class AlunoService : IAlunoService {
@@ -802,5 +803,95 @@ public class AlunoService : IAlunoService {
         }
 
         return listQueryable.ToList();
+    }
+
+    public ResponseModel PrimeiraAula(PrimeiraAulaRequest model) {
+        ResponseModel response = new() { Success = false };
+
+        try {
+            Aluno? aluno = _db.Alunos
+                .Include(a => a.PrimeiraAula)
+                .FirstOrDefault(a => a.Id == model.Aluno_Id);
+
+            if (aluno is null) {
+                return new ResponseModel { Message = "Aluno não encontrado" };
+            }
+
+            if (aluno.Deactivated != null) {
+                return new ResponseModel { Message = "O aluno está desativado" };
+            }
+
+            Evento? evento = _db.Eventos.FirstOrDefault(e => e.Id == model.Evento_Id);
+
+            if (evento is null) {
+                return new ResponseModel { Message = "Evento não encontrado" };
+            }
+
+            if (evento.Finalizado == true) {
+                return new ResponseModel { Message = "Não foi possível continuar. Este evento já está finalizado." };
+            }
+
+            if (evento.Deactivated != null) {
+                return new ResponseModel { Message = "Não foi possível continuar. Este evento se encontra desativado." };
+            }
+
+            if (aluno.PrimeiraAula != null) {
+                return new ResponseModel { Message = $"Aluno já possui uma primeira aula marcada dia: {aluno.PrimeiraAula.Data}" };
+            }
+
+            // O aluno deve se encaixar em um dos perfis cognitivos do evento
+            bool perfilCognitivoMatches = _db.Evento_Aula_PerfilCognitivo_Rels
+                .Any(ep =>
+                    ep.Evento_Aula_Id == evento.Id &&
+                    ep.PerfilCognitivo_Id == aluno.PerfilCognitivo_Id);
+
+            if (perfilCognitivoMatches == false) {
+                return new ResponseModel { Message = "O perfil cognitivo da aula não é adequado para este aluno" };
+            }
+
+            int registrosAtivos = evento.Evento_Participacao_Alunos.Count(p => p.Deactivated == null);
+
+            // O evento deve ter espaço para comportar o aluno
+            if (registrosAtivos >= evento.CapacidadeMaximaAlunos) {
+                return new ResponseModel { Message = "Esse evento já está em sua capacidade máxima" };
+            }
+
+            // Validations passed
+
+            Evento_Participacao_Aluno participacao = new()
+            {
+                Aluno_Id = aluno.Id,
+                Evento_Id = evento.Id,
+                Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
+                NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
+                Apostila_AH_Id = aluno.Apostila_AH_Id,
+                NumeroPaginaAH = aluno.NumeroPaginaAH,
+            };
+
+            Aluno_Historico historico = new()
+            {
+                Aluno_Id = aluno.Id,
+                Descricao = $"Primeira aula agendada: O aluno teve primeira aula agendada para o dia '{evento.Data:G}'",
+                Account_Id = _account!.Id,
+                Data = TimeFunctions.HoraAtualBR(),
+            };
+
+            aluno.PrimeiraAula_Id = evento.Id;
+
+            _db.Alunos.Update(aluno);
+            _db.Evento_Participacao_Alunos.Add(participacao);
+            _db.Aluno_Historicos.Add(historico);
+
+            _db.SaveChanges();
+
+            response.Success = true;
+            response.Object = _db.CalendarioAlunoLists.FirstOrDefault(r => r.Id == aluno.Id);
+            response.Message = "Primeira aula agendada com sucesso";
+        }
+        catch (Exception ex) {
+            response.Message = $"Falha ao inserir primeira aula do aluno: {ex}";
+        }
+
+        return response;
     }
 }

@@ -134,7 +134,25 @@ namespace Supera_Monitor_Back.Controllers {
                 ResponseModel response = _alunoService.Reposicao(model);
 
                 if (response.Success) {
-                    _logger.Log("Reposicao", "TurmaAulaAluno", response, Account?.Id);
+                    _logger.Log("Reposicao", "Aluno", response, Account?.Id);
+                    return Ok(response);
+                }
+
+                return BadRequest(response);
+            }
+            catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
+
+        [HttpPost("primeira-aula")]
+        public ActionResult<ResponseModel> PrimeiraAula(PrimeiraAulaRequest model) {
+            try {
+                ResponseModel response = _alunoService.PrimeiraAula(model);
+
+                if (response.Success) {
+                    _logger.Log("Primeira Aula", "Aluno", response, Account?.Id);
                     return Ok(response);
                 }
 
