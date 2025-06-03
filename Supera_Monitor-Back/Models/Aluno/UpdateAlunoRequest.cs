@@ -5,7 +5,7 @@ public class UpdateAlunoRequest {
 
     // Alterar dados da entidade Aluno
     public int? Turma_Id { get; set; }
-    public int PerfilCognitivo_Id { get; set; }
+    public int? PerfilCognitivo_Id { get; set; }
 
     public DateTime? DataInicioVigencia { get; set; }
     public DateTime? DataFimVigencia { get; set; }

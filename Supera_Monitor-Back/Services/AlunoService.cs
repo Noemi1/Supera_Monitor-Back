@@ -308,7 +308,7 @@ public class AlunoService : IAlunoService {
             // Não deve ser possível atualizar um aluno com um perfil cognitivo que não existe
             bool perfilCognitivoExists = _db.PerfilCognitivos.Any(p => p.Id == model.PerfilCognitivo_Id);
 
-            if (perfilCognitivoExists == false) {
+            if (model.PerfilCognitivo_Id.HasValue && !perfilCognitivoExists) {
                 return new ResponseModel { Message = "Não é possível atualizar um aluno com um perfil cognitivo que não existe" };
             }
 

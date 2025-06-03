@@ -11,7 +11,6 @@ public class CreateAlunoRequest {
     public DateTime DataInicioVigencia { get; set; }
     public DateTime? DataFimVigencia { get; set; }
 
-    public int PerfilCognitivo_Id { get; set; }
+    public int? PerfilCognitivo_Id { get; set; }
     public string AspNetUsers_Created_Id { get; set; } = string.Empty;
-
 }
