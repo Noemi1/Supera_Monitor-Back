@@ -15,7 +15,13 @@ public partial class AlunoList {
 
     public DateTime? DataFimVigencia { get; set; }
 
+    public int? PrimeiraAula_Id { get; set; }
+
     public DateTime? PrimeiraAula { get; set; }
+
+    public int? AulaZero_Id { get; set; }
+
+    public DateTime? AulaZero { get; set; }
 
     public bool? RestricaoMobilidade { get; set; }
 
@@ -88,8 +94,8 @@ public partial class AlunoList {
     public string? SenhaApp { get; set; }
 
     public bool Active => !Deactivated.HasValue;
-	public string? LinkGrupo { get; set; }
+    public string? LinkGrupo { get; set; }
 
 
-	public virtual ICollection<AlunoRestricaoList> Restricoes { get; set; } = new List<AlunoRestricaoList>();
+    public virtual ICollection<AlunoRestricaoList> Restricoes { get; set; } = new List<AlunoRestricaoList>();
 }
