@@ -1479,7 +1479,7 @@ public class EventoService : IEventoService {
 
     public List<Dashboard> Dashboard(DashboardRequest request) {
 
-        DateTime intervaloDe = new DateTime(request.Ano, request.Mes, 1);
+        DateTime intervaloDe = new(request.Ano, request.Mes, 1);
         DateTime intervaloAte = intervaloDe.AddMonths(1).AddDays(-1);
 
         List<Dashboard> response = new();
@@ -1687,7 +1687,7 @@ public class EventoService : IEventoService {
 
                             // Se o aluno não estiver vigente naquela data, não insere aula/participação para ele
                             if ((aluno.DataInicioVigencia.HasValue && data.Date >= aluno.DataInicioVigencia.Value.Date) && (!aluno.DataFimVigencia.HasValue || data.Date <= aluno.DataFimVigencia.Value.Date)) {
-                                dashboard.PrimeiraAula = aluno.PrimeiraAula.Value.Date == data.Date;
+                                dashboard.PrimeiraAula = aluno.PrimeiraAula.HasValue && aluno.PrimeiraAula == data.Date;
                                 dashboard.Show = true;
                             }
 
