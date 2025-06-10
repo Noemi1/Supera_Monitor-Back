@@ -15,6 +15,8 @@ public partial class AlunoList {
 
     public DateTime? DataFimVigencia { get; set; }
 
+    public String? CorLegenda { get; set; }
+
     public int? PrimeiraAula_Id { get; set; }
 
     public DateTime? PrimeiraAula { get; set; }

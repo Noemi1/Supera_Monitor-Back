@@ -323,6 +323,9 @@ public partial class DataContext : DbContext {
             entity.Property(e => e.Checklist)
                 .HasMaxLength(50)
                 .IsUnicode(false);
+            entity.Property(e => e.CorLegenda)
+                .HasMaxLength(20)
+                .IsUnicode(false);
             entity.Property(e => e.Created).HasColumnType("datetime");
             entity.Property(e => e.DataFimVigencia).HasColumnType("date");
             entity.Property(e => e.DataInicioVigencia).HasColumnType("date");

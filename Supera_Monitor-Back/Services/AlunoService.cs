@@ -72,10 +72,6 @@ public class AlunoService : IAlunoService {
     public List<AlunoList> GetAll() {
         List<AlunoList> alunos = _db.AlunoLists.OrderBy(a => a.Nome).ToList();
 
-        foreach (var aluno in alunos) {
-            aluno.Restricoes = _db.AlunoRestricaoLists.Where(ar => ar.Aluno_Id == aluno.Id && ar.Deactivated == null).ToList();
-        }
-
         return alunos;
     }
 
