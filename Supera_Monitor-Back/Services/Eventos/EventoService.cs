@@ -858,16 +858,17 @@ public class EventoService : IEventoService {
                 }
             }
 
-            //
             // Adicionar aulas da turma do dia que ainda não foram instanciadas
-            //
             List<Turma> turmasDoDia = turmas.Where(t => t.DiaSemana == (int)data.DayOfWeek).ToList();
 
             foreach (Turma turma in turmasDoDia) {
+                var originalTurmaDatetime = new DateTime(data.Year, data.Month, data.Day, turma.Horario!.Value.Hours, turma.Horario!.Value.Minutes, turma.Horario!.Value.Seconds);
+
                 // Se a turma já tem uma aula instanciada no mesmo horário, é uma aula repetida, então ignora e passa pra proxima
                 CalendarioEventoList? eventoAula = calendarioResponse.FirstOrDefault(a =>
                     a.Data.Date == data.Date
-                    && a.Turma_Id == turma.Id);
+                    && a.Turma_Id == turma.Id
+                    && a.Data == originalTurmaDatetime);
 
                 // Não usar mais o continue porque o método adiciona outros pseudo eventos
                 if (eventoAula is null) {
@@ -880,13 +881,13 @@ public class EventoService : IEventoService {
                         Evento_Tipo = "Pseudo-Aula",
 
                         Descricao = turma.Nome, // Pseudo aulas ganham o nome da turma
-                        DuracaoMinutos = 120, // As pseudo aulas são de uma turma e duram 2h
+                        DuracaoMinutos = 120, // As pseudo aulas são de uma turma e duram 2h por padrão
 
                         Roteiro_Id = roteiro?.Id,
                         Semana = roteiro?.Semana,
                         Tema = roteiro?.Tema,
 
-                        Data = new DateTime(data.Year, data.Month, data.Day, turma.Horario!.Value.Hours, turma.Horario!.Value.Minutes, turma.Horario!.Value.Seconds),
+                        Data = originalTurmaDatetime,
 
                         Turma_Id = turma.Id,
                         Turma = turma.Nome,
