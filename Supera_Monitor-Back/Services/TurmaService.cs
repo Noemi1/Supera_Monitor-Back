@@ -54,24 +54,12 @@ public class TurmaService : ITurmaService {
 
     public List<TurmaList> GetAll() {
         List<TurmaList> turmas = _db.TurmaLists.OrderBy(t => t.Nome).ToList();
+        List<int> turmaIds = turmas.Select(t => t.Id).ToList();
+        List<Turma_PerfilCognitivo_Rel> allTurmaPerfisCognitivos = _db.Turma_PerfilCognitivo_Rels.Where(t => turmaIds.Contains(t.Id)).ToList();
 
-        // Obtém todos os perfis cognitivos do banco de dados
-        var allPerfisCognitivos = _db.PerfilCognitivos.ToList();
-        var perfisCognitivosMap = allPerfisCognitivos.ToDictionary(p => p.Id);
-
-        // Para cada turma, busca e associa os perfis cognitivos correspondentes
+        // Para cada turma, associa os perfis cognitivos correspondentes
         foreach (var turma in turmas) {
-            var perfilIds = _db.Turma_PerfilCognitivo_Rels
-                .Where(tp => tp.Turma_Id == turma.Id)
-                .Select(tp => tp.PerfilCognitivo_Id)
-                .ToList();
-
-            // Obtém os perfis correspondentes da turma
-            var perfisDaTurma = perfilIds
-                .Select(id => perfisCognitivosMap.GetValueOrDefault(id))
-                .Where(p => p != null)
-                .ToList();
-
+            var perfisDaTurma = allTurmaPerfisCognitivos.Where(t => t.Turma_Id == turma.Id).ToList();
             turma.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(perfisDaTurma);
         }
 
