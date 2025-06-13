@@ -421,7 +421,7 @@ public class EventosController : _BaseController {
             // Se ano for maior que o ano atual, ele será ajustado para o ano atual
             // Se ano já estiver dentro do intervalo, ele permanece inalterado.
             request.Ano = Math.Clamp(request.Ano, 2025, DateTime.Now.Year);
-            request.Mes = Math.Clamp(request.Mes, 0, 12);
+            //request.Mes = Math.Clamp(request.Mes, 0, 12);
 
             var response = _eventoService.Dashboard(request);
 
