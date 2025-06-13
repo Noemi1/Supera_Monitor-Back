@@ -415,7 +415,7 @@ public class EventosController : _BaseController {
     }
 
     [HttpPost("dashboard")]
-    public ActionResult<List<Dashboard>> Dashboard(DashboardRequest request) {
+    public ActionResult<Dashboard> Dashboard(DashboardRequest request) {
         try {
             // Se ano for menor que 2025, ele será ajustado para 2025
             // Se ano for maior que o ano atual, ele será ajustado para o ano atual

@@ -88,12 +88,21 @@ namespace Supera_Monitor_Back.Helpers {
                 .ForMember(dest => dest.Professor, opt => opt.MapFrom(src => src.Professor.Account.Name))
                 .ForMember(dest => dest.Roteiro, opt => opt.MapFrom(src => src.Roteiro.Tema))
                 .ForMember(dest => dest.Turma, opt => opt.MapFrom(src => src.Turma.Nome));
+
             CreateMap<Evento, EventoAulaModel>()
                 .ForMember(dest => dest.Evento_Tipo, opt => opt.MapFrom(src => src.Evento_Tipo.Nome))
                 .ForMember(dest => dest.Sala, opt => opt.MapFrom(src => $"{src.Sala.NumeroSala} - Andar: {src.Sala.Andar}"));
+
             CreateMap<Evento, EventoModel>()
                 .ForMember(dest => dest.Evento_Tipo, opt => opt.MapFrom(src => src.Evento_Tipo.Nome))
                 .ForMember(dest => dest.Sala, opt => opt.MapFrom(src => $"{src.Sala.NumeroSala} - Andar: {src.Sala.Andar}"));
-        }
+
+
+			// Dashboard
+			CreateMap<CalendarioAlunoList, Dashboard_Participacao>();
+			CreateMap<AlunoList, Dashboard_Aluno>();
+			CreateMap<CalendarioEventoList, Dashboard_Aula>();
+			CreateMap<Roteiro, Dashboard_Roteiro>();
+		}
     }
 }

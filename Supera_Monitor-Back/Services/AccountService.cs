@@ -102,38 +102,40 @@ namespace Supera_Monitor_Back.Services {
         }
 
         public AuthenticateResponse RefreshToken(string token, string ipAddress) {
-            try {
-                var (refreshToken, account) = GetRefreshToken(token);
+            try
+			{
+				var (refreshToken, account) = GetRefreshToken(token);
 
-                var relatedProfessor = _db.Professors.FirstOrDefault(p => p.Account_Id == account.Id);
+				var relatedProfessor = _db.Professors.FirstOrDefault(p => p.Account_Id == account.Id);
 
-                // Renew refresh and JWT tokens
-                var newRefreshToken = GenerateRefreshToken(ipAddress);
-                refreshToken.Revoked = TimeFunctions.HoraAtualBR();
-                refreshToken.RevokedByIp = ipAddress;
-                refreshToken.ReplacedByToken = newRefreshToken.Token;
-                account.AccountRefreshTokens.Add(newRefreshToken);
+				// Renew refresh and JWT tokens
+				var newRefreshToken = GenerateRefreshToken(ipAddress);
+				refreshToken.Revoked = TimeFunctions.HoraAtualBR();
+				refreshToken.RevokedByIp = ipAddress;
+				refreshToken.ReplacedByToken = newRefreshToken.Token;
+				account.AccountRefreshTokens.Add(newRefreshToken);
 
-                RemoveOldRefreshTokens(account);
+				RemoveOldRefreshTokens(account);
 
-                // Save newly refreshed token on database
-                _db.Update(account);
-                _db.SaveChanges();
+				// Save newly refreshed token on database
+				_db.Update(account);
+				_db.SaveChanges();
 
-                // Send the updated JWT token back to the user
-                string jwtToken = GenerateJwtToken(account);
+				// Send the updated JWT token back to the user
+				string jwtToken = GenerateJwtToken(account);
 
-                AuthenticateResponse response = _mapper.Map<AuthenticateResponse>(account);
+				AuthenticateResponse response = _mapper.Map<AuthenticateResponse>(account);
 
-                response.Professor_Id = relatedProfessor?.Id;
-                response.Role = account.Role.Role;
-                response.JwtToken = jwtToken;
-                response.RefreshToken = newRefreshToken.Token;
-                return response;
-            }
-            catch (Exception) {
-                throw;
-            }
+				response.Professor_Id = relatedProfessor?.Id;
+				response.Role = account.Role.Role;
+				response.JwtToken = jwtToken;
+				response.RefreshToken = newRefreshToken.Token;
+				return response;
+			}
+			catch(Exception ex)
+			{
+				throw new Exception(ex.Message);
+			}
         }
 
         public ResponseModel RevokeToken(string token, string ipAddress) {
