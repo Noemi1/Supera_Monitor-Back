@@ -78,7 +78,7 @@ public class AlunoService : IAlunoService {
     public List<AlunoListWithChecklist> GetAllWithChecklist(AlunoRequest request)
     {
         IQueryable<AlunoList> alunosQueryable = _db.AlunoLists
-          .Where(a => a.Active == true)
+          .Where(a => a.Deactivated == null)
           .AsQueryable();
 
 
