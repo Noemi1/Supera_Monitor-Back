@@ -12,8 +12,8 @@ namespace Supera_Monitor_Back.Services;
 public interface IAlunoService {
     AlunoListWithChecklist Get(int alunoId);
     List<AlunoList> GetAll();
-    List<AlunoListWithChecklist> GetAllWithChecklist();
-    List<AlunoChecklistItemList> GetAlunoChecklistItemList(AlunoChecklistItemListRequest request);
+    List<AlunoListWithChecklist> GetAllWithChecklist(AlunoRequest request);
+    List<AlunoChecklistItemList> GetAlunoChecklistItemList(AlunoRequest request);
     ResponseModel Insert(CreateAlunoRequest model);
     ResponseModel Update(UpdateAlunoRequest model);
     ResponseModel ToggleDeactivate(int alunoId);
@@ -75,23 +75,44 @@ public class AlunoService : IAlunoService {
         return alunos;
     }
 
-    public List<AlunoListWithChecklist> GetAllWithChecklist() {
+    public List<AlunoListWithChecklist> GetAllWithChecklist(AlunoRequest request)
+    {
+        IQueryable<AlunoList> alunosQueryable = _db.AlunoLists
+          .Where(a => a.Active == true)
+          .AsQueryable();
+
+
+        if (request.Turma_Id.HasValue)
+        {
+            alunosQueryable = alunosQueryable.Where(a => a.Turma_Id == request.Turma_Id);
+        }
+
+        if (request.Professor_Id.HasValue)
+        {
+            alunosQueryable = alunosQueryable.Where(a => a.Professor_Id == request.Professor_Id);
+        }
+
+        if (request.Aluno_Id.HasValue)
+        {
+            alunosQueryable = alunosQueryable.Where(a => a.Id == request.Aluno_Id);
+        }
+
+
         List<AlunoList> alunos = _db.AlunoLists.OrderBy(a => a.Nome).ToList();
+        List<int> alunosIds = alunos.Select(x => x.Id).ToList();
 
         List<AlunoListWithChecklist> alunosWithChecklist = _mapper.Map<List<AlunoListWithChecklist>>(alunos);
 
-        List<int> alunoIds = alunosWithChecklist.Select(a => a.Id).ToList();
 
         List<AlunoChecklistView> listAlunoChecklistView = _db.AlunoChecklistViews
-            .Where(c => alunoIds.Contains(c.Aluno_Id))
+            .Where(c => alunosIds.Contains(c.Aluno_Id))
             .ToList();
 
-        foreach (var alunoList in alunosWithChecklist) {
-            alunoList.AlunoChecklist = listAlunoChecklistView.Where(a => alunoList.Id == a.Aluno_Id)
-                .OrderBy(c => c.Checklist_Id)
-                .ThenBy(c => c.Ordem)
+        alunosWithChecklist.ForEach(aluno =>
+        {
+            aluno.AlunoChecklist = listAlunoChecklistView.Where(a => aluno.Id == a.Aluno_Id)
                 .ToList();
-        }
+        });
 
         return alunosWithChecklist;
     }
@@ -781,7 +802,7 @@ public class AlunoService : IAlunoService {
         return _mapper.Map<List<AlunoHistoricoModel>>(historicos);
     }
 
-    public List<AlunoChecklistItemList> GetAlunoChecklistItemList(AlunoChecklistItemListRequest request) {
+    public List<AlunoChecklistItemList> GetAlunoChecklistItemList(AlunoRequest request) {
         IQueryable<AlunoChecklistItemList> listQueryable = _db.AlunoChecklistItemLists
             .Where(a => a.Finalizado == 0)
             .AsQueryable();

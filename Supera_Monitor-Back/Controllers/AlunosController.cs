@@ -190,10 +190,10 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
-        [HttpGet("all/with-checklist")]
-        public ActionResult<List<AlunoListWithChecklist>> GetAllWithChecklist() {
+        [HttpPost("all/with-checklist")]
+        public ActionResult<List<AlunoListWithChecklist>> GetAllWithChecklist(AlunoRequest request) {
             try {
-                var response = _alunoService.GetAllWithChecklist();
+                var response = _alunoService.GetAllWithChecklist(request);
 
                 return Ok(response);
             }
@@ -204,7 +204,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPost("checklists/all")]
-        public ActionResult<List<AlunoListWithChecklist>> GetAllAlunoChecklists(AlunoChecklistItemListRequest request) {
+        public ActionResult<List<AlunoListWithChecklist>> GetAllAlunoChecklists(AlunoRequest request) {
             try {
                 var response = _alunoService.GetAlunoChecklistItemList(request);
 
