@@ -98,7 +98,7 @@ public class AlunoService : IAlunoService {
         }
 
 
-        List<AlunoList> alunos = _db.AlunoLists.OrderBy(a => a.Nome).ToList();
+        List<AlunoList> alunos = alunosQueryable.OrderBy(a => a.Nome).ToList();
         List<int> alunosIds = alunos.Select(x => x.Id).ToList();
 
         List<AlunoListWithChecklist> alunosWithChecklist = _mapper.Map<List<AlunoListWithChecklist>>(alunos);
