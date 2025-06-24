@@ -63,7 +63,7 @@ public class AlunoService : IAlunoService {
             .ToList();
 
         alunoListWithChecklist.Restricoes = _db.AlunoRestricaoLists
-            .Where(ar => ar.Aluno_Id == aluno.Id && ar.Deactivated == null)
+            .Where(ar => ar.Aluno_Id == aluno.Id)
             .ToList();
 
         return alunoListWithChecklist;
@@ -75,25 +75,21 @@ public class AlunoService : IAlunoService {
         return alunos;
     }
 
-    public List<AlunoListWithChecklist> GetAllWithChecklist(AlunoRequest request)
-    {
+    public List<AlunoListWithChecklist> GetAllWithChecklist(AlunoRequest request) {
         IQueryable<AlunoList> alunosQueryable = _db.AlunoLists
           .Where(a => a.Deactivated == null)
           .AsQueryable();
 
 
-        if (request.Turma_Id.HasValue)
-        {
+        if (request.Turma_Id.HasValue) {
             alunosQueryable = alunosQueryable.Where(a => a.Turma_Id == request.Turma_Id);
         }
 
-        if (request.Professor_Id.HasValue)
-        {
+        if (request.Professor_Id.HasValue) {
             alunosQueryable = alunosQueryable.Where(a => a.Professor_Id == request.Professor_Id);
         }
 
-        if (request.Aluno_Id.HasValue)
-        {
+        if (request.Aluno_Id.HasValue) {
             alunosQueryable = alunosQueryable.Where(a => a.Id == request.Aluno_Id);
         }
 
@@ -112,6 +108,7 @@ public class AlunoService : IAlunoService {
         {
             aluno.AlunoChecklist = listAlunoChecklistView.Where(a => aluno.Id == a.Aluno_Id)
                 .ToList();
+
         });
 
         return alunosWithChecklist;
