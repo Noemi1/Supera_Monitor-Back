@@ -129,5 +129,18 @@ namespace Supera_Monitor_Back.Controllers {
                 return StatusCode(500, e);
             }
         }
+
+        [HttpGet("alunos/{turmaId}")]
+        public ActionResult<ResponseModel> GetAlunosByTurma(int turmaId) {
+            try {
+                List<AlunoList> response = _turmaService.GetAlunosByTurma(turmaId);
+
+                return Ok(response);
+            }
+            catch (Exception e) {
+                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                return StatusCode(500, e);
+            }
+        }
     }
 }

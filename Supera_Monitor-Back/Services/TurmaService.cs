@@ -18,7 +18,7 @@ public interface ITurmaService {
     List<TurmaList> GetAll();
 
     List<PerfilCognitivoModel> GetAllPerfisCognitivos();
-    List<AlunoList> GetAllAlunosByTurma(int turmaId);
+    List<AlunoList> GetAlunosByTurma(int turmaId);
 }
 
 public class TurmaService : ITurmaService {
@@ -345,7 +345,7 @@ public class TurmaService : ITurmaService {
         return response;
     }
 
-    public List<AlunoList> GetAllAlunosByTurma(int turmaId) {
+    public List<AlunoList> GetAlunosByTurma(int turmaId) {
         List<AlunoList> alunos = _db.AlunoLists.Where(a => a.Turma_Id == turmaId).ToList();
 
         return alunos;
@@ -359,10 +359,6 @@ public class TurmaService : ITurmaService {
 
             if (turma == null) {
                 return new ResponseModel { Message = "Turma não encontrada." };
-            }
-
-            if (_account == null) {
-                return new ResponseModel { Message = "Não foi possível completar a ação. Autenticação do autor não encontrada." };
             }
 
             // Validations passed
