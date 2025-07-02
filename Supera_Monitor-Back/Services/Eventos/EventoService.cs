@@ -439,25 +439,10 @@ public class EventoService : IEventoService {
         // Adicionar aulas instanciadas ao retorno
         List<CalendarioEventoList> calendarioResponse = eventosQueryable.ToList();
 
-        //Adicionar os alunos e perfis cognitivos às aulas instanciadas
-        //foreach (CalendarioEventoList evento in calendarioResponse) {
-        //    evento.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).OrderBy(a => a.Aluno).ToList();
-        //    evento.Professores = _db.CalendarioProfessorLists.Where(e => e.Evento_Id == evento.Id).ToList();
-
-        //    if (evento.Evento_Tipo_Id == (int)EventoTipo.Aula || evento.Evento_Tipo_Id == (int)EventoTipo.AulaExtra) {
-        //        var perfisCognitivos = _db.Evento_Aula_PerfilCognitivo_Rels
-        //            .Where(p => p.Evento_Aula_Id == evento.Id)
-        //            .Include(p => p.PerfilCognitivo)
-        //            .Select(p => p.PerfilCognitivo)
-        //            .ToList();
-
-        //        evento.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(perfisCognitivos);
-        //    }
-        //}
         PopulateCalendarioEvents(calendarioResponse);
 
         // Carrega lista de roteiros no intervalo selecionado
-        List<Roteiro> roteiros = _db.Roteiros.Where(x => x.DataInicio.Date <= request.IntervaloDe.Value.Date && x.DataFim.Date <= request.IntervaloAte.Value.Date).ToList();
+        List<Roteiro> roteiros = _db.Roteiros.ToList();
 
         // Adicionar aulas não instanciadas ao retorno
         DateTime data = request.IntervaloDe.Value;
@@ -566,7 +551,7 @@ public class EventoService : IEventoService {
 
                 // Não usar mais o continue porque o método adiciona outros pseudo eventos
                 if (eventoAula is null) {
-                    var roteiro = roteiros.FirstOrDefault(x => data.Date <= x.DataInicio.Date && data >= x.DataFim);
+                    var roteiro = roteiros.FirstOrDefault(x => data.Date >= x.DataInicio.Date && data.Date <= x.DataFim.Date);
 
                     CalendarioEventoList pseudoAula = new()
                     {
