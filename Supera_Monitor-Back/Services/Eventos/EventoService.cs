@@ -531,7 +531,7 @@ public class EventoService : IEventoService {
             List<Turma> turmasDoDia = turmas.Where(t => t.DiaSemana == (int) data.DayOfWeek).ToList();
 
             foreach (Turma turma in turmasDoDia) {
-                var originalTurmaDatetime = new DateTime(data.Year, data.Month, data.Day, turma.Horario!.Value.Hours, turma.Horario!.Value.Minutes, turma.Horario!.Value.Seconds);
+                var originalTurmaDatetime = new DateTime(data.Year, data.Month, data.Day, turma.Horario!.Value.Hours, turma.Horario!.Value.Minutes, 0);
 
                 // Se a turma já tem uma aula instanciada no mesmo horário, é uma aula repetida, então ignora e passa pra proxima
                 CalendarioEventoList? eventoAula = calendarioResponse.FirstOrDefault(a =>
