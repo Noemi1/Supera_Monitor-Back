@@ -624,22 +624,35 @@ public class EventoService : IEventoService {
         return response.AddDays(6);
     }
 
+    private static ResponseModel ValidateEvent(Evento? evento) {
+        if (evento is null) {
+            return new ResponseModel { Success = false, Message = "Evento não encontrado" };
+        }
+
+        if (evento.Deactivated.HasValue) {
+            return new ResponseModel { Success = false, Message = "Evento está desativado" };
+        }
+
+        if (evento.Finalizado) {
+            return new ResponseModel { Success = false, Message = "Evento já foi finalizado" };
+        }
+
+        return new ResponseModel { Success = true };
+    }
+
     public ResponseModel InsertParticipacao(InsertParticipacaoRequest request) {
         ResponseModel response = new() { Success = false };
 
         try {
-            Evento? evento = _db.Eventos.Include(e => e.Evento_Aula).FirstOrDefault(e => e.Id == request.Evento_Id);
+            Evento? evento = _db.Eventos
+                .Include(e => e.Evento_Aula)
+                .Include(e => e.Evento_Participacao_Alunos)
+                .FirstOrDefault(e => e.Id == request.Evento_Id);
 
-            if (evento is null) {
-                return new ResponseModel { Message = "Evento não encontrado" };
-            }
+            ResponseModel eventValidation = ValidateEvent(evento);
 
-            if (evento.Deactivated.HasValue) {
-                return new ResponseModel { Message = "Evento está desativado" };
-            }
-
-            if (evento.Finalizado) {
-                return new ResponseModel { Message = "Evento já foi finalizado" };
+            if (!eventValidation.Success) {
+                return eventValidation;
             }
 
             Aluno? aluno = _db.Alunos.Find(request.Aluno_Id);
@@ -649,13 +662,13 @@ public class EventoService : IEventoService {
             }
 
             // Se aluno já está inscrito, não deve poder ser inscrito novamente
-            bool alunoIsAlreadyEnrolled = _db.Evento_Participacao_Alunos.Any(a => a.Evento_Id == evento.Id && a.Aluno_Id == aluno.Id);
+            bool alunoIsAlreadyEnrolled = evento!.Evento_Participacao_Alunos.Any(p => p.Aluno_Id == aluno.Id);
 
             if (alunoIsAlreadyEnrolled) {
                 return new ResponseModel { Message = "Aluno já está inscrito neste evento" };
             }
 
-            int amountOfAlunosEnrolled = _db.Evento_Participacao_Alunos.Count(a => a.Evento_Id == evento.Id);
+            int amountOfAlunosEnrolled = evento.Evento_Participacao_Alunos.Count;
 
             switch (evento.Evento_Tipo_Id) {
             case (int) EventoTipo.Aula:
