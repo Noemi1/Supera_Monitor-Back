@@ -1277,7 +1277,7 @@ public class EventoService : IEventoService {
 
                 List<CalendarioEventoList> aulasDoRoteiro = new List<CalendarioEventoList>();
                 if (roteiro.Id == -1)
-                    aulasDoRoteiro = eventos.Where(x => x.Data.Date >= roteiro.DataInicio && x.Data.Date <= roteiro.DataFim).ToList();
+                    aulasDoRoteiro = eventos.Where(x => x.Turma_Id == turma.Id && x.Data.Date >= roteiro.DataInicio && x.Data.Date <= roteiro.DataFim ).ToList();
                 else
                     aulasDoRoteiro = eventos.Where(x => x.Turma_Id == turma.Id && x.Roteiro_Id == roteiro.Id).ToList();
 
