@@ -11,6 +11,7 @@ using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Accounts;
 using Supera_Monitor_Back.Services.Email;
 using Supera_Monitor_Back.Services.Email.Models;
+using Supera_Monitor_Back.Services.Eventos;
 using BC = BCrypt.Net.BCrypt;
 
 namespace Supera_Monitor_Back.Services {
@@ -49,6 +50,7 @@ namespace Supera_Monitor_Back.Services {
             _emailService = emailService;
             _account = (Account?)httpContextAccessor.HttpContext?.Items["Account"];
         }
+
 
 
         #region TESTING

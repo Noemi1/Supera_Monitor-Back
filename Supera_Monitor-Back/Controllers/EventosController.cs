@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using Azure.Core;
 using Microsoft.AspNetCore.Mvc;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
@@ -71,7 +72,7 @@ public class EventosController : _BaseController {
     [HttpPost("calendario")]
     public ActionResult<List<CalendarioEventoList>> GetCalendario(CalendarioRequest request) {
         try {
-            var response = _eventoService.GetCalendario(request);
+            var response =  _eventoService.GetCalendario(request);
 
             return Ok(response);
         }
@@ -419,4 +420,21 @@ public class EventosController : _BaseController {
             return StatusCode(500, e);
         }
     }
+
+    [HttpPost("cancelar-eventos-feriado/{ano}")]
+    public async Task<ActionResult<ResponseModel>> CancelaEventos(int ano)
+    {
+        try
+        {
+            ano = Math.Clamp(ano, 2000, DateTime.Now.Year + 100);
+            var response = await _eventoService.CancelaEventosFeriado(ano);
+            return Ok(response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
+
 }

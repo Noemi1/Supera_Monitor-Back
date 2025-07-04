@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
@@ -8,6 +9,8 @@ using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Eventos;
 using Supera_Monitor_Back.Models.Eventos.Dtos;
 using System.Globalization;
+using System.Reflection.PortableExecutable;
+using System.Text.Json;
 
 namespace Supera_Monitor_Back.Services.Eventos;
 
@@ -32,6 +35,7 @@ public interface IEventoService {
     public ResponseModel RemoveParticipacao(int participacaoId);
 
     public Dashboard Dashboard(DashboardRequest request);
+    public Task<ResponseModel> CancelaEventosFeriado(int ano);
 }
 
 public class EventoService : IEventoService {
@@ -43,7 +47,15 @@ public class EventoService : IEventoService {
     private readonly Account? _account;
     private readonly IHttpContextAccessor? _httpContextAccessor;
 
-    public EventoService(DataContext db, IMapper mapper, IProfessorService professorService, ISalaService salaService, IHttpContextAccessor httpContextAccessor) {
+    private Timer _timer;
+    private readonly TimeSpan _interval = TimeSpan.FromDays(1);
+
+    public EventoService(DataContext db, 
+        IMapper mapper,
+        IProfessorService professorService, 
+        ISalaService salaService, 
+        IHttpContextAccessor httpContextAccessor
+    ) {
         _db = db;
         _mapper = mapper;
         _professorService = professorService;
@@ -356,12 +368,14 @@ public class EventoService : IEventoService {
         return response;
     }
 
-
     public List<CalendarioEventoList> GetCalendario(CalendarioRequest request) {
+
         DateTime now = TimeFunctions.HoraAtualBR();
 
         request.IntervaloDe ??= GetThisWeeksMonday(now); // Se não passar data inicio, considera a segunda-feira da semana atual
         request.IntervaloAte ??= GetThisWeeksSaturday((DateTime) request.IntervaloDe); // Se não passar data fim, considera o sábado da semana da data inicio
+
+        
 
         if (request.IntervaloAte < request.IntervaloDe) {
             throw new Exception("Final do intervalo não pode ser antes do seu próprio início");
@@ -769,7 +783,6 @@ public class EventoService : IEventoService {
         return response;
     }
 
-
     public ResponseModel Cancelar(CancelarEventoRequest request) {
         ResponseModel response = new() { Success = false };
 
@@ -786,7 +799,6 @@ public class EventoService : IEventoService {
             }
 
             // Validations passed
-
             List<Aluno> alunosInEvento = _db.Evento_Participacao_Alunos
                 .Where(p => p.Evento_Id == evento.Id)
                 .Select(p => p.Aluno)
@@ -2289,5 +2301,175 @@ public class EventoService : IEventoService {
         }
 
         return events;
+    }
+
+
+    public async Task<List<FeriadoResponse>> GetFeriados(int ano)
+    {
+
+        string token = "20487|fbPtn71wk6mjsGDWRdU8mGECDlNZhyM7";
+        string url = $"https://api.invertexto.com/v1/holidays/{ano}?token={token}&state=SP";
+        using (HttpClient client = new HttpClient())
+        {
+            try
+            {
+                HttpResponseMessage response = await client.GetAsync(url);
+                //response.EnsureSuccessStatusCode(); // Lança uma exceção para códigos de status de erro
+                string responseContent = await response.Content.ReadAsStringAsync();
+                List<FeriadoResponse> feriados = JsonSerializer.Deserialize<List<FeriadoResponse>>(responseContent);
+                feriados = feriados.OrderBy(x => x.date).ToList();
+                return feriados;
+             
+            }
+            catch (HttpRequestException e)
+            {
+                Console.WriteLine("\nException Caught!");
+                Console.WriteLine("Message :{0} ", e.Message);
+                return new List<FeriadoResponse>() { };
+            }
+        }
+    }
+
+    public async Task<ResponseModel> CancelaEventosFeriado  (int ano)
+    {
+        ResponseModel response = new ResponseModel();
+
+        try
+        {
+            List<FeriadoResponse> feriados = await GetFeriados(ano);
+            List<DateTime> feriadosDates = feriados.Select(x => x.date.Date).ToList();
+            List<int> feriadosDayWeeks = feriadosDates.Select(x => (int)x.DayOfWeek).ToList();
+
+            List<Evento> eventos = _db.Eventos.Where(x => feriadosDates.Contains(x.Data.Date))
+                    .Include(e => e.Evento_Aula)
+                    .Include(e => e.Evento_Participacao_Alunos)
+                        .ThenInclude(e => e.Aluno)
+                        .ThenInclude(e => e.Aluno_Checklist_Items)
+                    .ToList();
+
+
+
+            List<Turma> turmas = _db.Turmas.Where(x => x.Deactivated == null && feriadosDayWeeks.Contains(x.DiaSemana))
+                    .Include(x => x.Turma_PerfilCognitivo_Rels)
+                    .Include(x => x.Alunos)
+                        .ThenInclude(x => x.Aluno_Checklist_Items)
+                    .ToList();
+
+            List<Roteiro> roteiros = _db.Roteiros.Where(x => !x.Deactivated.HasValue).ToList();
+
+
+            foreach (FeriadoResponse feriado in feriados)
+            {
+
+                // Buscar turmas que tem aula nesse dia
+                int dayOfWeek = (int)feriado.date.DayOfWeek;
+                List<Turma> turmasDoFeriado = turmas.Where(t => t.DiaSemana == dayOfWeek).ToList();
+
+                foreach (Turma turma in turmasDoFeriado)
+                {
+                    var evento = eventos.FirstOrDefault(x => x.Data.Date == feriado.date.Date && x.Evento_Aula?.Turma_Id == turma.Id);
+                    if (evento is null)
+                    {
+                        DateTime dataAula = new DateTime(feriado.date.Year, feriado.date.Month, feriado.date.Day, turma.Horario!.Value.Hours, turma.Horario!.Value.Minutes, 0);
+                        Roteiro? roteiroAula = roteiros.FirstOrDefault(x => dataAula.Date >= x.DataInicio.Date && dataAula.Date <= x.DataFim.Date);
+                        Evento pseudoAula = new Evento()
+                        {
+                            Evento_Tipo_Id = (int)EventoTipo.Aula,
+                            Descricao = turma.Nome, // Pseudo aulas ganham o nome da turma
+                            DuracaoMinutos = 120, // As pseudo aulas são de uma turma e duram 2h por padrão
+                            Data = dataAula,
+                            CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
+                            Sala_Id = turma!.Sala_Id!.Value,
+                            Finalizado = false,
+                            Created = DateTime.Now,
+                            Account_Created_Id = _account.Id,
+                            Deactivated = DateTime.Now,
+                            Observacao = $"Cancelamento automático <br> Feriado: {feriado.name}",
+                            Evento_Aula = new Evento_Aula
+                            {
+                                Turma_Id = turma.Id,
+                                Roteiro_Id = roteiroAula?.Id,
+                                Professor_Id = turma!.Professor_Id!.Value,
+                                Evento_Aula_PerfilCognitivo_Rels = turma.Turma_PerfilCognitivo_Rels
+                                                                    .Select(x => new Evento_Aula_PerfilCognitivo_Rel { PerfilCognitivo_Id = x.PerfilCognitivo_Id })
+                                                                    .ToList()
+                            },
+                            Evento_Participacao_Alunos = turma.Alunos.Select(x => new Evento_Participacao_Aluno
+                            {
+                                Aluno_Id = x.Id,
+                                Presente = null,
+                                Observacao = null,
+                                Apostila_Abaco_Id = null,
+                                Apostila_AH_Id = null,
+                                NumeroPaginaAH = null,
+                                NumeroPaginaAbaco = null,
+                                ReposicaoDe_Evento_Id = null
+                            }).ToList(),
+
+                            Evento_Participacao_Professors = new List<Evento_Participacao_Professor> { new Evento_Participacao_Professor {
+                                Professor_Id = turma!.Professor_Id!.Value,
+                                Presente = null,
+                                Observacao = null,
+                                Deactivated = null
+                            } },
+                        };
+
+
+                        _db.Eventos.Add(pseudoAula);
+                    } 
+                    else {
+                        if (evento.Deactivated is null)
+                        {
+                            evento.Deactivated = TimeFunctions.HoraAtualBR();
+                            foreach (var participacao in evento.Evento_Participacao_Alunos)
+                            {
+                                var aluno = participacao.Aluno;
+                                if (aluno.PrimeiraAula_Id == evento.Id || aluno.AulaZero_Id == evento.Id) {
+
+                                    if (aluno.AulaZero_Id == evento.Id) {
+                                        aluno.AulaZero_Id = null;
+                                        var checklist = aluno.Aluno_Checklist_Items.Where(x => x.Checklist_Item_Id == 31 || x.Checklist_Item_Id == 33).ToList();
+                                        foreach (var item in checklist)
+                                        {
+                                            item.Account_Finalizacao_Id = null;
+                                            item.DataFinalizacao = null;
+                                            _db.Update(item);
+                                        }
+                                    }
+                                    if (aluno.PrimeiraAula_Id == evento.Id) {
+                                        aluno.PrimeiraAula_Id = null;
+                                        var checklist = aluno.Aluno_Checklist_Items.Where(x => x.Checklist_Item_Id == 31 || x.Checklist_Item_Id == 33).ToList();
+                                        foreach (var item in checklist)
+                                        {
+                                            item.Account_Finalizacao_Id = null;
+                                            item.DataFinalizacao = null;
+                                            _db.Update(item);
+                                        }
+                                    }
+                                
+                                    _db.Update(aluno);
+                                }
+                            }
+                            _db.Update(evento);
+                        }
+                    }
+                }
+            }
+
+            _db.SaveChanges();
+
+
+
+
+            response.Message = "Eventos cancelados com sucesso";
+            response.Success = true;
+            return response;
+        }
+        catch (HttpRequestException e)
+        {
+            response.Success = false;
+            response.Message = e.Message;
+            return response;
+        }
     }
 }
