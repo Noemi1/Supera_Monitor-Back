@@ -39,7 +39,7 @@ public partial class AlunoList {
 
     public int Unidade_Id { get; set; }
 
-    public int Turma_Id { get; set; }
+    public int? Turma_Id { get; set; }
 
     public string? Turma { get; set; }
 
@@ -88,7 +88,7 @@ public partial class AlunoList {
 
     public int? PerfilCognitivo_Id { get; set; }
 
-    public string PerfilCognitivo { get; set; } = null!;
+    public string? PerfilCognitivo { get; set; }
 
     public string? RM { get; set; }
 
