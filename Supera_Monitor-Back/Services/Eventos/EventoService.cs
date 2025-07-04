@@ -582,12 +582,12 @@ public class EventoService : IEventoService {
                         .OrderBy(a => a.Nome)
                         .ToList();
 
-                    foreach(AlunoList aluno in alunos)
-                    {
-                        CalendarioAlunoList pseudoParticipacao = _mapper.Map<CalendarioAlunoList>(aluno);
+                    //foreach(AlunoList aluno in alunos)
+                    //{
+                    //    CalendarioAlunoList pseudoParticipacao = _mapper.Map<CalendarioAlunoList>(aluno);
 
-                        pseudoAula.Alunos.Add()
-                    }
+                    //    pseudoAula.Alunos.Add()
+                    //}
 
 
                     pseudoAula.Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos)
