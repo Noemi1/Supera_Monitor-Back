@@ -291,7 +291,7 @@ public class AlunoService : IAlunoService {
             response.Success = true;
         }
         catch (Exception ex) {
-            response.Message = "Falha ao registrar aluno: " + ex.ToString();
+            response.Message = "Falha ao registrar aluno";// + ex.ToString();
         }
 
         return response;
@@ -496,7 +496,7 @@ public class AlunoService : IAlunoService {
 
         }
         catch (Exception ex) {
-            response.Message = "Falha ao atualizar aluno: " + ex.ToString();
+            response.Message = "Falha ao atualizar aluno: ";// + ex.ToString();
         }
 
         return response;
@@ -541,7 +541,7 @@ public class AlunoService : IAlunoService {
             response.Object = _db.AlunoLists.AsNoTracking().FirstOrDefault(a => a.Id == aluno.Id);
         }
         catch (Exception ex) {
-            response.Message = "Falha ao ativar/desativar aluno: " + ex.ToString();
+            response.Message = "Falha ao ativar/desativar aluno";// + ex.ToString();
         }
 
         return response;
@@ -562,7 +562,7 @@ public class AlunoService : IAlunoService {
             response.Object = aluno.Aluno_Foto;
         }
         catch (Exception ex) {
-            response.Message = "Falha ao resgatar imagem de perfil do aluno: " + ex.ToString();
+            response.Message = "Falha ao resgatar imagem de perfil do aluno";// + ex.ToString();
         }
 
         return response;
@@ -725,7 +725,7 @@ public class AlunoService : IAlunoService {
             response.Message = "Reposição agendada com sucesso";
         }
         catch (Exception ex) {
-            response.Message = $"Falha ao inserir reposição de aula do aluno: {ex}";
+            response.Message = $"Falha ao inserir reposição de aula do aluno";//: {ex}";
         }
 
         return response;
@@ -793,7 +793,7 @@ public class AlunoService : IAlunoService {
 
         }
         catch (Exception ex) {
-            response.Message = "Falha ao buscar sumário do aluno: " + ex.ToString();
+            response.Message = "Falha ao buscar sumário do aluno ";// + ex.ToString();
         }
 
         return response;
@@ -911,7 +911,7 @@ public class AlunoService : IAlunoService {
             response.Message = "Primeira aula agendada com sucesso";
         }
         catch (Exception ex) {
-            response.Message = $"Falha ao inserir primeira aula do aluno: {ex}";
+            response.Message = $"Falha ao inserir primeira aula do aluno";// : {ex}";
         }
 
         return response;
