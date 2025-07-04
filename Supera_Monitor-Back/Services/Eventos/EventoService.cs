@@ -527,7 +527,9 @@ public class EventoService : IEventoService {
                 }
             }
 
+            //
             // Adicionar aulas da turma do dia que ainda não foram instanciadas
+            //
             List<Turma> turmasDoDia = turmas.Where(t => t.DiaSemana == (int) data.DayOfWeek).ToList();
 
             foreach (Turma turma in turmasDoDia) {
@@ -571,6 +573,7 @@ public class EventoService : IEventoService {
                         Andar = turma?.Sala?.Andar,
                     };
 
+
                     // Em pseudo-aulas, adicionar só os alunos da turma original após o início de sua vigência
                     List<AlunoList> alunos = alunosFromTurmas
                         .Where(
@@ -579,7 +582,16 @@ public class EventoService : IEventoService {
                         .OrderBy(a => a.Nome)
                         .ToList();
 
-                    pseudoAula.Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos).OrderBy(a => a.Aluno).ToList();
+                    foreach(AlunoList aluno in alunos)
+                    {
+                        CalendarioAlunoList pseudoParticipacao = _mapper.Map<CalendarioAlunoList>(aluno);
+
+                        pseudoAula.Alunos.Add()
+                    }
+
+
+                    pseudoAula.Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos)
+                        .OrderBy(a => a.Aluno).ToList();
 
                     pseudoAula.Professores.Add(new CalendarioProfessorList {
                         Id = null,

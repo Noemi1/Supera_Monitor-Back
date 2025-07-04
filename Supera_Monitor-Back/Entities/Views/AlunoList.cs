@@ -64,6 +64,7 @@ public partial class AlunoList {
     public DateTime? LastUpdated { get; set; }
 
     public DateTime? Deactivated { get; set; }
+    public bool Active => !Deactivated.HasValue;
 
     public string AspNetUsers_Created_Id { get; set; } = null!;
 
@@ -95,7 +96,6 @@ public partial class AlunoList {
 
     public string? SenhaApp { get; set; }
 
-    public bool Active => !Deactivated.HasValue;
     public string? LinkGrupo { get; set; }
 
 
