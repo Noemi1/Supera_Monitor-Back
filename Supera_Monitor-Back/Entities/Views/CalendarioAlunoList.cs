@@ -63,6 +63,8 @@ public partial class CalendarioAlunoList {
 
     public DateTime? Deactivated { get; set; }
 
+    public bool Active => !Deactivated.HasValue;
+
     public int? PerfilCognitivo_Id { get; set; }
 
     public string PerfilCognitivo { get; set; } = null!;

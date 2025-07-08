@@ -12,4 +12,5 @@ public partial class AlunoRestricaoList {
     public DateTime Created { get; set; }
 
     public DateTime? Deactivated { get; set; }
+    public bool Active => !Deactivated.HasValue;
 }

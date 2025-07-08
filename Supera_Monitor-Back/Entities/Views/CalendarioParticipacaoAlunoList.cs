@@ -18,6 +18,7 @@ public partial class CalendarioParticipacaoAlunoList {
     public string? Apostila_AH { get; set; }
     public int? ReposicaoDe_Evento_Id { get; set; }
     public DateTime? Deactivated { get; set; }
+    public bool Active => !Deactivated.HasValue;
     public string? Observacao { get; set; }
     public DateTime Data { get; set; }
     public int Evento_Tipo_Id { get; set; }

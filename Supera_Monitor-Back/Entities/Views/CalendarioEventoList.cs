@@ -58,7 +58,7 @@ public partial class CalendarioEventoList {
 
     public string? Account_Created { get; set; }
 
-    public bool IsActive => Deactivated == null;
+    public bool Active => Deactivated == null;
 
     public virtual ICollection<CalendarioAlunoList> Alunos { get; set; } = new List<CalendarioAlunoList>();
 

@@ -211,7 +211,7 @@ public class AlunoService : IAlunoService {
             response.Success = true;
         }
         catch (Exception ex) {
-            response.Message = "Falha ao registrar aluno: " + ex.ToString();
+            response.Message = "Falha ao registrar aluno";// + ex.ToString();
         }
 
         return response;
@@ -233,10 +233,10 @@ public class AlunoService : IAlunoService {
                 return new ResponseModel { Message = "Aluno não encontrado" };
             }
 
-            Aluno? oldObject = _db.Alunos.AsNoTracking().FirstOrDefault(a => a.Id == model.Id);
+            AlunoList? oldObject = _db.AlunoLists.AsNoTracking().FirstOrDefault(a => a.Id == model.Id);
 
             if (oldObject is null) {
-                return new ResponseModel { Message = "Aluno original não encontrado" };
+                return new ResponseModel { Message = "Aluno não encontrado" };
             }
 
             // Não deve ser possível atualizar um aluno com um perfil cognitivo que não existe
@@ -249,24 +249,24 @@ public class AlunoService : IAlunoService {
             // Aluno só pode ser operado em atualizações ou troca de turma se for uma turma válida
             Turma? turmaDestino = _db.Turmas.FirstOrDefault(t => t.Id == model.Turma_Id);
 
-            if (turmaDestino is null) {
+            if (turmaDestino is null && model.Turma_Id.HasValue) {
                 return new ResponseModel { Message = "Turma não encontrada" };
             }
 
-            bool isSwitchingTurma = aluno.Turma_Id != turmaDestino.Id;
+            bool isSwitchingTurma = aluno.Turma_Id != model.Turma_Id;
 
             // Se aluno estiver trocando de turma, deve-se garantir que a turma destino tem espaço disponível
             // Não considera reposição, pois não estamos olhando para uma aula específica
-            if (isSwitchingTurma) {
+            if (isSwitchingTurma && model.Turma_Id.HasValue) {
                 int amountOfAlunosInTurma = _db.Alunos.Count(a => a.Turma_Id == turmaDestino.Id && a.Deactivated == null);
 
                 if (amountOfAlunosInTurma >= turmaDestino.CapacidadeMaximaAlunos) {
                     return new ResponseModel { Message = "Turma já está em sua capacidade máxima" };
                 }
-            }
-
+            } 
+        
             // O aluno só pode receber um kit que esteja cadastrado ou nulo
-            if (model.Apostila_Kit_Id is not null) {
+            if (model.Apostila_Kit_Id is not null && model.Apostila_Kit_Id.HasValue) {
                 bool apostilaKitExists = _db.Apostila_Kits.Any(k => k.Id == model.Apostila_Kit_Id);
 
                 if (!apostilaKitExists) {
@@ -284,22 +284,21 @@ public class AlunoService : IAlunoService {
 
             // Garantir que RM é unico pra cada aluno
             bool rmIsAlreadyTaken = _db.Alunos.Any(a => a.RM == model.RM && a.Id != model.Id);
-
             if (rmIsAlreadyTaken) {
                 return new ResponseModel { Message = "RM já existe" };
             }
 
-            Evento? aulaZero = _db.Eventos.Find(model.AulaZero_Id);
+            //Evento? aulaZero = _db.Eventos.Find(model.AulaZero_Id);
 
-            if (model.AulaZero_Id.HasValue && aulaZero is null) {
-                return new ResponseModel { Message = "Aula zero não encontrada" };
-            }
+            //if (model.AulaZero_Id.HasValue && aulaZero is null) {
+            //    return new ResponseModel { Message = "Aula zero não encontrada" };
+            //}
 
-            Evento? primeiraAula = _db.Eventos.Find(model.PrimeiraAula_Id);
+            //Evento? primeiraAula = _db.Eventos.Find(model.PrimeiraAula_Id);
 
-            if (model.PrimeiraAula_Id.HasValue && primeiraAula is null) {
-                return new ResponseModel { Message = "Primeira aula não encontrada" };
-            }
+            //if (model.PrimeiraAula_Id.HasValue && primeiraAula is null) {
+            //    return new ResponseModel { Message = "Primeira aula não encontrada" };
+            //}
 
             // Validations passed
 
@@ -340,7 +339,7 @@ public class AlunoService : IAlunoService {
              * 3. Criar uma entidade em Aluno_Historico como 'log' da mudança
             */
 
-            if (isSwitchingTurma) {
+            if (isSwitchingTurma && model.Turma_Id.HasValue) {
                 List<Evento> eventosTurmaOriginal = _db.Eventos
                     .Include(e => e.Evento_Aula)
                     .Where(e =>
@@ -383,7 +382,6 @@ public class AlunoService : IAlunoService {
 
                     // Aula não deve registrar aluno se estiver em sua capacidade máxima e nesse caso, -> considera os alunos de reposição <-
                     int amountOfAlunosInAula = evento.Evento_Participacao_Alunos.Count(p => p.Deactivated == null);
-
                     if (amountOfAlunosInAula >= evento.CapacidadeMaximaAlunos) {
                         continue;
                     }
@@ -394,21 +392,31 @@ public class AlunoService : IAlunoService {
                 _db.Aluno_Historicos.Add(new Aluno_Historico
                 {
                     Aluno_Id = aluno.Id,
-                    Descricao = $"Aluno foi transferido da turma ID: '{oldObject?.Turma_Id}' para a turma ID: '{aluno.Turma_Id}'",
+                    Descricao = $"Aluno foi transferido da turma: '{oldObject?.Turma}' para a turma : '{aluno.Turma.Nome}'",
                     Account_Id = _account!.Id,
                     Data = TimeFunctions.HoraAtualBR(),
                 });
             }
-
+            else if (isSwitchingTurma)
+            {
+                _db.Aluno_Historicos.Add(new Aluno_Historico
+                {
+                    Aluno_Id = aluno.Id,
+                    Descricao = $"Aluno foi removido da turma: '{oldObject?.Turma}'.",
+                    Account_Id = _account!.Id,
+                    Data = TimeFunctions.HoraAtualBR(),
+                });
+            }
             _db.SaveChanges();
 
             response.Message = "Aluno atualizado com sucesso";
             response.OldObject = oldObject;
             response.Object = _db.AlunoLists.AsNoTracking().FirstOrDefault(aluno => aluno.Id == model.Id);
             response.Success = true;
+
         }
         catch (Exception ex) {
-            response.Message = "Falha ao atualizar aluno: " + ex.ToString();
+            response.Message = "Falha ao atualizar aluno: ";// + ex.ToString();
         }
 
         return response;
@@ -453,7 +461,7 @@ public class AlunoService : IAlunoService {
             response.Object = _db.AlunoLists.AsNoTracking().FirstOrDefault(a => a.Id == aluno.Id);
         }
         catch (Exception ex) {
-            response.Message = "Falha ao ativar/desativar aluno: " + ex.ToString();
+            response.Message = "Falha ao ativar/desativar aluno";// + ex.ToString();
         }
 
         return response;
@@ -474,7 +482,7 @@ public class AlunoService : IAlunoService {
             response.Object = aluno.Aluno_Foto;
         }
         catch (Exception ex) {
-            response.Message = "Falha ao resgatar imagem de perfil do aluno: " + ex.ToString();
+            response.Message = "Falha ao resgatar imagem de perfil do aluno";// + ex.ToString();
         }
 
         return response;
@@ -637,7 +645,7 @@ public class AlunoService : IAlunoService {
             response.Message = "Reposição agendada com sucesso";
         }
         catch (Exception ex) {
-            response.Message = $"Falha ao inserir reposição de aula do aluno: {ex}";
+            response.Message = $"Falha ao inserir reposição de aula do aluno";//: {ex}";
         }
 
         return response;
@@ -705,7 +713,7 @@ public class AlunoService : IAlunoService {
 
         }
         catch (Exception ex) {
-            response.Message = "Falha ao buscar sumário do aluno: " + ex.ToString();
+            response.Message = "Falha ao buscar sumário do aluno ";// + ex.ToString();
         }
 
         return response;
@@ -823,7 +831,7 @@ public class AlunoService : IAlunoService {
             response.Message = "Primeira aula agendada com sucesso";
         }
         catch (Exception ex) {
-            response.Message = $"Falha ao inserir primeira aula do aluno: {ex}";
+            response.Message = $"Falha ao inserir primeira aula do aluno";// : {ex}";
         }
 
         return response;

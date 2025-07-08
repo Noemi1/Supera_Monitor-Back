@@ -39,7 +39,7 @@ public partial class AlunoList {
 
     public int Unidade_Id { get; set; }
 
-    public int Turma_Id { get; set; }
+    public int? Turma_Id { get; set; }
 
     public string? Turma { get; set; }
 
@@ -64,6 +64,7 @@ public partial class AlunoList {
     public DateTime? LastUpdated { get; set; }
 
     public DateTime? Deactivated { get; set; }
+    public bool Active => !Deactivated.HasValue;
 
     public string AspNetUsers_Created_Id { get; set; } = null!;
 
@@ -87,7 +88,7 @@ public partial class AlunoList {
 
     public int? PerfilCognitivo_Id { get; set; }
 
-    public string PerfilCognitivo { get; set; } = null!;
+    public string? PerfilCognitivo { get; set; }
 
     public string? RM { get; set; }
 
@@ -95,7 +96,6 @@ public partial class AlunoList {
 
     public string? SenhaApp { get; set; }
 
-    public bool Active => !Deactivated.HasValue;
     public string? LinkGrupo { get; set; }
 
 
