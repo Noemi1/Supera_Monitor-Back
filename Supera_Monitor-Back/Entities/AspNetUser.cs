@@ -34,4 +34,7 @@ public partial class AspNetUser {
     public string? EmailSenha { get; set; }
 
     public int? Cliente_Id { get; set; }
+
+	public virtual ICollection<Aluno_Historico> Aluno_Historicos { get; set; } = new List<Aluno_Historico>();
+
 }

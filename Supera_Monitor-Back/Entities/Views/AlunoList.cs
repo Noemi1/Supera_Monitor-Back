@@ -11,7 +11,7 @@ public partial class AlunoList {
 
     public string? Checklist { get; set; }
 
-    public DateTime? DataInicioVigencia { get; set; }
+    public DateTime DataInicioVigencia { get; set; }
 
     public DateTime? DataFimVigencia { get; set; }
 
@@ -90,7 +90,7 @@ public partial class AlunoList {
 
     public string? PerfilCognitivo { get; set; }
 
-    public string? RM { get; set; }
+    public string RM { get; set; } = string.Empty;
 
     public string? LoginApp { get; set; }
 

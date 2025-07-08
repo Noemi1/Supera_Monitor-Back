@@ -22,7 +22,7 @@ public interface IAlunoService {
     ResponseModel GetSummaryByAluno(int alunoId);
     List<ApostilaList> GetApostilasByAluno(int alunoId);
 
-    List<AlunoHistoricoModel> GetHistoricoById(int alunoId);
+	List<AlunoHistoricoList> GetHistoricoById(int alunoId);
 
     ResponseModel Reposicao(ReposicaoRequest model);
     ResponseModel PrimeiraAula(PrimeiraAulaRequest model);
@@ -148,14 +148,9 @@ public class AlunoService : IAlunoService {
             Random RNG = new();
             string randomRM;
 
-            List<string> existingRMS = _db.Alunos
-                .Where(a => a.RM != null)
-                .Select(a => a.RM!)
-                .ToList();
-
             do {
                 randomRM = RNG.Next(0, 100000).ToString("D5");
-            } while (existingRMS.Any(rm => rm == randomRM));
+            } while (_db.Alunos.Any(x => x.RM == randomRM));
 
             Aluno aluno = new()
             {
@@ -200,7 +195,8 @@ public class AlunoService : IAlunoService {
             {
                 Aluno_Id = aluno.Id,
                 Descricao = "Aluno cadastrado",
-                Account_Id = _account!.Id,
+                AspNetUser_Id = model.AspNetUsers_Created_Id,
+				Account_Id = _account?.Id,
                 Data = TimeFunctions.HoraAtualBR(),
             });
 
@@ -719,13 +715,14 @@ public class AlunoService : IAlunoService {
         return response;
     }
 
-    public List<AlunoHistoricoModel> GetHistoricoById(int alunoId) {
-        var historicos = _db.Aluno_Historicos
-            .Where(h => h.Aluno_Id == alunoId)
+    public List<AlunoHistoricoList> GetHistoricoById(int alunoId) {
+		List<AlunoHistoricoList> historicos = _db.AlunoHistoricoList
+			.Where(h => h.Aluno_Id == alunoId)
             .ToList();
 
-        return _mapper.Map<List<AlunoHistoricoModel>>(historicos);
-    }
+		return historicos;
+
+	}
 
     public List<AlunoChecklistItemList> GetAlunoChecklistItemList(AlunoRequest request) {
         IQueryable<AlunoChecklistItemList> listQueryable = _db.AlunoChecklistItemLists

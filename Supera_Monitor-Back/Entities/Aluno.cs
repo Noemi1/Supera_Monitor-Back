@@ -19,7 +19,7 @@ public partial class Aluno {
 
     public int? Apostila_Kit_Id { get; set; }
 
-    public DateTime? DataInicioVigencia { get; set; }
+    public DateTime DataInicioVigencia { get; set; }
 
     public DateTime? DataFimVigencia { get; set; }
 
@@ -29,7 +29,7 @@ public partial class Aluno {
 
     public string? SenhaApp { get; set; }
 
-    public string? RM { get; set; }
+	public string RM { get; set; } = string.Empty;
 
     public int? Apostila_Abaco_Id { get; set; }
 

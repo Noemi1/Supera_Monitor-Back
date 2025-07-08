@@ -47,8 +47,6 @@ public class EventoService : IEventoService {
     private readonly Account? _account;
     private readonly IHttpContextAccessor? _httpContextAccessor;
 
-    private Timer _timer;
-    private readonly TimeSpan _interval = TimeSpan.FromDays(1);
 
     public EventoService(DataContext db, 
         IMapper mapper,
@@ -591,18 +589,10 @@ public class EventoService : IEventoService {
                     // Em pseudo-aulas, adicionar só os alunos da turma original após o início de sua vigência
                     List<AlunoList> alunos = alunosFromTurmas
                         .Where(
-                            a => a.Turma_Id == turma.Id
-                            && a.DataInicioVigencia.Value.Date <= data.Date)
+                            a => a.Turma_Id == turma!.Id
+                            && a.DataInicioVigencia.Date <= data.Date)
                         .OrderBy(a => a.Nome)
                         .ToList();
-
-                    //foreach(AlunoList aluno in alunos)
-                    //{
-                    //    CalendarioAlunoList pseudoParticipacao = _mapper.Map<CalendarioAlunoList>(aluno);
-
-                    //    pseudoAula.Alunos.Add()
-                    //}
-
 
                     pseudoAula.Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos)
                         .OrderBy(a => a.Aluno).ToList();
@@ -610,8 +600,8 @@ public class EventoService : IEventoService {
                     pseudoAula.Professores.Add(new CalendarioProfessorList {
                         Id = null,
                         Evento_Id = pseudoAula.Id,
-                        Professor_Id = (int) turma.Professor_Id,
-                        Nome = turma.Professor.Account.Name,
+                        Professor_Id = (int) turma!.Professor_Id!,
+                        Nome = turma!.Professor!.Account.Name,
                         CorLegenda = turma.Professor.CorLegenda,
                         Presente = null,
                         Observacao = "",
@@ -1348,7 +1338,7 @@ public class EventoService : IEventoService {
                         CapacidadeMaximaAlunos = turma?.CapacidadeMaximaAlunos ?? 12,
                     };
 
-                    List<AlunoList> alunosTurma = alunos.Where(x => x.Turma_Id == turma.Id).ToList();
+                    List<AlunoList> alunosTurma = alunos.Where(x => x.Turma_Id == turma!.Id).ToList();
 
                     foreach (AlunoList aluno in alunosTurma) {
                         Dashboard_Participacao pseudoParticipacao = new() {
@@ -1369,7 +1359,7 @@ public class EventoService : IEventoService {
                         // Se estiver no invervalo do Roteiro
                         bool intervaloRoteiro = data >= roteiro.DataInicio.Date && data <= roteiro.DataFim.Date;
                         // Se o aluno estiver vigente naquela data
-                        bool alunoVigente = (aluno.DataInicioVigencia.HasValue && date >= aluno.DataInicioVigencia.Value.Date) && (!aluno.DataFimVigencia.HasValue || date <= aluno.DataFimVigencia.Value.Date);
+                        bool alunoVigente = (date >= aluno.DataInicioVigencia.Date) && (!aluno.DataFimVigencia.HasValue || date <= aluno.DataFimVigencia.Value.Date);
 
                         Dashboard_Aula_Participacao aula = new() {
                             Participacao = pseudoParticipacao,
@@ -2316,8 +2306,8 @@ public class EventoService : IEventoService {
                 HttpResponseMessage response = await client.GetAsync(url);
                 //response.EnsureSuccessStatusCode(); // Lança uma exceção para códigos de status de erro
                 string responseContent = await response.Content.ReadAsStringAsync();
-                List<FeriadoResponse> feriados = JsonSerializer.Deserialize<List<FeriadoResponse>>(responseContent);
-                feriados = feriados.OrderBy(x => x.date).ToList();
+                List<FeriadoResponse>? feriados = JsonSerializer.Deserialize<List<FeriadoResponse>>(responseContent);
+                feriados = feriados!.OrderBy(x => x.date).ToList();
                 return feriados;
              
             }
@@ -2382,7 +2372,7 @@ public class EventoService : IEventoService {
                             Sala_Id = turma!.Sala_Id!.Value,
                             Finalizado = false,
                             Created = DateTime.Now,
-                            Account_Created_Id = _account.Id,
+                            Account_Created_Id = _account!.Id,
                             Deactivated = DateTime.Now,
                             Observacao = $"Cancelamento automático <br> Feriado: {feriado.name}",
                             Evento_Aula = new Evento_Aula

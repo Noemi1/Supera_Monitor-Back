@@ -132,6 +132,7 @@ public partial class DataContext : DbContext {
     public virtual DbSet<TurmaList> TurmaLists { get; set; }
 
     public virtual DbSet<Turma_PerfilCognitivo_Rel> Turma_PerfilCognitivo_Rels { get; set; }
+    public virtual DbSet<AlunoHistoricoList> AlunoHistoricoList { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         if (!optionsBuilder.IsConfigured) { // Se já estiver configurado, não configura de novo (Testes realizam injeção de dependências)
@@ -417,12 +418,19 @@ public partial class DataContext : DbContext {
             entity.Property(e => e.Data).HasColumnType("datetime");
             entity.Property(e => e.Descricao).IsUnicode(false);
 
-            entity.HasOne(d => d.Account).WithMany(p => p.Aluno_Historicos)
-                .HasForeignKey(d => d.Account_Id)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Aluno_Historico_Account");
+			entity.HasOne(d => d.Account)
+				.WithMany(p => p.Aluno_Historicos)
+				.HasForeignKey(d => d.Account_Id)
+				.OnDelete(DeleteBehavior.ClientSetNull)
+				.HasConstraintName("FK_Aluno_Historico_Account");
 
-            entity.HasOne(d => d.Aluno).WithMany(p => p.Aluno_Historicos)
+			entity.HasOne(d => d.AspNetUser)
+				.WithMany(p => p.Aluno_Historicos)
+				.HasForeignKey(d => d.AspNetUser_Id)
+				.OnDelete(DeleteBehavior.ClientSetNull);
+
+			entity.HasOne(d => d.Aluno)
+			.WithMany(p => p.Aluno_Historicos)
                 .HasForeignKey(d => d.Aluno_Id)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Aluno_Historico_Aluno");

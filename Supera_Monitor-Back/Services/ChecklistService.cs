@@ -184,11 +184,7 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Aluno não encontrado" };
                 }
 
-                // Se o aluno não tiver uma data de início de vigencia, não será possível calcular os prazos
-                if (aluno.DataInicioVigencia is null) {
-                    return new ResponseModel { Message = "Aluno deve possuir uma data de início de vigência para calcular os prazos das atividades" };
-                }
-
+            
                 // Buscar todos os itens da checklist não desativados
                 List<Checklist_Item> checklistItems = _db.Checklist_Items.Where(c => c.Deactivated == null).ToList();
 
@@ -207,7 +203,7 @@ namespace Supera_Monitor_Back.Services {
 						int semana = checklists.FirstOrDefault(c => c.Id == item.Checklist_Id)?.NumeroSemana ?? 0;
 
 						// Obtém a data de início do aluno
-						DateTime dataInicio = aluno.DataInicioVigencia.Value;
+						DateTime dataInicio = aluno.DataInicioVigencia;
 
 						// Calcula quantos dias faltam para o próximo domingo após a data de início
 						int diasAteDomingo = ((int)DayOfWeek.Sunday - (int)dataInicio.DayOfWeek + 7) % 7;
