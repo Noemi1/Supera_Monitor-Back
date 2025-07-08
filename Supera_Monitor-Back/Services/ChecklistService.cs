@@ -170,20 +170,18 @@ namespace Supera_Monitor_Back.Services {
             return response;
         }
 
+
         public ResponseModel PopulateAlunoChecklist(int alunoId)
         {
             ResponseModel response = new() { Success = false };
 
             try {
-                Aluno? aluno = _db.Alunos.Find(alunoId);
+                Aluno? aluno = _db.Alunos
+					.Include(x => x.Aluno_Checklist_Items)
+					.FirstOrDefault(x => x.Id == alunoId);
 
                 if (aluno is null) {
                     return new ResponseModel { Message = "Aluno não encontrado" };
-                }
-
-                // Se a checklist do aluno já está populada, não popular novamente
-                if (_db.Aluno_Checklist_Items.Any(c => c.Id == aluno.Id)) {
-                    return new ResponseModel { Message = "Aluno já possui itens na checklist, logo, não foi populado novamente" };
                 }
 
                 // Se o aluno não tiver uma data de início de vigencia, não será possível calcular os prazos
@@ -200,29 +198,36 @@ namespace Supera_Monitor_Back.Services {
 
                 // Para cada um, adicionar na checklist do aluno
                 foreach (Checklist_Item item in checklistItems) {
-                    // Obtém o número da semana da tarefa, padrão 0 se não encontrado
-                    int semana = checklists.FirstOrDefault(c => c.Id == item.Checklist_Id)?.NumeroSemana ?? 0;
 
-                    // Obtém a data de início do aluno
-                    DateTime dataInicio = ( DateTime )aluno.DataInicioVigencia;
+					Aluno_Checklist_Item? existe = aluno.Aluno_Checklist_Items
+													.FirstOrDefault(x => x.Checklist_Item_Id == item.Id);
+					if (existe == null)
+					{
+						// Obtém o número da semana da tarefa, padrão 0 se não encontrado
+						int semana = checklists.FirstOrDefault(c => c.Id == item.Checklist_Id)?.NumeroSemana ?? 0;
 
-                    // Calcula quantos dias faltam para o próximo domingo após a data de início
-                    int diasAteDomingo = (( int )DayOfWeek.Sunday - ( int )dataInicio.DayOfWeek + 7) % 7;
+						// Obtém a data de início do aluno
+						DateTime dataInicio = aluno.DataInicioVigencia.Value;
 
-                    // Determina o primeiro domingo a partir da data de início
-                    DateTime primeiroDomingo = dataInicio.AddDays(diasAteDomingo);
+						// Calcula quantos dias faltam para o próximo domingo após a data de início
+						int diasAteDomingo = ((int)DayOfWeek.Sunday - (int)dataInicio.DayOfWeek + 7) % 7;
 
-                    // Calcula o prazo final da tarefa (domingo da semana correspondente)
-                    DateTime prazo = primeiroDomingo.AddDays(7 * (semana + 1));
+						// Determina o primeiro domingo a partir da data de início
+						DateTime primeiroDomingo = dataInicio.AddDays(diasAteDomingo);
 
-                    // Adiciona o item à checklist do aluno
-                    alunoChecklist.Add(new() {
-                        Aluno_Id = aluno.Id,
-                        Prazo = prazo,
-                        Checklist_Item_Id = item.Id,
-                        DataFinalizacao = null,
-                        Account_Finalizacao_Id = null,
-                    });
+						// Calcula o prazo final da tarefa (domingo da semana correspondente)
+						DateTime prazo = primeiroDomingo.AddDays(7 * (semana + 1));
+
+						// Adiciona o item à checklist do aluno
+						alunoChecklist.Add(new()
+						{
+							Aluno_Id = aluno.Id,
+							Prazo = prazo,
+							Checklist_Item_Id = item.Id,
+							DataFinalizacao = null,
+							Account_Finalizacao_Id = null,
+						});
+					}
                 }
 
                 _db.Aluno_Checklist_Items.AddRange(alunoChecklist);
@@ -230,6 +235,7 @@ namespace Supera_Monitor_Back.Services {
 
                 response.Success = true;
                 response.Message = "Itens da checklist do aluno foram populados com sucesso";
+
             } catch (Exception ex) {
                 response.Message = "Falha ao popular checklist do aluno: " + ex.ToString();
             }

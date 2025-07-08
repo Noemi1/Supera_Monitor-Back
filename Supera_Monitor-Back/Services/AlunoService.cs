@@ -127,57 +127,21 @@ public class AlunoService : IAlunoService {
 
             // Aluno só pode ser cadastrado se tiver status matriculado
             if (pessoa.Pessoa_Status_Id != (int)PessoaStatus.Matriculado) {
-                return new ResponseModel { Message = "Pessoa não está matriculada" };
+                return new ResponseModel { Message = "Aluno não está matriculado" };
             }
 
-            // Aluno só pode ser cadastrado se tiver Unidade_Id = 1 (dev)
+            // Aluno só pode ser cadastrado se tiver Unidade_Id = 1 (Supera Brigadeiro)
             if (pessoa.Unidade_Id != 1) {
-                return new ResponseModel { Message = "Pessoa não tem Unidade_Id = 1" };
+                return new ResponseModel { Message = "Pessoa não pertence a uma unidade cadastrada" };
             }
 
             // Só pode ser cadastrado um aluno por pessoa
             bool alunoAlreadyRegistered = _db.Alunos.Any(a => a.Pessoa_Id == model.Pessoa_Id);
 
             if (alunoAlreadyRegistered) {
-                return new ResponseModel { Message = "Pessoa já tem um aluno cadastrado em seu nome" };
+                return new ResponseModel { Message = "Aluno já matriculado." };
             }
-
-            // Aluno não deve poder ser cadastrado em uma turma inválida, mas deve poder ser cadastrado sem turma
-            Turma? turmaDestino = _db.Turmas
-                .Include(t => t.Alunos)
-                .FirstOrDefault(t => t.Id == model.Turma_Id);
-
-            if (turmaDestino is null) {
-                if (model.Turma_Id.HasValue) {
-                    return new ResponseModel { Message = "Turma não encontrada" };
-                }
-            }
-
-            // Se turma existir, não pode estar cheia
-            if (turmaDestino is not null) {
-                int amountOfAlunosInTurmaDestino = turmaDestino.Alunos.Count;
-
-                if (amountOfAlunosInTurmaDestino >= turmaDestino.CapacidadeMaximaAlunos) {
-                    return new ResponseModel { Message = "Turma já está em sua capacidade máxima" };
-                }
-            }
-
-            // O aluno não pode receber um kit que não existe, mas pode receber kit nulo
-            if (model.Apostila_Kit_Id is not null) {
-                bool apostilaKitExists = _db.Apostila_Kits.Any(k => k.Id == model.Apostila_Kit_Id);
-
-                if (!apostilaKitExists) {
-                    return new ResponseModel { Message = "Não é possível inserir um aluno com um kit que não existe" };
-                }
-            }
-
-            // Não deve ser possível inserir um aluno com um perfil cognitivo que não existe
-            bool perfilCognitivoExists = _db.PerfilCognitivos.Any(p => p.Id == model.PerfilCognitivo_Id);
-
-            if (!perfilCognitivoExists) {
-                return new ResponseModel { Message = "Não é possível inserir um aluno com um perfil cognitivo que não existe" };
-            }
-
+         
             // Validations passed
 
             // quando chegar o dia que isso dê pau, me perdoe. só deus sabe como tá a mente do palhaço
@@ -193,87 +157,43 @@ public class AlunoService : IAlunoService {
                 randomRM = RNG.Next(0, 100000).ToString("D5");
             } while (existingRMS.Any(rm => rm == randomRM));
 
-            // Coletar as primeiras apostilas Abaco e Ah do kit do aluno
-            var primeiraApostilaAbaco = _db.Apostila_Kit_Rels
-                .Include(a => a.Apostila)
-                .FirstOrDefault(a =>
-                    a.Apostila_Kit_Id == model.Apostila_Kit_Id
-                    && a.Apostila.Apostila_Tipo_Id == (int)ApostilaTipo.Abaco
-                    && a.Apostila.Ordem == 1);
-
-            var primeiraApostilaAh = _db.Apostila_Kit_Rels
-                .Include(a => a.Apostila)
-                .FirstOrDefault(a =>
-                    a.Apostila_Kit_Id == model.Apostila_Kit_Id
-                    && a.Apostila.Apostila_Tipo_Id == (int)ApostilaTipo.AH
-                    && a.Apostila.Ordem == 1);
-
             Aluno aluno = new()
             {
-                Aluno_Foto = model.Aluno_Foto,
-                DataInicioVigencia = model.DataInicioVigencia,
-                DataFimVigencia = model.DataFimVigencia,
-                RestricaoMobilidade = model.RestricaoMobilidade,
 
-                Apostila_Kit_Id = model.Apostila_Kit_Id,
-                Apostila_Abaco_Id = primeiraApostilaAbaco?.Apostila_Id,
-                NumeroPaginaAbaco = primeiraApostilaAbaco is not null ? 0 : null,
-                Apostila_AH_Id = primeiraApostilaAh?.Apostila_Id,
-                NumeroPaginaAH = primeiraApostilaAh is not null ? 0 : null,
-
-                RM = randomRM.ToString(),
-                LoginApp = pessoa.Email ?? $"{randomRM}@supera",
-                SenhaApp = "Supera@123",
-
-                Turma_Id = turmaDestino?.Id,
-                Pessoa_Id = model.Pessoa_Id,
-                PerfilCognitivo_Id = model.PerfilCognitivo_Id,
+				Pessoa_Id = model.Pessoa_Id,
                 AspNetUsers_Created_Id = model.AspNetUsers_Created_Id,
-
                 Created = TimeFunctions.HoraAtualBR(),
                 LastUpdated = null,
                 Deactivated = null,
 
-                AulaZero_Id = null,
-                PrimeiraAula_Id = null,
-            };
+				RM = randomRM.ToString(),
+				LoginApp = pessoa.Email ?? $"{randomRM}@supera",
+				SenhaApp = "Supera@123",
 
-            _db.Add(aluno);
+				DataInicioVigencia = DateTime.Now,
+				DataFimVigencia = null,
+				Turma_Id = null,
+				PerfilCognitivo_Id = null,
+				AulaZero_Id = null,
+				PrimeiraAula_Id = null,
+				Aluno_Foto = null,
+				RestricaoMobilidade = null,
+
+				Apostila_Kit_Id = null,
+				Apostila_Abaco_Id = null,
+				NumeroPaginaAbaco = null,
+				Apostila_AH_Id = null,
+				NumeroPaginaAH = null,
+
+			};
+
+            _db.Alunos.Add(aluno);
             _db.SaveChanges();
 
             ResponseModel populateChecklistResponse = _checklistService.PopulateAlunoChecklist(aluno.Id);
 
             if (!populateChecklistResponse.Success) {
                 return populateChecklistResponse;
-            }
-
-            List<Evento> eventoAulasTurmaDestino = _db.Eventos
-                .Include(e => e.Evento_Aula)
-                .Include(e => e.Evento_Participacao_Alunos)
-                .Where(e =>
-                    e.Evento_Aula != null
-                    && e.Data >= TimeFunctions.HoraAtualBR()
-                    && e.Evento_Aula.Turma_Id == aluno.Turma_Id)
-                .OrderBy(e => e.Data)
-                .ToList();
-
-            // Inserir novos registros deste aluno nas aulas futuras da turma destino
-            foreach (Evento evento in eventoAulasTurmaDestino) {
-                // Aula não deve registrar aluno se estiver em sua capacidade máxima e nesse caso, -> considera os alunos de reposição <-
-                var alunosInEventoAula = evento.Evento_Participacao_Alunos
-                    .Count(p => p.Deactivated != null);
-
-                if (alunosInEventoAula >= evento.CapacidadeMaximaAlunos) {
-                    continue;
-                }
-
-                Evento_Participacao_Aluno participacaoAluno = new()
-                {
-                    Aluno_Id = aluno.Id,
-                    Evento_Id = evento.Id,
-                };
-
-                _db.Evento_Participacao_Alunos.Add(participacaoAluno);
             }
 
             _db.Aluno_Historicos.Add(new Aluno_Historico

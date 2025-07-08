@@ -27,7 +27,7 @@ namespace Supera_Monitor_Back.Controllers {
                 return Ok(response);
             }
             catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                // _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
@@ -40,7 +40,7 @@ namespace Supera_Monitor_Back.Controllers {
                 return Ok(response);
             }
             catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                // _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
@@ -53,7 +53,7 @@ namespace Supera_Monitor_Back.Controllers {
                 return Ok(response);
             }
             catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                // _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
@@ -61,18 +61,18 @@ namespace Supera_Monitor_Back.Controllers {
         [HttpPost()]
         public ActionResult<ResponseModel> Insert(CreateAlunoRequest model) {
             try {
-                var response = _alunoService.Insert(model);
+				ResponseModel response = _alunoService.Insert(model);
 
                 if (response.Success) {
                     int alunoId = response.Object!.Id;
-                    _logger.Log("Insert", "Alunos", response, Account?.Id);
+                    // _logger.Log("Insert", "Alunos", response, Account?.Id);
                     return Created(@$"/alunos/{alunoId}", response);
                 }
 
                 return BadRequest(response);
             }
             catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                // _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
@@ -83,14 +83,14 @@ namespace Supera_Monitor_Back.Controllers {
                 var response = _alunoService.Update(model);
 
                 if (response.Success) {
-                    _logger.Log("Update", "Alunos", response, Account?.Id);
+                    // _logger.Log("Update", "Alunos", response, Account?.Id);
                     return Ok(response);
                 }
 
                 return BadRequest(response);
             }
             catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                // _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
@@ -103,14 +103,14 @@ namespace Supera_Monitor_Back.Controllers {
                 if (response.Success) {
                     string action = response.Object!.Deactivated is null ? "Enable" : "Disable";
 
-                    _logger.Log(action, "Alunos", response, Account?.Id);
+                    // _logger.Log(action, "Alunos", response, Account?.Id);
                     return Ok(response);
                 }
 
                 return BadRequest(response);
             }
             catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                // _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
@@ -123,7 +123,7 @@ namespace Supera_Monitor_Back.Controllers {
                 return Ok(response);
             }
             catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                // _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
@@ -134,14 +134,14 @@ namespace Supera_Monitor_Back.Controllers {
                 ResponseModel response = _alunoService.Reposicao(model);
 
                 if (response.Success) {
-                    _logger.Log("Reposicao", "Aluno", response, Account?.Id);
+                    // _logger.Log("Reposicao", "Aluno", response, Account?.Id);
                     return Ok(response);
                 }
 
                 return BadRequest(response);
             }
             catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                // _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
@@ -152,14 +152,14 @@ namespace Supera_Monitor_Back.Controllers {
                 ResponseModel response = _alunoService.PrimeiraAula(model);
 
                 if (response.Success) {
-                    _logger.Log("Primeira Aula", "Aluno", response, Account?.Id);
+                    // _logger.Log("Primeira Aula", "Aluno", response, Account?.Id);
                     return Ok(response);
                 }
 
                 return BadRequest(response);
             }
             catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                // _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
@@ -172,7 +172,7 @@ namespace Supera_Monitor_Back.Controllers {
                 return Ok(response);
             }
             catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                // _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
@@ -185,7 +185,7 @@ namespace Supera_Monitor_Back.Controllers {
                 return Ok(response);
             }
             catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                // _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
@@ -198,7 +198,7 @@ namespace Supera_Monitor_Back.Controllers {
                 return Ok(response);
             }
             catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                // _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
@@ -211,7 +211,7 @@ namespace Supera_Monitor_Back.Controllers {
                 return Ok(response);
             }
             catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+                // _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
