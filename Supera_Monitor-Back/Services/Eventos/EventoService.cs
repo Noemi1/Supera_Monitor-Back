@@ -639,6 +639,7 @@ public class EventoService : IEventoService {
             Evento? evento = _db.Eventos
                 .Include(e => e.Evento_Aula)
                 .Include(e => e.Evento_Participacao_Alunos)
+                .Include(e => e.Evento_Tipo)
                 .FirstOrDefault(e => e.Id == request.Evento_Id);
 
             ResponseModel eventValidation = ValidateEvent(evento);
@@ -707,6 +708,13 @@ public class EventoService : IEventoService {
                 Apostila_AH_Id = aluno.Apostila_AH_Id,
                 NumeroPaginaAH = aluno.NumeroPaginaAH,
             };
+
+            _db.Aluno_Historicos.Add(new Aluno_Historico {
+                Aluno_Id = aluno.Id,
+                Descricao = $"Aluno foi inscrito no evento '{evento.Descricao}' do dia {evento.Data:G} - Evento é do tipo '{evento.Evento_Tipo.Nome}'",
+                Account_Id = _account!.Id,
+                Data = TimeFunctions.HoraAtualBR(),
+            });
 
             _db.Evento_Participacao_Alunos.Add(newParticipacao);
             _db.SaveChanges();
