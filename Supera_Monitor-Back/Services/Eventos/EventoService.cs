@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json.Linq;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
@@ -9,7 +8,6 @@ using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Eventos;
 using Supera_Monitor_Back.Models.Eventos.Dtos;
 using System.Globalization;
-using System.Reflection.PortableExecutable;
 using System.Text.Json;
 
 namespace Supera_Monitor_Back.Services.Eventos;
@@ -48,10 +46,10 @@ public class EventoService : IEventoService {
     private readonly IHttpContextAccessor? _httpContextAccessor;
 
 
-    public EventoService(DataContext db, 
+    public EventoService(DataContext db,
         IMapper mapper,
-        IProfessorService professorService, 
-        ISalaService salaService, 
+        IProfessorService professorService,
+        ISalaService salaService,
         IHttpContextAccessor httpContextAccessor
     ) {
         _db = db;
@@ -306,12 +304,6 @@ public class EventoService : IEventoService {
                 return new ResponseModel { Message = "Esta sala se encontra ocupada neste horário" };
             }
 
-            int alunosInEvento = evento.Evento_Participacao_Alunos.Count(e => e.Deactivated == null);
-
-            if (request.CapacidadeMaximaAlunos < alunosInEvento) {
-                return new ResponseModel { Message = "Número máximo de alunos excedido" };
-            }
-
             // Validations passed
 
             var oldObject = _db.CalendarioEventoLists.First(e => e.Id == evento.Id);
@@ -373,7 +365,7 @@ public class EventoService : IEventoService {
         request.IntervaloDe ??= GetThisWeeksMonday(now); // Se não passar data inicio, considera a segunda-feira da semana atual
         request.IntervaloAte ??= GetThisWeeksSaturday((DateTime) request.IntervaloDe); // Se não passar data fim, considera o sábado da semana da data inicio
 
-        
+
 
         if (request.IntervaloAte < request.IntervaloDe) {
             throw new Exception("Final do intervalo não pode ser antes do seu próprio início");
@@ -638,22 +630,6 @@ public class EventoService : IEventoService {
     private static DateTime GetThisWeeksSaturday(DateTime date) {
         var response = date.AddDays(-(int) date.DayOfWeek);
         return response.AddDays(6);
-    }
-
-    private static ResponseModel ValidateEvent(Evento? evento) {
-        if (evento is null) {
-            return new ResponseModel { Success = false, Message = "Evento não encontrado" };
-        }
-
-        if (evento.Deactivated.HasValue) {
-            return new ResponseModel { Success = false, Message = "Evento está desativado" };
-        }
-
-        if (evento.Finalizado) {
-            return new ResponseModel { Success = false, Message = "Evento já foi finalizado" };
-        }
-
-        return new ResponseModel { Success = true };
     }
 
     public ResponseModel InsertParticipacao(InsertParticipacaoRequest request) {
@@ -974,6 +950,84 @@ public class EventoService : IEventoService {
         return response;
     }
 
+    private static ResponseModel ValidateEvent(Evento? evento) {
+        if (evento is null) {
+            return new ResponseModel { Message = "Evento não encontrado." };
+        }
+
+        if (evento.Deactivated.HasValue) {
+            return new ResponseModel { Message = $"Este evento foi cancelado às {evento.Deactivated.Value:g}" };
+        }
+
+        if (evento.Finalizado) {
+            return new ResponseModel { Message = "Evento já está finalizado" };
+        }
+
+        return new ResponseModel { Success = true, Message = "Evento válido" };
+    }
+
+    private ResponseModel ValidateApostilas(List<int> apostilaIds, List<Apostila> existingApostilas, string? type) {
+        foreach (int apostilaId in apostilaIds) {
+            var matchingApostila = existingApostilas.FirstOrDefault(a => a.Id == apostilaId);
+
+            if (matchingApostila is null) {
+                return new ResponseModel { Message = $"Apostila {type} ID: '{apostilaId}' não existe" };
+            }
+        }
+
+        return new ResponseModel { Success = true };
+    }
+
+    private ResponseModel ValidateParticipacao(int? participacaoId, Evento evento, List<Apostila> existingApostilas) {
+        Evento_Participacao_Aluno? participacao = evento.Evento_Participacao_Alunos
+                        .FirstOrDefault(p => p.Id == participacaoId);
+
+        if (participacao is null) {
+            return new ResponseModel { Message = $"Participação de aluno no evento ID: '{evento.Id}' Participacao_Id: '{participacaoId}' não foi encontrada" };
+        }
+
+        if (participacao.Deactivated.HasValue) {
+            return new ResponseModel { Message = $"Participação de aluno no evento ID: '{evento.Id}' Participacao_Id: '{participacaoId}' está desativada" };
+        }
+
+        // Alunos devem possuir as apostilas em que estão tentando marcar progresso
+
+        var alunoApostilaKitId = participacao.Aluno.Apostila_Kit_Id;
+
+        if (alunoApostilaKitId == null) {
+            return new ResponseModel { Message = $"Aluno ID: '{participacao.Aluno_Id}' não possui kit de apostilas" };
+        }
+
+        var alunoApostilaKitRels = _db.Apostila_Kit_Rels.Where(a => a.Apostila_Kit_Id == alunoApostilaKitId);
+
+        bool alunoHasApostilaAbaco = alunoApostilaKitRels.Any(a => a.Apostila_Id == participacao.Apostila_Abaco_Id);
+        bool alunoHasApostilaAh = alunoApostilaKitRels.Any(a => a.Apostila_Id == participacao.Apostila_AH_Id);
+
+        // Para poder atualizar, o kit de apostilas do aluno deve possuir a apostila Abaco e a apostila AH passadas na requisição
+
+        if (!alunoHasApostilaAbaco) {
+            return new ResponseModel { Message = $"Aluno ID: '{participacao.Aluno_Id}' não possui a apostila Abaco ID: '{participacao.Apostila_Abaco_Id}'" };
+        }
+
+        if (!alunoHasApostilaAh) {
+            return new ResponseModel { Message = $"Aluno ID: '{participacao.Aluno_Id}' não possui a apostila AH ID: '{participacao.Apostila_AH_Id}'" };
+        }
+
+        // Não deve ser possível atualizar além do tamanho máximo da apostila
+        int totalPaginasAbaco = existingApostilas.Find(a => a.Id == participacao.Apostila_Abaco_Id)!.NumeroTotalPaginas;
+        int totalPaginasAh = existingApostilas.Find(a => a.Id == participacao.Apostila_AH_Id)!.NumeroTotalPaginas;
+
+        if (participacao.NumeroPaginaAbaco > totalPaginasAbaco) {
+            return new ResponseModel { Message = $"Número de páginas da apostila Abaco não pode ser maior que o total de páginas: Participacao ID {participacao.Id}" };
+        }
+
+        if (participacao.NumeroPaginaAH > totalPaginasAh) {
+            return new ResponseModel { Message = $"Número de páginas da apostila AH não pode ser maior que o total de páginas: Participacao ID {participacao.Id}" };
+        }
+
+        return new ResponseModel { Success = true };
+    }
+
     public ResponseModel Finalizar(FinalizarEventoRequest request) {
         ResponseModel response = new() { Success = false };
 
@@ -984,137 +1038,68 @@ public class EventoService : IEventoService {
                 .Include(e => e.Evento_Participacao_Professors)
                 .FirstOrDefault(e => e.Id == request.Evento_Id);
 
-            if (evento is null) {
-                return new ResponseModel { Message = "Evento não encontrado." };
+            var eventValidation = ValidateEvent(evento);
+
+            if (!eventValidation.Success) {
+                return eventValidation;
             }
 
-            if (evento.Deactivated.HasValue) {
-                return new ResponseModel { Message = $"Este evento foi cancelado às {evento.Deactivated.Value:g}" };
-            }
-
-            // Não devo poder realizar a chamada em um evento que está finalizado
-            if (evento.Finalizado) {
-                return new ResponseModel { Message = "Evento já está finalizado" };
-            }
-
-            // Valida que as apostilas existem
-            List<Apostila> existingApostilas = _db.Apostilas.ToList();
+            var existingApostilas = _db.Apostilas.ToList();
 
             List<int> apostilasAbacoIds = request.Alunos.Select(p => p.Apostila_Abaco_Id).ToList();
             List<int> apostilasAhIds = request.Alunos.Select(p => p.Apostila_Ah_Id).ToList();
 
-            // Verifica se as apostilas passadas na requisição existem
-            foreach (int apostilaId in apostilasAbacoIds) {
-                if (!existingApostilas.Any(a => a.Id == apostilaId)) {
-                    return new ResponseModel { Message = $"Apostila Abaco ID: '{apostilaId}' não existe" };
-                }
+            var validateApostilasAh = ValidateApostilas(apostilasAhIds, existingApostilas, "AH");
+            var validateApostilasAbaco = ValidateApostilas(apostilasAbacoIds, existingApostilas, "Abaco");
+
+            if (!validateApostilasAh.Success) {
+                return validateApostilasAh;
             }
 
-            foreach (int apostilaId in apostilasAhIds) {
-                if (!existingApostilas.Any(a => a.Id == apostilaId)) {
-                    return new ResponseModel { Message = $"Apostila AH ID: '{apostilaId}' não existe" };
-                }
+            if (!validateApostilasAbaco.Success) {
+                return validateApostilasAbaco;
             }
 
             // Validations passed
 
-            evento.Observacao = request.Observacao;
+            evento!.Observacao = request.Observacao;
             evento.Finalizado = true;
             evento.LastUpdated = TimeFunctions.HoraAtualBR();
 
             _db.Eventos.Update(evento);
 
-            foreach (ParticipacaoAlunoModel partAluno in request.Alunos) {
+            foreach (ParticipacaoAlunoModel participacaoModel in request.Alunos) {
                 Evento_Participacao_Aluno? participacao = evento.Evento_Participacao_Alunos
-                    .FirstOrDefault(p => p.Id == partAluno.Participacao_Id);
+                    .FirstOrDefault(p => p.Id == participacaoModel.Participacao_Id);
 
-                if (participacao is null) {
-                    return new ResponseModel { Message = $"Participação de aluno no evento ID: '{evento.Id}' Participacao_Id: '{partAluno.Participacao_Id}' não foi encontrada" };
-                }
+                var validateParticipacao = ValidateParticipacao(participacao?.Id, evento, existingApostilas);
 
-                if (participacao.Deactivated.HasValue) {
-                    return new ResponseModel { Message = $"Participação de aluno no evento ID: '{evento.Id}' Participacao_Id: '{partAluno.Participacao_Id}' está desativada" };
-                }
-
-                // Alunos devem possuir as apostilas em que estão tentando marcar progresso
-
-                var alunoApostilaKitId = participacao.Aluno.Apostila_Kit_Id;
-
-                if (alunoApostilaKitId == null) {
-                    return new ResponseModel { Message = $"Aluno ID: '{participacao.Aluno_Id}' não possui kit de apostilas" };
-                }
-
-                bool alunoHasApostilaAbaco = _db.Apostila_Kit_Rels.Any(a =>
-                   a.Apostila_Kit_Id == alunoApostilaKitId
-                   && a.Apostila_Id == partAluno.Apostila_Abaco_Id);
-
-                bool alunoHasApostilaAh = _db.Apostila_Kit_Rels.Any(a =>
-                    a.Apostila_Kit_Id == alunoApostilaKitId
-                    && a.Apostila_Id == partAluno.Apostila_Ah_Id);
-
-                // Para poder atualizar, o kit de apostilas do aluno deve possuir a apostila Abaco e a apostila AH passadas na requisição
-
-                if (!alunoHasApostilaAbaco) {
-                    return new ResponseModel { Message = $"Aluno ID: '{participacao.Aluno_Id}' não possui a apostila Abaco ID: '{partAluno.Apostila_Abaco_Id}'" };
-                }
-
-                if (!alunoHasApostilaAh) {
-                    return new ResponseModel { Message = $"Aluno ID: '{participacao.Aluno_Id}' não possui a apostila AH ID: '{partAluno.Apostila_Ah_Id}'" };
-                }
-
-                // Desativado: Se a apostila não muda, não deve permitir que o aluno regresse nas páginas
-                //bool apostilaAbacoChanged = participacao.Apostila_Abaco_Id != partAluno.Apostila_Abaco_Id;
-                //if (!apostilaAbacoChanged) {
-                //    if (partAluno.NumeroPaginaAbaco < participacao.NumeroPaginaAbaco) {
-                //        return new ResponseModel { Message = $"Progresso da Apostila Abaco não pode regredir: Participacao ID {participacao.Id}" };
-                //    }
-                //}
-
-                //bool apostilaAhChanged = participacao.Apostila_AH_Id != partAluno.Apostila_Ah_Id;
-                //if (!apostilaAhChanged) {
-                //    if (partAluno.NumeroPaginaAh < participacao.NumeroPaginaAH) {
-                //        return new ResponseModel { Message = $"Progresso da Apostila AH não pode regredir: Participacao ID {participacao.Id}" };
-                //    }
-                //}
-
-                // Não deve ser possível atualizar além do tamanho máximo da apostila
-                int totalPaginasAbaco = existingApostilas.Find(a => a.Id == partAluno.Apostila_Abaco_Id)!.NumeroTotalPaginas;
-                int totalPaginasAh = existingApostilas.Find(a => a.Id == partAluno.Apostila_Ah_Id)!.NumeroTotalPaginas;
-
-                if (partAluno.NumeroPaginaAbaco > totalPaginasAbaco) {
-                    return new ResponseModel { Message = $"Número de páginas da apostila Abaco não pode ser maior que o total de páginas: Participacao ID {participacao.Id}" };
-                }
-
-                if (partAluno.NumeroPaginaAh > totalPaginasAh) {
-                    return new ResponseModel { Message = $"Número de páginas da apostila AH não pode ser maior que o total de páginas: Participacao ID {participacao.Id}" };
+                if (!validateParticipacao.Success) {
+                    return validateParticipacao;
                 }
 
                 // Atualizar tanto a participação quanto o aluno
-                participacao.Apostila_Abaco_Id = partAluno.Apostila_Abaco_Id;
-                participacao.NumeroPaginaAbaco = partAluno.NumeroPaginaAbaco;
-                participacao.Aluno.Apostila_Abaco_Id = partAluno.Apostila_Abaco_Id;
-                participacao.Aluno.NumeroPaginaAbaco = partAluno.NumeroPaginaAbaco;
+                participacao!.Apostila_Abaco_Id = participacaoModel.Apostila_Abaco_Id;
+                participacao.NumeroPaginaAbaco = participacaoModel.NumeroPaginaAbaco;
+                participacao.Aluno.Apostila_Abaco_Id = participacaoModel.Apostila_Abaco_Id;
+                participacao.Aluno.NumeroPaginaAbaco = participacaoModel.NumeroPaginaAbaco;
 
-                participacao.Apostila_AH_Id = partAluno.Apostila_Ah_Id;
-                participacao.NumeroPaginaAH = partAluno.NumeroPaginaAh;
-                participacao.Aluno.Apostila_AH_Id = partAluno.Apostila_Ah_Id;
-                participacao.Aluno.NumeroPaginaAH = partAluno.NumeroPaginaAh;
+                participacao.Apostila_AH_Id = participacaoModel.Apostila_Ah_Id;
+                participacao.NumeroPaginaAH = participacaoModel.NumeroPaginaAh;
+                participacao.Aluno.Apostila_AH_Id = participacaoModel.Apostila_Ah_Id;
+                participacao.Aluno.NumeroPaginaAH = participacaoModel.NumeroPaginaAh;
 
-                // Se o evento for a primeira aula do aluno e ocorrer uma falta, deve atualizar a data da PrimeiraAula do aluno para a proxima aula da turma a partir da data do evento atual
-                //if (participacao.Aluno.PrimeiraAula == evento.Data && partAluno.Presente == false) {
-                //    Turma turma = _db.Turmas.Single(t => t.Id == participacao.Aluno.Turma_Id);
+                participacao.Observacao = participacaoModel.Observacao;
+                participacao.Presente = participacaoModel.Presente;
 
-                //    DateTime data = evento.Data;
-
-                //    do {
-                //        data = data.AddDays(1);
-                //    } while ((int)data.DayOfWeek != turma.DiaSemana);
-
-                //    participacao.Aluno.PrimeiraAula = data;
-                //}
-
-                participacao.Observacao = partAluno.Observacao;
-                participacao.Presente = partAluno.Presente;
+                if (!participacaoModel.Presente) {
+                    _db.Aluno_Historicos.Add(new Aluno_Historico {
+                        Account_Id = _account.Id,
+                        Aluno_Id = participacao.Aluno_Id,
+                        Data = evento.Data,
+                        Descricao = $"Aluno faltou no evento '{evento.Descricao}' no dia {evento.Data:G}"
+                    });
+                }
 
                 _db.Update(participacao);
             }
@@ -1291,7 +1276,7 @@ public class EventoService : IEventoService {
 
                 List<CalendarioEventoList> aulasDoRoteiro = new List<CalendarioEventoList>();
                 if (roteiro.Id == -1)
-                    aulasDoRoteiro = eventos.Where(x => x.Turma_Id == turma.Id && x.Data.Date >= roteiro.DataInicio && x.Data.Date <= roteiro.DataFim ).ToList();
+                    aulasDoRoteiro = eventos.Where(x => x.Turma_Id == turma.Id && x.Data.Date >= roteiro.DataInicio && x.Data.Date <= roteiro.DataFim).ToList();
                 else
                     aulasDoRoteiro = eventos.Where(x => x.Turma_Id == turma.Id && x.Roteiro_Id == roteiro.Id).ToList();
 
@@ -2294,25 +2279,20 @@ public class EventoService : IEventoService {
     }
 
 
-    public async Task<List<FeriadoResponse>> GetFeriados(int ano)
-    {
+    public async Task<List<FeriadoResponse>> GetFeriados(int ano) {
 
         string token = "20487|fbPtn71wk6mjsGDWRdU8mGECDlNZhyM7";
         string url = $"https://api.invertexto.com/v1/holidays/{ano}?token={token}&state=SP";
-        using (HttpClient client = new HttpClient())
-        {
-            try
-            {
+        using (HttpClient client = new HttpClient()) {
+            try {
                 HttpResponseMessage response = await client.GetAsync(url);
                 //response.EnsureSuccessStatusCode(); // Lança uma exceção para códigos de status de erro
                 string responseContent = await response.Content.ReadAsStringAsync();
                 List<FeriadoResponse>? feriados = JsonSerializer.Deserialize<List<FeriadoResponse>>(responseContent);
                 feriados = feriados!.OrderBy(x => x.date).ToList();
                 return feriados;
-             
-            }
-            catch (HttpRequestException e)
-            {
+
+            } catch (HttpRequestException e) {
                 Console.WriteLine("\nException Caught!");
                 Console.WriteLine("Message :{0} ", e.Message);
                 return new List<FeriadoResponse>() { };
@@ -2320,15 +2300,13 @@ public class EventoService : IEventoService {
         }
     }
 
-    public async Task<ResponseModel> CancelaEventosFeriado  (int ano)
-    {
+    public async Task<ResponseModel> CancelaEventosFeriado(int ano) {
         ResponseModel response = new ResponseModel();
 
-        try
-        {
+        try {
             List<FeriadoResponse> feriados = await GetFeriados(ano);
             List<DateTime> feriadosDates = feriados.Select(x => x.date.Date).ToList();
-            List<int> feriadosDayWeeks = feriadosDates.Select(x => (int)x.DayOfWeek).ToList();
+            List<int> feriadosDayWeeks = feriadosDates.Select(x => (int) x.DayOfWeek).ToList();
 
             List<Evento> eventos = _db.Eventos.Where(x => feriadosDates.Contains(x.Data.Date))
                     .Include(e => e.Evento_Aula)
@@ -2348,23 +2326,19 @@ public class EventoService : IEventoService {
             List<Roteiro> roteiros = _db.Roteiros.Where(x => !x.Deactivated.HasValue).ToList();
 
 
-            foreach (FeriadoResponse feriado in feriados)
-            {
+            foreach (FeriadoResponse feriado in feriados) {
 
                 // Buscar turmas que tem aula nesse dia
-                int dayOfWeek = (int)feriado.date.DayOfWeek;
+                int dayOfWeek = (int) feriado.date.DayOfWeek;
                 List<Turma> turmasDoFeriado = turmas.Where(t => t.DiaSemana == dayOfWeek).ToList();
 
-                foreach (Turma turma in turmasDoFeriado)
-                {
+                foreach (Turma turma in turmasDoFeriado) {
                     var evento = eventos.FirstOrDefault(x => x.Data.Date == feriado.date.Date && x.Evento_Aula?.Turma_Id == turma.Id);
-                    if (evento is null)
-                    {
+                    if (evento is null) {
                         DateTime dataAula = new DateTime(feriado.date.Year, feriado.date.Month, feriado.date.Day, turma.Horario!.Value.Hours, turma.Horario!.Value.Minutes, 0);
                         Roteiro? roteiroAula = roteiros.FirstOrDefault(x => dataAula.Date >= x.DataInicio.Date && dataAula.Date <= x.DataFim.Date);
-                        Evento pseudoAula = new Evento()
-                        {
-                            Evento_Tipo_Id = (int)EventoTipo.Aula,
+                        Evento pseudoAula = new Evento() {
+                            Evento_Tipo_Id = (int) EventoTipo.Aula,
                             Descricao = turma.Nome, // Pseudo aulas ganham o nome da turma
                             DuracaoMinutos = 120, // As pseudo aulas são de uma turma e duram 2h por padrão
                             Data = dataAula,
@@ -2375,8 +2349,7 @@ public class EventoService : IEventoService {
                             Account_Created_Id = _account!.Id,
                             Deactivated = DateTime.Now,
                             Observacao = $"Cancelamento automático <br> Feriado: {feriado.name}",
-                            Evento_Aula = new Evento_Aula
-                            {
+                            Evento_Aula = new Evento_Aula {
                                 Turma_Id = turma.Id,
                                 Roteiro_Id = roteiroAula?.Id,
                                 Professor_Id = turma!.Professor_Id!.Value,
@@ -2384,8 +2357,7 @@ public class EventoService : IEventoService {
                                                                     .Select(x => new Evento_Aula_PerfilCognitivo_Rel { PerfilCognitivo_Id = x.PerfilCognitivo_Id })
                                                                     .ToList()
                             },
-                            Evento_Participacao_Alunos = turma.Alunos.Select(x => new Evento_Participacao_Aluno
-                            {
+                            Evento_Participacao_Alunos = turma.Alunos.Select(x => new Evento_Participacao_Aluno {
                                 Aluno_Id = x.Id,
                                 Presente = null,
                                 Observacao = null,
@@ -2406,21 +2378,17 @@ public class EventoService : IEventoService {
 
 
                         _db.Eventos.Add(pseudoAula);
-                    } 
-                    else {
-                        if (evento.Deactivated is null)
-                        {
+                    } else {
+                        if (evento.Deactivated is null) {
                             evento.Deactivated = TimeFunctions.HoraAtualBR();
-                            foreach (var participacao in evento.Evento_Participacao_Alunos)
-                            {
+                            foreach (var participacao in evento.Evento_Participacao_Alunos) {
                                 var aluno = participacao.Aluno;
                                 if (aluno.PrimeiraAula_Id == evento.Id || aluno.AulaZero_Id == evento.Id) {
 
                                     if (aluno.AulaZero_Id == evento.Id) {
                                         aluno.AulaZero_Id = null;
                                         var checklist = aluno.Aluno_Checklist_Items.Where(x => x.Checklist_Item_Id == 31 || x.Checklist_Item_Id == 33).ToList();
-                                        foreach (var item in checklist)
-                                        {
+                                        foreach (var item in checklist) {
                                             item.Account_Finalizacao_Id = null;
                                             item.DataFinalizacao = null;
                                             _db.Update(item);
@@ -2429,14 +2397,13 @@ public class EventoService : IEventoService {
                                     if (aluno.PrimeiraAula_Id == evento.Id) {
                                         aluno.PrimeiraAula_Id = null;
                                         var checklist = aluno.Aluno_Checklist_Items.Where(x => x.Checklist_Item_Id == 31 || x.Checklist_Item_Id == 33).ToList();
-                                        foreach (var item in checklist)
-                                        {
+                                        foreach (var item in checklist) {
                                             item.Account_Finalizacao_Id = null;
                                             item.DataFinalizacao = null;
                                             _db.Update(item);
                                         }
                                     }
-                                
+
                                     _db.Update(aluno);
                                 }
                             }
@@ -2454,9 +2421,7 @@ public class EventoService : IEventoService {
             response.Message = "Eventos cancelados com sucesso";
             response.Success = true;
             return response;
-        }
-        catch (HttpRequestException e)
-        {
+        } catch (HttpRequestException e) {
             response.Success = false;
             response.Message = e.Message;
             return response;
