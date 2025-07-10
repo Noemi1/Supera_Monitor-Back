@@ -3,9 +3,13 @@
 public partial class Sala {
     public int Id { get; set; }
 
+    public string Descricao { get; set; } = null!;
+
     public int NumeroSala { get; set; }
 
     public int Andar { get; set; }
+
+    public bool Online { get; set; }
 
     public virtual ICollection<Evento> Eventos { get; set; } = new List<Evento>();
 

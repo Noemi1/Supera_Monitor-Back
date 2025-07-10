@@ -20,14 +20,12 @@ public class SalaService : ISalaService {
     private readonly DataContext _db;
     private readonly IMapper _mapper;
 
-    public SalaService(DataContext db, IMapper mapper)
-    {
+    public SalaService(DataContext db, IMapper mapper) {
         _db = db;
         _mapper = mapper;
     }
 
-    public List<SalaModel> GetAllSalas()
-    {
+    public List<SalaModel> GetAllSalas() {
         List<Sala> salas = _db.Salas
             .OrderBy(s => s.Andar)
             .ThenBy(s => s.NumeroSala)
@@ -36,8 +34,7 @@ public class SalaService : ISalaService {
         return _mapper.Map<List<SalaModel>>(salas);
     }
 
-    public ResponseModel Insert(CreateSalaRequest model)
-    {
+    public ResponseModel Insert(CreateSalaRequest model) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -67,8 +64,7 @@ public class SalaService : ISalaService {
         return response;
     }
 
-    public ResponseModel Update(UpdateSalaRequest model)
-    {
+    public ResponseModel Update(UpdateSalaRequest model) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -102,8 +98,7 @@ public class SalaService : ISalaService {
         return response;
     }
 
-    public ResponseModel Delete(int salaId)
-    {
+    public ResponseModel Delete(int salaId) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -126,15 +121,22 @@ public class SalaService : ISalaService {
         return response;
     }
 
-    public bool IsSalaOccupied(int Sala_Id, DateTime date, int duracaoMinutos, int? ignoredEventoId)
-    {
+    public bool IsSalaOccupied(int Sala_Id, DateTime date, int duracaoMinutos, int? ignoredEventoId) {
+        Sala? sala = _db.Salas.FirstOrDefault(s => s.Id == Sala_Id);
+
+        if (sala is null) {
+            return false;
+        }
+
+        if (sala.Online) {
+            return false;
+        }
+
         var novoEventoInicio = date;
         var novoEventoFim = date.AddMinutes(duracaoMinutos);
 
         bool isSalaOccupied = _db.Eventos.Any(e =>
             e.Id != ignoredEventoId
-            && e.Id != ( int )SalasIgnoradas.SALA_ONLINE
-            && e.Id != ( int )SalasIgnoradas.SALA_DOS_PROFESSORES
             && e.Deactivated == null
             && e.Sala_Id == Sala_Id
             && e.Data < novoEventoFim // O evento existente começa antes do fim do novo evento
@@ -142,10 +144,5 @@ public class SalaService : ISalaService {
         );
 
         return isSalaOccupied;
-    }
-
-    enum SalasIgnoradas {
-        SALA_ONLINE = 13,
-        SALA_DOS_PROFESSORES = 14
     }
 }
