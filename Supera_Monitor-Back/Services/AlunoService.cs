@@ -105,9 +105,11 @@ public class AlunoService : IAlunoService {
             .ToList();
 
         alunosWithChecklist.ForEach(aluno => {
-            aluno.AlunoChecklist = listAlunoChecklistView.Where(a => aluno.Id == a.Aluno_Id)
+            aluno.AlunoChecklist = listAlunoChecklistView
+                .Where(a => aluno.Id == a.Aluno_Id)
+                .OrderBy(a => a.Checklist_Id)
+                .ThenBy(a => a.Ordem)
                 .ToList();
-
         });
 
         return alunosWithChecklist;
