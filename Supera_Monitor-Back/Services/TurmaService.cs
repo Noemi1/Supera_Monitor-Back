@@ -26,12 +26,14 @@ public class TurmaService : ITurmaService {
     private readonly IMapper _mapper;
     private readonly Account? _account;
     private readonly IProfessorService _professorService;
+    private readonly ISalaService _salaService;
 
-    public TurmaService(DataContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor, IProfessorService professorService) {
+    public TurmaService(DataContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor, IProfessorService professorService, ISalaService salaService) {
         _db = db;
         _mapper = mapper;
         _account = (Account?)httpContextAccessor.HttpContext?.Items["Account"];
         _professorService = professorService;
+        _salaService = salaService;
     }
 
     public TurmaList Get(int turmaId) {
@@ -108,24 +110,18 @@ public class TurmaService : ITurmaService {
             }
 
             // Não devo poder registrar uma aula em uma sala que não existe
-            bool salaExists = _db.Salas.Any(s => s.Id == model.Sala_Id);
 
-            if (!salaExists) {
+            if (!_salaService.Exists(model.Sala_Id)) {
                 return new ResponseModel { Message = "Sala não encontrada" };
             }
 
-            TimeSpan twoHours = TimeSpan.FromHours(2);
+            bool isSalaRecurrentlyOccupied = _salaService.IsSalaRecurrentlyOccupied(
+                Sala_Id: model.Sala_Id,
+                DiaSemana: model.DiaSemana,
+                Horario: model.Horario,
+                IgnoredTurmaId: null);
 
-            // Não devo permitir que duas turmas usem a mesma sala recorrentemente no mesmo horário
-            bool salaIsAlreadyOccupied = _db.Turmas
-                .Where(t =>
-                    t.Deactivated == null
-                    && t.DiaSemana == model.DiaSemana
-                    && t.Sala_Id == model.Sala_Id)
-                .AsEnumerable()
-                .Any(t => ((TimeSpan)t.Horario! - model.Horario).Duration() < TimeSpan.FromHours(2));
-
-            if (salaIsAlreadyOccupied) {
+            if (isSalaRecurrentlyOccupied) {
                 return new ResponseModel { Message = "Sala já está ocupada nesse horário" };
             }
 
@@ -143,7 +139,7 @@ public class TurmaService : ITurmaService {
             Turma turma = _mapper.Map<Turma>(model);
 
             turma.Created = TimeFunctions.HoraAtualBR();
-            turma.Account_Created_Id = _account.Id;
+            turma.Account_Created_Id = _account!.Id;
 
             _db.Turmas.Add(turma);
             _db.SaveChanges();
@@ -223,23 +219,17 @@ public class TurmaService : ITurmaService {
             }
 
             // Não devo permitir a atualização de uma turma em uma sala que não existe
-            bool salaExists = _db.Salas.Any(s => s.Id == model.Sala_Id);
-
-            if (salaExists == false) {
-                return new ResponseModel { Message = "Sala não encontrada." };
+            if (!_salaService.Exists(model.Sala_Id)) {
+                return new ResponseModel { Message = "Sala não encontrada" };
             }
 
-            // Não devo permitir que duas turmas usem a mesma sala recorrentemente no mesmo horário
-            bool salaIsAlreadyOccupied = _db.Turmas
-                .Where(t =>
-                    t.Id != model.Id
-                    && t.Deactivated == null
-                    && t.DiaSemana == model.DiaSemana
-                    && t.Sala_Id == model.Sala_Id)
-                .AsEnumerable()
-                .Any(t => ((TimeSpan)t.Horario! - model.Horario).Duration() < TimeSpan.FromHours(2));
+            bool isSalaRecurrentlyOccupied = _salaService.IsSalaRecurrentlyOccupied(
+                Sala_Id: model.Sala_Id,
+                DiaSemana: model.DiaSemana,
+                Horario: model.Horario,
+                IgnoredTurmaId: null);
 
-            if (salaIsAlreadyOccupied) {
+            if (isSalaRecurrentlyOccupied) {
                 return new ResponseModel { Message = "Sala já está ocupada nesse horário" };
             }
 

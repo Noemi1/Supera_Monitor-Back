@@ -12,7 +12,9 @@ public interface ISalaService {
     ResponseModel Update(UpdateSalaRequest model);
     ResponseModel Delete(int salaId);
 
+    bool Exists(int Sala_Id);
     bool IsSalaOccupied(int Sala_Id, DateTime date, int duracaoMinutos, int? ignoredEventoId);
+    bool IsSalaRecurrentlyOccupied(int Sala_Id, int DiaSemana, TimeSpan Horario, int? IgnoredTurmaId, int DuracaoMinutos = 120);
 }
 
 
@@ -45,7 +47,8 @@ public class SalaService : ISalaService {
                 return new ResponseModel { Message = "A operação foi cancelada pois existe outra sala com esse mesmo número" };
             }
 
-            Sala newSala = new() {
+            Sala newSala = new()
+            {
                 Andar = model.Andar,
                 NumeroSala = model.NumeroSala,
             };
@@ -57,7 +60,8 @@ public class SalaService : ISalaService {
             response.Success = true;
             response.Message = "Sala criada com sucesso";
             response.Object = _mapper.Map<SalaModel>(newSala);
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = "Falha ao inserir nova sala: " + ex.ToString();
         }
 
@@ -91,7 +95,8 @@ public class SalaService : ISalaService {
             response.Success = true;
             response.Message = "Sala atualizada com sucesso";
             response.Object = _mapper.Map<SalaModel>(sala);
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = "Falha ao atualizar sala: " + ex.ToString();
         }
 
@@ -114,7 +119,8 @@ public class SalaService : ISalaService {
 
             response.Success = true;
             response.Message = "Sala removida com sucesso";
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = "Falha ao remover sala: " + ex.ToString();
         }
 
@@ -144,5 +150,49 @@ public class SalaService : ISalaService {
         );
 
         return isSalaOccupied;
+    }
+
+    public bool IsSalaRecurrentlyOccupied(int Sala_Id, int DiaSemana, TimeSpan Horario, int? IgnoredTurmaId, int DuracaoMinutos = 120) {
+        Sala? sala = _db.Salas.Find(Sala_Id);
+
+        if (sala is null) {
+            throw new Exception("Sala não encontrada");
+        }
+
+        if (sala.Online) {
+            return false;
+        }
+
+        TimeSpan duracaoMinutos = TimeSpan.FromMinutes((int)DuracaoMinutos!);
+
+        var activeTurmas = _db.Turmas.Where(t =>
+            t.Deactivated == null &&
+            t.Sala_Id == Sala_Id &&
+            t.DiaSemana == DiaSemana &&
+            (IgnoredTurmaId == null || t.Id != IgnoredTurmaId));
+
+        TimeSpan startEventTime = Horario.Subtract(duracaoMinutos);
+        TimeSpan endEventTime = Horario.Add(duracaoMinutos);
+
+        // Vejo uma possibilidade de bug em horários extremos ex.: Evento às 23hrs ou 01hrs
+        // Clamp do horário se entrar em um desses casos
+        if (startEventTime < TimeSpan.Zero) {
+            startEventTime = TimeSpan.Zero;
+        }
+
+        if (endEventTime > TimeSpan.FromHours(24)) {
+            endEventTime = TimeSpan.FromHours(24);
+        }
+
+        bool hasCollision = activeTurmas
+            .Any(t =>
+                t.Horario > startEventTime &&
+                t.Horario < endEventTime);
+
+        return hasCollision;
+    }
+
+    public bool Exists(int Sala_Id) {
+        return _db.Salas.Any(s => s.Id == Sala_Id);
     }
 }
