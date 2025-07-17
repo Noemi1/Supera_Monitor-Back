@@ -697,6 +697,12 @@ public class EventoService : IEventoService {
                             && p.Evento.Evento_Tipo_Id == (int)EventoTipo.AulaZero
                             && p.Evento.Deactivated == null);
 
+                if (alunoAlreadyParticipated) {
+                    return new ResponseModel { Message = $"Este aluno já participou de uma aula zero." };
+                }
+
+                aluno.AulaZero_Id = evento.Id;
+                _db.Alunos.Update(aluno);
                     if (alunoAlreadyParticipated) {
                         return new ResponseModel { Message = $"Este aluno já participou de uma aula zero." };
                     }
@@ -748,7 +754,7 @@ public class EventoService : IEventoService {
         ResponseModel response = new() { Success = false };
 
         try {
-            Evento_Participacao_Aluno? participacao = _db.Evento_Participacao_Alunos.FirstOrDefault(p => p.Id == participacaoId);
+            Evento_Participacao_Aluno? participacao = _db.Evento_Participacao_Alunos.Include(e => e.Aluno).FirstOrDefault(p => p.Id == participacaoId);
 
             if (participacao is null) {
                 return new ResponseModel { Message = "Participação do aluno em evento não encontrada" };
@@ -759,6 +765,14 @@ public class EventoService : IEventoService {
             }
 
             // Validations passed
+
+            if (participacao.Aluno.PrimeiraAula_Id == participacao.Evento_Id) {
+                participacao.Aluno.PrimeiraAula_Id = null;
+            }
+
+            if (participacao.Aluno.AulaZero_Id == participacao.Evento_Id) {
+                participacao.Aluno.AulaZero_Id = null;
+            }
 
             _db.Evento_Participacao_Alunos.Remove(participacao);
             _db.SaveChanges();
