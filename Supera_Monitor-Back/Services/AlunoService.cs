@@ -32,7 +32,7 @@ public interface IAlunoService {
 public class AlunoService : IAlunoService {
     private readonly DataContext _db;
     private readonly CRM4UContext _dbCRM;
-	private readonly IMapper _mapper;
+    private readonly IMapper _mapper;
     private readonly IEmailService _emailService;
     private readonly IPessoaService _pessoaService;
     private readonly IChecklistService _checklistService;
@@ -41,23 +41,23 @@ public class AlunoService : IAlunoService {
     private readonly IHttpContextAccessor _httpContextAccessor;
 
     public AlunoService(
-		DataContext db,
-		CRM4UContext dbCRM,
-		IMapper mapper, 
-		IPessoaService pessoaService, 
-		IHttpContextAccessor httpContextAccessor, 
-		IChecklistService checklistService, 
-		IEmailService emailService
-		) {
+        DataContext db,
+        CRM4UContext dbCRM,
+        IMapper mapper,
+        IPessoaService pessoaService,
+        IHttpContextAccessor httpContextAccessor,
+        IChecklistService checklistService,
+        IEmailService emailService
+        ) {
         _db = db;
         _dbCRM = dbCRM;
-		_mapper = mapper;
+        _mapper = mapper;
         _emailService = emailService;
         _pessoaService = pessoaService;
         _checklistService = checklistService;
 
         _httpContextAccessor = httpContextAccessor;
-        _account = (Account?) httpContextAccessor?.HttpContext?.Items["Account"];
+        _account = (Account?)httpContextAccessor?.HttpContext?.Items["Account"];
     }
 
     public AlunoListWithChecklist Get(int alunoId) {
@@ -115,7 +115,8 @@ public class AlunoService : IAlunoService {
             .Where(c => alunosIds.Contains(c.Aluno_Id))
             .ToList();
 
-        alunosWithChecklist.ForEach(aluno => {
+        alunosWithChecklist.ForEach(aluno =>
+        {
             aluno.AlunoChecklist = listAlunoChecklistView
                 .Where(a => aluno.Id == a.Aluno_Id)
                 .OrderBy(a => a.Checklist_Id)
@@ -139,7 +140,7 @@ public class AlunoService : IAlunoService {
             }
 
             // Aluno só pode ser cadastrado se tiver status matriculado
-            if (pessoaCRM.Pessoa_Status_Id != (int) PessoaStatus.Matriculado) {
+            if (pessoaCRM.Pessoa_Status_Id != (int)PessoaStatus.Matriculado) {
                 return new ResponseModel { Message = "Aluno não está matriculado" };
             }
 
@@ -149,55 +150,55 @@ public class AlunoService : IAlunoService {
             }
 
 
-			// Só pode ser cadastrado um aluno por pessoa
-			bool alunoAlreadyRegistered = _db.Pessoas.Any(a => a.PessoaCRM_Id == model.Pessoa_Id);
-			if (alunoAlreadyRegistered)
-			{
-				return new ResponseModel { Message = "Aluno já matriculado." };
-			}
+            // Só pode ser cadastrado um aluno por pessoa
+            bool alunoAlreadyRegistered = _db.Pessoas.Any(a => a.PessoaCRM_Id == model.Pessoa_Id);
+            if (alunoAlreadyRegistered) {
+                return new ResponseModel { Message = "Aluno já matriculado." };
+            }
 
-			// Validations passed
-			Pessoa pessoa = new Pessoa()
-			{
-				PessoaCRM_Id = pessoaCRM.Id,
-				Nome = pessoaCRM.Nome,
-				Email = pessoaCRM.Email,
-				Endereco = pessoaCRM.Endereco,
-				Observacao = pessoaCRM.Observacao,
-				Telefone = pessoaCRM.Telefone,
-				Celular = pessoaCRM.Celular,
-				DataEntrada = pessoaCRM.DataEntrada,
-				Pessoa_FaixaEtaria_Id = pessoaCRM.Pessoa_FaixaEtaria_Id,
-				Pessoa_Origem_Id = pessoaCRM.Pessoa_Origem_Id,
-				Pessoa_Status_Id = pessoaCRM.Pessoa_Status_Id,
-				RG = pessoaCRM.RG,
-				CPF = pessoaCRM.CPF,
-				aspnetusers_Id = pessoaCRM.aspnetusers_Id,
-				Pessoa_Sexo_Id = pessoaCRM.Pessoa_Sexo_Id,
-				DataNascimento = pessoaCRM.DataNascimento,
-				DataCadastro = pessoaCRM.DataCadastro,
-				Unidade_Id = pessoaCRM.Unidade_Id,
-				Pessoa_Origem_Canal_Id = pessoaCRM.Pessoa_Origem_Canal_Id,
-				Pessoa_Indicou_Id = pessoaCRM.Pessoa_Indicou_Id,
-				LandPage_Id = pessoaCRM.LandPage_Id,
-				Pessoa_Geracao_Id = pessoaCRM.Pessoa_Geracao_Id,
+            // Validations passed
+            Pessoa pessoa = new Pessoa()
+            {
+                PessoaCRM_Id = pessoaCRM.Id,
+                Nome = pessoaCRM.Nome,
+                Email = pessoaCRM.Email,
+                Endereco = pessoaCRM.Endereco,
+                Observacao = pessoaCRM.Observacao,
+                Telefone = pessoaCRM.Telefone,
+                Celular = pessoaCRM.Celular,
+                DataEntrada = pessoaCRM.DataEntrada,
+                Pessoa_FaixaEtaria_Id = pessoaCRM.Pessoa_FaixaEtaria_Id,
+                Pessoa_Origem_Id = pessoaCRM.Pessoa_Origem_Id,
+                Pessoa_Status_Id = pessoaCRM.Pessoa_Status_Id,
+                RG = pessoaCRM.RG,
+                CPF = pessoaCRM.CPF,
+                aspnetusers_Id = pessoaCRM.aspnetusers_Id,
+                Pessoa_Sexo_Id = pessoaCRM.Pessoa_Sexo_Id,
+                DataNascimento = pessoaCRM.DataNascimento,
+                DataCadastro = pessoaCRM.DataCadastro,
+                Unidade_Id = pessoaCRM.Unidade_Id,
+                Pessoa_Origem_Canal_Id = pessoaCRM.Pessoa_Origem_Canal_Id,
+                Pessoa_Indicou_Id = pessoaCRM.Pessoa_Indicou_Id,
+                LandPage_Id = pessoaCRM.LandPage_Id,
+                Pessoa_Geracao_Id = pessoaCRM.Pessoa_Geracao_Id,
 
-			};
+            };
 
-			_db.Pessoas.Add(pessoa);
-			_db.SaveChanges();
+            _db.Pessoas.Add(pessoa);
+            _db.SaveChanges();
 
 
-			// quando chegar o dia que isso dê pau, me perdoe. só deus sabe como tá a mente do palhaço
-			Random RNG = new();
+            // quando chegar o dia que isso dê pau, me perdoe. só deus sabe como tá a mente do palhaço
+            Random RNG = new();
             string randomRM;
 
             do {
                 randomRM = RNG.Next(0, 100000).ToString("D5");
-            } 
-			while (_db.Alunos.Any(x => x.RM == randomRM));
+            }
+            while (_db.Alunos.Any(x => x.RM == randomRM));
 
-            Aluno aluno = new() {
+            Aluno aluno = new()
+            {
 
                 Pessoa_Id = pessoa.Id,
                 AspNetUsers_Created_Id = model.AspNetUsers_Created_Id,
@@ -235,7 +236,8 @@ public class AlunoService : IAlunoService {
                 return populateChecklistResponse;
             }
 
-            _db.Aluno_Historicos.Add(new Aluno_Historico {
+            _db.Aluno_Historicos.Add(new Aluno_Historico
+            {
                 Aluno_Id = aluno.Id,
                 Descricao = "Aluno cadastrado",
                 AspNetUser_Id = model.AspNetUsers_Created_Id,
@@ -248,7 +250,8 @@ public class AlunoService : IAlunoService {
             response.Message = "Aluno cadastrado com sucesso";
             response.Object = _db.AlunoLists.AsNoTracking().FirstOrDefault(a => a.Id == aluno.Id);
             response.Success = true;
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = "Falha ao registrar aluno";// + ex.ToString();
         }
 
@@ -296,7 +299,8 @@ public class AlunoService : IAlunoService {
             if (isChangingPerfilCognitivo) {
                 var currentPerfilCognitivo = _db.PerfilCognitivos.Find(aluno.PerfilCognitivo_Id);
 
-                _db.Aluno_Historicos.Add(new Aluno_Historico {
+                _db.Aluno_Historicos.Add(new Aluno_Historico
+                {
                     Aluno_Id = aluno.Id,
                     Descricao = $"Perfil cognitivo do aluno foi atualizado de '{currentPerfilCognitivo!.Descricao}' para '{updatedPerfilCognitivo.Descricao}'.",
                     Account_Id = _account!.Id,
@@ -368,7 +372,8 @@ public class AlunoService : IAlunoService {
 
             aluno.LastUpdated = TimeFunctions.HoraAtualBR();
 
-            _db.Aluno_Historicos.Add(new Aluno_Historico {
+            _db.Aluno_Historicos.Add(new Aluno_Historico
+            {
                 Aluno_Id = aluno.Id,
                 Descricao = $"Dados do aluno foram atualizados.",
                 Account_Id = _account!.Id,
@@ -419,7 +424,8 @@ public class AlunoService : IAlunoService {
 
                 // Inserir novos registros deste aluno nas aulas futuras da turma destino
                 foreach (Evento evento in eventosTurmaDestino) {
-                    Evento_Participacao_Aluno newParticipacao = new() {
+                    Evento_Participacao_Aluno newParticipacao = new()
+                    {
                         Presente = null,
                         Aluno_Id = aluno.Id,
                         Evento_Id = evento.Id,
@@ -434,14 +440,17 @@ public class AlunoService : IAlunoService {
                     _db.Evento_Participacao_Alunos.Add(newParticipacao);
                 }
 
-                _db.Aluno_Historicos.Add(new Aluno_Historico {
+                _db.Aluno_Historicos.Add(new Aluno_Historico
+                {
                     Aluno_Id = aluno.Id,
                     Descricao = $"Aluno foi transferido da turma: '{oldObject?.Turma}' para a turma : '{aluno.Turma.Nome}'",
                     Account_Id = _account!.Id,
                     Data = TimeFunctions.HoraAtualBR(),
                 });
-            } else if (isSwitchingTurma) {
-                _db.Aluno_Historicos.Add(new Aluno_Historico {
+            }
+            else if (isSwitchingTurma) {
+                _db.Aluno_Historicos.Add(new Aluno_Historico
+                {
                     Aluno_Id = aluno.Id,
                     Descricao = $"Aluno foi removido da turma: '{oldObject?.Turma}'.",
                     Account_Id = _account!.Id,
@@ -456,7 +465,8 @@ public class AlunoService : IAlunoService {
             response.Object = _db.AlunoLists.AsNoTracking().FirstOrDefault(aluno => aluno.Id == model.Id);
             response.Success = true;
 
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = "Falha ao atualizar aluno: ";// + ex.ToString();
         }
 
@@ -485,7 +495,8 @@ public class AlunoService : IAlunoService {
 
             _db.Alunos.Update(aluno);
 
-            _db.Aluno_Historicos.Add(new Aluno_Historico {
+            _db.Aluno_Historicos.Add(new Aluno_Historico
+            {
                 Aluno_Id = aluno.Id,
                 Descricao = $"Aluno {(aluno.Deactivated.HasValue ? "Reativado" : "Desativado")}",
                 Account_Id = _account.Id,
@@ -499,7 +510,8 @@ public class AlunoService : IAlunoService {
             response.Success = true;
             response.Message = $"Aluno foi {toggleResult} com sucesso";
             response.Object = _db.AlunoLists.AsNoTracking().FirstOrDefault(a => a.Id == aluno.Id);
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = "Falha ao ativar/desativar aluno";// + ex.ToString();
         }
 
@@ -519,7 +531,8 @@ public class AlunoService : IAlunoService {
             response.Success = true;
             response.Message = "Imagem de perfil encontrada";
             response.Object = aluno.Aluno_Foto;
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = "Falha ao resgatar imagem de perfil do aluno";// + ex.ToString();
         }
 
@@ -645,7 +658,8 @@ public class AlunoService : IAlunoService {
             _db.Alunos.Update(aluno);
 
             // Amarrar o novo registro à aula sendo reposta
-            Evento_Participacao_Aluno registroDest = new() {
+            Evento_Participacao_Aluno registroDest = new()
+            {
                 Aluno_Id = aluno.Id,
                 Evento_Id = eventoDest.Id,
                 ReposicaoDe_Evento_Id = eventoSource.Id,
@@ -667,7 +681,8 @@ public class AlunoService : IAlunoService {
             _db.Evento_Participacao_Alunos.Update(registroSource);
             _db.Evento_Participacao_Alunos.Add(registroDest);
 
-            _db.Aluno_Historicos.Add(new Aluno_Historico {
+            _db.Aluno_Historicos.Add(new Aluno_Historico
+            {
                 Aluno_Id = aluno.Id,
                 Descricao = $"O aluno agendou reposição do dia '{eventoSource.Data:G}' para o dia '{eventoDest.Data:G}' com a turma {eventoDest.Evento_Aula?.Turma_Id.ToString() ?? "Extra"}",
                 Account_Id = _account!.Id,
@@ -679,7 +694,8 @@ public class AlunoService : IAlunoService {
             response.Success = true;
             response.Object = _db.CalendarioAlunoLists.FirstOrDefault(r => r.Id == registroDest.Id);
             response.Message = "Reposição agendada com sucesso";
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Falha ao inserir reposição de aula do aluno";//: {ex}";
         }
 
@@ -727,7 +743,8 @@ public class AlunoService : IAlunoService {
                 .ToList();
 
             response.Success = true;
-            response.Object = new SummaryModel {
+            response.Object = new SummaryModel
+            {
                 Aluno_Id = aluno.Id,
                 Turma_Id = aluno.Turma_Id,
 
@@ -745,7 +762,8 @@ public class AlunoService : IAlunoService {
             };
             response.Message = "Sumário foi retornado com sucesso";
 
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = "Falha ao buscar sumário do aluno ";// + ex.ToString();
         }
 
@@ -797,7 +815,9 @@ public class AlunoService : IAlunoService {
                 return new ResponseModel { Message = "O aluno está desativado" };
             }
 
-            Evento? evento = _db.Eventos.FirstOrDefault(e => e.Id == model.Evento_Id);
+            Evento? evento = _db.Eventos
+                .Include(e => e.Evento_Participacao_Alunos)
+                .FirstOrDefault(e => e.Id == model.Evento_Id);
 
             if (evento is null) {
                 return new ResponseModel { Message = "Evento não encontrado" };
@@ -832,36 +852,44 @@ public class AlunoService : IAlunoService {
                 return new ResponseModel { Message = "Esse evento já está em sua capacidade máxima" };
             }
 
+            // Se o aluno já estiver no evento, precisa apenas marcar como primeira aula
+            bool alunoIsAlreadyInEvent = evento.Evento_Participacao_Alunos.Any(a => a.Aluno_Id == aluno.Id);
+
             // Validations passed
+            if (!alunoIsAlreadyInEvent) {
+                Evento_Participacao_Aluno participacao = new()
+                {
+                    Aluno_Id = aluno.Id,
+                    Evento_Id = evento.Id,
+                    Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
+                    NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
+                    Apostila_AH_Id = aluno.Apostila_AH_Id,
+                    NumeroPaginaAH = aluno.NumeroPaginaAH,
+                };
 
-            Evento_Participacao_Aluno participacao = new() {
-                Aluno_Id = aluno.Id,
-                Evento_Id = evento.Id,
-                Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
-                NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
-                Apostila_AH_Id = aluno.Apostila_AH_Id,
-                NumeroPaginaAH = aluno.NumeroPaginaAH,
-            };
+                _db.Evento_Participacao_Alunos.Add(participacao);
+            }
 
-            Aluno_Historico historico = new() {
+            Aluno_Historico historico = new()
+            {
                 Aluno_Id = aluno.Id,
                 Descricao = $"O aluno teve primeira aula agendada para o dia '{evento.Data:G}'",
                 Account_Id = _account!.Id,
                 Data = TimeFunctions.HoraAtualBR(),
             };
 
-            aluno.PrimeiraAula_Id = evento.Id;
-
-            _db.Alunos.Update(aluno);
-            _db.Evento_Participacao_Alunos.Add(participacao);
             _db.Aluno_Historicos.Add(historico);
+
+            aluno.PrimeiraAula_Id = evento.Id;
+            _db.Alunos.Update(aluno);
 
             _db.SaveChanges();
 
             response.Success = true;
             response.Object = _db.CalendarioAlunoLists.FirstOrDefault(r => r.Id == aluno.Id);
             response.Message = "Primeira aula agendada com sucesso";
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Falha ao inserir primeira aula do aluno";// : {ex}";
         }
 
