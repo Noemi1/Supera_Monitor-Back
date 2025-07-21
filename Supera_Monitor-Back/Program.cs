@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using Supera_Monitor_Back.CRM4U;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Middlewares;
 using Supera_Monitor_Back.Services;
@@ -25,6 +26,7 @@ builder.Services.AddHttpContextAccessor();
 #region SQL
 
 builder.Services.AddDbContext<DataContext>();
+builder.Services.AddDbContext<CRM4UContext>();
 
 #endregion
 

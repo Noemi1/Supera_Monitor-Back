@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Supera_Monitor_Back.CRM4U;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
@@ -30,7 +31,8 @@ public interface IAlunoService {
 
 public class AlunoService : IAlunoService {
     private readonly DataContext _db;
-    private readonly IMapper _mapper;
+    private readonly CRM4UContext _dbCRM;
+	private readonly IMapper _mapper;
     private readonly IEmailService _emailService;
     private readonly IPessoaService _pessoaService;
     private readonly IChecklistService _checklistService;
@@ -38,9 +40,18 @@ public class AlunoService : IAlunoService {
     private readonly Account? _account;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public AlunoService(DataContext db, IMapper mapper, IPessoaService pessoaService, IHttpContextAccessor httpContextAccessor, IChecklistService checklistService, IEmailService emailService) {
+    public AlunoService(
+		DataContext db,
+		CRM4UContext dbCRM,
+		IMapper mapper, 
+		IPessoaService pessoaService, 
+		IHttpContextAccessor httpContextAccessor, 
+		IChecklistService checklistService, 
+		IEmailService emailService
+		) {
         _db = db;
-        _mapper = mapper;
+        _dbCRM = dbCRM;
+		_mapper = mapper;
         _emailService = emailService;
         _pessoaService = pessoaService;
         _checklistService = checklistService;
@@ -116,46 +127,79 @@ public class AlunoService : IAlunoService {
     }
 
     public ResponseModel Insert(CreateAlunoRequest model) {
+
         ResponseModel response = new() { Success = false };
 
         try {
-            Pessoa? pessoa = _db.Pessoas.Find(model.Pessoa_Id);
+            PessoaCRM? pessoaCRM = _dbCRM.Pessoa.Find(model.Pessoa_Id);
 
             // Aluno só pode ser cadastrado se a pessoa existir no CRM
-            if (pessoa == null) {
+            if (pessoaCRM == null) {
                 return new ResponseModel { Message = "Pessoa não encontrada" };
             }
 
             // Aluno só pode ser cadastrado se tiver status matriculado
-            if (pessoa.Pessoa_Status_Id != (int) PessoaStatus.Matriculado) {
+            if (pessoaCRM.Pessoa_Status_Id != (int) PessoaStatus.Matriculado) {
                 return new ResponseModel { Message = "Aluno não está matriculado" };
             }
 
             // Aluno só pode ser cadastrado se tiver Unidade_Id = 1 (Supera Brigadeiro)
-            if (pessoa.Unidade_Id != 1) {
+            if (pessoaCRM.Unidade_Id != 1) {
                 return new ResponseModel { Message = "Pessoa não pertence a uma unidade cadastrada" };
             }
 
-            // Só pode ser cadastrado um aluno por pessoa
-            bool alunoAlreadyRegistered = _db.Alunos.Any(a => a.Pessoa_Id == model.Pessoa_Id);
 
-            if (alunoAlreadyRegistered) {
-                return new ResponseModel { Message = "Aluno já matriculado." };
-            }
+			// Só pode ser cadastrado um aluno por pessoa
+			bool alunoAlreadyRegistered = _db.Pessoas.Any(a => a.PessoaCRM_Id == model.Pessoa_Id);
+			if (alunoAlreadyRegistered)
+			{
+				return new ResponseModel { Message = "Aluno já matriculado." };
+			}
 
-            // Validations passed
+			// Validations passed
+			Pessoa pessoa = new Pessoa()
+			{
+				PessoaCRM_Id = pessoaCRM.Id,
+				Nome = pessoaCRM.Nome,
+				Email = pessoaCRM.Email,
+				Endereco = pessoaCRM.Endereco,
+				Observacao = pessoaCRM.Observacao,
+				Telefone = pessoaCRM.Telefone,
+				Celular = pessoaCRM.Celular,
+				DataEntrada = pessoaCRM.DataEntrada,
+				Pessoa_FaixaEtaria_Id = pessoaCRM.Pessoa_FaixaEtaria_Id,
+				Pessoa_Origem_Id = pessoaCRM.Pessoa_Origem_Id,
+				Pessoa_Status_Id = pessoaCRM.Pessoa_Status_Id,
+				RG = pessoaCRM.RG,
+				CPF = pessoaCRM.CPF,
+				aspnetusers_Id = pessoaCRM.aspnetusers_Id,
+				Pessoa_Sexo_Id = pessoaCRM.Pessoa_Sexo_Id,
+				DataNascimento = pessoaCRM.DataNascimento,
+				DataCadastro = pessoaCRM.DataCadastro,
+				Unidade_Id = pessoaCRM.Unidade_Id,
+				Pessoa_Origem_Canal_Id = pessoaCRM.Pessoa_Origem_Canal_Id,
+				Pessoa_Indicou_Id = pessoaCRM.Pessoa_Indicou_Id,
+				LandPage_Id = pessoaCRM.LandPage_Id,
+				Pessoa_Geracao_Id = pessoaCRM.Pessoa_Geracao_Id,
 
-            // quando chegar o dia que isso dê pau, me perdoe. só deus sabe como tá a mente do palhaço
-            Random RNG = new();
+			};
+
+			_db.Pessoas.Add(pessoa);
+			_db.SaveChanges();
+
+
+			// quando chegar o dia que isso dê pau, me perdoe. só deus sabe como tá a mente do palhaço
+			Random RNG = new();
             string randomRM;
 
             do {
                 randomRM = RNG.Next(0, 100000).ToString("D5");
-            } while (_db.Alunos.Any(x => x.RM == randomRM));
+            } 
+			while (_db.Alunos.Any(x => x.RM == randomRM));
 
             Aluno aluno = new() {
 
-                Pessoa_Id = model.Pessoa_Id,
+                Pessoa_Id = pessoa.Id,
                 AspNetUsers_Created_Id = model.AspNetUsers_Created_Id,
                 Created = TimeFunctions.HoraAtualBR(),
                 LastUpdated = null,

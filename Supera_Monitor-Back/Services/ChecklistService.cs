@@ -208,11 +208,12 @@ namespace Supera_Monitor_Back.Services {
 						// Calcula quantos dias faltam para o próximo domingo após a data de início
 						int diasAteDomingo = ((int)DayOfWeek.Sunday - (int)dataInicio.DayOfWeek + 7) % 7;
 
-						// Determina o primeiro domingo a partir da data de início
-						DateTime primeiroDomingo = dataInicio.AddDays(diasAteDomingo);
+						// Determina a primeira segunda a partir da data de início
+						DateTime primeiraSegunda = dataInicio.AddDays(diasAteDomingo + 1);
 
-						// Calcula o prazo final da tarefa (domingo da semana correspondente)
-						DateTime prazo = primeiroDomingo.AddDays(7 * (semana + 1));
+						// Calcula o prazo final da tarefa (segunda da semana correspondente)
+						//DateTime prazo = primeiroDomingo.AddDays(7 * (semana + 1));
+						DateTime prazo = primeiraSegunda.AddDays(7 * (semana + 1));
 
 						// Adiciona o item à checklist do aluno
 						alunoChecklist.Add(new()
