@@ -213,7 +213,7 @@ namespace Supera_Monitor_Back.Services {
 
 						// Calcula o prazo final da tarefa (segunda da semana correspondente)
 						//DateTime prazo = primeiroDomingo.AddDays(7 * (semana + 1));
-						DateTime prazo = primeiraSegunda.AddDays(7 * (semana + 1));
+						DateTime prazo = primeiraSegunda.AddDays(7 * semana);
 
 						// Adiciona o item à checklist do aluno
 						alunoChecklist.Add(new()
