@@ -452,7 +452,7 @@ public class EventoService : IEventoService {
         DateTime data = request.IntervaloDe.Value;
 
         // Adicionar todas as aulas não instanciadas - Aulas de turmas que tem horário marcado
-        while (data < request.IntervaloAte) {
+        while (data <= request.IntervaloAte) {
             //
             // Adiciona eventos recorrentes para reuniões e oficinas
             //
