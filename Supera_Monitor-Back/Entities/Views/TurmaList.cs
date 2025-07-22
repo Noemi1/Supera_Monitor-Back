@@ -13,7 +13,7 @@ public partial class TurmaList {
 
     public int CapacidadeMaximaAlunos { get; set; }
 
-    public int? AlunosAtivos { get; set; }
+    public int AlunosAtivos { get; set; }
 
     public int? Unidade_Id { get; set; }
 
