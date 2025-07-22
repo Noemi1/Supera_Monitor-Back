@@ -1093,14 +1093,14 @@ public class EventoService : IEventoService {
             var existingApostilas = _db.Apostilas.ToList();
 
             List<int> apostilasAbacoIds = request.Alunos
-				.Where(x => x.Apostila_Abaco_Id.HasValue)
-				.Select(p => p.Apostila_Abaco_Id!.Value)
-				.ToList();
+                .Where(x => x.Apostila_Abaco_Id.HasValue)
+                .Select(p => p.Apostila_Abaco_Id!.Value)
+                .ToList();
 
             List<int> apostilasAhIds = request.Alunos
-				.Where(x => x.Apostila_Abaco_Id.HasValue)
-				.Select(p => p.Apostila_Ah_Id!.Value)
-				.ToList();
+                .Where(x => x.Apostila_Abaco_Id.HasValue)
+                .Select(p => p.Apostila_Ah_Id!.Value)
+                .ToList();
 
             var validateApostilasAh = ValidateApostilas(apostilasAhIds, existingApostilas, "AH");
             var validateApostilasAbaco = ValidateApostilas(apostilasAbacoIds, existingApostilas, "Abaco");
@@ -2603,7 +2603,9 @@ public class EventoService : IEventoService {
                 aluno.Apostila_Kit_Id = model.Apostila_Kit_Id;
                 aluno.Turma_Id = model.Turma_Id;
                 aluno.Apostila_Abaco_Id = apostilas!.FirstOrDefault();
+                aluno.NumeroPaginaAbaco = 1;
                 aluno.Apostila_AH_Id = apostilas!.LastOrDefault();
+                aluno.NumeroPaginaAH = 1;
 
                 _db.Alunos.Update(aluno);
             }
