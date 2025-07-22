@@ -7,6 +7,9 @@ using Supera_Monitor_Back.Models.Roteiro;
 namespace Supera_Monitor_Back.Services;
 
 public interface IRoteiroService {
+
+
+    public RoteiroModel? Get(int roteiroId);
     List<RoteiroModel> GetAll();
     ResponseModel Insert(CreateRoteiroRequest model);
     ResponseModel Update(UpdateRoteiroRequest model);
@@ -23,16 +26,24 @@ public class RoteiroService : IRoteiroService {
     private readonly Account? _account;
     private readonly IHttpContextAccessor? _httpContextAccessor;
 
-    public RoteiroService(DataContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor)
-    {
+    public RoteiroService(DataContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor) {
         _db = db;
         _mapper = mapper;
         _httpContextAccessor = httpContextAccessor;
-        _account = ( Account? )_httpContextAccessor?.HttpContext?.Items["Account"];
+        _account = (Account?)_httpContextAccessor?.HttpContext?.Items["Account"];
     }
 
-    public List<RoteiroModel> GetAll()
-    {
+    public RoteiroModel? Get(int roteiroId) {
+        Roteiro? roteiro = _db.Roteiros.Find(roteiroId);
+
+        if (roteiro is null) {
+            return null;
+        }
+
+        return _mapper.Map<RoteiroModel>(roteiro);
+    }
+
+    public List<RoteiroModel> GetAll() {
         List<Roteiro> listRoteiros = _db.Roteiros
             .OrderBy(j => j.Semana)
             .ToList();
@@ -40,8 +51,7 @@ public class RoteiroService : IRoteiroService {
         return _mapper.Map<List<RoteiroModel>>(listRoteiros);
     }
 
-    public ResponseModel Insert(CreateRoteiroRequest model)
-    {
+    public ResponseModel Insert(CreateRoteiroRequest model) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -76,7 +86,8 @@ public class RoteiroService : IRoteiroService {
 
             // Validations passed
 
-            Roteiro newRoteiro = new() {
+            Roteiro newRoteiro = new()
+            {
                 Tema = model.Tema,
                 Semana = model.Semana,
                 DataInicio = model.DataInicio,
@@ -94,15 +105,15 @@ public class RoteiroService : IRoteiroService {
             response.Success = true;
             response.Message = "Roteiro inserido com sucesso";
             response.Object = _mapper.Map<RoteiroModel>(newRoteiro);
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Falha ao inserir roteiro: {ex}";
         }
 
         return response;
     }
 
-    public ResponseModel Update(UpdateRoteiroRequest model)
-    {
+    public ResponseModel Update(UpdateRoteiroRequest model) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -142,15 +153,15 @@ public class RoteiroService : IRoteiroService {
             response.Success = true;
             response.Message = "Roteiro atualizado com sucesso";
             response.Object = _mapper.Map<RoteiroModel>(roteiro);
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Falha ao atualizar roteiro: {ex}";
         }
 
         return response;
     }
 
-    public ResponseModel ToggleDeactivate(int roteiroId)
-    {
+    public ResponseModel ToggleDeactivate(int roteiroId) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -171,15 +182,15 @@ public class RoteiroService : IRoteiroService {
 
             response.Success = true;
             response.Message = "Roteiro desativado com sucesso";
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Falha ao desativar roteiro: {ex}";
         }
 
         return response;
     }
 
-    public List<MaterialModel> GetAllMaterialByRoteiro(int roteiroId)
-    {
+    public List<MaterialModel> GetAllMaterialByRoteiro(int roteiroId) {
         List<Roteiro_Material> listMaterial = _db.Roteiro_Materials
             .Where(m => m.Roteiro_Id == roteiroId)
             .ToList();
@@ -187,8 +198,7 @@ public class RoteiroService : IRoteiroService {
         return _mapper.Map<List<MaterialModel>>(listMaterial);
     }
 
-    public ResponseModel InsertMaterial(CreateRoteiroMaterialRequest model)
-    {
+    public ResponseModel InsertMaterial(CreateRoteiroMaterialRequest model) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -204,7 +214,8 @@ public class RoteiroService : IRoteiroService {
 
             // Validations passed
 
-            Roteiro_Material newMaterial = new() {
+            Roteiro_Material newMaterial = new()
+            {
                 FileName = model.FileName,
                 FileBase64 = model.FileBase64,
                 Roteiro_Id = model.Roteiro_Id,
@@ -220,15 +231,15 @@ public class RoteiroService : IRoteiroService {
             response.Success = true;
             response.Message = "Material criado com sucesso";
             response.Object = _mapper.Map<MaterialModel>(newMaterial);
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Falha ao criar material: {ex}";
         }
 
         return response;
     }
 
-    public ResponseModel ToggleDeactivateMaterial(int roteiroMaterialId)
-    {
+    public ResponseModel ToggleDeactivateMaterial(int roteiroMaterialId) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -250,7 +261,8 @@ public class RoteiroService : IRoteiroService {
             response.Success = true;
             response.Message = "Material desativado com sucesso";
             response.Object = _mapper.Map<MaterialModel>(material);
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Falha ao desativar material: {ex}";
         }
 
