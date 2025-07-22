@@ -21,8 +21,8 @@ public class ParticipacaoAlunoModel {
 
     public string? Observacao { get; set; }
     public bool Presente { get; set; }
-    public int Apostila_Abaco_Id { get; set; }
-    public int NumeroPaginaAbaco { get; set; }
-    public int Apostila_Ah_Id { get; set; }
-    public int NumeroPaginaAh { get; set; }
+    public int? Apostila_Abaco_Id { get; set; }
+    public int? NumeroPaginaAbaco { get; set; }
+    public int? Apostila_Ah_Id { get; set; }
+    public int? NumeroPaginaAh { get; set; }
 }
