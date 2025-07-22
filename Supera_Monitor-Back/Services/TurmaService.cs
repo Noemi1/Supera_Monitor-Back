@@ -227,7 +227,7 @@ public class TurmaService : ITurmaService {
                 Sala_Id: model.Sala_Id,
                 DiaSemana: model.DiaSemana,
                 Horario: model.Horario,
-                IgnoredTurmaId: null);
+                IgnoredTurmaId: model.Id);
 
             if (isSalaRecurrentlyOccupied) {
                 return new ResponseModel { Message = "Sala já está ocupada nesse horário" };
