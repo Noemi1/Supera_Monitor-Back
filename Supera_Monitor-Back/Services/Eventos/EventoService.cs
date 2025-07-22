@@ -1090,8 +1090,15 @@ public class EventoService : IEventoService {
 
             var existingApostilas = _db.Apostilas.ToList();
 
-            List<int> apostilasAbacoIds = request.Alunos.Select(p => p.Apostila_Abaco_Id).ToList();
-            List<int> apostilasAhIds = request.Alunos.Select(p => p.Apostila_Ah_Id).ToList();
+            List<int> apostilasAbacoIds = request.Alunos
+				.Where(x => x.Apostila_Abaco_Id.HasValue)
+				.Select(p => p.Apostila_Abaco_Id!.Value)
+				.ToList();
+
+            List<int> apostilasAhIds = request.Alunos
+				.Where(x => x.Apostila_Abaco_Id.HasValue)
+				.Select(p => p.Apostila_Ah_Id!.Value)
+				.ToList();
 
             var validateApostilasAh = ValidateApostilas(apostilasAhIds, existingApostilas, "AH");
             var validateApostilasAbaco = ValidateApostilas(apostilasAbacoIds, existingApostilas, "Abaco");
