@@ -5,7 +5,7 @@ public class UpdateAulaRequest {
 
     public DateTime Data { get; set; }
     public int? Turma_Id { get; set; }
-    public int Roteiro_Id { get; set; }
+    public int? Roteiro_Id { get; set; }
     public int Professor_Id { get; set; }
     public int Sala_Id { get; set; }
     public int DuracaoMinutos { get; set; }

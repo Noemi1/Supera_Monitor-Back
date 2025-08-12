@@ -603,10 +603,12 @@ public class AulaService : IAulaService {
             }
 
             // Não devo poder atualizar turma com um roteiro que não existe
+            if (request.Roteiro_Id.HasValue) {
             bool roteiroExists = _db.Roteiros.Any(r => r.Id == request.Roteiro_Id);
 
             if (!roteiroExists) {
                 return new ResponseModel { Message = "Roteiro não encontrado" };
+            }
             }
 
             // Não devo poder atualizar turma com um professor que está desativado
@@ -663,6 +665,7 @@ public class AulaService : IAulaService {
 
             evento.Evento_Aula!.Professor_Id = request.Professor_Id;
             evento.Evento_Aula.Turma_Id = request.Turma_Id;
+            evento.Evento_Aula.Roteiro_Id = request.Roteiro_Id ?? evento.Evento_Aula.Roteiro_Id;
 
             _db.Update(evento);
             _db.SaveChanges();
