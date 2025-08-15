@@ -67,5 +67,5 @@ public partial class CalendarioAlunoList {
 
     public int? PerfilCognitivo_Id { get; set; }
 
-    public string PerfilCognitivo { get; set; } = null!;
+    public string? PerfilCognitivo { get; set; } 
 }
