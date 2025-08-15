@@ -11,7 +11,7 @@ public partial class CalendarioAlunoList {
 
     public int? Checklist_Id { get; set; }
 
-    public string? Aluno { get; set; }
+	public string Aluno { get; set; } = string.Empty;
 
     public DateTime? DataNascimento { get; set; }
 
@@ -19,9 +19,11 @@ public partial class CalendarioAlunoList {
 
     public string? Aluno_Foto { get; set; }
 
-    public int Turma_Id { get; set; }
+    public int? Turma_Id { get; set; }
 
-    public DateTime? DataInicioVigencia { get; set; }
+	public string? Turma { get; set; }
+
+	public DateTime? DataInicioVigencia { get; set; }
 
     public DateTime? DataFimVigencia { get; set; }
 
@@ -34,8 +36,6 @@ public partial class CalendarioAlunoList {
     public DateTime? AulaZero { get; set; }
 
     public bool? RestricaoMobilidade { get; set; }
-
-    public string? Turma { get; set; }
 
     public int? ReposicaoDe_Evento_Id { get; set; }
 
