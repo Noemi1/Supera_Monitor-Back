@@ -1,5 +1,3 @@
-using System.Globalization;
-using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 using Supera_Monitor_Back.CRM4U;
 using Supera_Monitor_Back.Helpers;
@@ -7,19 +5,19 @@ using Supera_Monitor_Back.Middlewares;
 using Supera_Monitor_Back.Services;
 using Supera_Monitor_Back.Services.Email;
 using Supera_Monitor_Back.Services.Eventos;
+using System.Globalization;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
 
 builder.Services.AddControllers()
-    .AddJsonOptions(x =>
-    {
+    .AddJsonOptions(x => {
         x.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
         x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     })
-    .AddNewtonsoftJson(x =>
-    {
+    .AddNewtonsoftJson(x => {
         x.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
         x.SerializerSettings.Culture = new CultureInfo("pt-BR", false);
     });
@@ -32,7 +30,7 @@ builder.Services.AddDbContext<CRM4UContext>();
 
 #endregion
 
-builder.Services.AddAutoMapper(typeof(AutoMapperProfiles).Assembly);
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 #region SERVICES
 builder.Services.AddScoped<IAccountService, AccountService>();
@@ -66,8 +64,8 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 //if (app.Environment.IsDevelopment()) {
-app.UseSwagger();
-app.UseSwaggerUI();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 //}
 
 app.UseHttpsRedirection();

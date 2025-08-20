@@ -41,6 +41,7 @@ namespace Supera_Monitor_Back.Services {
                 throw new Exception("Professor não encontrado.");
             }
 
+
             return professor;
         }
 
@@ -71,9 +72,9 @@ namespace Supera_Monitor_Back.Services {
                 }
 
                 // Só atribuir o nivel de certificacao passado na requisição se este existir, caso contrário, nulo
-                bool nivelCertificacaoExists = _db.Professor_NivelCertificacaos.Any(n => n.Id == model.Professor_NivelCertificacao_Id);
+                bool NivelCertificacaoExists = _db.Professor_NivelCertificacaos.Any(n => n.Id == model.Professor_NivelCertificacao_Id);
 
-                professor.Professor_NivelCertificacao_Id = nivelCertificacaoExists ? model.Professor_NivelCertificacao_Id : null;
+                professor.Professor_NivelCertificacao_Id = NivelCertificacaoExists ? model.Professor_NivelCertificacao_Id : null;
 
                 // Se for passado um Account_Id no request, busca a conta no banco, senão cria uma e salva
                 if (model.Account_Id != null) {
@@ -83,9 +84,9 @@ namespace Supera_Monitor_Back.Services {
                         return new ResponseModel { Message = "Conta não encontrada" };
                     }
 
-                    bool userIsAlreadyAssigned = _db.ProfessorLists.Any(p => p.Account_Id == model.Account_Id);
+                    bool UserIsAlreadyAssigned = _db.ProfessorLists.Any(p => p.Account_Id == model.Account_Id);
 
-                    if (userIsAlreadyAssigned == true) {
+                    if (UserIsAlreadyAssigned == true) {
                         return new ResponseModel { Message = "Usuário já está associado a um professor" };
                     }
 
@@ -182,9 +183,9 @@ namespace Supera_Monitor_Back.Services {
                 response.OldObject = _db.ProfessorLists.SingleOrDefault(p => p.Id == professor.Id);
 
                 // Só atribuir o nivel de certificacao passado na requisição se este existir, caso contrário, nulo
-                bool nivelCertificacaoExists = _db.Professor_NivelCertificacaos.Any(n => n.Id == model.Professor_NivelCertificacao_Id);
+                bool NivelCertificacaoExists = _db.Professor_NivelCertificacaos.Any(n => n.Id == model.Professor_NivelCertificacao_Id);
 
-                professor.Professor_NivelCertificacao_Id = nivelCertificacaoExists ? model.Professor_NivelCertificacao_Id : null;
+                professor.Professor_NivelCertificacao_Id = NivelCertificacaoExists ? model.Professor_NivelCertificacao_Id : null;
 
                 account.Name = model.Nome;
                 account.Phone = model.Telefone;

@@ -26,14 +26,16 @@ namespace Supera_Monitor_Back.Services {
         private readonly Account? _account;
         private readonly IHttpContextAccessor? _httpContextAccessor;
 
-        public ChecklistService(DataContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor) {
+        public ChecklistService(DataContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor)
+        {
             _db = db;
             _mapper = mapper;
             _httpContextAccessor = httpContextAccessor;
-            _account = (Account?)_httpContextAccessor?.HttpContext?.Items["Account"];
+            _account = ( Account? )_httpContextAccessor?.HttpContext?.Items["Account"];
         }
 
-        public List<ChecklistModel> GetAll() {
+        public List<ChecklistModel> GetAll()
+        {
             List<Checklist> listChecklist = _db.Checklists
                 .OrderBy(c => c.Ordem)
                 .ToList();
@@ -47,7 +49,8 @@ namespace Supera_Monitor_Back.Services {
             return response;
         }
 
-        public List<ChecklistItemModel> GetAllByChecklistId(int checklistId) {
+        public List<ChecklistItemModel> GetAllByChecklistId(int checklistId)
+        {
             List<Checklist_Item> listChecklistItem = _db.Checklist_Items
                 .Where(c =>
                     c.Checklist_Id == checklistId &&
@@ -58,9 +61,12 @@ namespace Supera_Monitor_Back.Services {
             return _mapper.Map<List<ChecklistItemModel>>(listChecklistItem);
         }
 
-        public List<AlunoChecklistView> GetAllByAlunoId(int alunoId) {
+
+        public List<AlunoChecklistView> GetAllByAlunoId(int alunoId)
+        {
             List<AlunoChecklistView> listAlunoChecklistView = _db.AlunoChecklistViews
-                .Where(c => c.Aluno_Id == alunoId)
+                .Where(c =>
+                    c.Aluno_Id == alunoId)
                 .OrderBy(c => c.Checklist_Id)
                 .ThenBy(c => c.Ordem)
                 .ToList();
@@ -68,7 +74,8 @@ namespace Supera_Monitor_Back.Services {
             return listAlunoChecklistView;
         }
 
-        public ResponseModel Insert(CreateChecklistItemRequest model) {
+        public ResponseModel Insert(CreateChecklistItemRequest model)
+        {
             ResponseModel response = new() { Success = false };
 
             try {
@@ -82,8 +89,7 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Item da checklist deve possuir um nome" };
                 }
 
-                Checklist_Item newChecklistItem = new()
-                {
+                Checklist_Item newChecklistItem = new() {
                     Nome = model.Nome,
                     Ordem = model.Ordem,
                     Checklist_Id = model.Checklist_Id,
@@ -96,22 +102,22 @@ namespace Supera_Monitor_Back.Services {
                 response.Success = true;
                 response.Message = "Item da checklist criado com sucesso";
                 response.Object = _mapper.Map<ChecklistItemModel>(newChecklistItem);
-            }
-            catch (Exception ex) {
-                response.Message = $"Falha ao inserir item da checklist: {ex}";
+            } catch (Exception ex) {
+                response.Message = "Falha ao inserir item da checklist: " + ex.ToString();
             }
 
             return response;
         }
 
-        public ResponseModel Update(UpdateChecklistItemRequest model) {
+        public ResponseModel Update(UpdateChecklistItemRequest model)
+        {
             ResponseModel response = new() { Success = false };
 
             try {
                 Checklist_Item? checklistItem = _db.Checklist_Items.AsNoTracking().FirstOrDefault(c => c.Id == model.Id);
 
                 if (checklistItem is null) {
-                    return new ResponseModel { Message = "Item da checklist não encontrado" };
+                    return new ResponseModel { Success = false, Message = "Item da checklist não encontrado" };
                 }
 
                 if (checklistItem.Deactivated.HasValue) {
@@ -129,15 +135,15 @@ namespace Supera_Monitor_Back.Services {
                 response.Success = true;
                 response.Message = "Item da checklist atualizado com sucesso";
                 response.Object = _mapper.Map<ChecklistItemModel>(checklistItem);
-            }
-            catch (Exception ex) {
-                response.Message = $"Falha ao atualizar item da checklist: {ex}";
+            } catch (Exception ex) {
+                response.Message = "Falha ao atualizar item da checklist: " + ex.ToString();
             }
 
             return response;
         }
 
-        public ResponseModel ToggleDeactivate(int checklistItemId) {
+        public ResponseModel ToggleDeactivate(int checklistItemId)
+        {
             ResponseModel response = new() { Success = false };
 
             try {
@@ -157,26 +163,28 @@ namespace Supera_Monitor_Back.Services {
                 response.Success = true;
                 response.Message = "Item da checklist foi ativado/desativado com sucesso";
                 response.Object = _mapper.Map<ChecklistItemModel>(checklistItem);
-            }
-            catch (Exception ex) {
-                response.Message = $"Falha ao ativar/desativar item da checklist: {ex}";
+            } catch (Exception ex) {
+                response.Message = "Falha ao ativar/desativar item da checklist: " + ex.ToString();
             }
 
             return response;
         }
 
-        public ResponseModel PopulateAlunoChecklist(int alunoId) {
+
+        public ResponseModel PopulateAlunoChecklist(int alunoId)
+        {
             ResponseModel response = new() { Success = false };
 
             try {
                 Aluno? aluno = _db.Alunos
-                    .Include(x => x.Aluno_Checklist_Items)
-                    .FirstOrDefault(x => x.Id == alunoId);
+					.Include(x => x.Aluno_Checklist_Items)
+					.FirstOrDefault(x => x.Id == alunoId);
 
                 if (aluno is null) {
                     return new ResponseModel { Message = "Aluno não encontrado" };
                 }
 
+            
                 // Buscar todos os itens da checklist não desativados
                 List<Checklist_Item> checklistItems = _db.Checklist_Items.Where(c => c.Deactivated == null).ToList();
 
@@ -186,35 +194,37 @@ namespace Supera_Monitor_Back.Services {
 
                 // Para cada um, adicionar na checklist do aluno
                 foreach (Checklist_Item item in checklistItems) {
-                    Aluno_Checklist_Item? existe = aluno.Aluno_Checklist_Items.FirstOrDefault(x => x.Checklist_Item_Id == item.Id);
 
-                    if (existe == null) {
-                        // Obtém o número da semana da tarefa, padrão 0 se não encontrado
-                        int semana = checklists.FirstOrDefault(c => c.Id == item.Checklist_Id)?.NumeroSemana ?? 0;
+					Aluno_Checklist_Item? existe = aluno.Aluno_Checklist_Items
+													.FirstOrDefault(x => x.Checklist_Item_Id == item.Id);
+					if (existe == null)
+					{
+						// Obtém o número da semana da tarefa, padrão 0 se não encontrado
+						int semana = checklists.FirstOrDefault(c => c.Id == item.Checklist_Id)?.NumeroSemana ?? 0;
 
-                        // Obtém a data de início do aluno
-                        DateTime dataInicio = aluno.DataInicioVigencia;
+						// Obtém a data de início do aluno
+						DateTime dataInicio = aluno.DataInicioVigencia;
 
-                        // Calcula quantos dias faltam para o próximo domingo após a data de início
-                        int diasAteDomingo = ((int)DayOfWeek.Sunday - (int)dataInicio.DayOfWeek + 7) % 7;
+						// Calcula quantos dias faltam para o próximo domingo após a data de início
+						int diasAteDomingo = ((int)DayOfWeek.Sunday - (int)dataInicio.DayOfWeek + 7) % 7;
 
-                        // Determina a primeira segunda a partir da data de início
-                        DateTime primeiraSegunda = dataInicio.AddDays(diasAteDomingo + 1);
+						// Determina a primeira segunda a partir da data de início
+						DateTime primeiraSegunda = dataInicio.AddDays(diasAteDomingo + 1);
 
-                        // Calcula o prazo final da tarefa (segunda da semana correspondente)
-                        //DateTime prazo = primeiroDomingo.AddDays(7 * (semana + 1));
-                        DateTime prazo = primeiraSegunda.AddDays(7 * semana);
+						// Calcula o prazo final da tarefa (segunda da semana correspondente)
+						//DateTime prazo = primeiroDomingo.AddDays(7 * (semana + 1));
+						DateTime prazo = primeiraSegunda.AddDays(7 * semana);
 
-                        // Adiciona o item à checklist do aluno
-                        alunoChecklist.Add(new()
-                        {
-                            Aluno_Id = aluno.Id,
-                            Prazo = prazo,
-                            Checklist_Item_Id = item.Id,
-                            DataFinalizacao = null,
-                            Account_Finalizacao_Id = null,
-                        });
-                    }
+						// Adiciona o item à checklist do aluno
+						alunoChecklist.Add(new()
+						{
+							Aluno_Id = aluno.Id,
+							Prazo = prazo,
+							Checklist_Item_Id = item.Id,
+							DataFinalizacao = null,
+							Account_Finalizacao_Id = null,
+						});
+					}
                 }
 
                 _db.Aluno_Checklist_Items.AddRange(alunoChecklist);
@@ -222,15 +232,16 @@ namespace Supera_Monitor_Back.Services {
 
                 response.Success = true;
                 response.Message = "Itens da checklist do aluno foram populados com sucesso";
-            }
-            catch (Exception ex) {
-                response.Message = $"Falha ao popular checklist do aluno: {ex}";
+
+            } catch (Exception ex) {
+                response.Message = "Falha ao popular checklist do aluno: " + ex.ToString();
             }
 
             return response;
         }
 
-        public ResponseModel ToggleAlunoChecklistItem(ToggleAlunoChecklistRequest model) {
+        public ResponseModel ToggleAlunoChecklistItem(ToggleAlunoChecklistRequest model)
+        {
             ResponseModel response = new() { Success = false };
 
             try {
@@ -253,26 +264,33 @@ namespace Supera_Monitor_Back.Services {
                 response.Success = true;
                 response.Message = "Item da checklist do aluno foi atualizado com sucesso";
                 response.Object = _mapper.Map<AlunoChecklistItemModel>(item);
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                 response.Message = $"Falha ao atualizar checklist item do aluno: {ex}";
             }
 
             return response;
         }
 
-        public List<ChecklistsFromAlunoModel> GetAllAlunoChecklistsByEventoId(int eventoId) {
-            List<Evento_Participacao_Aluno> registros = _db.Evento_Participacao_Alunos
-                .Where(p => p.Evento_Id == eventoId && p.Deactivated == null)
-                .ToList();
+        public List<ChecklistsFromAlunoModel> GetAllAlunoChecklistsByEventoId(int eventoId)
+        {
+            // Coletar lista de registros e os alunos que tem esses registros previamente p/ reduzir o número de chamadas ao banco
+            List<Evento_Participacao_Aluno> registros = _db.Evento_Participacao_Alunos.Where(p => p.Evento_Id == eventoId && p.Deactivated == null).ToList();
+
+            List<int> alunoIds = registros.Select(r => r.Aluno_Id).ToList();
+            List<AlunoList> alunos = _db.AlunoLists.Where(a => alunoIds.Contains(a.Id)).ToList();
 
             // Montar o objeto de retorno
-            List<ChecklistsFromAlunoModel> response = [];
+            List<ChecklistsFromAlunoModel> response = new();
 
             foreach (Evento_Participacao_Aluno registro in registros) {
+                var aluno = alunos.FirstOrDefault(a => a.Id == registro.Aluno_Id);
+
                 List<AlunoChecklistView> alunoChecklists = GetAllByAlunoId(registro.Aluno_Id);
 
-                response.Add(new ChecklistsFromAlunoModel { Aluno_Id = registro.Aluno_Id, Checklist = alunoChecklists });
+                response.Add(new() {
+                    Aluno_Id = registro.Aluno_Id,
+                    Checklist = alunoChecklists
+                });
             }
 
             return response;

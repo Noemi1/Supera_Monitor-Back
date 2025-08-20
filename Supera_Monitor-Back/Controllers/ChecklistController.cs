@@ -1,9 +1,9 @@
-﻿using System.Reflection;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Checklist;
 using Supera_Monitor_Back.Services;
+using System.Reflection;
 
 namespace Supera_Monitor_Back.Controllers {
     [Authorize(Entities.Role.Admin, Entities.Role.Teacher, Entities.Role.Assistant)]
@@ -13,65 +13,67 @@ namespace Supera_Monitor_Back.Controllers {
         private readonly IChecklistService _checklistService;
         private readonly ILogService _logger;
 
-        public ChecklistController(IChecklistService checklistService, ILogService logger) {
+        public ChecklistController(IChecklistService checklistService, ILogService logger)
+        {
             _checklistService = checklistService;
             _logger = logger;
         }
 
         [HttpGet("all")]
-        public ActionResult<List<ChecklistModel>> GetAll() {
+        public ActionResult<List<ChecklistModel>> GetAll()
+        {
             try {
                 var response = _checklistService.GetAll();
 
                 return Ok(response);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
 
         [HttpGet("all/{checklistId}")]
-        public ActionResult<ResponseModel> GetAllByChecklistId(int checklistId) {
+        public ActionResult<ResponseModel> GetAllByChecklistId(int checklistId)
+        {
             try {
                 var response = _checklistService.GetAllByChecklistId(checklistId);
 
                 return Ok(response);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
 
         [HttpGet("all/aluno/{alunoId}")]
-        public ActionResult<List<AlunoChecklistView>> GetAllByAlunoId(int alunoId) {
+        public ActionResult<List<AlunoChecklistView>> GetAllByAlunoId(int alunoId)
+        {
             try {
                 var response = _checklistService.GetAllByAlunoId(alunoId);
 
                 return Ok(response);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
 
         [HttpGet("all/evento/{eventoId}")]
-        public ActionResult<List<ChecklistsFromAlunoModel>> GetAllAlunoChecklistsByEventoId(int eventoId) {
+        public ActionResult<List<ChecklistsFromAlunoModel>> GetAllAlunoChecklistsByEventoId(int eventoId)
+        {
             try {
                 var response = _checklistService.GetAllAlunoChecklistsByEventoId(eventoId);
 
                 return Ok(response);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
 
         [HttpPost()]
-        public ActionResult<ResponseModel> Insert(CreateChecklistItemRequest model) {
+        public ActionResult<ResponseModel> Insert(CreateChecklistItemRequest model)
+        {
             try {
                 var response = _checklistService.Insert(model);
 
@@ -81,15 +83,15 @@ namespace Supera_Monitor_Back.Controllers {
                 }
 
                 return BadRequest(response);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
 
         [HttpPut()]
-        public ActionResult<ResponseModel> Update(UpdateChecklistItemRequest model) {
+        public ActionResult<ResponseModel> Update(UpdateChecklistItemRequest model)
+        {
             try {
                 var response = _checklistService.Update(model);
 
@@ -99,15 +101,15 @@ namespace Supera_Monitor_Back.Controllers {
                 }
 
                 return BadRequest(response);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
 
         [HttpPatch("toggle-active/{checklistItemId}")]
-        public ActionResult<ResponseModel> ToggleDeactivate(int checklistItemId) {
+        public ActionResult<ResponseModel> ToggleDeactivate(int checklistItemId)
+        {
             try {
                 var response = _checklistService.ToggleDeactivate(checklistItemId);
 
@@ -117,15 +119,15 @@ namespace Supera_Monitor_Back.Controllers {
                 }
 
                 return BadRequest(response);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
 
         [HttpPost("populate/{alunoId}")]
-        public ActionResult<ResponseModel> PopulateAlunoChecklist(int alunoId) {
+        public ActionResult<ResponseModel> PopulateAlunoChecklist(int alunoId)
+        {
             try {
                 var response = _checklistService.PopulateAlunoChecklist(alunoId);
 
@@ -135,15 +137,15 @@ namespace Supera_Monitor_Back.Controllers {
                 }
 
                 return BadRequest(response);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }
         }
 
         [HttpPatch("toggle-item")]
-        public ActionResult<ResponseModel> ToggleAlunoChecklistItem(ToggleAlunoChecklistRequest model) {
+        public ActionResult<ResponseModel> ToggleAlunoChecklistItem(ToggleAlunoChecklistRequest model)
+        {
             try {
                 var response = _checklistService.ToggleAlunoChecklistItem(model);
 
@@ -153,8 +155,7 @@ namespace Supera_Monitor_Back.Controllers {
                 }
 
                 return BadRequest(response);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
                 return StatusCode(500, e);
             }

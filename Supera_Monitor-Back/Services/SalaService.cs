@@ -41,22 +41,16 @@ public class SalaService : ISalaService {
 
         try {
             // Não devo poder criar duas salas com o mesmo numero
-            bool salaAlreadyExists = _db.Salas.Any(s => s.NumeroSala == model.NumeroSala);
+            bool SalaAlreadyExists = _db.Salas.Any(s => s.NumeroSala == model.NumeroSala);
 
-            if (salaAlreadyExists) {
+            if (SalaAlreadyExists) {
                 return new ResponseModel { Message = "A operação foi cancelada pois existe outra sala com esse mesmo número" };
-            }
-
-            if (string.IsNullOrEmpty(model.Descricao)) {
-                return new ResponseModel { Message = "A sala precisa ter um nome/descrição" };
             }
 
             Sala newSala = new()
             {
                 Andar = model.Andar,
                 NumeroSala = model.NumeroSala,
-                Descricao = model.Descricao,
-                Online = model.Online ?? false,
             };
 
             _db.Salas.Add(newSala);
@@ -86,19 +80,14 @@ public class SalaService : ISalaService {
             }
 
             // Não devo poder atualizar da sala para um outro numero que ja existe
-            bool salaAlreadyExists = _db.Salas.Any(s => s.NumeroSala == model.NumeroSala && s.Id != model.Id);
+            bool SalaAlreadyExists = _db.Salas.Any(s => s.NumeroSala == model.NumeroSala && s.Id != model.Id);
 
-            if (salaAlreadyExists) {
+            if (SalaAlreadyExists) {
                 return new ResponseModel { Message = "A operação foi cancelada pois existe outra sala com esse mesmo número" };
-            }
-
-            if (string.IsNullOrEmpty(model.Descricao)) {
-                return new ResponseModel { Message = "A sala precisa ter um nome/descrição" };
             }
 
             sala.Andar = model.Andar;
             sala.NumeroSala = model.NumeroSala;
-            sala.Descricao = model.Descricao;
 
             _db.Salas.Update(sala);
             _db.SaveChanges();
@@ -164,7 +153,11 @@ public class SalaService : ISalaService {
     }
 
     public bool IsSalaRecurrentlyOccupied(int Sala_Id, int DiaSemana, TimeSpan Horario, int? IgnoredTurmaId, int DuracaoMinutos = 120) {
-        Sala sala = _db.Salas.Find(Sala_Id) ?? throw new Exception("Sala não encontrada");
+        Sala? sala = _db.Salas.Find(Sala_Id);
+
+        if (sala is null) {
+            throw new Exception("Sala não encontrada");
+        }
 
         if (sala.Online) {
             return false;
@@ -176,15 +169,10 @@ public class SalaService : ISalaService {
             t.Deactivated == null &&
             t.Sala_Id == Sala_Id &&
             t.DiaSemana == DiaSemana &&
-            (IgnoredTurmaId == null || t.Id != IgnoredTurmaId))
-            .ToList();
+            (IgnoredTurmaId == null || t.Id != IgnoredTurmaId));
 
-        return FindRecurrentConflicts(Horario, duracaoMinutos, activeTurmas);
-    }
-
-    public static bool FindRecurrentConflicts(TimeSpan Horario, TimeSpan DuracaoMinutos, List<Turma> Turmas) {
-        TimeSpan startEventTime = Horario.Subtract(DuracaoMinutos);
-        TimeSpan endEventTime = Horario.Add(DuracaoMinutos);
+        TimeSpan startEventTime = Horario.Subtract(duracaoMinutos);
+        TimeSpan endEventTime = Horario.Add(duracaoMinutos);
 
         // Vejo uma possibilidade de bug em horários extremos ex.: Evento às 23hrs ou 01hrs
         // Clamp do horário se entrar em um desses casos
@@ -196,7 +184,7 @@ public class SalaService : ISalaService {
             endEventTime = TimeSpan.FromHours(24);
         }
 
-        bool hasCollision = Turmas
+        bool hasCollision = activeTurmas
             .Any(t =>
                 t.Horario > startEventTime &&
                 t.Horario < endEventTime);

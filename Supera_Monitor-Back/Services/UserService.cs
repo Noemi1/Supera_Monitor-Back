@@ -34,16 +34,18 @@ namespace Supera_Monitor_Back.Services {
             IHttpContextAccessor httpContextAccessor,
             IEmailService emailService,
             IAccountService accountService
-            ) {
+            )
+        {
             _db = db;
             _mapper = mapper;
             _httpContextAccessor = httpContextAccessor;
-            _account = (Account?)httpContextAccessor?.HttpContext?.Items["Account"];
+            _account = ( Account? )httpContextAccessor?.HttpContext?.Items["Account"];
             _emailService = emailService;
             _accountService = accountService;
         }
 
-        public AccountResponse Get(int accountId) {
+        public AccountResponse Get(int accountId)
+        {
             Account? account = _db.Accounts
                 .Include(acc => acc.Role)
                 .FirstOrDefault(acc => acc.Id == accountId);
@@ -57,19 +59,22 @@ namespace Supera_Monitor_Back.Services {
             return response;
         }
 
-        public List<AccountList> GetAll() {
+        public List<AccountList> GetAll()
+        {
             List<AccountList> accounts = _db.AccountLists.OrderBy(t => t.Name).ToList();
 
             return accounts;
         }
 
-        public List<AccountRoleModel> GetRoles() {
+        public List<AccountRoleModel> GetRoles()
+        {
             List<AccountRole> roles = _db.AccountRoles.ToList();
 
             return _mapper.Map<List<AccountRoleModel>>(roles);
         }
 
-        public ResponseModel Insert(CreateAccountRequest model, string origin) {
+        public ResponseModel Insert(CreateAccountRequest model, string origin)
+        {
             Account? account = _db.Accounts.FirstOrDefault(acc => acc.Email == model.Email);
 
             if (account != null) {
@@ -93,15 +98,15 @@ namespace Supera_Monitor_Back.Services {
 
             SendVerificationEmail(account, origin, randomPassword);
 
-            return new ResponseModel
-            {
+            return new ResponseModel {
                 Message = "Conta cadastrada com sucesso!",
                 Success = true,
                 Object = _db.AccountLists.AsNoTracking().FirstOrDefault(accList => accList.Id == account.Id),
             };
         }
 
-        public ResponseModel Update(UpdateAccountRequest model) {
+        public ResponseModel Update(UpdateAccountRequest model)
+        {
             Account? account = _db.Accounts.Find(model.Id);
 
             if (account == null) {
@@ -118,7 +123,7 @@ namespace Supera_Monitor_Back.Services {
                 return new ResponseModel { Message = "Você não pode atualizar uma conta desativada." };
             }
 
-            if (_account == null || _account.Role_Id < (int)Role.Teacher && _account.Id != account.Id) {
+            if (_account == null || _account.Role_Id < ( int )Role.Teacher && _account.Id != account.Id) {
                 return new ResponseModel { Message = "Você não está autorizado a realizar esta ação. Apenas administradores ou o próprio titular da conta podem atualizar esta conta." };
             }
 
@@ -139,8 +144,7 @@ namespace Supera_Monitor_Back.Services {
             _db.Accounts.Update(account);
             _db.SaveChanges();
 
-            return new ResponseModel
-            {
+            return new ResponseModel {
                 Message = "Conta atualizada com sucesso!",
                 Success = true,
                 Object = _db.AccountLists.AsNoTracking().FirstOrDefault(x => x.Id == account.Id),
@@ -148,7 +152,8 @@ namespace Supera_Monitor_Back.Services {
             };
         }
 
-        public ResponseModel Delete(int accountId) {
+        public ResponseModel Delete(int accountId)
+        {
             Account? account = _db.Accounts
                 .Include(acc => acc.AccountRefreshTokens)
                 .Include(acc => acc.Role)
@@ -162,7 +167,7 @@ namespace Supera_Monitor_Back.Services {
                 return new ResponseModel { Message = "Você não pode atualizar uma conta desativada." };
             }
 
-            if (_account == null || _account.Role_Id < (int)Role.Teacher && _account.Id != account.Id) {
+            if (_account == null || _account.Role_Id < ( int )Role.Teacher && _account.Id != account.Id) {
                 return new ResponseModel { Message = "Você não está autorizado a realizar esta ação. Apenas administradores ou o próprio titular da conta podem deletar esta conta." };
             }
 
@@ -175,19 +180,18 @@ namespace Supera_Monitor_Back.Services {
             _db.Accounts.Remove(account);
             _db.SaveChanges();
 
-            return new ResponseModel
-            {
+            return new ResponseModel {
                 Message = "Conta deletada com sucesso.",
                 Success = true,
                 Object = logObject,
             };
         }
 
-        private void SendVerificationEmail(Account account, string url, string randomPassword) {
+        private void SendVerificationEmail(Account account, string url, string randomPassword)
+        {
             _emailService.SendEmail(
                 templateType: "VerifyAccount",
-                model: new VerificationEmailModel
-                {
+                model: new VerificationEmailModel {
                     Url = url,
                     VerificationToken = account.VerificationToken,
                     Email = account.Email,
@@ -196,7 +200,8 @@ namespace Supera_Monitor_Back.Services {
                 to: account.Email);
         }
 
-        public ResponseModel ResetPassword(int accountId) {
+        public ResponseModel ResetPassword(int accountId)
+        {
             Account? account = _db.Accounts
                  .Include(x => x.Role)
                  .FirstOrDefault(x => x.Id == accountId);
@@ -221,15 +226,15 @@ namespace Supera_Monitor_Back.Services {
                 model: new PasswordResetModel { RandomPassword = randomPassword },
                 to: account.Email);
 
-            return new ResponseModel
-            {
+            return new ResponseModel {
                 Message = "Email de recuperação de senha enviado!",
                 Success = true,
                 Object = _db.AccountLists.AsNoTracking().FirstOrDefault(accList => accList.Id == account.Id)
             };
         }
 
-        public ResponseModel ToggleDeactivate(int accountId, string ipAddress) {
+        public ResponseModel ToggleDeactivate(int accountId, string ipAddress)
+        {
             Account? account = _db.Accounts
                             .Include(acc => acc.AccountRefreshTokens)
                             .FirstOrDefault(acc => acc.Id == accountId);
@@ -269,8 +274,7 @@ namespace Supera_Monitor_Back.Services {
                 }
             }
 
-            return new ResponseModel
-            {
+            return new ResponseModel {
                 Success = true,
                 Object = _db.AccountLists.AsNoTracking().FirstOrDefault(accList => accList.Id == account.Id),
             };
@@ -278,7 +282,8 @@ namespace Supera_Monitor_Back.Services {
 
         #region HELPER FUNCTIONS
 
-        private Account SetNewAccount(Account entity) {
+        private Account SetNewAccount(Account entity)
+        {
             entity.AcceptTerms = true;
             entity.Created = TimeFunctions.HoraAtualBR();
             entity.VerificationToken = Utils.RandomTokenString();

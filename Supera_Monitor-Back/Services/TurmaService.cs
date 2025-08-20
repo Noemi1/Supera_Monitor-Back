@@ -72,6 +72,7 @@ public class TurmaService : ITurmaService {
         return turmas;
     }
 
+
     public List<PerfilCognitivoModel> GetAllPerfisCognitivos() {
         List<PerfilCognitivo> profiles = _db.PerfilCognitivos.ToList();
 
@@ -180,7 +181,7 @@ public class TurmaService : ITurmaService {
         ResponseModel response = new() { Success = false };
 
         try {
-            Turma? turma = _db.Turmas.Include(t => t.Alunos).FirstOrDefault(t => t.Id == model.Id);
+            Turma? turma = _db.Turmas.Find(model.Id);
 
             // Não devo poder atualizar uma turma que não existe
             if (turma == null) {
@@ -190,10 +191,6 @@ public class TurmaService : ITurmaService {
             // Não devo poder atualizar uma turma desativada
             if (turma.Deactivated.HasValue) {
                 return new ResponseModel { Message = "Não é possível atualizar uma turma desativada." };
-            }
-
-            if (model.CapacidadeMaximaAlunos < turma.Alunos.Count) {
-                return new ResponseModel { Message = $"A capacidade máxima de alunos não pode ser menor que a quantidade de alunos já matriculados na turma ({turma.Alunos.Count})." };
             }
 
             // Não devo poder atualizar turma com um professor que não existe
@@ -221,16 +218,9 @@ public class TurmaService : ITurmaService {
                 return new ResponseModel { Message = "Não foi possível atualizar a turma. O professor responsável já tem compromissos no horário indicado." };
             }
 
-            Sala? salaDestino = _db.Salas.Find(model.Sala_Id);
-
-            if (salaDestino is null) {
+            // Não devo permitir a atualização de uma turma em uma sala que não existe
+            if (!_salaService.Exists(model.Sala_Id)) {
                 return new ResponseModel { Message = "Sala não encontrada" };
-            }
-
-            bool existemAlunosComRestricaoNaTurma = turma.Alunos.Any(a => a.RestricaoMobilidade == true);
-
-            if (existemAlunosComRestricaoNaTurma && !salaDestino.PossuiAcessibilidade()) {
-                return new ResponseModel { Message = "A sala destino selecionada não possui acessibilidade para os alunos com restrições de mobilidade já cadastrados." };
             }
 
             bool isSalaRecurrentlyOccupied = _salaService.IsSalaRecurrentlyOccupied(
@@ -243,27 +233,13 @@ public class TurmaService : ITurmaService {
                 return new ResponseModel { Message = "Sala já está ocupada nesse horário" };
             }
 
-            var perfisRequisitados = model.PerfilCognitivo.Distinct().ToList();
-
-            var perfisValidos = _db.PerfilCognitivos
-                .Where(p => perfisRequisitados.Contains(p.Id))
-                .ToList();
-
             // Não devo poder atualizar turma com um perfil cognitivo que não existe
-            if (perfisRequisitados.Count != perfisValidos.Count) {
+            List<int> perfisCognitivos = model.PerfilCognitivo;
+
+            int validPerfisCognitivos = _db.PerfilCognitivos.Count(p => perfisCognitivos.Contains(p.Id));
+
+            if (perfisCognitivos.Count != validPerfisCognitivos) {
                 return new ResponseModel { Message = "Algum dos perfis cognitivos informados na requisição não existe." };
-            }
-
-            var perfisMatriculados = turma.Alunos
-                .Where(a => a.PerfilCognitivo_Id.HasValue)
-                .Select(a => a.PerfilCognitivo_Id!.Value)
-                .Distinct();
-
-            if (perfisMatriculados.Except(perfisRequisitados).Any()) {
-                return new ResponseModel
-                {
-                    Message = "Não é possível alterar um dos perfis cognitivos da turma, um dos alunos matriculados possui esse perfil."
-                };
             }
 
             // Validations passed
@@ -295,7 +271,7 @@ public class TurmaService : ITurmaService {
             _db.Turma_PerfilCognitivo_Rels.RemoveRange(turmaPerfisCognitivos);
             _db.SaveChanges();
 
-            foreach (int perfilCognitivoId in perfisRequisitados) {
+            foreach (int perfilCognitivoId in perfisCognitivos) {
                 Turma_PerfilCognitivo_Rel newTurmaPerfilRel = new()
                 {
                     Turma_Id = turma.Id,

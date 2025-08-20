@@ -143,8 +143,7 @@ public partial class DataContext : DbContext {
 
             var connectionString = configuration.GetConnectionString("ConnectionString");
 
-            optionsBuilder.UseSqlServer(connectionString, options =>
-            {
+            optionsBuilder.UseSqlServer(connectionString, options => {
                 options.CommandTimeout(1200); // 20 minutos
                 options.EnableRetryOnFailure(
                     maxRetryCount: 3,
@@ -156,8 +155,7 @@ public partial class DataContext : DbContext {
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
-        modelBuilder.Entity<Account>(entity =>
-        {
+        modelBuilder.Entity<Account>(entity => {
             entity.ToTable("Account");
 
             entity.HasIndex(e => e.Account_Created_Id, "IX_Account_Account_Created_Id");
@@ -171,8 +169,7 @@ public partial class DataContext : DbContext {
             entity.HasOne(d => d.Role).WithMany(p => p.Accounts).HasForeignKey(d => d.Role_Id);
         });
 
-        modelBuilder.Entity<AccountList>(entity =>
-        {
+        modelBuilder.Entity<AccountList>(entity => {
             entity
                 .HasNoKey()
                 .ToView("AccountList");
@@ -182,8 +179,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<AccountRefreshToken>(entity =>
-        {
+        modelBuilder.Entity<AccountRefreshToken>(entity => {
             entity.ToTable("AccountRefreshToken");
 
             entity.HasIndex(e => e.Account_Id, "IX_AccountRefreshToken_Account_Id");
@@ -193,13 +189,11 @@ public partial class DataContext : DbContext {
                 .HasConstraintName("FK_AccountRefreshToken_Account");
         });
 
-        modelBuilder.Entity<AccountRole>(entity =>
-        {
+        modelBuilder.Entity<AccountRole>(entity => {
             entity.ToTable("AccountRole");
         });
 
-        modelBuilder.Entity<Aluno>(entity =>
-        {
+        modelBuilder.Entity<Aluno>(entity => {
             entity.ToTable("Aluno");
 
             entity.Property(e => e.Aluno_Foto).IsUnicode(false);
@@ -252,8 +246,7 @@ public partial class DataContext : DbContext {
                 .HasConstraintName("FK_Aluno_Turma");
         });
 
-        modelBuilder.Entity<AlunoChecklistItemList>(entity =>
-        {
+        modelBuilder.Entity<AlunoChecklistItemList>(entity => {
             entity
                 .HasNoKey()
                 .ToView("AlunoChecklistItemList");
@@ -285,8 +278,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<AlunoChecklistView>(entity =>
-        {
+        modelBuilder.Entity<AlunoChecklistView>(entity => {
             entity
                 .HasNoKey()
                 .ToView("AlunoChecklistView");
@@ -299,8 +291,7 @@ public partial class DataContext : DbContext {
             entity.Property(e => e.Prazo).HasColumnType("date");
         });
 
-        modelBuilder.Entity<AlunoList>(entity =>
-        {
+        modelBuilder.Entity<AlunoList>(entity => {
             entity
                 .HasNoKey()
                 .ToView("AlunoList");
@@ -374,8 +365,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<AlunoRestricaoList>(entity =>
-        {
+        modelBuilder.Entity<AlunoRestricaoList>(entity => {
             entity
                 .HasNoKey()
                 .ToView("AlunoRestricaoList");
@@ -388,8 +378,7 @@ public partial class DataContext : DbContext {
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
         });
 
-        modelBuilder.Entity<Aluno_Checklist_Item>(entity =>
-        {
+        modelBuilder.Entity<Aluno_Checklist_Item>(entity => {
             entity.ToTable("Aluno_Checklist_Item");
 
             entity.Property(e => e.DataFinalizacao).HasColumnType("datetime");
@@ -411,8 +400,7 @@ public partial class DataContext : DbContext {
                 .HasConstraintName("FK_Aluno_Checklist_Item_Checklist_Item");
         });
 
-        modelBuilder.Entity<Aluno_Historico>(entity =>
-        {
+        modelBuilder.Entity<Aluno_Historico>(entity => {
             entity.ToTable("Aluno_Historico");
 
             entity.Property(e => e.Data).HasColumnType("datetime");
@@ -436,8 +424,7 @@ public partial class DataContext : DbContext {
                 .HasConstraintName("FK_Aluno_Historico_Aluno");
         });
 
-        modelBuilder.Entity<Aluno_Restricao>(entity =>
-        {
+        modelBuilder.Entity<Aluno_Restricao>(entity => {
             entity.ToTable("Aluno_Restricao");
 
             entity.Property(e => e.Created).HasColumnType("datetime");
@@ -457,8 +444,7 @@ public partial class DataContext : DbContext {
                 .HasConstraintName("FK_Aluno_Restricao_Aluno");
         });
 
-        modelBuilder.Entity<Apostila>(entity =>
-        {
+        modelBuilder.Entity<Apostila>(entity => {
             entity.ToTable("Apostila");
 
             entity.Property(e => e.Nome)
@@ -466,8 +452,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<ApostilaList>(entity =>
-        {
+        modelBuilder.Entity<ApostilaList>(entity => {
             entity
                 .HasNoKey()
                 .ToView("ApostilaList");
@@ -480,8 +465,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Apostila_Kit>(entity =>
-        {
+        modelBuilder.Entity<Apostila_Kit>(entity => {
             entity.ToTable("Apostila_Kit");
 
             entity.Property(e => e.Nome)
@@ -489,8 +473,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Apostila_Kit_Rel>(entity =>
-        {
+        modelBuilder.Entity<Apostila_Kit_Rel>(entity => {
             entity.ToTable("Apostila_Kit_Rel");
 
             entity.HasOne(d => d.Apostila).WithMany(p => p.Apostila_Kit_Rels)
@@ -504,8 +487,7 @@ public partial class DataContext : DbContext {
                 .HasConstraintName("FK_Apostila_Kit_Rel_Apostila_Kit");
         });
 
-        modelBuilder.Entity<Apostila_Tipo>(entity =>
-        {
+        modelBuilder.Entity<Apostila_Tipo>(entity => {
             entity.ToTable("Apostila_Tipo");
 
             entity.Property(e => e.Nome)
@@ -513,8 +495,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<AspNetUser>(entity =>
-        {
+        modelBuilder.Entity<AspNetUser>(entity => {
             entity.Property(e => e.Id)
                 .HasMaxLength(128)
                 .IsUnicode(false);
@@ -542,8 +523,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<AulaEsperaList>(entity =>
-        {
+        modelBuilder.Entity<AulaEsperaList>(entity => {
             entity
                 .HasNoKey()
                 .ToView("AulaEsperaList");
@@ -573,8 +553,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Aula_Aluno_Contato>(entity =>
-        {
+        modelBuilder.Entity<Aula_Aluno_Contato>(entity => {
             entity.HasKey(e => e.Id).HasName("PK_Aula_Aluno_Falta");
 
             entity.ToTable("Aula_Aluno_Contato");
@@ -588,8 +567,7 @@ public partial class DataContext : DbContext {
                 .HasConstraintName("FK_Aula_Aluno_Contato_Account");
         });
 
-        modelBuilder.Entity<Aula_ListaEspera>(entity =>
-        {
+        modelBuilder.Entity<Aula_ListaEspera>(entity => {
             entity.ToTable("Aula_ListaEspera");
 
             entity.Property(e => e.Created).HasColumnType("datetime");
@@ -605,8 +583,7 @@ public partial class DataContext : DbContext {
                 .HasConstraintName("FK_Aula_ListaEspera_Aluno");
         });
 
-        modelBuilder.Entity<CalendarioAlunoList>(entity =>
-        {
+        modelBuilder.Entity<CalendarioAlunoList>(entity => {
             entity
                 .HasNoKey()
                 .ToView("CalendarioAlunoList");
@@ -644,8 +621,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<CalendarioEventoList>(entity =>
-        {
+        modelBuilder.Entity<CalendarioEventoList>(entity => {
             entity
                 .HasNoKey()
                 .ToView("CalendarioEventoList");
@@ -672,8 +648,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<CalendarioProfessorList>(entity =>
-        {
+        modelBuilder.Entity<CalendarioProfessorList>(entity => {
             entity
                 .HasNoKey()
                 .ToView("CalendarioProfessorList");
@@ -684,8 +659,7 @@ public partial class DataContext : DbContext {
             entity.Property(e => e.Observacao).IsUnicode(false);
         });
 
-        modelBuilder.Entity<Checklist>(entity =>
-        {
+        modelBuilder.Entity<Checklist>(entity => {
             entity.ToTable("Checklist");
 
             entity.Property(e => e.Nome)
@@ -693,8 +667,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Checklist_Item>(entity =>
-        {
+        modelBuilder.Entity<Checklist_Item>(entity => {
             entity.ToTable("Checklist_Item");
 
             entity.Property(e => e.Deactivated).HasColumnType("datetime");
@@ -708,8 +681,7 @@ public partial class DataContext : DbContext {
                 .HasConstraintName("FK_Checklist_Item_Checklist");
         });
 
-        modelBuilder.Entity<Evento>(entity =>
-        {
+        modelBuilder.Entity<Evento>(entity => {
             entity.ToTable("Evento");
 
             entity.Property(e => e.Created).HasColumnType("datetime");
@@ -736,8 +708,7 @@ public partial class DataContext : DbContext {
                 .HasConstraintName("FK_Evento_Sala");
         });
 
-        modelBuilder.Entity<Evento_Aula>(entity =>
-        {
+        modelBuilder.Entity<Evento_Aula>(entity => {
             entity.ToTable("Evento_Aula");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
@@ -761,8 +732,7 @@ public partial class DataContext : DbContext {
                 .HasConstraintName("FK_Evento_Aula_Turma");
         });
 
-        modelBuilder.Entity<Evento_Aula_PerfilCognitivo_Rel>(entity =>
-        {
+        modelBuilder.Entity<Evento_Aula_PerfilCognitivo_Rel>(entity => {
             entity.ToTable("Evento_Aula_PerfilCognitivo_Rel");
 
             entity.HasOne(d => d.Evento_Aula).WithMany(p => p.Evento_Aula_PerfilCognitivo_Rels)
@@ -776,8 +746,7 @@ public partial class DataContext : DbContext {
                 .HasConstraintName("FK_Evento_Aula_PerfilCognitivo_Rel_PerfilCognitivo");
         });
 
-        modelBuilder.Entity<Evento_Participacao_Aluno>(entity =>
-        {
+        modelBuilder.Entity<Evento_Participacao_Aluno>(entity => {
             entity.ToTable("Evento_Participacao_Aluno");
 
             entity.Property(e => e.Deactivated).HasColumnType("datetime");
@@ -806,8 +775,7 @@ public partial class DataContext : DbContext {
                 .HasConstraintName("FK_Evento_Participacao_Aluno_ReposicaoDe_Evento");
         });
 
-        modelBuilder.Entity<Evento_Participacao_Aluno_Contato>(entity =>
-        {
+        modelBuilder.Entity<Evento_Participacao_Aluno_Contato>(entity => {
             entity.ToTable("Evento_Participacao_Aluno_Contato");
 
             entity.Property(e => e.Data).HasColumnType("datetime");
@@ -829,8 +797,7 @@ public partial class DataContext : DbContext {
                 .HasConstraintName("FK_Evento_Participacao_Aluno_Contato_Evento_Participacao_Aluno");
         });
 
-        modelBuilder.Entity<Evento_Participacao_Aluno_Contato_Tipo>(entity =>
-        {
+        modelBuilder.Entity<Evento_Participacao_Aluno_Contato_Tipo>(entity => {
             entity.ToTable("Evento_Participacao_Aluno_Contato_Tipo");
 
             entity.Property(e => e.Descricao)
@@ -838,8 +805,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Evento_Participacao_Aluno_Status>(entity =>
-        {
+        modelBuilder.Entity<Evento_Participacao_Aluno_Status>(entity => {
             entity.ToTable("Evento_Participacao_Aluno_Status");
 
             entity.Property(e => e.CorLegenda)
@@ -853,8 +819,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Evento_Participacao_Professor>(entity =>
-        {
+        modelBuilder.Entity<Evento_Participacao_Professor>(entity => {
             entity.ToTable("Evento_Participacao_Professor");
 
             entity.Property(e => e.Deactivated).HasColumnType("datetime");
@@ -871,8 +836,7 @@ public partial class DataContext : DbContext {
                 .HasConstraintName("FK_Evento_Participacao_Professor_Professor");
         });
 
-        modelBuilder.Entity<Evento_Tipo>(entity =>
-        {
+        modelBuilder.Entity<Evento_Tipo>(entity => {
             entity.ToTable("Evento_Tipo");
 
             entity.Property(e => e.Nome)
@@ -880,8 +844,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Feriado>(entity =>
-        {
+        modelBuilder.Entity<Feriado>(entity => {
             entity.ToTable("Feriado");
 
             entity.Property(e => e.Data).HasColumnType("datetime");
@@ -890,8 +853,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Lembrete>(entity =>
-        {
+        modelBuilder.Entity<Lembrete>(entity => {
             entity.ToTable("Lembrete");
 
             entity.Property(e => e.Descricao)
@@ -899,8 +861,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Log>(entity =>
-        {
+        modelBuilder.Entity<Log>(entity => {
             entity.ToTable("Log");
 
             entity.HasIndex(e => e.Account_Id, "IX_Log_Account_Id");
@@ -908,20 +869,17 @@ public partial class DataContext : DbContext {
             entity.HasOne(d => d.Account).WithMany(p => p.Logs).HasForeignKey(d => d.Account_Id);
         });
 
-        modelBuilder.Entity<LogError>(entity =>
-        {
+        modelBuilder.Entity<LogError>(entity => {
             entity.ToTable("LogError");
         });
 
-        modelBuilder.Entity<LogList>(entity =>
-        {
+        modelBuilder.Entity<LogList>(entity => {
             entity
                 .HasNoKey()
                 .ToView("LogList");
         });
 
-        modelBuilder.Entity<PerfilCognitivo>(entity =>
-        {
+        modelBuilder.Entity<PerfilCognitivo>(entity => {
             entity.ToTable("PerfilCognitivo");
 
             entity.Property(e => e.Descricao).IsUnicode(false);
@@ -930,8 +888,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Pessoa>(entity =>
-        {
+        modelBuilder.Entity<Pessoa>(entity => {
             entity.ToTable("Pessoa");
 
             entity.Property(e => e.CPF)
@@ -986,15 +943,13 @@ public partial class DataContext : DbContext {
                 .HasConstraintName("FK_Pessoa_Pessoa_Status");
         });
 
-        modelBuilder.Entity<Pessoa_FaixaEtarium>(entity =>
-        {
+        modelBuilder.Entity<Pessoa_FaixaEtarium>(entity => {
             entity.Property(e => e.Nome)
                 .HasMaxLength(50)
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Pessoa_Geracao>(entity =>
-        {
+        modelBuilder.Entity<Pessoa_Geracao>(entity => {
             entity.ToTable("Pessoa_Geracao");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
@@ -1003,8 +958,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Pessoa_Origem>(entity =>
-        {
+        modelBuilder.Entity<Pessoa_Origem>(entity => {
             entity.ToTable("Pessoa_Origem");
 
             entity.Property(e => e.Descricao)
@@ -1021,8 +975,7 @@ public partial class DataContext : DbContext {
                 .HasConstraintName("FK_Pessoa_Origem_Pessoa_Origem_Categoria");
         });
 
-        modelBuilder.Entity<Pessoa_Origem_Canal>(entity =>
-        {
+        modelBuilder.Entity<Pessoa_Origem_Canal>(entity => {
             entity.ToTable("Pessoa_Origem_Canal");
 
             entity.Property(e => e.Nome)
@@ -1030,15 +983,13 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Pessoa_Origem_Categorium>(entity =>
-        {
+        modelBuilder.Entity<Pessoa_Origem_Categorium>(entity => {
             entity.Property(e => e.Nome)
                 .HasMaxLength(100)
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Pessoa_Origem_Investimento>(entity =>
-        {
+        modelBuilder.Entity<Pessoa_Origem_Investimento>(entity => {
             entity.ToTable("Pessoa_Origem_Investimento");
 
             entity.Property(e => e.Fee).HasColumnType("decimal(18, 2)");
@@ -1048,8 +999,7 @@ public partial class DataContext : DbContext {
             entity.Property(e => e.OutrosInvestimentos).HasColumnType("decimal(18, 2)");
         });
 
-        modelBuilder.Entity<Pessoa_Sexo>(entity =>
-        {
+        modelBuilder.Entity<Pessoa_Sexo>(entity => {
             entity.ToTable("Pessoa_Sexo");
 
             entity.Property(e => e.Nome)
@@ -1057,8 +1007,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Pessoa_Status>(entity =>
-        {
+        modelBuilder.Entity<Pessoa_Status>(entity => {
             entity.ToTable("Pessoa_Status");
 
             entity.Property(e => e.Nome)
@@ -1066,8 +1015,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Professor>(entity =>
-        {
+        modelBuilder.Entity<Professor>(entity => {
             entity.ToTable("Professor");
 
             entity.Property(e => e.CorLegenda)
@@ -1086,8 +1034,7 @@ public partial class DataContext : DbContext {
                 .HasConstraintName("FK_Professor_Professor_NivelCertificacao");
         });
 
-        modelBuilder.Entity<ProfessorList>(entity =>
-        {
+        modelBuilder.Entity<ProfessorList>(entity => {
             entity
                 .HasNoKey()
                 .ToView("ProfessorList");
@@ -1105,8 +1052,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Professor_NivelCertificacao>(entity =>
-        {
+        modelBuilder.Entity<Professor_NivelCertificacao>(entity => {
             entity.ToTable("Professor_NivelCertificacao");
 
             entity.Property(e => e.Descricao)
@@ -1114,8 +1060,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Roteiro>(entity =>
-        {
+        modelBuilder.Entity<Roteiro>(entity => {
             entity.ToTable("Roteiro");
 
             entity.Property(e => e.CorLegenda)
@@ -1136,8 +1081,7 @@ public partial class DataContext : DbContext {
                 .HasConstraintName("FK_Roteiro_Account_Created");
         });
 
-        modelBuilder.Entity<Roteiro_Material>(entity =>
-        {
+        modelBuilder.Entity<Roteiro_Material>(entity => {
             entity.ToTable("Roteiro_Material");
 
             entity.Property(e => e.Created).HasColumnType("datetime");
@@ -1159,8 +1103,7 @@ public partial class DataContext : DbContext {
                 .HasConstraintName("FK_Roteiro_Material_Jornada");
         });
 
-        modelBuilder.Entity<Sala>(entity =>
-        {
+        modelBuilder.Entity<Sala>(entity => {
             entity.ToTable("Sala");
 
             entity.Property(e => e.Descricao)
@@ -1168,8 +1111,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Turma>(entity =>
-        {
+        modelBuilder.Entity<Turma>(entity => {
             entity.ToTable("Turma");
 
             entity.Property(e => e.LinkGrupo).IsUnicode(false);
@@ -1191,8 +1133,7 @@ public partial class DataContext : DbContext {
                 .HasConstraintName("FK_Turma_Sala");
         });
 
-        modelBuilder.Entity<TurmaList>(entity =>
-        {
+        modelBuilder.Entity<TurmaList>(entity => {
             entity
                 .HasNoKey()
                 .ToView("TurmaList");
@@ -1206,8 +1147,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Turma_PerfilCognitivo_Rel>(entity =>
-        {
+        modelBuilder.Entity<Turma_PerfilCognitivo_Rel>(entity => {
             entity.ToTable("Turma_PerfilCognitivo_Rel");
 
             entity.HasOne(d => d.PerfilCognitivo).WithMany(p => p.Turma_PerfilCognitivo_Rels)
@@ -1219,19 +1159,6 @@ public partial class DataContext : DbContext {
                 .HasForeignKey(d => d.Turma_Id)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Turma_PerfilCognitivo_Rel_Turma");
-        });
-
-        modelBuilder.Entity<AlunoHistoricoList>(entity =>
-        {
-            entity
-                .HasNoKey()
-                .ToView("AlunoHistoricoList");
-
-            entity.Property(e => e.Account_Id)
-                .HasMaxLength(128)
-                .IsUnicode(false);
-            entity.Property(e => e.Data).HasColumnType("datetime");
-            entity.Property(e => e.Descricao).IsUnicode(false);
         });
 
         OnModelCreatingPartial(modelBuilder);
