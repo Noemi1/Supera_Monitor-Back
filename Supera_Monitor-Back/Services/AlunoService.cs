@@ -33,8 +33,6 @@ public class AlunoService : IAlunoService {
     private readonly DataContext _db;
     private readonly CRM4UContext _dbCRM;
     private readonly IMapper _mapper;
-    private readonly IEmailService _emailService;
-    private readonly IPessoaService _pessoaService;
     private readonly IChecklistService _checklistService;
 
     private readonly Account? _account;
@@ -52,8 +50,6 @@ public class AlunoService : IAlunoService {
         _db = db;
         _dbCRM = dbCRM;
         _mapper = mapper;
-        _emailService = emailService;
-        _pessoaService = pessoaService;
         _checklistService = checklistService;
 
         _httpContextAccessor = httpContextAccessor;
@@ -181,32 +177,22 @@ public class AlunoService : IAlunoService {
                 Pessoa_Indicou_Id = pessoaCRM.Pessoa_Indicou_Id,
                 LandPage_Id = pessoaCRM.LandPage_Id,
                 Pessoa_Geracao_Id = pessoaCRM.Pessoa_Geracao_Id,
-
             };
 
             _db.Pessoas.Add(pessoa);
             _db.SaveChanges();
 
-
-            // quando chegar o dia que isso dê pau, me perdoe. só deus sabe como tá a mente do palhaço
-            Random RNG = new();
-            string randomRM;
-
-            do {
-                randomRM = RNG.Next(0, 100000).ToString("D5");
-            }
-            while (_db.Alunos.Any(x => x.RM == randomRM));
+            string randomRM = Utils.GenerateRM(_db);
 
             Aluno aluno = new()
             {
-
                 Pessoa_Id = pessoa.Id,
                 AspNetUsers_Created_Id = model.AspNetUsers_Created_Id,
                 Created = TimeFunctions.HoraAtualBR(),
                 LastUpdated = null,
                 Deactivated = null,
 
-                RM = randomRM.ToString(),
+                RM = randomRM,
                 LoginApp = pessoa.Email ?? $"{randomRM}@supera",
                 SenhaApp = "Supera@123",
 
@@ -224,7 +210,6 @@ public class AlunoService : IAlunoService {
                 NumeroPaginaAbaco = null,
                 Apostila_AH_Id = null,
                 NumeroPaginaAH = null,
-
             };
 
             _db.Alunos.Add(aluno);
@@ -252,7 +237,7 @@ public class AlunoService : IAlunoService {
             response.Success = true;
         }
         catch (Exception ex) {
-            response.Message = "Falha ao registrar aluno";// + ex.ToString();
+            response.Message = $"Falha ao registrar aluno: {ex}";
         }
 
         return response;
@@ -302,7 +287,7 @@ public class AlunoService : IAlunoService {
                 _db.Aluno_Historicos.Add(new Aluno_Historico
                 {
                     Aluno_Id = aluno.Id,
-                    Descricao = $"Perfil cognitivo do aluno foi atualizado de '{currentPerfilCognitivo!.Descricao}' para '{updatedPerfilCognitivo.Descricao}'.",
+                    Descricao = $"Perfil cognitivo do aluno foi atualizado de '{currentPerfilCognitivo?.Descricao}' para '{updatedPerfilCognitivo.Descricao}'.",
                     Account_Id = _account!.Id,
                     Data = TimeFunctions.HoraAtualBR(),
                 });
@@ -467,7 +452,7 @@ public class AlunoService : IAlunoService {
 
         }
         catch (Exception ex) {
-            response.Message = "Falha ao atualizar aluno: ";// + ex.ToString();
+            response.Message = $"Falha ao atualizar aluno: {ex}";
         }
 
         return response;

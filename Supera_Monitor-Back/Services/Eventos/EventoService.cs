@@ -31,6 +31,7 @@ public interface IEventoService {
 
     public ResponseModel InsertParticipacao(InsertParticipacaoRequest request);
     public ResponseModel RemoveParticipacao(int participacaoId);
+    public ResponseModel CancelarParticipacao(int participacaoId);
 
     public ResponseModel FinalizarAulaZero(FinalizarAulaZeroRequest request);
 
@@ -763,7 +764,7 @@ public class EventoService : IEventoService {
             }
 
             if (participacao.Deactivated.HasValue) {
-                return new ResponseModel { Message = "Não é possível remove uma participação que está desativada" };
+                return new ResponseModel { Message = "Não é possível remover uma participação que está desativada" };
             }
 
             // Validations passed
@@ -784,6 +785,46 @@ public class EventoService : IEventoService {
         }
         catch (Exception ex) {
             response.Message = $"Falha ao remover participação aluno em evento: {ex}";
+        }
+
+        return response;
+    }
+
+    public ResponseModel CancelarParticipacao(int participacaoId) {
+        ResponseModel response = new() { Success = false };
+
+        try {
+            Evento_Participacao_Aluno? participacao = _db.Evento_Participacao_Alunos.Include(e => e.Aluno).FirstOrDefault(p => p.Id == participacaoId);
+
+            if (participacao is null) {
+                return new ResponseModel { Message = "Participação do aluno em evento não encontrada" };
+            }
+
+            if (participacao.Deactivated.HasValue) {
+                return new ResponseModel { Message = "A participação já está desativada" };
+            }
+
+            // Validations passed
+
+            if (participacao.Aluno.PrimeiraAula_Id == participacao.Evento_Id) {
+                participacao.Aluno.PrimeiraAula_Id = null;
+            }
+
+            if (participacao.Aluno.AulaZero_Id == participacao.Evento_Id) {
+                participacao.Aluno.AulaZero_Id = null;
+            }
+
+            participacao.Presente = false;
+            participacao.Deactivated = TimeFunctions.HoraAtualBR();
+
+            _db.Evento_Participacao_Alunos.Update(participacao);
+            _db.SaveChanges();
+
+            response.Message = "A participação do aluno foi cancelada";
+            response.Success = true;
+        }
+        catch (Exception ex) {
+            response.Message = $"Falha ao cancelar participação do aluno no evento: {ex}";
         }
 
         return response;
@@ -2378,7 +2419,6 @@ public class EventoService : IEventoService {
         return events;
     }
 
-
     public async Task<List<FeriadoResponse>> GetFeriados(int ano) {
 
         string token = "20487|fbPtn71wk6mjsGDWRdU8mGECDlNZhyM7";
@@ -2577,18 +2617,20 @@ public class EventoService : IEventoService {
             IEnumerable<Aluno> alunosInEvento = evento.Evento_Participacao_Alunos.Select(ep => ep.Aluno);
 
             foreach (var model in alunosPresentes) {
-                Aluno aluno = alunosInEvento
-                    .FirstOrDefault(a => a.Id == model.Aluno_Id) ?? throw new Exception("Aluno não encontrado.");
+                Aluno aluno = alunosInEvento.FirstOrDefault(a => a.Id == model.Aluno_Id) ?? throw new Exception("Aluno não encontrado.");
 
                 kitsDictionary.TryGetValue(model.Apostila_Kit_Id, out var apostilas);
+
+                int? apostilaAbacoId = apostilas?.FirstOrDefault();
+                int? apostilaAHId = apostilas?.LastOrDefault();
 
                 aluno.PerfilCognitivo_Id = model.PerfilCognitivo_Id;
                 aluno.Apostila_Kit_Id = model.Apostila_Kit_Id;
                 aluno.Turma_Id = model.Turma_Id;
-                aluno.Apostila_Abaco_Id = apostilas!.FirstOrDefault();
-                aluno.NumeroPaginaAbaco = 1;
-                aluno.Apostila_AH_Id = apostilas!.LastOrDefault();
-                aluno.NumeroPaginaAH = 1;
+                aluno.Apostila_Abaco_Id = apostilaAbacoId;
+                aluno.NumeroPaginaAbaco = apostilaAbacoId.HasValue ? 1 : null;
+                aluno.Apostila_AH_Id = apostilaAHId;
+                aluno.NumeroPaginaAH = apostilaAHId.HasValue ? 1 : null;
 
                 _db.Alunos.Update(aluno);
             }
