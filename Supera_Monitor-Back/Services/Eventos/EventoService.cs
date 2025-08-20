@@ -522,7 +522,7 @@ public class EventoService : IEventoService {
                         Descricao = descricao,
                         DuracaoMinutos = 60,
                         Finalizado = false,
-                        Sala_Id = null,
+                        Sala_Id = 2,
                         CapacidadeMaximaAlunos = 0,
                         Professores = professores.Select(professor => new CalendarioProfessorList
                         {
