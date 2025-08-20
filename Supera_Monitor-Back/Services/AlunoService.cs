@@ -283,7 +283,7 @@ public class AlunoService : IAlunoService {
             // Não deve ser possível atualizar um aluno com um perfil cognitivo que não existe
             var updatedPerfilCognitivo = _db.PerfilCognitivos.FirstOrDefault(p => p.Id == model.PerfilCognitivo_Id);
 
-            if (updatedPerfilCognitivo is null) {
+            if (model.PerfilCognitivo_Id.HasValue && updatedPerfilCognitivo is null) {
                 return new ResponseModel { Message = "Não é possível atualizar um aluno com um perfil cognitivo que não existe" };
             }
 
@@ -467,7 +467,7 @@ public class AlunoService : IAlunoService {
 
         }
         catch (Exception ex) {
-            response.Message = "Falha ao atualizar aluno: ";// + ex.ToString();
+            response.Message = "Falha ao atualizar aluno: + ex.ToString();
         }
 
         return response;
