@@ -32,7 +32,7 @@ builder.Services.AddDbContext<CRM4UContext>();
 
 #endregion
 
-builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+builder.Services.AddAutoMapper(typeof(AutoMapperProfiles).Assembly);
 
 #region SERVICES
 builder.Services.AddScoped<IAccountService, AccountService>();
@@ -75,7 +75,7 @@ app.UseStaticFiles();
 
 app.UseCors(option => option
     .SetIsOriginAllowed(x => true)
-    .WithOrigins("http://localhost:4200", "https://supera-monitor-front.vercel.app", "https://supera-monitor-back-e4hwhteuewdmd8ea.canadacentral-01.azurewebsites.net")
+    .WithOrigins("http://localhost:4200", "https://localhost:4200", "https://supera-monitor-front.vercel.app", "https://supera-monitor-back-e4hwhteuewdmd8ea.canadacentral-01.azurewebsites.net")
     .AllowAnyMethod()
     .AllowAnyHeader()
     .AllowCredentials()

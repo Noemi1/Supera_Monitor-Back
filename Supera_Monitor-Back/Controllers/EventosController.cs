@@ -268,7 +268,7 @@ public class EventosController : _BaseController {
         }
     }
 
-    [HttpPost("inscrever")]
+    [HttpPost("participacao/inscrever")]
     public ActionResult<ResponseModel> InsertParticipacao(InsertParticipacaoRequest request) {
         try {
             var response = _eventoService.InsertParticipacao(request);
@@ -285,7 +285,7 @@ public class EventosController : _BaseController {
         }
     }
 
-    [HttpDelete("remover")]
+    [HttpDelete("participacao/remover/{participacaoId}")]
     public ActionResult<ResponseModel> RemoveParticipacao(int participacaoId) {
         try {
             var response = _eventoService.RemoveParticipacao(participacaoId);
@@ -302,16 +302,16 @@ public class EventosController : _BaseController {
         }
     }
 
-    [HttpPost("aulas/chamada")]
-    public ActionResult<ResponseModel> Chamada(ChamadaRequest request) {
+    [HttpPatch("participacao/cancelar/{participacaoId}")]
+    public ActionResult<ResponseModel> CancelarParticipacao(int participacaoId) {
         try {
-            ResponseModel response = _aulaService.Chamada(request);
+            var response = _eventoService.CancelarParticipacao(participacaoId);
 
-            if (response.Success) {
-                return Ok(response);
+            if (response.Success == false) {
+                return BadRequest(response);
             }
 
-            return BadRequest(response);
+            return Ok(response);
         }
         catch (Exception e) {
             _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());

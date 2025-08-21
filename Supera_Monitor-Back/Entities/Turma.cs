@@ -38,4 +38,10 @@ public partial class Turma {
     public virtual Sala? Sala { get; set; }
 
     public virtual ICollection<Turma_PerfilCognitivo_Rel> Turma_PerfilCognitivo_Rels { get; set; } = new List<Turma_PerfilCognitivo_Rel>();
+
+    public bool PossuiVagas(int vagasOcupadas, int vagasRequisitadas) {
+        int vagasDisponiveis = this.CapacidadeMaximaAlunos - vagasOcupadas;
+
+        return (vagasDisponiveis - vagasRequisitadas) >= 0;
+    }
 }

@@ -14,4 +14,8 @@ public partial class Sala {
     public virtual ICollection<Evento> Eventos { get; set; } = new List<Evento>();
 
     public virtual ICollection<Turma> Turmas { get; set; } = new List<Turma>();
+
+    public bool PossuiAcessibilidade() {
+        return Andar == 0 || Online == true;
+    }
 }
