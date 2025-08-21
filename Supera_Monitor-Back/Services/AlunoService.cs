@@ -467,7 +467,7 @@ public class AlunoService : IAlunoService {
 
         }
         catch (Exception ex) {
-            response.Message = "Falha ao atualizar aluno: + ex.ToString();
+            response.Message = $"Falha ao atualizar aluno: {ex}";
         }
 
         return response;
