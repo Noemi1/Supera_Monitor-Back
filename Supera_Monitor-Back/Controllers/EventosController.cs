@@ -302,10 +302,10 @@ public class EventosController : _BaseController {
         }
     }
 
-    [HttpPatch("participacao/cancelar/{participacaoId}")]
-    public ActionResult<ResponseModel> CancelarParticipacao(int participacaoId) {
+    [HttpPatch("participacao/cancelar")]
+    public ActionResult<ResponseModel> CancelarParticipacao(CancelarParticipacaoRequest request) {
         try {
-            var response = _eventoService.CancelarParticipacao(participacaoId);
+            var response = _eventoService.CancelarParticipacao(request);
 
             if (response.Success == false) {
                 return BadRequest(response);

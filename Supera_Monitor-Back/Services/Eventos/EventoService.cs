@@ -31,7 +31,7 @@ public interface IEventoService {
 
     public ResponseModel InsertParticipacao(InsertParticipacaoRequest request);
     public ResponseModel RemoveParticipacao(int participacaoId);
-    public ResponseModel CancelarParticipacao(int participacaoId);
+    public ResponseModel CancelarParticipacao(CancelarParticipacaoRequest request);
 
     public ResponseModel FinalizarAulaZero(FinalizarAulaZeroRequest request);
 
@@ -790,7 +790,7 @@ public class EventoService : IEventoService {
         return response;
     }
 
-    public ResponseModel CancelarParticipacao(int participacaoId) {
+    public ResponseModel CancelarParticipacao(CancelarParticipacaoRequest request) {
         ResponseModel response = new() { Success = false };
 
         try {
@@ -815,6 +815,7 @@ public class EventoService : IEventoService {
             }
 
             participacao.Presente = false;
+            participacao.Observacao = request?.Observacao;
             participacao.Deactivated = TimeFunctions.HoraAtualBR();
 
             _db.Evento_Participacao_Alunos.Update(participacao);
