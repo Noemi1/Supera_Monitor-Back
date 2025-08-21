@@ -780,6 +780,8 @@ public partial class DataContext : DbContext {
         {
             entity.ToTable("Evento_Participacao_Aluno");
 
+            entity.Property(e => e.AlunoContactado).HasColumnType("datetime");
+            entity.Property(e => e.ContatoObservacao).IsUnicode(false);
             entity.Property(e => e.Deactivated).HasColumnType("datetime");
             entity.Property(e => e.Observacao).IsUnicode(false);
 

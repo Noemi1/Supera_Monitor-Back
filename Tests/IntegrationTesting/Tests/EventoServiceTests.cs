@@ -2,6 +2,7 @@
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models.Eventos;
+using Supera_Monitor_Back.Models.Eventos.Participacao;
 using Supera_Monitor_Back.Services;
 using Supera_Monitor_Back.Services.Email;
 using Supera_Monitor_Back.Services.Eventos;
@@ -300,6 +301,76 @@ public class EventoServiceTests : BaseIntegrationTest {
 
         var eventoTurma = response.SingleOrDefault(e => e.Evento_Tipo_Id == (int)EventoTipo.Aula);
         Assert.Null(eventoTurma);
+    }
+
+    [Fact]
+    public void Should_UpdateParticipacaoCorrectly() {
+        // Arrange (constructor)
+
+        var turma = TurmaFactory.Create(_db, new Turma
+        {
+            DiaSemana = 1,
+            Horario = new TimeSpan(10, 0, 0),
+            Sala_Id = 1,
+            Professor_Id = 1,
+            Nome = "Test Turma",
+            CapacidadeMaximaAlunos = 12,
+            Unidade_Id = 1,
+            Account_Created_Id = 3,
+        }, [1, 2]);
+
+        Assert.NotNull(turma);
+
+        var aluno = AlunoFactory.Create(_db, new Aluno { Turma_Id = turma.Id, PerfilCognitivo_Id = 1, Apostila_Kit_Id = 1, Apostila_Abaco_Id = 1, Apostila_AH_Id = 3 });
+
+        var evento = EventoFactory.Create(_db, new Evento
+        {
+            Descricao = "Test Evento Finalizar",
+            Data = TimeFunctions.HoraAtualBR().AddDays(1),
+            Evento_Tipo_Id = (int)EventoTipo.Aula,
+            DuracaoMinutos = 120,
+            Sala_Id = 1,
+            CapacidadeMaximaAlunos = 10,
+            Account_Created_Id = 3, // Admin
+            Created = TimeFunctions.HoraAtualBR(),
+            Evento_Aula = new Evento_Aula
+            {
+                Professor_Id = (int)turma.Professor_Id!,
+                Roteiro_Id = null,
+                Turma_Id = turma.Id,
+            },
+        });
+
+        Assert.NotNull(evento);
+
+        var participacao = EventoFactory.CreateParticipacaoAluno(_db, evento, aluno);
+
+        // Act
+        var response = sut.UpdateParticipacao(new UpdateParticipacaoRequest
+        {
+            Participacao_Id = participacao.Id,
+            ContatoObservacao = "Test Update Participacao",
+
+            AlunoContactado = TimeFunctions.HoraAtualBR(),
+
+            Deactivated = participacao.Deactivated,
+            Presente = participacao.Presente,
+            Observacao = participacao.Observacao,
+            ReposicaoDe_Evento_Id = participacao.ReposicaoDe_Evento_Id,
+            Apostila_AH_Id = participacao.Apostila_AH_Id,
+            Apostila_Abaco_Id = participacao.Apostila_Abaco_Id,
+            NumeroPaginaAbaco = participacao.NumeroPaginaAbaco,
+            NumeroPaginaAH = participacao.NumeroPaginaAH,
+        });
+
+        // Assert
+
+        Assert.NotNull(response);
+        Assert.True(response.Success);
+
+        Evento_Participacao_Aluno? updatedParticipacao = _db.Evento_Participacao_Alunos.Find(participacao.Id);
+        Assert.NotNull(updatedParticipacao);
+        Assert.Equal("Test Update Participacao", updatedParticipacao.ContatoObservacao);
     }
 
     //[Fact]

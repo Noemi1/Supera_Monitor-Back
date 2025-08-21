@@ -11,7 +11,7 @@ public partial class CalendarioAlunoList {
 
     public int? Checklist_Id { get; set; }
 
-	public string Aluno { get; set; } = string.Empty;
+    public string Aluno { get; set; } = string.Empty;
 
     public DateTime? DataNascimento { get; set; }
 
@@ -21,9 +21,9 @@ public partial class CalendarioAlunoList {
 
     public int? Turma_Id { get; set; }
 
-	public string? Turma { get; set; }
+    public string? Turma { get; set; }
 
-	public DateTime? DataInicioVigencia { get; set; }
+    public DateTime? DataInicioVigencia { get; set; }
 
     public DateTime? DataFimVigencia { get; set; }
 
@@ -63,9 +63,13 @@ public partial class CalendarioAlunoList {
 
     public DateTime? Deactivated { get; set; }
 
-    public bool Active => !Deactivated.HasValue;
+    public DateTime? AlunoContactado { get; set; }
+
+    public string? ContatoObservacao { get; set; }
+
+    public bool Active => Deactivated == null;
 
     public int? PerfilCognitivo_Id { get; set; }
 
-    public string? PerfilCognitivo { get; set; } 
+    public string? PerfilCognitivo { get; set; }
 }

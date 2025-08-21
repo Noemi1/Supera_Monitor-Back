@@ -23,6 +23,10 @@ public partial class Evento_Participacao_Aluno {
 
     public DateTime? Deactivated { get; set; }
 
+    public DateTime? AlunoContactado { get; set; }
+
+    public string? ContatoObservacao { get; set; }
+
     public virtual Aluno Aluno { get; set; } = null!;
 
     public virtual Apostila? Apostila_AH { get; set; }

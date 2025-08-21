@@ -6,6 +6,7 @@ using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Eventos;
 using Supera_Monitor_Back.Models.Eventos.Aula;
 using Supera_Monitor_Back.Models.Eventos.Dtos;
+using Supera_Monitor_Back.Models.Eventos.Participacao;
 using Supera_Monitor_Back.Services;
 using Supera_Monitor_Back.Services.Eventos;
 
@@ -272,6 +273,23 @@ public class EventosController : _BaseController {
     public ActionResult<ResponseModel> InsertParticipacao(InsertParticipacaoRequest request) {
         try {
             var response = _eventoService.InsertParticipacao(request);
+
+            if (response.Success == false) {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
+        }
+        catch (Exception e) {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
+
+    [HttpPut("participacao/atualizar")]
+    public ActionResult<ResponseModel> UpdateParticipacao(UpdateParticipacaoRequest request) {
+        try {
+            var response = _eventoService.UpdateParticipacao(request);
 
             if (response.Success == false) {
                 return BadRequest(response);

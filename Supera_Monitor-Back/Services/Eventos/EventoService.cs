@@ -9,6 +9,7 @@ using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Eventos;
 using Supera_Monitor_Back.Models.Eventos.Dtos;
+using Supera_Monitor_Back.Models.Eventos.Participacao;
 
 namespace Supera_Monitor_Back.Services.Eventos;
 
@@ -30,6 +31,7 @@ public interface IEventoService {
     public ResponseModel CreateAulaExtraEvent(CreateClassEventDto dto);
 
     public ResponseModel InsertParticipacao(InsertParticipacaoRequest request);
+    public ResponseModel UpdateParticipacao(UpdateParticipacaoRequest request);
     public ResponseModel RemoveParticipacao(int participacaoId);
     public ResponseModel CancelarParticipacao(CancelarParticipacaoRequest request);
 
@@ -748,6 +750,54 @@ public class EventoService : IEventoService {
         }
         catch (Exception ex) {
             response.Message = $"Falha ao inscrever aluno no evento: {ex}";
+        }
+
+        return response;
+    }
+
+    public ResponseModel UpdateParticipacao(UpdateParticipacaoRequest request) {
+        ResponseModel response = new() { Success = false };
+
+        try {
+            Evento_Participacao_Aluno? participacao = _db.Evento_Participacao_Alunos.Find(request.Participacao_Id);
+
+            if (participacao is null) {
+                return new ResponseModel { Message = "Participação encontrada" };
+            }
+
+            Apostila? apostilaAbaco = _db.Apostilas.Find(request.Apostila_Abaco_Id);
+
+            if (request.Apostila_Abaco_Id.HasValue && apostilaAbaco is null) {
+                return new ResponseModel { Message = "Apostila Ábaco não encontrada" };
+            }
+
+            Apostila? apostilaAh = _db.Apostilas.Find(request.Apostila_AH_Id);
+
+            if (request.Apostila_Abaco_Id.HasValue && apostilaAbaco is null) {
+                return new ResponseModel { Message = "Apostila AH não encontrada" };
+            }
+
+            // Validations passed
+
+            participacao.Observacao = request?.Observacao;
+
+            participacao.Apostila_Abaco_Id = request?.Apostila_Abaco_Id;
+            participacao.NumeroPaginaAbaco = apostilaAbaco is not null ? request?.NumeroPaginaAbaco : null;
+            participacao.Apostila_AH_Id = request?.Apostila_Abaco_Id;
+            participacao.NumeroPaginaAH = apostilaAh is not null ? request?.NumeroPaginaAbaco : null;
+
+            participacao.AlunoContactado = request?.AlunoContactado;
+            participacao.ContatoObservacao = request?.ContatoObservacao;
+
+            participacao.Deactivated = request?.Deactivated;
+
+            _db.Evento_Participacao_Alunos.Update(participacao);
+
+            response.Message = "Participação do aluno foi atualizada com sucesso.";
+            response.Success = true;
+        }
+        catch (Exception ex) {
+            response.Message = $"Falha ao atualizar participação do aluno: {ex}";
         }
 
         return response;
