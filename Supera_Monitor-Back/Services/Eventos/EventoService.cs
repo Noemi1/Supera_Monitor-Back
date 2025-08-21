@@ -794,7 +794,7 @@ public class EventoService : IEventoService {
         ResponseModel response = new() { Success = false };
 
         try {
-            Evento_Participacao_Aluno? participacao = _db.Evento_Participacao_Alunos.Include(e => e.Aluno).FirstOrDefault(p => p.Id == participacaoId);
+            Evento_Participacao_Aluno? participacao = _db.Evento_Participacao_Alunos.Include(e => e.Aluno).FirstOrDefault(p => p.Id == request.Participacao_Id);
 
             if (participacao is null) {
                 return new ResponseModel { Message = "Participação do aluno em evento não encontrada" };
