@@ -10,6 +10,7 @@ public class DataSeeder(DataContext db) {
 
     public async Task SeedAsync() {
         await SeedEventoTipo();
+        await SeedStatusContato();
         await SeedPerfilCognitivo();
         await SeedAccountRoles();
         await SeedAccountsAndProfessors();
@@ -20,6 +21,30 @@ public class DataSeeder(DataContext db) {
         await SeedApostilaKitRels();
         await SeedFunctions();
         await SeedViews();
+    }
+
+    private async Task SeedStatusContato() {
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+
+        _db.Database.ExecuteSqlRaw("SET IDENTITY_INSERT [Evento_Participacao_Aluno_StatusContato] ON");
+
+        var statusContatos = new List<Evento_Participacao_Aluno_StatusContato>
+        {
+            new() { Id = 1, Descricao = "Não compareceu"},
+            new() { Id = 2, Descricao = "Aguardando retorno"},
+            new() { Id = 3, Descricao = "Optou por não repor"},
+            new() { Id = 4, Descricao = "Aula cancelada"},
+            new() { Id = 5, Descricao = "Reposição - Agendada"},
+            new() { Id = 6, Descricao = "Reposição - Realizada"},
+            new() { Id = 7, Descricao = "Reposição - Desmarcada"},
+            new() { Id = 8, Descricao = "Reposição - Não compareceu"},
+            new() { Id = 9, Descricao = "Outro"},
+        };
+
+        _db.Evento_Participacao_Aluno_StatusContato.AddRange(statusContatos);
+        await _db.SaveChangesAsync();
+
+        _db.Evento_Participacao_Aluno_StatusContato.AddRange();
     }
 
     private async Task SeedApostilaTipos() {

@@ -67,6 +67,8 @@ public partial class CalendarioAlunoList {
 
     public string? ContatoObservacao { get; set; }
 
+    public int? StatusContato_Id { get; set; }
+
     public bool Active => Deactivated == null;
 
     public int? PerfilCognitivo_Id { get; set; }

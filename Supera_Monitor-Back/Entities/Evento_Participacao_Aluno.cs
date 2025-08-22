@@ -27,6 +27,8 @@ public partial class Evento_Participacao_Aluno {
 
     public string? ContatoObservacao { get; set; }
 
+    public int? StatusContato_Id { get; set; }
+
     public virtual Aluno Aluno { get; set; } = null!;
 
     public virtual Apostila? Apostila_AH { get; set; }
@@ -35,8 +37,8 @@ public partial class Evento_Participacao_Aluno {
 
     public virtual Evento Evento { get; set; } = null!;
 
-    public virtual ICollection<Evento_Participacao_Aluno_Contato> Evento_Participacao_Aluno_Contatos { get; set; } = new List<Evento_Participacao_Aluno_Contato>();
-
     public virtual Evento? ReposicaoDe_Evento { get; set; }
+
+    public virtual Evento_Participacao_Aluno_StatusContato? StatusContato { get; set; }
 }
 

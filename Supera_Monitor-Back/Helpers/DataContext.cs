@@ -73,9 +73,9 @@ public partial class DataContext : DbContext {
 
     public virtual DbSet<Evento_Participacao_Aluno_Contato> Evento_Participacao_Aluno_Contatos { get; set; }
 
-    public virtual DbSet<Evento_Participacao_Aluno_Contato_Tipo> Evento_Participacao_Aluno_Contato_Tipos { get; set; }
-
     public virtual DbSet<Evento_Participacao_Aluno_Status> Evento_Participacao_Aluno_Statuses { get; set; }
+
+    public virtual DbSet<Evento_Participacao_Aluno_StatusContato> Evento_Participacao_Aluno_StatusContato { get; set; }
 
     public virtual DbSet<Evento_Participacao_Professor> Evento_Participacao_Professors { get; set; }
 
@@ -806,6 +806,10 @@ public partial class DataContext : DbContext {
             entity.HasOne(d => d.ReposicaoDe_Evento).WithMany(p => p.Evento_Participacao_AlunoReposicaoDe_Eventos)
                 .HasForeignKey(d => d.ReposicaoDe_Evento_Id)
                 .HasConstraintName("FK_Evento_Participacao_Aluno_ReposicaoDe_Evento");
+
+            entity.HasOne(d => d.StatusContato).WithMany(p => p.Evento_Participacao_Alunos)
+                .HasForeignKey(d => d.StatusContato_Id)
+                .HasConstraintName("FK_Evento_Participacao_Aluno_Evento_Participacao_Aluno_StatusContato");
         });
 
         modelBuilder.Entity<Evento_Participacao_Aluno_Contato>(entity =>
@@ -819,25 +823,6 @@ public partial class DataContext : DbContext {
                 .HasForeignKey(d => d.Account_Id)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Evento_Participacao_Aluno_Contato_Account");
-
-            entity.HasOne(d => d.Contato_Tipo).WithMany(p => p.Evento_Participacao_Aluno_Contatos)
-                .HasForeignKey(d => d.Contato_Tipo_Id)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Evento_Participacao_Aluno_Contato_Evento_Participacao_Aluno_Contato_Tipo");
-
-            entity.HasOne(d => d.Evento_Participacao_Aluno).WithMany(p => p.Evento_Participacao_Aluno_Contatos)
-                .HasForeignKey(d => d.Evento_Participacao_Aluno_Id)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Evento_Participacao_Aluno_Contato_Evento_Participacao_Aluno");
-        });
-
-        modelBuilder.Entity<Evento_Participacao_Aluno_Contato_Tipo>(entity =>
-        {
-            entity.ToTable("Evento_Participacao_Aluno_Contato_Tipo");
-
-            entity.Property(e => e.Descricao)
-                .HasMaxLength(250)
-                .IsUnicode(false);
         });
 
         modelBuilder.Entity<Evento_Participacao_Aluno_Status>(entity =>
@@ -852,6 +837,15 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
             entity.Property(e => e.TextColor)
                 .HasMaxLength(50)
+                .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<Evento_Participacao_Aluno_StatusContato>(entity =>
+        {
+            entity.ToTable("Evento_Participacao_Aluno_StatusContato");
+
+            entity.Property(e => e.Descricao)
+                .HasMaxLength(250)
                 .IsUnicode(false);
         });
 
