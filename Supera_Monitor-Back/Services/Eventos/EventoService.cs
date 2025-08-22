@@ -440,7 +440,9 @@ public class EventoService : IEventoService {
         List<int> turmaIds = turmas.Select(t => t.Id).ToList();
 
         List<AlunoList> alunosFromTurmas = _db.AlunoLists
-            .Where(a => a.Turma_Id.HasValue && turmaIds.Contains(a.Turma_Id.Value))
+            .Where(a => a.Turma_Id.HasValue 
+					&& turmaIds.Contains(a.Turma_Id.Value)
+					&& x.Active == true)
             .ToList();
 
         List<Turma_PerfilCognitivo_Rel> perfilCognitivoRelFromTurmas = _db.Turma_PerfilCognitivo_Rels
