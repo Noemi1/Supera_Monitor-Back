@@ -440,9 +440,7 @@ public class EventoService : IEventoService {
         List<int> turmaIds = turmas.Select(t => t.Id).ToList();
 
         List<AlunoList> alunosFromTurmas = _db.AlunoLists
-            .Where(a => a.Turma_Id.HasValue 
-					&& turmaIds.Contains(a.Turma_Id.Value)
-					&& x.Active == true)
+            .Where(a => a.Turma_Id.HasValue && turmaIds.Contains(a.Turma_Id.Value))
             .ToList();
 
         List<Turma_PerfilCognitivo_Rel> perfilCognitivoRelFromTurmas = _db.Turma_PerfilCognitivo_Rels
@@ -599,11 +597,11 @@ public class EventoService : IEventoService {
                     };
 
 
-                    // Em pseudo-aulas, adicionar só os alunos da turma original após o início de sua vigência
+                    // Em pseudo-aulas, adicionar só os alunos da turma original após o início de sua vigência e que tenham sido dessativado só depois da data da aula
                     List<AlunoList> alunos = alunosFromTurmas
-                        .Where(
-                            a => a.Turma_Id == turma!.Id
-                            && a.DataInicioVigencia.Date <= data.Date)
+                        .Where(a => a.Turma_Id == turma!.Id
+                            && a.DataInicioVigencia.Date <= data.Date
+                            && (a.Deactivated == null || a.Deactivated.Value.Date > data.Date))
                         .OrderBy(a => a.Nome)
                         .ToList();
 
