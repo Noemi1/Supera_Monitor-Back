@@ -1312,6 +1312,8 @@ public class EventoService : IEventoService {
         return evento;
     }
 
+    
+
     public Dashboard Dashboard(DashboardRequest request) {
 
         DateTime intervaloDe = new(request.Ano, 1, 1);
@@ -1369,7 +1371,7 @@ public class EventoService : IEventoService {
 
         roteiros.ForEach(roteiro =>
         {
-            var week = dfi.Calendar.GetWeekOfYear(roteiro.DataInicio, dfi.CalendarWeekRule, dfi.FirstDayOfWeek);
+            int week = dfi.Calendar.GetWeekOfYear(roteiro.DataInicio, dfi.CalendarWeekRule, dfi.FirstDayOfWeek);
             roteirosArray[week - 1] = roteiro;
         });
 
@@ -1385,7 +1387,7 @@ public class EventoService : IEventoService {
                 if (index == 0) // Se for a semana 0
                 {
                     semana = 0;
-                    dataInicio = intervaloDe; // .AddDays((int)intervaloDe.DayOfWeek - 5); // Segunda-feira
+                    dataInicio = intervaloDe.AddDays((int)intervaloDe.DayOfWeek - 5); // Segunda-feira
                 }
                 else {
                     Roteiro lastRoteiro = roteirosArray[index - 1];
@@ -1409,36 +1411,36 @@ public class EventoService : IEventoService {
             }
 
             // Insere as aulas das turmas para cada roteiro
-            foreach (TurmaList turma in turmas) {
-                // Encontra a Data da aula da turma naquela semana do roteiro
-                DayOfWeek roteiroWeek = roteiro.DataInicio.DayOfWeek;
+            foreach (TurmaList turma in turmas) 
+			{
 
-                int diff = 7 - (int)roteiroWeek + turma.DiaSemana;
-                DateTime data = roteiro.DataInicio.AddDays(diff);
+                // Encontra a data da aula dentro do roteiros
+				DateTime data = roteiro.DataInicio;
+				for (DateTime dt = roteiro.DataInicio; dt <= roteiro.DataFim; dt = dt.AddDays(1))
+				{
+					if ((int)dt.DayOfWeek == turma.DiaSemana)
+					{
+						data = dt;
+					}
+				}
 
-                // Se a data calculada estiver fora do roteiro
-                // Procura a data mais próxima a partir do domingo
-                if (data.Date < roteiro.DataInicio.Date || data.Date > roteiro.DataFim.Date) {
-                    DateTime domingo = roteiro.DataInicio.AddDays(-(int)roteiroWeek);
-                    data = domingo.AddDays(turma.DiaSemana);
-                }
-
-
-                List<CalendarioEventoList> aulasDoRoteiro = new List<CalendarioEventoList>();
-                if (roteiro.Id == -1)
-                    aulasDoRoteiro = eventos.Where(x => x.Turma_Id == turma.Id && x.Data.Date >= roteiro.DataInicio && x.Data.Date <= roteiro.DataFim).ToList();
-                else
-                    aulasDoRoteiro = eventos.Where(x => x.Turma_Id == turma.Id && x.Roteiro_Id == roteiro.Id).ToList();
-
-                // Se houver aula, só insere na listagem
-                if (aulasDoRoteiro.Count > 0) {
-                    foreach (CalendarioEventoList aula in aulasDoRoteiro) {
-                        List<CalendarioAlunoList> participacoesAula = participacoes.Where(x => x.Evento_Id == aula.Id).ToList();
+				List<CalendarioEventoList> aulasDoRoteiro = eventos.Where(x => x.Turma_Id == turma.Id 
+																			&& x.Data.Date >= roteiro.DataInicio 
+																			&& x.Data.Date <= roteiro.DataFim)
+																		.ToList();
+				// Se houver aula, só insere na listagem
+				if (aulasDoRoteiro.Count > 0) 
+				{
+                    foreach (CalendarioEventoList aula in aulasDoRoteiro) 
+					{
+                        List<CalendarioAlunoList> participacoesAula = participacoes
+																	.Where(x => x.Evento_Id == aula.Id)
+																	.ToList();
 
                         foreach (CalendarioAlunoList participacao in participacoesAula) {
                             aulas.Add(new Dashboard_Aula_Participacao
                             {
-                                Show = true,
+                                Show = aula.Data.Year == request.Ano,
                                 Aula = _mapper.Map<Dashboard_Aula>(aula),
                                 Participacao = _mapper.Map<Dashboard_Participacao>(participacao),
                             });
@@ -1448,36 +1450,42 @@ public class EventoService : IEventoService {
                 // Se não houver aula, cria pseudo aulas e pseudo participações e insere na listagem
                 else {
 
-                    Dashboard_Aula pseudoAula = new()
-                    {
-                        Id = -1,
-                        Data = new DateTime(data.Year, data.Month, data.Day, turma!.Horario!.Value.Hours, turma.Horario.Value.Minutes, 0),
-                        Descricao = turma.Nome,
-                        Evento_Tipo_Id = (int)EventoTipo.Aula,
+					if (roteiro.DataInicio.Year == request.Ano && roteiro.DataFim.Year == request.Ano)
+					{
+						Dashboard_Aula pseudoAula = new()
+						{
+							Id = -1,
+							Data = new DateTime(data.Year, data.Month, data.Day, turma!.Horario!.Value.Hours, turma.Horario.Value.Minutes, 0),
+							Descricao = turma.Nome,
+							Evento_Tipo_Id = (int)EventoTipo.Aula,
 
-                        DuracaoMinutos = 120,
-                        Finalizado = false,
-                        Roteiro_Id = roteiro.Id,
-                        ReagendamentoDe_Evento_Id = null,
-                        Deactivated = null,
-                        Observacao = null,
+							DuracaoMinutos = 120,
+							Finalizado = false,
+							Deactivated = null,
+							Observacao = null,
 
-                        Professor_Id = turma?.Professor_Id,
-                        Professor = turma?.Professor ?? "Professor indefinido",
-                        CorLegenda = turma?.Professor ?? "#000",
+							Roteiro_Id = roteiro.Id,
+							Semana = roteiro.Semana,
+							Tema = roteiro.Tema,
 
-                        Sala_Id = turma?.Sala_Id,
-                        NumeroSala = turma?.NumeroSala,
-                        Andar = turma?.Andar,
+							Professor_Id = turma?.Professor_Id,
+							Professor = turma?.Professor ?? "Professor indefinido",
+							CorLegenda = turma?.Professor ?? "#000",
 
-                        Turma_Id = turma?.Id,
-                        Turma = turma?.Nome,
-                        CapacidadeMaximaAlunos = turma?.CapacidadeMaximaAlunos ?? 12,
-                    };
+							Sala_Id = turma?.Sala_Id,
+							NumeroSala = turma?.NumeroSala,
+							Andar = turma?.Andar,
 
-                    List<AlunoList> alunosTurma = alunos.Where(x => x.Turma_Id == turma!.Id).ToList();
+							Turma_Id = turma?.Id,
+							Turma = turma?.Nome,
+							CapacidadeMaximaAlunos = turma?.CapacidadeMaximaAlunos ?? 12,
 
-                    foreach (AlunoList aluno in alunosTurma) {
+
+						};
+
+						List<AlunoList> alunosTurma = alunos.Where(x => x.Turma_Id == turma!.Id).ToList();
+
+						foreach (AlunoList aluno in alunosTurma) {
                         Dashboard_Participacao pseudoParticipacao = new()
                         {
                             Id = -1,
@@ -1493,22 +1501,27 @@ public class EventoService : IEventoService {
                             NumeroPaginaAH = aluno.NumeroPaginaAH,
                         };
 
-                        var date = data.Date;
+                        DateTime date = data.Date;
                         // Se estiver no invervalo do Roteiro
-                        bool intervaloRoteiro = data >= roteiro.DataInicio.Date && data <= roteiro.DataFim.Date;
+                        bool intervaloEstaNoRoteiro = data >= roteiro.DataInicio.Date && data <= roteiro.DataFim.Date;
                         // Se o aluno estiver vigente naquela data
                         bool alunoVigente = (date >= aluno.DataInicioVigencia.Date) && (!aluno.DataFimVigencia.HasValue || date <= aluno.DataFimVigencia.Value.Date);
 
-                        Dashboard_Aula_Participacao aula = new()
-                        {
-                            Participacao = pseudoParticipacao,
-                            Aula = pseudoAula,
-                            Show = alunoVigente && intervaloRoteiro
-                        };
+						bool dataDoAno = data.Year == request.Ano;
+
+
+						Dashboard_Aula_Participacao aula = new()
+						{
+							Participacao = pseudoParticipacao,
+							Aula = pseudoAula,
+							Show = alunoVigente && intervaloEstaNoRoteiro && dataDoAno
+						};
 
                         aulas.Add(aula);
 
                     }
+					}
+
                 }
             }
         }
@@ -1527,6 +1540,7 @@ public class EventoService : IEventoService {
 
         return response;
     }
+
 
     public ResponseModel Create(NewEventoRequest request) {
         ResponseModel response = new();
