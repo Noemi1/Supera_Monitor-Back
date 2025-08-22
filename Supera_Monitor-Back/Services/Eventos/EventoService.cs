@@ -10,12 +10,17 @@ using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Eventos;
 using Supera_Monitor_Back.Models.Eventos.Dtos;
 using Supera_Monitor_Back.Models.Eventos.Participacao;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Supera_Monitor_Back.Services.Eventos;
 
-public interface IEventoService {
-    public CalendarioEventoList GetEventoById(int eventoId);
-    public List<CalendarioEventoList> GetOficinas();
+public interface IEventoService
+{
+	public CalendarioEventoList GetEventoById(int eventoId);
+
+	public CalendarioEventoList GetPseudoAula(PseudoEventoRequest request);
+
+	public List<CalendarioEventoList> GetOficinas();
     public List<CalendarioEventoList> GetCalendario(CalendarioRequest request);
     public ResponseModel Insert(CreateEventoRequest request, int eventoTipoId);
     public ResponseModel Update(UpdateEventoRequest request);
@@ -376,8 +381,6 @@ public class EventoService : IEventoService {
 
         request.IntervaloDe ??= GetThisWeeksMonday(now); // Se não passar data inicio, considera a segunda-feira da semana atual
         request.IntervaloAte ??= GetThisWeeksSaturday((DateTime)request.IntervaloDe); // Se não passar data fim, considera o sábado da semana da data inicio
-
-
 
         if (request.IntervaloAte < request.IntervaloDe) {
             throw new Exception("Final do intervalo não pode ser antes do seu próprio início");
@@ -1312,9 +1315,109 @@ public class EventoService : IEventoService {
         return evento;
     }
 
-    
 
-    public Dashboard Dashboard(DashboardRequest request) {
+	public CalendarioEventoList GetPseudoAula(PseudoEventoRequest request)
+	{
+
+		CalendarioEventoList? eventoAula = _db.CalendarioEventoLists.FirstOrDefault(x =>
+				  x.Data == request.DataHora
+				  && x.Turma_Id == request.Turma_Id);
+
+		if (eventoAula != null) {
+			eventoAula = this.GetEventoById(eventoAula.Id);
+			return eventoAula;
+		}
+		else
+		{
+			DateTime data = request.DataHora;
+
+			Turma? turma = _db.Turmas
+				.Include(x => x.Alunos)
+				.Include(t => t.Professor!)
+				.ThenInclude(t => t.Account)
+				.Include(t => t.Sala)
+				.FirstOrDefault(x => x.Id == request.Turma_Id 
+						&& x.Deactivated == null
+						&& x.DiaSemana == (int)request.DataHora.DayOfWeek
+						&& x.Horario.Value == request.DataHora.TimeOfDay);
+
+
+			if (turma is null)
+			{
+				throw new Exception("Turma não encontrada!");
+			}
+
+
+			Roteiro? roteiro = _db.Roteiros.FirstOrDefault(x => data.Date >= x.DataInicio.Date 
+															 && data.Date <= x.DataFim.Date);
+
+			CalendarioEventoList pseudoAula = new()
+			{
+				Id = -1,
+				Evento_Tipo_Id = (int)EventoTipo.Aula,
+				Evento_Tipo = "Pseudo-Aula",
+
+				Descricao = turma.Nome, // Pseudo aulas ganham o nome da turma
+				DuracaoMinutos = 120, // As pseudo aulas são de uma turma e duram 2h por padrão
+
+				Roteiro_Id = roteiro?.Id,
+				Semana = roteiro?.Semana,
+				Tema = roteiro?.Tema,
+
+				Data = request.DataHora,
+
+				Turma_Id = turma.Id,
+				Turma = turma.Nome,
+				CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
+
+				Professor_Id = turma?.Professor_Id,
+				Professor = turma?.Professor is not null ? turma.Professor.Account.Name : "Professor indefinido",
+				CorLegenda = turma?.Professor is not null ? turma.Professor.CorLegenda : "#000",
+
+				Finalizado = false,
+				Sala_Id = turma?.Sala?.Id,
+				NumeroSala = turma?.Sala?.NumeroSala,
+				Andar = turma?.Sala?.Andar,
+			};
+
+
+			// Em pseudo-aulas, adicionar só os alunos da turma original após o início de sua vigência
+			List<AlunoList> alunos = _db.AlunoLists
+				.Where(x => x.Turma_Id == request.Turma_Id && x.DataInicioVigencia.Date <= data.Date)
+				.OrderBy(x => x.Nome)
+				.ToList();
+
+			pseudoAula.Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos).ToList();
+
+			pseudoAula.Professores.Add(new CalendarioProfessorList
+			{
+				Id = null,
+				Evento_Id = pseudoAula.Id,
+				Professor_Id = (int)turma!.Professor_Id!,
+				Nome = turma!.Professor!.Account.Name,
+				CorLegenda = turma.Professor.CorLegenda,
+				Presente = null,
+				Observacao = "",
+				Account_Id = turma.Professor.Account.Id,
+				Telefone = turma.Professor.Account.Phone,
+				ExpedienteFim = turma.Professor.ExpedienteFim,
+				ExpedienteInicio = turma.Professor.ExpedienteInicio,
+			});
+
+			List<PerfilCognitivo> perfisCognitivos = _db.Turma_PerfilCognitivo_Rels
+				.Include(x => x.PerfilCognitivo)
+				.Where(p => p.Turma_Id == request.Turma_Id)
+				.Select(p => p.PerfilCognitivo)
+				.ToList();
+
+			pseudoAula.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(perfisCognitivos);
+
+			return pseudoAula;
+		}
+	}
+
+
+	public Dashboard Dashboard(DashboardRequest request) {
 
         DateTime intervaloDe = new(request.Ano, 1, 1);
         DateTime intervaloAte = intervaloDe.AddYears(1).AddDays(-1);

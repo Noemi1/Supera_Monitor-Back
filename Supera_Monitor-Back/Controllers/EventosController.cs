@@ -43,20 +43,38 @@ public class EventosController : _BaseController {
         }
     }
 
-    [HttpGet("{eventoId}")]
-    public ActionResult<List<EventoAulaModel>> GetEventoById(int eventoId) {
-        try {
-            var response = _eventoService.GetEventoById(eventoId);
+	[HttpGet("{eventoId}")]
+	public ActionResult<List<EventoAulaModel>> GetEventoById(int eventoId)
+	{
+		try
+		{
+			var response = _eventoService.GetEventoById(eventoId);
 
-            return Ok(response);
-        }
-        catch (Exception e) {
-            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-            return StatusCode(500, e);
-        }
-    }
+			return Ok(response);
+		}
+		catch (Exception e)
+		{
+			_logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+			return StatusCode(500, e);
+		}
+	}
 
-    [HttpGet("aulas/all")]
+	[HttpPost("pseudo-aula")]
+	public ActionResult<CalendarioEventoList> GetPseudoAula(PseudoEventoRequest request)
+	{
+		try
+		{
+			var response = _eventoService.GetPseudoAula(request);
+			return Ok(response);
+		}
+		catch (Exception e)
+		{
+			_logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+			return StatusCode(500, e);
+		}
+	}
+
+	[HttpGet("aulas/all")]
     public ActionResult<List<EventoAulaModel>> GetAll() {
         try {
             var response = _aulaService.GetAll();
