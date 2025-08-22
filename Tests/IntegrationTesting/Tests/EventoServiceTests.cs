@@ -373,39 +373,60 @@ public class EventoServiceTests : BaseIntegrationTest {
         Assert.Equal("Test Update Participacao", updatedParticipacao.ContatoObservacao);
     }
 
-    //[Fact]
-    //public void Should_CancelarEventoAndRelatedParticipacoes() {
-    //    var evento = EventoFactory.Create(_db, new Evento
-    //    {
-    //        Data = TimeFunctions.HoraAtualBR(),
-    //        Sala_Id = 1,
-    //        CapacidadeMaximaAlunos = 999,
-    //        DuracaoMinutos = 60,
-    //        Evento_Tipo_Id = (int)EventoTipo.AulaExtra,
-    //        Evento_Aula = new Evento_Aula
-    //        {
-    //            Roteiro_Id = null,
-    //            Professor_Id = 1,
-    //            Turma_Id = null,
-    //        },
-    //    });
-    //}
+    [Fact]
+    public void Should_BeAbleToCreateOficina() {
+        // Arrange (constructor)
 
-    //[Fact]
-    //public void Should_CancelarAulaZeroAndRelatedChecklists() {
-    //    var evento = EventoFactory.Create(_db, new Evento
-    //    {
-    //        Data = TimeFunctions.HoraAtualBR(),
-    //        Sala_Id = 1,
-    //        CapacidadeMaximaAlunos = 999,
-    //        DuracaoMinutos = 60,
-    //        Evento_Tipo_Id = (int)EventoTipo.AulaExtra,
-    //        Evento_Aula = new Evento_Aula
-    //        {
-    //            Roteiro_Id = null,
-    //            Professor_Id = 1,
-    //            Turma_Id = null,
-    //        },
-    //    });
-    //}
+        // Act
+        var response = sut.Insert(new CreateEventoRequest
+        {
+            Sala_Id = 1,
+            CapacidadeMaximaAlunos = 12,
+            DuracaoMinutos = 120,
+            Data = TimeFunctions.HoraAtualBR().AddDays(1),
+        }, (int)EventoTipo.Oficina);
+
+        // Assert
+        Assert.NotNull(response);
+        Assert.True(response.Success);
+    }
+
+    [Fact]
+    public void Should_CancelarEvento() {
+        // Arrange (constructor)
+
+        var evento = EventoFactory.Create(_db, new Evento
+        {
+            Sala_Id = 1,
+            CapacidadeMaximaAlunos = 999,
+            DuracaoMinutos = 60,
+            Data = TimeFunctions.HoraAtualBR(),
+            Evento_Tipo_Id = (int)EventoTipo.AulaExtra,
+            Evento_Aula = new Evento_Aula
+            {
+                Roteiro_Id = null,
+                Professor_Id = 1,
+                Turma_Id = null,
+            },
+        });
+
+        Assert.NotNull(evento);
+
+        // Act
+
+        var response = sut.Cancelar(new CancelarEventoRequest
+        {
+            Id = evento.Id,
+            Observacao = "Test Cancelar",
+        });
+
+        // Assert
+
+        Assert.NotNull(response);
+        Assert.True(response.Success);
+
+        Evento? eventoCancelado = _db.Eventos.SingleOrDefault(e => e.Id == evento.Id);
+        Assert.NotNull(eventoCancelado);
+        Assert.NotNull(eventoCancelado.Deactivated);
+    }
 }
