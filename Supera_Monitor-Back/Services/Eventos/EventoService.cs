@@ -1475,14 +1475,27 @@ public class EventoService : IEventoService {
 
         roteiros.ForEach(roteiro =>
         {
-            int week = dfi.Calendar.GetWeekOfYear(roteiro.DataInicio, dfi.CalendarWeekRule, dfi.FirstDayOfWeek);
+			int week;
+			if (roteiro.DataInicio.Year == request.Ano - 1)
+			{
+				week = 1;
+			}
+			else if (roteiro.DataFim.Year == request.Ano + 1)
+			{
+				week = weeksInYear;
+			} else
+			{
+				week = dfi.Calendar.GetWeekOfYear(roteiro.DataInicio, dfi.CalendarWeekRule, dfi.FirstDayOfWeek);
+			}
+
             roteirosArray[week - 1] = roteiro;
         });
 
-        for (int index = 0; index < roteirosArray.Length; index++) {
+        for (int index = 0; index < roteirosArray.Length; index++) 
+		{
             Roteiro roteiro = roteirosArray[index];
 
-            // Se não tiver roteiro salva pseudo roteiros
+            // Se não tiver roteiro salva pseudo roteirosy
             if (roteiro == null) {
                 int semana;
                 DateTime dataInicio;
@@ -1561,9 +1574,12 @@ public class EventoService : IEventoService {
 
 								aulas.Add(new Dashboard_Aula_Participacao
 								{
-									Show = alunoVigente && intervaloEstaNoRoteiro && dataDoAno,
 									Aula = _mapper.Map<Dashboard_Aula>(aula),
 									Participacao = _mapper.Map<Dashboard_Participacao>(participacao),
+									Show = alunoVigente
+											&& intervaloEstaNoRoteiro
+											&& dataDoAno
+											&& roteiro.Recesso == false,
 								});
 							}
 						}
@@ -1631,7 +1647,10 @@ public class EventoService : IEventoService {
 							{
 								Participacao = pseudoParticipacao,
 								Aula = pseudoAula,
-								Show = alunoVigente && intervaloEstaNoRoteiro && dataDoAno
+								Show = alunoVigente
+											&& intervaloEstaNoRoteiro
+											&& dataDoAno
+											&& roteiro.Recesso == false
 							};
 
 							aulas.Add(aula);

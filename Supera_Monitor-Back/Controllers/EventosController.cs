@@ -13,7 +13,7 @@ using Supera_Monitor_Back.Services.Eventos;
 
 namespace Supera_Monitor_Back.Controllers;
 
-[Authorize(Entities.Role.Admin, Entities.Role.Teacher, Entities.Role.Assistant)]
+//[Authorize(Entities.Role.Admin, Entities.Role.Teacher, Entities.Role.Assistant)]
 [ApiController]
 [Route("back/[controller]")]
 public class EventosController : _BaseController {
