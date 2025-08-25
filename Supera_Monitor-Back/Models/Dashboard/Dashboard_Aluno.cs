@@ -25,6 +25,6 @@ namespace Supera_Monitor_Back.Models.Dashboard
 
 		public string? Celular { get; set; }
 
-		public List<Dashboard_Aula_Participacao> Aulas { get; set; } = new List<Dashboard_Aula_Participacao>();
+		public List<Dashboard_Item> Aulas { get; set; } = new List<Dashboard_Item>();
 	}
 }

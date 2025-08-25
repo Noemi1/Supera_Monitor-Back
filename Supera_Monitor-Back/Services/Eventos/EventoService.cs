@@ -1461,7 +1461,7 @@ public class EventoService : IEventoService {
         List<CalendarioAlunoList> participacoes = participacoesQueryable.ToList();
         List<CalendarioEventoList> eventos = eventosQueryable.OrderBy(x => x.Data).ToList();
 
-        List<Dashboard_Aula_Participacao> aulas = new List<Dashboard_Aula_Participacao>() { };
+        List<Dashboard_Item> aulas = new List<Dashboard_Item>() { };
 
         List<Roteiro> roteiros = _db.Roteiros
             .Where(x => x.DataInicio.Year == request.Ano || x.DataFim.Year == request.Ano)
@@ -1572,10 +1572,11 @@ public class EventoService : IEventoService {
 								bool alunoVigente = (dataInicioVigencia.HasValue && date >= dataInicioVigencia.Value.Date) 
 												&& (!dataFimVigencia.HasValue || date <= dataFimVigencia.Value.Date);
 
-								aulas.Add(new Dashboard_Aula_Participacao
+								aulas.Add(new Dashboard_Item
 								{
 									Aula = _mapper.Map<Dashboard_Aula>(aula),
 									Participacao = _mapper.Map<Dashboard_Participacao>(participacao),
+									Roteiro = _mapper.Map<Dashboard_Roteiro>(roteiro),
 									Show = alunoVigente
 											&& intervaloEstaNoRoteiro
 											&& dataDoAno
@@ -1643,10 +1644,11 @@ public class EventoService : IEventoService {
 							bool alunoVigente = (dataInicioVigencia.HasValue && date >= dataInicioVigencia.Value.Date)
 											&& (!dataFimVigencia.HasValue || date <= dataFimVigencia.Value.Date);
 
-							Dashboard_Aula_Participacao aula = new()
+							Dashboard_Item aula = new()
 							{
 								Participacao = pseudoParticipacao,
 								Aula = pseudoAula,
+								Roteiro = _mapper.Map<Dashboard_Roteiro>(roteiro),
 								Show = alunoVigente
 											&& intervaloEstaNoRoteiro
 											&& dataDoAno
