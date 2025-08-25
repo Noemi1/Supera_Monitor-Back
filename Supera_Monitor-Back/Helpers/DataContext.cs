@@ -123,8 +123,6 @@ public partial class DataContext : DbContext {
 
     public virtual DbSet<Roteiro> Roteiros { get; set; }
 
-    public virtual DbSet<Roteiro_Material> Roteiro_Materials { get; set; }
-
     public virtual DbSet<Sala> Salas { get; set; }
 
     public virtual DbSet<Turma> Turmas { get; set; }
@@ -1130,29 +1128,6 @@ public partial class DataContext : DbContext {
                 .HasForeignKey(d => d.Account_Created_Id)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Roteiro_Account_Created");
-        });
-
-        modelBuilder.Entity<Roteiro_Material>(entity =>
-        {
-            entity.ToTable("Roteiro_Material");
-
-            entity.Property(e => e.Created).HasColumnType("datetime");
-            entity.Property(e => e.Deactivated).HasColumnType("datetime");
-            entity.Property(e => e.FileBase64).IsUnicode(false);
-            entity.Property(e => e.FileName)
-                .HasMaxLength(250)
-                .IsUnicode(false);
-            entity.Property(e => e.LastUpdated).HasColumnType("datetime");
-
-            entity.HasOne(d => d.Account_Created).WithMany(p => p.Roteiro_Materials)
-                .HasForeignKey(d => d.Account_Created_Id)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Roteiro_Material_Account_Created");
-
-            entity.HasOne(d => d.Roteiro).WithMany(p => p.Roteiro_Materials)
-                .HasForeignKey(d => d.Roteiro_Id)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Roteiro_Material_Jornada");
         });
 
         modelBuilder.Entity<Sala>(entity =>

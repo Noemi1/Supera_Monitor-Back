@@ -9,5 +9,7 @@ public class CreateRoteiroRequest {
 
     public DateTime DataFim { get; set; }
 
-    public string? CorLegenda { get; set; }
+	public string CorLegenda { get; set; } = String.Empty;
+
+	public bool Recesso { get; set; }
 }

@@ -1,6 +1,7 @@
 ﻿namespace Supera_Monitor_Back.Models.Roteiro;
 
 public class UpdateRoteiroRequest {
+
     public int Id { get; set; }
 
     public string Tema { get; set; } = null!;
@@ -9,7 +10,9 @@ public class UpdateRoteiroRequest {
 
     public DateTime DataInicio { get; set; }
 
-    public DateTime DataFim { get; set; }
+	public DateTime DataFim { get; set; }
 
-    public string? CorLegenda { get; set; }
+	public string CorLegenda { get; set; } = String.Empty;
+    
+	public bool Recesso { get; set; }
 }

@@ -11,9 +11,11 @@ public class RoteiroModel {
 
     public DateTime DataFim { get; set; }
 
-    public string? CorLegenda { get; set; }
+	public string CorLegenda { get; set; } = String.Empty;
 
-    public int Account_Created_Id { get; set; }
+	public bool Recesso { get; set; }
+
+	public int Account_Created_Id { get; set; }
 
     public DateTime Created { get; set; }
 

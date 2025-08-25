@@ -19,11 +19,12 @@ public partial class Roteiro {
 
     public DateTime? Deactivated { get; set; }
 
-    public string? CorLegenda { get; set; }
+	public string CorLegenda { get; set; } = String.Empty;
 
-    public virtual Account Account_Created { get; set; } = null!;
+	public bool Recesso{ get; set; }
+
+	public virtual Account Account_Created { get; set; } = null!;
 
     public virtual ICollection<Evento_Aula> Evento_Aulas { get; set; } = new List<Evento_Aula>();
 
-    public virtual ICollection<Roteiro_Material> Roteiro_Materials { get; set; } = new List<Roteiro_Material>();
 }

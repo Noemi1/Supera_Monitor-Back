@@ -97,53 +97,5 @@ namespace Supera_Monitor_Back.Controllers {
                 return StatusCode(500, e);
             }
         }
-
-        [HttpGet("material/{roteiroMaterialId}")]
-        public ActionResult<ResponseModel> GetAllMaterialByRoteiro(int roteiroMaterialId) {
-            try {
-                var response = _roteiroService.GetAllMaterialByRoteiro(roteiroMaterialId);
-
-                return Ok(response);
-            }
-            catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-                return StatusCode(500, e);
-            }
-        }
-
-        [HttpPost("material")]
-        public ActionResult<ResponseModel> InsertMaterial(CreateRoteiroMaterialRequest model) {
-            try {
-                var response = _roteiroService.InsertMaterial(model);
-
-                if (response.Success) {
-                    return Ok(response);
-                }
-
-                return BadRequest(response);
-            }
-            catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-                return StatusCode(500, e);
-            }
-        }
-
-
-        [HttpPatch("material/{roteiroMaterialId}")]
-        public ActionResult<ResponseModel> ToggleDeactivateMaterial(int roteiroMaterialId) {
-            try {
-                var response = _roteiroService.ToggleDeactivateMaterial(roteiroMaterialId);
-
-                if (response.Success) {
-                    return Ok(response);
-                }
-
-                return BadRequest(response);
-            }
-            catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-                return StatusCode(500, e);
-            }
-        }
-    }
+	}
 }

@@ -59,8 +59,6 @@ public partial class Account {
 
     public virtual AccountRole Role { get; set; } = null!;
 
-    public virtual ICollection<Roteiro_Material> Roteiro_Materials { get; set; } = new List<Roteiro_Material>();
-
     public virtual ICollection<Roteiro> Roteiros { get; set; } = new List<Roteiro>();
 
     public virtual ICollection<Turma> Turmas { get; set; } = new List<Turma>();
