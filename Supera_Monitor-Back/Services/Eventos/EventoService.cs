@@ -43,7 +43,7 @@ public interface IEventoService
 
     public ResponseModel FinalizarAulaZero(FinalizarAulaZeroRequest request);
 
-    public Dashboard_Response Dashboard(DashboardRequest request);
+    public Task<Dashboard_Response> Dashboard(DashboardRequest request);
     public Task<ResponseModel> CancelaEventosFeriado(int ano);
 }
 
@@ -1418,7 +1418,7 @@ public class EventoService : IEventoService {
 	}
 
 
-	public Dashboard_Response Dashboard(DashboardRequest request) {
+	public async Task<Dashboard_Response> Dashboard(DashboardRequest request) {
 
         DateTime intervaloDe = new(request.Ano, 1, 1);
         DateTime intervaloAte = intervaloDe.AddYears(1).AddDays(-1);
@@ -1460,6 +1460,8 @@ public class EventoService : IEventoService {
         List<TurmaList> turmas = turmasQueryable.OrderBy(x => x.Nome).ToList();
         List<CalendarioAlunoList> participacoes = participacoesQueryable.ToList();
         List<CalendarioEventoList> eventos = eventosQueryable.OrderBy(x => x.Data).ToList();
+
+		List<FeriadoResponse> feriados = await this.GetFeriados(request.Ano);
 
         List<Dashboard_Item> aulas = new List<Dashboard_Item>() { };
 
@@ -1572,11 +1574,15 @@ public class EventoService : IEventoService {
 								bool alunoVigente = (dataInicioVigencia.HasValue && date >= dataInicioVigencia.Value.Date) 
 												&& (!dataFimVigencia.HasValue || date <= dataFimVigencia.Value.Date);
 
+
+							FeriadoResponse? feriado = feriados.FirstOrDefault(x => x.date.Date == data.Date);
+
 								aulas.Add(new Dashboard_Item
 								{
 									Aula = _mapper.Map<Dashboard_Aula>(aula),
 									Participacao = _mapper.Map<Dashboard_Participacao>(participacao),
 									Roteiro = _mapper.Map<Dashboard_Roteiro>(roteiro),
+									Feriado = feriado,
 									Show = alunoVigente
 											&& intervaloEstaNoRoteiro
 											&& dataDoAno
@@ -1644,11 +1650,13 @@ public class EventoService : IEventoService {
 							bool alunoVigente = (dataInicioVigencia.HasValue && date >= dataInicioVigencia.Value.Date)
 											&& (!dataFimVigencia.HasValue || date <= dataFimVigencia.Value.Date);
 
-							Dashboard_Item aula = new()
+						FeriadoResponse? feriado = feriados.FirstOrDefault(x => x.date.Date == data.Date);
+						Dashboard_Item aula = new()
 							{
 								Participacao = pseudoParticipacao,
 								Aula = pseudoAula,
 								Roteiro = _mapper.Map<Dashboard_Roteiro>(roteiro),
+								Feriado = feriado,
 								Show = alunoVigente
 											&& intervaloEstaNoRoteiro
 											&& dataDoAno
