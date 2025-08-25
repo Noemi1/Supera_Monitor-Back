@@ -456,7 +456,7 @@ public class EventosController : _BaseController {
     }
 
     [HttpPost("dashboard")]
-    public ActionResult<Dashboard_Response> Dashboard(DashboardRequest request) {
+    public async Task<ActionResult<Dashboard_Response>> Dashboard(DashboardRequest request) {
         try {
             // Se ano for menor que 2025, ele será ajustado para 2025
             // Se ano for maior que o ano atual, ele será ajustado para o ano atual
@@ -464,7 +464,7 @@ public class EventosController : _BaseController {
             request.Ano = Math.Clamp(request.Ano, 2025, DateTime.Now.Year);
             //request.Mes = Math.Clamp(request.Mes, 0, 12);
 
-            var response = _eventoService.Dashboard(request);
+            var response = await _eventoService.Dashboard(request);
 
             return Ok(response);
         }
