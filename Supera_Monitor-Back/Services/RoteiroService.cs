@@ -56,29 +56,21 @@ public class RoteiroService : IRoteiroService {
                 return new ResponseModel { Message = "Data de fim não pode ser anterior à data de início" };
             }
 
-            // Não deve ser possível criar um roteiro em uma semana que já está associada a outro roteiro (nos roteiros ativos)
-            var roteiroConflict = _db.Roteiros.FirstOrDefault(r =>
-                r.Deactivated == null &&
-                r.Semana == model.Semana);
-
-            if (roteiroConflict is not null) {
-                return new ResponseModel { Message = $"A semana {model.Semana} já possui um roteiro associado: '{roteiroConflict.Tema}'." };
-            }
-
+       
             // Verifica se o novo roteiro se sobrepõe a outro roteiro existente ativo
             // As condições cobrem os seguintes casos:
             // 1. A DataInicio do novo roteiro está dentro do intervalo de um roteiro existente.
             // 2. A DataFim do novo roteiro está dentro do intervalo de um roteiro existente.
             // 3. O novo roteiro engloba completamente outro roteiro já cadastrado.
-            bool isDuringAnotherRoteiro = _db.Roteiros.Any(r =>
+            bool isDuringAnotherRoteiro = _db.Roteiros.FirstOrDefault(r =>
                 r.Deactivated == null &&
                 ((model.DataInicio >= r.DataInicio && model.DataInicio <= r.DataFim) || // DataInicio está dentro de outro roteiro
                  (model.DataFim >= r.DataInicio && model.DataFim <= r.DataFim) ||       // DataFim está dentro de outro roteiro
                  (model.DataInicio <= r.DataInicio && model.DataFim >= r.DataFim))      // Novo roteiro engloba outro roteiro
             );
 
-            if (isDuringAnotherRoteiro) {
-                return new ResponseModel { Message = "As datas passadas na requisição entram em conflito com outro roteiro existente." };
+            if (isDuringAnotherRoteiro != null) {
+                return new ResponseModel { Message = $"A data do intervalo desse roteiro conflita com outro roteiro: Semana: ${isDuringAnotherRoteiro.Semana}, Tema: ${isDuringAnotherRoteiro.Tema}." };
             }
 
 			// Validations passed
@@ -114,14 +106,22 @@ public class RoteiroService : IRoteiroService {
                 return new ResponseModel { Message = "Intervalo de roteiro inválido" };
             }
 
-            // Não deve ser possível atualizar um roteiro em uma semana que já está associada a outro roteiro (nos roteiros ativos)
-            var roteiroConflict = _db.Roteiros.FirstOrDefault(r =>
-                r.Id != model.Id &&
+      
+            // Verifica se o novo roteiro se sobrepõe a outro roteiro existente ativo
+            // As condições cobrem os seguintes casos:
+            // 1. A DataInicio do novo roteiro está dentro do intervalo de um roteiro existente.
+            // 2. A DataFim do novo roteiro está dentro do intervalo de um roteiro existente.
+            // 3. O novo roteiro engloba completamente outro roteiro já cadastrado.
+            bool isDuringAnotherRoteiro = _db.Roteiros.FirstOrDefault(r =>
                 r.Deactivated == null &&
-                r.Semana == model.Semana);
+                r.Id != model.Id &&
+                ((model.DataInicio >= r.DataInicio && model.DataInicio <= r.DataFim) || // DataInicio está dentro de outro roteiro
+                 (model.DataFim >= r.DataInicio && model.DataFim <= r.DataFim) ||       // DataFim está dentro de outro roteiro
+                 (model.DataInicio <= r.DataInicio && model.DataFim >= r.DataFim))      // Novo roteiro engloba outro roteiro
+            );
 
-            if (roteiroConflict is not null) {
-                return new ResponseModel { Message = $"A semana {model.Semana} já possui um roteiro associado: '{roteiroConflict.Tema}'." };
+            if (isDuringAnotherRoteiro != null) {
+                return new ResponseModel { Message = $"A data do intervalo desse roteiro conflita com outro roteiro: Semana: ${isDuringAnotherRoteiro.Semana}, Tema: ${isDuringAnotherRoteiro.Tema}." };
             }
 
 			// Validations passed
