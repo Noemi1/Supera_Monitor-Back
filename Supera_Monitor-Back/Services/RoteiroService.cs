@@ -62,7 +62,7 @@ public class RoteiroService : IRoteiroService {
             // 1. A DataInicio do novo roteiro está dentro do intervalo de um roteiro existente.
             // 2. A DataFim do novo roteiro está dentro do intervalo de um roteiro existente.
             // 3. O novo roteiro engloba completamente outro roteiro já cadastrado.
-            bool isDuringAnotherRoteiro = _db.Roteiros.FirstOrDefault(r =>
+            Roteiro? isDuringAnotherRoteiro = _db.Roteiros.FirstOrDefault(r =>
                 r.Deactivated == null &&
                 ((model.DataInicio >= r.DataInicio && model.DataInicio <= r.DataFim) || // DataInicio está dentro de outro roteiro
                  (model.DataFim >= r.DataInicio && model.DataFim <= r.DataFim) ||       // DataFim está dentro de outro roteiro
@@ -112,7 +112,7 @@ public class RoteiroService : IRoteiroService {
             // 1. A DataInicio do novo roteiro está dentro do intervalo de um roteiro existente.
             // 2. A DataFim do novo roteiro está dentro do intervalo de um roteiro existente.
             // 3. O novo roteiro engloba completamente outro roteiro já cadastrado.
-            bool isDuringAnotherRoteiro = _db.Roteiros.FirstOrDefault(r =>
+            Roteiro? isDuringAnotherRoteiro = _db.Roteiros.FirstOrDefault(r =>
                 r.Deactivated == null &&
                 r.Id != model.Id &&
                 ((model.DataInicio >= r.DataInicio && model.DataInicio <= r.DataFim) || // DataInicio está dentro de outro roteiro
