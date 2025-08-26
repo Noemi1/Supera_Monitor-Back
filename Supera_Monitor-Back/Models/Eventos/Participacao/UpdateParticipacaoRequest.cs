@@ -10,6 +10,7 @@ public class UpdateParticipacaoRequest {
     public int? NumeroPaginaAbaco { get; set; }
     public int? ReposicaoDe_Evento_Id { get; set; }
     public DateTime? Deactivated { get; set; }
-    public DateTime? AlunoContactado { get; set; }
     public string? ContatoObservacao { get; set; }
+    public DateTime? AlunoContactado { get; set; }
+    public int? StatusContato_Id { get; set; }
 }

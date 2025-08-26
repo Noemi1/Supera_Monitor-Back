@@ -764,17 +764,17 @@ public class EventoService : IEventoService {
 
             // Validations passed
 
-            participacao.Observacao = request?.Observacao;
+            participacao.Observacao = request.Observacao;
+            participacao.Deactivated = request.Deactivated;
 
-            participacao.Apostila_Abaco_Id = request?.Apostila_Abaco_Id;
-            participacao.NumeroPaginaAbaco = apostilaAbaco is not null ? request?.NumeroPaginaAbaco : null;
-            participacao.Apostila_AH_Id = request?.Apostila_Abaco_Id;
-            participacao.NumeroPaginaAH = apostilaAh is not null ? request?.NumeroPaginaAbaco : null;
+            participacao.Apostila_Abaco_Id = request.Apostila_Abaco_Id;
+            participacao.NumeroPaginaAbaco = apostilaAbaco is not null ? request.NumeroPaginaAbaco : null;
+            participacao.Apostila_AH_Id = request.Apostila_Abaco_Id;
+            participacao.NumeroPaginaAH = apostilaAh is not null ? request.NumeroPaginaAbaco : null;
 
-            participacao.AlunoContactado = request?.AlunoContactado;
-            participacao.ContatoObservacao = request?.ContatoObservacao;
-
-            participacao.Deactivated = request?.Deactivated;
+            participacao.AlunoContactado = request.AlunoContactado;
+            participacao.ContatoObservacao = request.ContatoObservacao;
+            participacao.StatusContato_Id = request.StatusContato_Id;
 
             _db.Evento_Participacao_Alunos.Update(participacao);
 
@@ -850,8 +850,12 @@ public class EventoService : IEventoService {
             }
 
             participacao.Presente = false;
-            participacao.Observacao = request?.Observacao;
+            participacao.Observacao = request.Observacao;
             participacao.Deactivated = TimeFunctions.HoraAtualBR();
+
+            participacao.AlunoContactado = request.AlunoContactado;
+            participacao.StatusContato_Id = request.StatusContato_Id;
+            participacao.ContatoObservacao = request.ContatoObservacao;
 
             _db.Evento_Participacao_Alunos.Update(participacao);
             _db.SaveChanges();
