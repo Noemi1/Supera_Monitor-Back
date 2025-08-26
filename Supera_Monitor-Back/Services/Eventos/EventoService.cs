@@ -1885,12 +1885,19 @@ public class EventoService : IEventoService {
 
             List<Turma> turmas = _db.Turmas
                 .Where(x => x.Deactivated == null)
-                .Include(x => x.Alunos)
-                .Include(x => x.Turma_PerfilCognitivo_Rels)
-                .Include(x => x.Evento_Aulas)
-                    .ThenInclude(x => x.Evento)
+                //.Include(x => x.Alunos)
+                //.Include(x => x.Turma_PerfilCognitivo_Rels)
+                //.Include(x => x.Evento_Aulas)
+                //    .ThenInclude(x => x.Evento)
                 .AsSplitQuery()
                 .ToList();
+
+			List<Evento> eventos = _db.Eventos
+				.Where(x => x.Data.Year == ano)
+				.Include(x => x.Evento_Aula)
+				.AsSplitQuery()
+				.ToList();
+
 
             List<Roteiro> roteiros = _db.Roteiros
                 .Where(x => x.Deactivated == null)
@@ -1923,14 +1930,37 @@ public class EventoService : IEventoService {
 					else if (recesso is not null) 
 						observacao = $"Cancelamento automático <br> Recesso: {recesso.Tema}";
 
+
+					List<Evento> eventosInDayOfWeek = eventos.Where(x => x.Data.Date == data.Date).ToList();
+
+					// Cancela todos os eventos instanciados
+					foreach(Evento evento in eventosInDayOfWeek)
+					{
+						if (evento.Evento_Aula is not null)
+						{
+							if (evento.Evento_Aula.Roteiro_Id is null)
+							{
+								evento.Evento_Aula.Roteiro_Id = roteiro?.Id;
+							}
+						}
+
+						evento.Deactivated = deactivated;
+						evento.Observacao = observacao;
+						_db.Eventos.Update(evento);
+					}
+
+
 					List<Turma> turmasInDayOfWeek = turmas.Where(t => t.DiaSemana == dayOfWeek).ToList();
 
 					foreach(Turma turma in turmasInDayOfWeek)
 					{
 
-						Evento? aula = turma.Evento_Aulas
-							.Select(e => e.Evento)
-							.FirstOrDefault(e => e.Data.Date == data.Date);
+						Evento? aula = eventos.FirstOrDefault(x => x.Data.Date == data.Date 
+												&& x.Evento_Aula is not null
+												&& x.Evento_Aula?.Turma_Id == turma.Id);
+								//turma.Evento_Aulas
+							//.Select(e => e.Evento)
+							//.FirstOrDefault(e => e.Data.Date == data.Date);
 
 						List<Evento_Aula_PerfilCognitivo_Rel> eventoAulaPerfilCognitivoRels = turma.Turma_PerfilCognitivo_Rels
 							.Select(x => new Evento_Aula_PerfilCognitivo_Rel { PerfilCognitivo_Id = x.PerfilCognitivo_Id })
@@ -1979,12 +2009,13 @@ public class EventoService : IEventoService {
 							_db.Eventos.Add(aula);
 						}
 						// Se possuir uma aula instanciada ativa no feriado, desativá-la
-						else if (aula is not null && aula.Deactivated is null)
-						{
-							aula.Deactivated = deactivated;
-							aula.Observacao = observacao;
-							_db.Eventos.Update(aula);
-						}
+						//else if (aula is not null && aula.Deactivated is null)
+						//{
+						//	aula.Evento_Aula.Roteiro_Id = aula.Evento_Aula.Roteiro_Id ?? roteiro?.Id;
+						//	aula.Deactivated = deactivated;
+						//	aula.Observacao = observacao;
+						//	_db.Eventos.Update(aula);
+						//}
 					}
 
 				}
