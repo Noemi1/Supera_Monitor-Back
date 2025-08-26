@@ -6,7 +6,6 @@ using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Dashboard;
 using Supera_Monitor_Back.Models.Eventos;
 using Supera_Monitor_Back.Models.Eventos.Aula;
-using Supera_Monitor_Back.Models.Eventos.Dtos;
 using Supera_Monitor_Back.Models.Eventos.Participacao;
 using Supera_Monitor_Back.Services;
 using Supera_Monitor_Back.Services.Eventos;
@@ -27,14 +26,10 @@ public class EventosController : _BaseController {
         _logger = logger;
     }
 
-    [HttpPost("criar")]
-    public ActionResult<ResponseModel> CreateEvent(CreateEventDto dto) {
+    [HttpGet("{eventoId}")]
+    public ActionResult<List<EventoAulaModel>> GetEventoById(int eventoId) {
         try {
-            var response = _eventoService.CreateEvent(dto);
-
-            if (response.Success == false) {
-                return BadRequest(response);
-            }
+            var response = _eventoService.GetEventoById(eventoId);
 
             return Ok(response);
         }
@@ -44,38 +39,19 @@ public class EventosController : _BaseController {
         }
     }
 
-	[HttpGet("{eventoId}")]
-	public ActionResult<List<EventoAulaModel>> GetEventoById(int eventoId)
-	{
-		try
-		{
-			var response = _eventoService.GetEventoById(eventoId);
+    [HttpPost("pseudo-aula")]
+    public ActionResult<CalendarioEventoList> GetPseudoAula(PseudoEventoRequest request) {
+        try {
+            var response = _eventoService.GetPseudoAula(request);
+            return Ok(response);
+        }
+        catch (Exception e) {
+            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+            return StatusCode(500, e);
+        }
+    }
 
-			return Ok(response);
-		}
-		catch (Exception e)
-		{
-			_logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-			return StatusCode(500, e);
-		}
-	}
-
-	[HttpPost("pseudo-aula")]
-	public ActionResult<CalendarioEventoList> GetPseudoAula(PseudoEventoRequest request)
-	{
-		try
-		{
-			var response = _eventoService.GetPseudoAula(request);
-			return Ok(response);
-		}
-		catch (Exception e)
-		{
-			_logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-			return StatusCode(500, e);
-		}
-	}
-
-	[HttpGet("aulas/all")]
+    [HttpGet("aulas/all")]
     public ActionResult<List<EventoAulaModel>> GetAll() {
         try {
             var response = _aulaService.GetAll();

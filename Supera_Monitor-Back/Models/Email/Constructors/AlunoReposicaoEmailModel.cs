@@ -1,4 +1,4 @@
-﻿namespace Supera_Monitor_Back.Services.Email.Models;
+﻿namespace Supera_Monitor_Back.Models.Email.Constructors;
 
 public class AlunoReposicaoEmailModel {
     public string Name { get; set; } = string.Empty;

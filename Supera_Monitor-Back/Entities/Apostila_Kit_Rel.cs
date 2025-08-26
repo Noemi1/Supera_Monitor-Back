@@ -2,12 +2,8 @@
 
 public partial class Apostila_Kit_Rel {
     public int Id { get; set; }
-
     public int Apostila_Id { get; set; }
-
     public int Apostila_Kit_Id { get; set; }
-
     public virtual Apostila Apostila { get; set; } = null!;
-
     public virtual Apostila_Kit Apostila_Kit { get; set; } = null!;
 }

@@ -10,15 +10,13 @@ namespace Supera_Monitor_Back.Services;
 
 public interface ITurmaService {
     TurmaList Get(int turmaId);
+    List<TurmaList> GetAll();
+    List<AlunoList> GetAlunosByTurma(int turmaId);
+    List<PerfilCognitivoModel> GetAllPerfisCognitivos();
     ResponseModel Insert(CreateTurmaRequest model);
     ResponseModel Update(UpdateTurmaRequest model);
     ResponseModel Delete(int turmaId);
     ResponseModel ToggleDeactivate(int turmaId, string ipAddress);
-
-    List<TurmaList> GetAll();
-
-    List<PerfilCognitivoModel> GetAllPerfisCognitivos();
-    List<AlunoList> GetAlunosByTurma(int turmaId);
 }
 
 public class TurmaService : ITurmaService {

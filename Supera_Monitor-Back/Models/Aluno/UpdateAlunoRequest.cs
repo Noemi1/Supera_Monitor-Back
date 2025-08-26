@@ -6,17 +6,13 @@ public class UpdateAlunoRequest {
     // Alterar dados da entidade Aluno
     public int? Turma_Id { get; set; }
     public int? PerfilCognitivo_Id { get; set; }
-
     public DateTime? DataInicioVigencia { get; set; }
     public DateTime? DataFimVigencia { get; set; }
-
     public int? PrimeiraAula_Id { get; set; }
     public int? AulaZero_Id { get; set; }
-
     public string? Aluno_Foto { get; set; }
     public int? Apostila_Kit_Id { get; set; }
     public bool? RestricaoMobilidade { get; set; }
-
     public string RM { get; set; } = string.Empty;
     public string? LoginApp { get; set; } = string.Empty;
     public string? SenhaApp { get; set; } = string.Empty;
@@ -24,7 +20,6 @@ public class UpdateAlunoRequest {
     // Alterar dados da entidade Pessoa
     public string? Nome { get; set; } = string.Empty;
     public DateTime? DataNascimento { get; set; }
-
     public string? Email { get; set; } = string.Empty;
     public string? Endereco { get; set; } = string.Empty;
     public string? Observacao { get; set; } = string.Empty;

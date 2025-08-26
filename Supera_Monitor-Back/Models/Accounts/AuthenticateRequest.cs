@@ -1,13 +1,13 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Supera_Monitor_Back.Models.Accounts {
-    public class AuthenticateRequest {
+namespace Supera_Monitor_Back.Models.Accounts;
 
-        [Required]
-        [EmailAddress]
-        public string Email { get; set; }
+public class AuthenticateRequest {
 
-        [Required]
-        public string Password { get; set; }
-    }
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+
+    [Required]
+    public string Password { get; set; } = string.Empty;
 }

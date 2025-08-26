@@ -45,12 +45,6 @@ public partial class DataContext : DbContext {
 
     public virtual DbSet<AulaEsperaList> AulaEsperaLists { get; set; }
 
-    public virtual DbSet<Aula_Aluno_Contato> Aula_Aluno_Contatos { get; set; }
-
-    public virtual DbSet<Aula_ListaEspera> Aula_ListaEsperas { get; set; }
-
-    public virtual DbSet<Aula_PerfilCognitivo_Rel> Aula_PerfilCognitivo_Rels { get; set; }
-
     public virtual DbSet<CalendarioAlunoList> CalendarioAlunoLists { get; set; }
 
     public virtual DbSet<CalendarioEventoList> CalendarioEventoLists { get; set; }
@@ -71,10 +65,6 @@ public partial class DataContext : DbContext {
 
     public virtual DbSet<Evento_Participacao_Aluno> Evento_Participacao_Alunos { get; set; }
 
-    public virtual DbSet<Evento_Participacao_Aluno_Contato> Evento_Participacao_Aluno_Contatos { get; set; }
-
-    public virtual DbSet<Evento_Participacao_Aluno_Status> Evento_Participacao_Aluno_Statuses { get; set; }
-
     public virtual DbSet<Evento_Participacao_Aluno_StatusContato> Evento_Participacao_Aluno_StatusContato { get; set; }
 
     public virtual DbSet<Evento_Participacao_Professor> Evento_Participacao_Professors { get; set; }
@@ -82,8 +72,6 @@ public partial class DataContext : DbContext {
     public virtual DbSet<Evento_Tipo> Evento_Tipos { get; set; }
 
     public virtual DbSet<Feriado> Feriados { get; set; }
-
-    public virtual DbSet<Lembrete> Lembretes { get; set; }
 
     public virtual DbSet<Log> Logs { get; set; }
 
@@ -95,7 +83,7 @@ public partial class DataContext : DbContext {
 
     public virtual DbSet<Pessoa> Pessoas { get; set; }
 
-    public virtual DbSet<Pessoa_FaixaEtarium> Pessoa_FaixaEtaria { get; set; }
+    public virtual DbSet<Pessoa_FaixaEtaria> Pessoa_FaixaEtaria { get; set; }
 
     public virtual DbSet<Pessoa_Geracao> Pessoa_Geracaos { get; set; }
 
@@ -103,7 +91,7 @@ public partial class DataContext : DbContext {
 
     public virtual DbSet<Pessoa_Origem_Canal> Pessoa_Origem_Canals { get; set; }
 
-    public virtual DbSet<Pessoa_Origem_Categorium> Pessoa_Origem_Categoria { get; set; }
+    public virtual DbSet<Pessoa_Origem_Categoria> Pessoa_Origem_Categoria { get; set; }
 
     public virtual DbSet<Pessoa_Origem_Investimento> Pessoa_Origem_Investimentos { get; set; }
 
@@ -114,10 +102,6 @@ public partial class DataContext : DbContext {
     public virtual DbSet<Professor> Professors { get; set; }
 
     public virtual DbSet<ProfessorList> ProfessorLists { get; set; }
-
-    public virtual DbSet<Professor_AgendaPedagogica> Professor_AgendaPedagogicas { get; set; }
-
-    public virtual DbSet<Professor_AgendaPedagogica_Rel> Professor_AgendaPedagogica_Rels { get; set; }
 
     public virtual DbSet<Professor_NivelCertificacao> Professor_NivelCertificacaos { get; set; }
 
@@ -130,6 +114,7 @@ public partial class DataContext : DbContext {
     public virtual DbSet<TurmaList> TurmaLists { get; set; }
 
     public virtual DbSet<Turma_PerfilCognitivo_Rel> Turma_PerfilCognitivo_Rels { get; set; }
+
     public virtual DbSet<AlunoHistoricoList> AlunoHistoricoList { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
@@ -571,38 +556,6 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Aula_Aluno_Contato>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK_Aula_Aluno_Falta");
-
-            entity.ToTable("Aula_Aluno_Contato");
-
-            entity.Property(e => e.Data).HasColumnType("datetime");
-            entity.Property(e => e.Observacoes).IsUnicode(false);
-
-            entity.HasOne(d => d.Account).WithMany(p => p.Aula_Aluno_Contatos)
-                .HasForeignKey(d => d.Account_Id)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Aula_Aluno_Contato_Account");
-        });
-
-        modelBuilder.Entity<Aula_ListaEspera>(entity =>
-        {
-            entity.ToTable("Aula_ListaEspera");
-
-            entity.Property(e => e.Created).HasColumnType("datetime");
-
-            entity.HasOne(d => d.Account_Created).WithMany(p => p.Aula_ListaEsperas)
-                .HasForeignKey(d => d.Account_Created_Id)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Aula_ListaEspera_AccountCreated");
-
-            entity.HasOne(d => d.Aluno).WithMany(p => p.Aula_ListaEsperas)
-                .HasForeignKey(d => d.Aluno_Id)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Aula_ListaEspera_Aluno");
-        });
-
         modelBuilder.Entity<CalendarioAlunoList>(entity =>
         {
             entity
@@ -810,34 +763,6 @@ public partial class DataContext : DbContext {
                 .HasConstraintName("FK_Evento_Participacao_Aluno_Evento_Participacao_Aluno_StatusContato");
         });
 
-        modelBuilder.Entity<Evento_Participacao_Aluno_Contato>(entity =>
-        {
-            entity.ToTable("Evento_Participacao_Aluno_Contato");
-
-            entity.Property(e => e.Data).HasColumnType("datetime");
-            entity.Property(e => e.Observacoes).IsUnicode(false);
-
-            entity.HasOne(d => d.Account).WithMany(p => p.Evento_Participacao_Aluno_Contatos)
-                .HasForeignKey(d => d.Account_Id)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Evento_Participacao_Aluno_Contato_Account");
-        });
-
-        modelBuilder.Entity<Evento_Participacao_Aluno_Status>(entity =>
-        {
-            entity.ToTable("Evento_Participacao_Aluno_Status");
-
-            entity.Property(e => e.CorLegenda)
-                .HasMaxLength(50)
-                .IsUnicode(false);
-            entity.Property(e => e.Descricao)
-                .HasMaxLength(250)
-                .IsUnicode(false);
-            entity.Property(e => e.TextColor)
-                .HasMaxLength(50)
-                .IsUnicode(false);
-        });
-
         modelBuilder.Entity<Evento_Participacao_Aluno_StatusContato>(entity =>
         {
             entity.ToTable("Evento_Participacao_Aluno_StatusContato");
@@ -881,15 +806,6 @@ public partial class DataContext : DbContext {
             entity.Property(e => e.Data).HasColumnType("datetime");
             entity.Property(e => e.Descricao)
                 .HasMaxLength(50)
-                .IsUnicode(false);
-        });
-
-        modelBuilder.Entity<Lembrete>(entity =>
-        {
-            entity.ToTable("Lembrete");
-
-            entity.Property(e => e.Descricao)
-                .HasMaxLength(250)
                 .IsUnicode(false);
         });
 
@@ -980,7 +896,7 @@ public partial class DataContext : DbContext {
                 .HasConstraintName("FK_Pessoa_Pessoa_Status");
         });
 
-        modelBuilder.Entity<Pessoa_FaixaEtarium>(entity =>
+        modelBuilder.Entity<Pessoa_FaixaEtaria>(entity =>
         {
             entity.Property(e => e.Nome)
                 .HasMaxLength(50)
@@ -1024,7 +940,7 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Pessoa_Origem_Categorium>(entity =>
+        modelBuilder.Entity<Pessoa_Origem_Categoria>(entity =>
         {
             entity.Property(e => e.Nome)
                 .HasMaxLength(100)

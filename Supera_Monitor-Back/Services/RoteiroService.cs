@@ -8,8 +8,6 @@ using Supera_Monitor_Back.Models.Roteiro;
 namespace Supera_Monitor_Back.Services;
 
 public interface IRoteiroService {
-
-
     public RoteiroModel? Get(int roteiroId);
     List<RoteiroModel> GetAll();
     ResponseModel Insert(CreateRoteiroRequest model);
@@ -56,7 +54,6 @@ public class RoteiroService : IRoteiroService {
                 return new ResponseModel { Message = "Data de fim não pode ser anterior à data de início" };
             }
 
-       
             // Verifica se o novo roteiro se sobrepõe a outro roteiro existente ativo
             // As condições cobrem os seguintes casos:
             // 1. A DataInicio do novo roteiro está dentro do intervalo de um roteiro existente.
@@ -73,11 +70,11 @@ public class RoteiroService : IRoteiroService {
                 return new ResponseModel { Message = $"A data do intervalo desse roteiro conflita com outro roteiro: Semana: ${isDuringAnotherRoteiro.Semana}, Tema: ${isDuringAnotherRoteiro.Tema}." };
             }
 
-			// Validations passed
+            // Validations passed
 
-			Roteiro roteiro = _mapper.Map<Roteiro>(model);
-			roteiro.Account_Created_Id = _account!.Id;
-			roteiro.Created = TimeFunctions.HoraAtualBR();
+            Roteiro roteiro = _mapper.Map<Roteiro>(model);
+            roteiro.Account_Created_Id = _account!.Id;
+            roteiro.Created = TimeFunctions.HoraAtualBR();
 
             _db.Roteiros.Add(roteiro);
             _db.SaveChanges();
@@ -106,7 +103,6 @@ public class RoteiroService : IRoteiroService {
                 return new ResponseModel { Message = "Intervalo de roteiro inválido" };
             }
 
-      
             // Verifica se o novo roteiro se sobrepõe a outro roteiro existente ativo
             // As condições cobrem os seguintes casos:
             // 1. A DataInicio do novo roteiro está dentro do intervalo de um roteiro existente.
@@ -124,22 +120,20 @@ public class RoteiroService : IRoteiroService {
                 return new ResponseModel { Message = $"A data do intervalo desse roteiro conflita com outro roteiro: Semana: ${isDuringAnotherRoteiro.Semana}, Tema: ${isDuringAnotherRoteiro.Tema}." };
             }
 
-			// Validations passed
+            // Validations passed
 
-			DateTime created = roteiro.Created;
-			DateTime? deactivated = roteiro.Deactivated;
-			int account_Created_Id = roteiro.Account_Created_Id;
+            DateTime created = roteiro.Created;
+            DateTime? deactivated = roteiro.Deactivated;
+            int account_Created_Id = roteiro.Account_Created_Id;
 
-			roteiro = _mapper.Map<Roteiro>(model);
+            roteiro = _mapper.Map<Roteiro>(model);
 
-			roteiro.Created = created;
-			roteiro.Deactivated = deactivated;
-			roteiro.Account_Created_Id = account_Created_Id;
-			roteiro.LastUpdated = TimeFunctions.HoraAtualBR();
+            roteiro.Created = created;
+            roteiro.Deactivated = deactivated;
+            roteiro.Account_Created_Id = account_Created_Id;
+            roteiro.LastUpdated = TimeFunctions.HoraAtualBR();
 
-
-
-			_db.Roteiros.Update(roteiro);
+            _db.Roteiros.Update(roteiro);
             _db.SaveChanges();
 
             response.Success = true;
@@ -181,5 +175,4 @@ public class RoteiroService : IRoteiroService {
 
         return response;
     }
-
 }

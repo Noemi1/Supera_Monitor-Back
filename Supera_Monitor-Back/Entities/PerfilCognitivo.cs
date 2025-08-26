@@ -7,8 +7,6 @@ public partial class PerfilCognitivo {
 
     public string? Descricao { get; set; }
 
-    public virtual ICollection<Aula_PerfilCognitivo_Rel> Aula_PerfilCognitivo_Rels { get; set; } = new List<Aula_PerfilCognitivo_Rel>();
-
     public virtual ICollection<Evento_Aula_PerfilCognitivo_Rel> Evento_Aula_PerfilCognitivo_Rels { get; set; } = new List<Evento_Aula_PerfilCognitivo_Rel>();
 
     public virtual ICollection<Turma_PerfilCognitivo_Rel> Turma_PerfilCognitivo_Rels { get; set; } = new List<Turma_PerfilCognitivo_Rel>();

@@ -7,18 +7,17 @@ using Supera_Monitor_Back.Helpers;
 public class AuthorizeAttribute : Attribute, IAuthorizationFilter {
     private readonly IList<Role> _roles;
 
-    public AuthorizeAttribute(params Role[] roles)
-    {
-        _roles = roles ?? new Role[] { };
+    public AuthorizeAttribute(params Role[] roles) {
+        _roles = roles ?? [];
     }
 
-    public void OnAuthorization(AuthorizationFilterContext context)
-    {
+    public void OnAuthorization(AuthorizationFilterContext context) {
         try {
             var db = context.HttpContext.RequestServices.GetService(typeof(DataContext)) as DataContext;
-            var account = ( Account )context.HttpContext.Items["Account"];
 
-            List<int> rolesId = _roles.Select(x => ( int )x).ToList();
+            var account = (Account?)context.HttpContext.Items["Account"];
+
+            var roleIds = _roles.Select(x => (int)x).ToList();
 
             var any = _roles.Any();
 
@@ -27,12 +26,14 @@ public class AuthorizeAttribute : Attribute, IAuthorizationFilter {
                 return;
             }
 
-            var contains = rolesId.Contains(account.Role_Id);
+            var contains = roleIds.Contains(account.Role_Id);
+
             if ((any && !contains)) {
                 context.Result = new JsonResult(new { message = "Forbidden" }) { StatusCode = StatusCodes.Status403Forbidden };
                 return;
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             Console.WriteLine($"Caught an exception on AuthorizeAttributes {e.Message}");
         }
     }

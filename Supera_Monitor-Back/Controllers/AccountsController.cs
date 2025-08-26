@@ -33,7 +33,7 @@ namespace Supera_Monitor_Back.Controllers {
         [HttpGet("dbcheck")]
         public async Task<ActionResult> CheckConnection() {
             try {
-                var canConnect = await _db.Database.CanConnectAsync();
+                bool canConnect = await _db.Database.CanConnectAsync();
 
                 if (canConnect) {
                     return Ok("Database connection is OK.");

@@ -6,276 +6,273 @@ using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Checklist;
 
-namespace Supera_Monitor_Back.Services {
-    public interface IChecklistService {
-        List<ChecklistModel> GetAll();
-        List<ChecklistItemModel> GetAllByChecklistId(int checklistId);
-        List<AlunoChecklistView> GetAllByAlunoId(int alunoId);
-        ResponseModel Insert(CreateChecklistItemRequest model);
-        ResponseModel Update(UpdateChecklistItemRequest model);
-        ResponseModel ToggleDeactivate(int checklistItemId);
+namespace Supera_Monitor_Back.Services;
 
-        List<ChecklistsFromAlunoModel> GetAllAlunoChecklistsByEventoId(int eventoId);
-        ResponseModel PopulateAlunoChecklist(int alunoId);
-        ResponseModel ToggleAlunoChecklistItem(ToggleAlunoChecklistRequest model);
+public interface IChecklistService {
+    List<ChecklistModel> GetAll();
+    List<AlunoChecklistView> GetAllByAlunoId(int alunoId);
+    List<ChecklistItemModel> GetAllByChecklistId(int checklistId);
+    List<ChecklistsFromAlunoModel> GetAllAlunoChecklistsByEventoId(int eventoId);
+    ResponseModel Insert(CreateChecklistItemRequest model);
+    ResponseModel PopulateAlunoChecklist(int alunoId);
+    ResponseModel Update(UpdateChecklistItemRequest model);
+    ResponseModel ToggleDeactivate(int checklistItemId);
+    ResponseModel ToggleAlunoChecklistItem(ToggleAlunoChecklistRequest model);
+}
+
+public class ChecklistService : IChecklistService {
+    private readonly DataContext _db;
+    private readonly IMapper _mapper;
+    private readonly Account? _account;
+
+    public ChecklistService(DataContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor) {
+        _db = db;
+        _mapper = mapper;
+        _account = (Account?)httpContextAccessor?.HttpContext?.Items["Account"];
     }
 
-    public class ChecklistService : IChecklistService {
-        private readonly DataContext _db;
-        private readonly IMapper _mapper;
-        private readonly Account? _account;
-        private readonly IHttpContextAccessor? _httpContextAccessor;
+    public List<ChecklistModel> GetAll() {
+        var listChecklist = _db.Checklists
+            .OrderBy(c => c.Ordem)
+            .ToList();
 
-        public ChecklistService(DataContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor) {
-            _db = db;
-            _mapper = mapper;
-            _httpContextAccessor = httpContextAccessor;
-            _account = (Account?)_httpContextAccessor?.HttpContext?.Items["Account"];
+        var response = _mapper.Map<List<ChecklistModel>>(listChecklist);
+
+        foreach (ChecklistModel checklist in response) {
+            checklist.Items = GetAllByChecklistId(checklist.Id);
         }
 
-        public List<ChecklistModel> GetAll() {
-            List<Checklist> listChecklist = _db.Checklists
-                .OrderBy(c => c.Ordem)
-                .ToList();
+        return response;
+    }
 
-            var response = _mapper.Map<List<ChecklistModel>>(listChecklist);
+    public List<ChecklistItemModel> GetAllByChecklistId(int checklistId) {
+        var listChecklistItem = _db.Checklist_Items
+            .Where(c =>
+                c.Checklist_Id == checklistId &&
+                c.Deactivated == null)
+            .OrderBy(c => c.Ordem)
+            .ToList();
 
-            foreach (ChecklistModel checklist in response) {
-                checklist.Items = GetAllByChecklistId(checklist.Id);
+        return _mapper.Map<List<ChecklistItemModel>>(listChecklistItem);
+    }
+
+    public List<AlunoChecklistView> GetAllByAlunoId(int alunoId) {
+        var listAlunoChecklistView = _db.AlunoChecklistViews
+            .Where(c => c.Aluno_Id == alunoId)
+            .OrderBy(c => c.Checklist_Id)
+            .ThenBy(c => c.Ordem)
+            .ToList();
+
+        return listAlunoChecklistView;
+    }
+
+    public ResponseModel Insert(CreateChecklistItemRequest model) {
+        ResponseModel response = new() { Success = false };
+
+        try {
+            bool checklistExists = _db.Checklists.Any(c => c.Id == model.Checklist_Id);
+
+            if (checklistExists == false) {
+                return new ResponseModel { Message = "Checklist não encontrada" };
             }
 
-            return response;
+            if (string.IsNullOrEmpty(model.Nome)) {
+                return new ResponseModel { Message = "Item da checklist deve possuir um nome" };
+            }
+
+            Checklist_Item newChecklistItem = new()
+            {
+                Nome = model.Nome,
+                Ordem = model.Ordem,
+                Checklist_Id = model.Checklist_Id,
+                Deactivated = null
+            };
+
+            _db.Checklist_Items.Add(newChecklistItem);
+            _db.SaveChanges();
+
+            response.Success = true;
+            response.Message = "Item da checklist criado com sucesso";
+            response.Object = _mapper.Map<ChecklistItemModel>(newChecklistItem);
+        }
+        catch (Exception ex) {
+            response.Message = $"Falha ao inserir item da checklist: {ex}";
         }
 
-        public List<ChecklistItemModel> GetAllByChecklistId(int checklistId) {
-            List<Checklist_Item> listChecklistItem = _db.Checklist_Items
-                .Where(c =>
-                    c.Checklist_Id == checklistId &&
-                    c.Deactivated == null)
-                .OrderBy(c => c.Ordem)
-                .ToList();
+        return response;
+    }
 
-            return _mapper.Map<List<ChecklistItemModel>>(listChecklistItem);
+    public ResponseModel Update(UpdateChecklistItemRequest model) {
+        ResponseModel response = new() { Success = false };
+
+        try {
+            Checklist_Item? checklistItem = _db.Checklist_Items.AsNoTracking().FirstOrDefault(c => c.Id == model.Id);
+
+            if (checklistItem is null) {
+                return new ResponseModel { Message = "Item da checklist não encontrado" };
+            }
+
+            if (checklistItem.Deactivated.HasValue) {
+                return new ResponseModel { Message = "Este item está inativo" };
+            }
+
+            response.OldObject = _mapper.Map<ChecklistItemModel>(checklistItem);
+
+            checklistItem.Nome = model.Nome;
+            checklistItem.Ordem = model.Ordem;
+
+            _db.Update(checklistItem);
+            _db.SaveChanges();
+
+            response.Success = true;
+            response.Message = "Item da checklist atualizado com sucesso";
+            response.Object = _mapper.Map<ChecklistItemModel>(checklistItem);
+        }
+        catch (Exception ex) {
+            response.Message = $"Falha ao atualizar item da checklist: {ex}";
         }
 
-        public List<AlunoChecklistView> GetAllByAlunoId(int alunoId) {
-            List<AlunoChecklistView> listAlunoChecklistView = _db.AlunoChecklistViews
-                .Where(c => c.Aluno_Id == alunoId)
-                .OrderBy(c => c.Checklist_Id)
-                .ThenBy(c => c.Ordem)
-                .ToList();
+        return response;
+    }
 
-            return listAlunoChecklistView;
+    public ResponseModel ToggleDeactivate(int checklistItemId) {
+        ResponseModel response = new() { Success = false };
+
+        try {
+            Checklist_Item? checklistItem = _db.Checklist_Items.FirstOrDefault(ci => ci.Id == checklistItemId);
+
+            if (checklistItem == null) {
+                return new ResponseModel { Message = "Item da checklist não encontrado." };
+            }
+
+            bool isItemActive = checklistItem.Deactivated == null;
+
+            checklistItem.Deactivated = isItemActive ? TimeFunctions.HoraAtualBR() : null;
+
+            _db.Checklist_Items.Update(checklistItem);
+            _db.SaveChanges();
+
+            response.Success = true;
+            response.Message = "Item da checklist foi ativado/desativado com sucesso";
+            response.Object = _mapper.Map<ChecklistItemModel>(checklistItem);
+        }
+        catch (Exception ex) {
+            response.Message = $"Falha ao ativar/desativar item da checklist: {ex}";
         }
 
-        public ResponseModel Insert(CreateChecklistItemRequest model) {
-            ResponseModel response = new() { Success = false };
+        return response;
+    }
 
-            try {
-                bool checklistExists = _db.Checklists.Any(c => c.Id == model.Checklist_Id);
+    public ResponseModel PopulateAlunoChecklist(int alunoId) {
+        ResponseModel response = new() { Success = false };
 
-                if (checklistExists == false) {
-                    return new ResponseModel { Message = "Checklist não encontrada" };
+        try {
+            Aluno? aluno = _db.Alunos
+                .Include(x => x.Aluno_Checklist_Items)
+                .FirstOrDefault(x => x.Id == alunoId);
+
+            if (aluno is null) {
+                return new ResponseModel { Message = "Aluno não encontrado" };
+            }
+
+            // Buscar todos os itens da checklist não desativados
+            var checklistItems = _db.Checklist_Items.Where(c => c.Deactivated == null).ToList();
+
+            List<Aluno_Checklist_Item> alunoChecklist = [];
+
+            var checklists = _db.Checklists.ToList();
+
+            // Para cada um, adicionar na checklist do aluno
+            foreach (Checklist_Item item in checklistItems) {
+                Aluno_Checklist_Item? existe = aluno.Aluno_Checklist_Items.FirstOrDefault(x => x.Checklist_Item_Id == item.Id);
+
+                if (existe == null) {
+                    // Obtém o número da semana da tarefa, padrão 0 se não encontrado
+                    int semana = checklists.FirstOrDefault(c => c.Id == item.Checklist_Id)?.NumeroSemana ?? 0;
+
+                    // Obtém a data de início do aluno
+                    DateTime dataInicio = aluno.DataInicioVigencia;
+
+                    // Calcula quantos dias faltam para o próximo domingo após a data de início
+                    int diasAteDomingo = ((int)DayOfWeek.Sunday - (int)dataInicio.DayOfWeek + 7) % 7;
+
+                    // Determina a primeira segunda a partir da data de início
+                    DateTime primeiraSegunda = dataInicio.AddDays(diasAteDomingo + 1);
+
+                    // Calcula o prazo final da tarefa (segunda da semana correspondente)
+                    //DateTime prazo = primeiroDomingo.AddDays(7 * (semana + 1));
+                    DateTime prazo = primeiraSegunda.AddDays(7 * semana);
+
+                    // Adiciona o item à checklist do aluno
+                    alunoChecklist.Add(new()
+                    {
+                        Aluno_Id = aluno.Id,
+                        Prazo = prazo,
+                        Checklist_Item_Id = item.Id,
+                        DataFinalizacao = null,
+                        Account_Finalizacao_Id = null,
+                    });
                 }
-
-                if (string.IsNullOrEmpty(model.Nome)) {
-                    return new ResponseModel { Message = "Item da checklist deve possuir um nome" };
-                }
-
-                Checklist_Item newChecklistItem = new()
-                {
-                    Nome = model.Nome,
-                    Ordem = model.Ordem,
-                    Checklist_Id = model.Checklist_Id,
-                    Deactivated = null
-                };
-
-                _db.Checklist_Items.Add(newChecklistItem);
-                _db.SaveChanges();
-
-                response.Success = true;
-                response.Message = "Item da checklist criado com sucesso";
-                response.Object = _mapper.Map<ChecklistItemModel>(newChecklistItem);
-            }
-            catch (Exception ex) {
-                response.Message = $"Falha ao inserir item da checklist: {ex}";
             }
 
-            return response;
+            _db.Aluno_Checklist_Items.AddRange(alunoChecklist);
+            _db.SaveChanges();
+
+            response.Success = true;
+            response.Message = "Itens da checklist do aluno foram populados com sucesso";
+        }
+        catch (Exception ex) {
+            response.Message = $"Falha ao popular checklist do aluno: {ex}";
         }
 
-        public ResponseModel Update(UpdateChecklistItemRequest model) {
-            ResponseModel response = new() { Success = false };
+        return response;
+    }
 
-            try {
-                Checklist_Item? checklistItem = _db.Checklist_Items.AsNoTracking().FirstOrDefault(c => c.Id == model.Id);
+    public ResponseModel ToggleAlunoChecklistItem(ToggleAlunoChecklistRequest model) {
+        ResponseModel response = new() { Success = false };
 
-                if (checklistItem is null) {
-                    return new ResponseModel { Message = "Item da checklist não encontrado" };
-                }
+        try {
+            Aluno_Checklist_Item? item = _db.Aluno_Checklist_Items.Find(model.Aluno_Checklist_Item_Id);
 
-                if (checklistItem.Deactivated.HasValue) {
-                    return new ResponseModel { Message = "Este item está inativo" };
-                }
-
-                response.OldObject = _mapper.Map<ChecklistItemModel>(checklistItem);
-
-                checklistItem.Nome = model.Nome;
-                checklistItem.Ordem = model.Ordem;
-
-                _db.Update(checklistItem);
-                _db.SaveChanges();
-
-                response.Success = true;
-                response.Message = "Item da checklist atualizado com sucesso";
-                response.Object = _mapper.Map<ChecklistItemModel>(checklistItem);
-            }
-            catch (Exception ex) {
-                response.Message = $"Falha ao atualizar item da checklist: {ex}";
+            if (item is null) {
+                return new ResponseModel { Message = "Item da checklist do aluno não encontrado" };
             }
 
-            return response;
+            if (item.DataFinalizacao is null) {
+                item.Account_Finalizacao_Id = _account?.Id;
+                item.DataFinalizacao = TimeFunctions.HoraAtualBR();
+            }
+
+            item.Observacoes = model.Observacoes ?? item.Observacoes;
+
+            _db.Aluno_Checklist_Items.Update(item);
+            _db.SaveChanges();
+
+            response.Success = true;
+            response.Message = "Item da checklist do aluno foi atualizado com sucesso";
+            response.Object = _mapper.Map<AlunoChecklistItemModel>(item);
+        }
+        catch (Exception ex) {
+            response.Message = $"Falha ao atualizar checklist item do aluno: {ex}";
         }
 
-        public ResponseModel ToggleDeactivate(int checklistItemId) {
-            ResponseModel response = new() { Success = false };
+        return response;
+    }
 
-            try {
-                Checklist_Item? checklistItem = _db.Checklist_Items.FirstOrDefault(ci => ci.Id == checklistItemId);
+    public List<ChecklistsFromAlunoModel> GetAllAlunoChecklistsByEventoId(int eventoId) {
+        var registros = _db.Evento_Participacao_Alunos
+            .Where(p => p.Evento_Id == eventoId && p.Deactivated == null)
+            .ToList();
 
-                if (checklistItem == null) {
-                    return new ResponseModel { Message = "Item da checklist não encontrado." };
-                }
+        // Montar o objeto de retorno
+        List<ChecklistsFromAlunoModel> response = [];
 
-                bool isItemActive = checklistItem.Deactivated == null;
+        foreach (Evento_Participacao_Aluno registro in registros) {
+            List<AlunoChecklistView> alunoChecklists = GetAllByAlunoId(registro.Aluno_Id);
 
-                checklistItem.Deactivated = isItemActive ? TimeFunctions.HoraAtualBR() : null;
-
-                _db.Checklist_Items.Update(checklistItem);
-                _db.SaveChanges();
-
-                response.Success = true;
-                response.Message = "Item da checklist foi ativado/desativado com sucesso";
-                response.Object = _mapper.Map<ChecklistItemModel>(checklistItem);
-            }
-            catch (Exception ex) {
-                response.Message = $"Falha ao ativar/desativar item da checklist: {ex}";
-            }
-
-            return response;
+            response.Add(new ChecklistsFromAlunoModel { Aluno_Id = registro.Aluno_Id, Checklist = alunoChecklists });
         }
 
-        public ResponseModel PopulateAlunoChecklist(int alunoId) {
-            ResponseModel response = new() { Success = false };
-
-            try {
-                Aluno? aluno = _db.Alunos
-                    .Include(x => x.Aluno_Checklist_Items)
-                    .FirstOrDefault(x => x.Id == alunoId);
-
-                if (aluno is null) {
-                    return new ResponseModel { Message = "Aluno não encontrado" };
-                }
-
-                // Buscar todos os itens da checklist não desativados
-                List<Checklist_Item> checklistItems = _db.Checklist_Items.Where(c => c.Deactivated == null).ToList();
-
-                List<Aluno_Checklist_Item> alunoChecklist = new();
-
-                List<Checklist> checklists = _db.Checklists.ToList();
-
-                // Para cada um, adicionar na checklist do aluno
-                foreach (Checklist_Item item in checklistItems) {
-                    Aluno_Checklist_Item? existe = aluno.Aluno_Checklist_Items.FirstOrDefault(x => x.Checklist_Item_Id == item.Id);
-
-                    if (existe == null) {
-                        // Obtém o número da semana da tarefa, padrão 0 se não encontrado
-                        int semana = checklists.FirstOrDefault(c => c.Id == item.Checklist_Id)?.NumeroSemana ?? 0;
-
-                        // Obtém a data de início do aluno
-                        DateTime dataInicio = aluno.DataInicioVigencia;
-
-                        // Calcula quantos dias faltam para o próximo domingo após a data de início
-                        int diasAteDomingo = ((int)DayOfWeek.Sunday - (int)dataInicio.DayOfWeek + 7) % 7;
-
-                        // Determina a primeira segunda a partir da data de início
-                        DateTime primeiraSegunda = dataInicio.AddDays(diasAteDomingo + 1);
-
-                        // Calcula o prazo final da tarefa (segunda da semana correspondente)
-                        //DateTime prazo = primeiroDomingo.AddDays(7 * (semana + 1));
-                        DateTime prazo = primeiraSegunda.AddDays(7 * semana);
-
-                        // Adiciona o item à checklist do aluno
-                        alunoChecklist.Add(new()
-                        {
-                            Aluno_Id = aluno.Id,
-                            Prazo = prazo,
-                            Checklist_Item_Id = item.Id,
-                            DataFinalizacao = null,
-                            Account_Finalizacao_Id = null,
-                        });
-                    }
-                }
-
-                _db.Aluno_Checklist_Items.AddRange(alunoChecklist);
-                _db.SaveChanges();
-
-                response.Success = true;
-                response.Message = "Itens da checklist do aluno foram populados com sucesso";
-            }
-            catch (Exception ex) {
-                response.Message = $"Falha ao popular checklist do aluno: {ex}";
-            }
-
-            return response;
-        }
-
-        public ResponseModel ToggleAlunoChecklistItem(ToggleAlunoChecklistRequest model) {
-            ResponseModel response = new() { Success = false };
-
-            try {
-                Aluno_Checklist_Item? item = _db.Aluno_Checklist_Items.Find(model.Aluno_Checklist_Item_Id);
-
-                if (item is null) {
-                    return new ResponseModel { Message = "Item da checklist do aluno não encontrado" };
-                }
-
-                if (item.DataFinalizacao is null) {
-                    item.Account_Finalizacao_Id = _account?.Id;
-                    item.DataFinalizacao = TimeFunctions.HoraAtualBR();
-                }
-
-                item.Observacoes = model.Observacoes ?? item.Observacoes;
-
-                _db.Aluno_Checklist_Items.Update(item);
-                _db.SaveChanges();
-
-                response.Success = true;
-                response.Message = "Item da checklist do aluno foi atualizado com sucesso";
-                response.Object = _mapper.Map<AlunoChecklistItemModel>(item);
-            }
-            catch (Exception ex) {
-                response.Message = $"Falha ao atualizar checklist item do aluno: {ex}";
-            }
-
-            return response;
-        }
-
-        public List<ChecklistsFromAlunoModel> GetAllAlunoChecklistsByEventoId(int eventoId) {
-            List<Evento_Participacao_Aluno> registros = _db.Evento_Participacao_Alunos
-                .Where(p => p.Evento_Id == eventoId && p.Deactivated == null)
-                .ToList();
-
-            // Montar o objeto de retorno
-            List<ChecklistsFromAlunoModel> response = [];
-
-            foreach (Evento_Participacao_Aluno registro in registros) {
-                List<AlunoChecklistView> alunoChecklists = GetAllByAlunoId(registro.Aluno_Id);
-
-                response.Add(new ChecklistsFromAlunoModel { Aluno_Id = registro.Aluno_Id, Checklist = alunoChecklists });
-            }
-
-            return response;
-        }
+        return response;
     }
 }

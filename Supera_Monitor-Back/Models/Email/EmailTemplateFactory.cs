@@ -1,4 +1,4 @@
-﻿namespace Supera_Monitor_Back.Services.Email;
+﻿namespace Supera_Monitor_Back.Models.Email;
 
 public interface IEmailTemplateFactory {
     IEmailTemplate GetTemplate(string templateType);
@@ -7,8 +7,7 @@ public interface IEmailTemplateFactory {
 public class EmailTemplateFactory : IEmailTemplateFactory {
     private readonly Dictionary<string, IEmailTemplate> _templates;
 
-    public EmailTemplateFactory()
-    {
+    public EmailTemplateFactory() {
         _templates = new Dictionary<string, IEmailTemplate> {
             { "Welcome", new WelcomeEmailTemplate() },
             { "VerifyAccount", new VerificationEmailTemplate()},
@@ -20,8 +19,7 @@ public class EmailTemplateFactory : IEmailTemplateFactory {
         };
     }
 
-    public IEmailTemplate GetTemplate(string templateType)
-    {
+    public IEmailTemplate GetTemplate(string templateType) {
         if (_templates.TryGetValue(templateType, out var template)) {
             return template;
         }

@@ -4,6 +4,7 @@ using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Accounts;
+using Supera_Monitor_Back.Models.Apostila;
 using Supera_Monitor_Back.Models.Professor;
 
 namespace Supera_Monitor_Back.Services {

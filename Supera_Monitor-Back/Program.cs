@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using Supera_Monitor_Back.CRM4U;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Middlewares;
+using Supera_Monitor_Back.Models.Email;
 using Supera_Monitor_Back.Services;
 using Supera_Monitor_Back.Services.Email;
 using Supera_Monitor_Back.Services.Eventos;

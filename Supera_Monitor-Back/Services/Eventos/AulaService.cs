@@ -13,7 +13,6 @@ public interface IAulaService {
     public CalendarioEventoList? GetById(int aulaId);
     public List<EventoAulaModel> GetAll();
     public List<CalendarioParticipacaoAlunoList> AlunosAulas(int ano);
-
     public ResponseModel InsertAulaZero(CreateAulaZeroRequest request);
     public ResponseModel InsertAulaExtra(CreateAulaExtraRequest request);
     public ResponseModel InsertAulaForTurma(CreateAulaTurmaRequest request);
@@ -27,24 +26,22 @@ public class AulaService : IAulaService {
     private readonly ISalaService _salaService;
 
     private readonly Account? _account;
-    private readonly IHttpContextAccessor? _httpContextAccessor;
 
     public AulaService(DataContext db, IMapper mapper, IProfessorService professorService, ISalaService salaService, IHttpContextAccessor httpContextAccessor) {
         _db = db;
         _mapper = mapper;
         _professorService = professorService;
         _salaService = salaService;
-        _httpContextAccessor = httpContextAccessor;
-        _account = (Account?)_httpContextAccessor.HttpContext?.Items["Account"];
+        _account = (Account?)httpContextAccessor.HttpContext?.Items["Account"];
     }
 
     public CalendarioEventoList? GetById(int aulaId) {
         var eventoAula = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == aulaId);
 
         if (eventoAula is not null) {
-            var aulaPerfisCognitivos = _db.Aula_PerfilCognitivo_Rels
+            var aulaPerfisCognitivos = _db.Evento_Aula_PerfilCognitivo_Rels
                 .Include(p => p.PerfilCognitivo)
-                .Where(e => e.Aula_Id == aulaId)
+                .Where(e => e.Evento_Aula_Id == aulaId)
                 .Select(e => e.PerfilCognitivo)
                 .ToList();
 
@@ -143,7 +140,7 @@ public class AulaService : IAulaService {
             {
                 Data = request.Data,
                 Descricao = turma.Nome ?? request.Descricao ?? "Sem descrição",
-                Observacao = request?.Observacao,
+                Observacao = request.Observacao,
                 Sala_Id = request.Sala_Id,
                 DuracaoMinutos = request.DuracaoMinutos,
                 CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
@@ -498,7 +495,7 @@ public class AulaService : IAulaService {
             {
                 Data = request.Data,
                 Descricao = request.Descricao ?? "Aula Zero",
-                Observacao = request?.Observacao,
+                Observacao = request.Observacao,
                 Sala_Id = request.Sala_Id,
                 DuracaoMinutos = request.DuracaoMinutos,
 
@@ -768,7 +765,6 @@ public class AulaService : IAulaService {
         #region Roteiros
         List<string> meses = new() { "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro" };
         int index = 1;
-        int semanaCount = 0;
 
         //
         // Monta os roteiros

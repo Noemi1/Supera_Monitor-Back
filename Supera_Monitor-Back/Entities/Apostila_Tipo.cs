@@ -2,7 +2,6 @@
 
 public partial class Apostila_Tipo {
     public int Id { get; set; }
-
     public string Nome { get; set; } = null!;
 }
 

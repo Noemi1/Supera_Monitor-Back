@@ -5,8 +5,8 @@ using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Accounts;
+using Supera_Monitor_Back.Models.Email.Constructors;
 using Supera_Monitor_Back.Services.Email;
-using Supera_Monitor_Back.Services.Email.Models;
 
 namespace Supera_Monitor_Back.Services {
     public interface IUserService {
@@ -76,7 +76,7 @@ namespace Supera_Monitor_Back.Services {
                 return new ResponseModel { Message = "Este e-mail já está em uso." };
             }
 
-            if (_account.Deactivated != null) {
+            if (_account?.Deactivated != null) {
                 return new ResponseModel { Message = "Esta conta foi desativada." };
             }
 
@@ -131,7 +131,7 @@ namespace Supera_Monitor_Back.Services {
 
             // If user is editing his own account
             if (account.Id == _account.Id) {
-                _httpContextAccessor.HttpContext.Items["Account"] = account;
+                _httpContextAccessor.HttpContext!.Items["Account"] = account;
             }
 
             AccountList? old = _db.AccountLists.AsNoTracking().FirstOrDefault(accList => accList.Id == account.Id);
@@ -256,8 +256,8 @@ namespace Supera_Monitor_Back.Services {
             _db.SaveChanges();
 
             // If user is editing his own account
-            if (account.Id == _account!.Id) {
-                _httpContextAccessor.HttpContext.Items["Account"] = account;
+            if (account.Id == _account.Id) {
+                _httpContextAccessor.HttpContext!.Items["Account"] = account;
             }
 
             // If account is being deactivated, revoke all its active tokens
@@ -285,7 +285,7 @@ namespace Supera_Monitor_Back.Services {
             entity.Deactivated = null;
             entity.Verified = null;
 
-            entity.Account_Created_Id = _account.Id;
+            entity.Account_Created_Id = _account?.Id;
             entity.Created = TimeFunctions.HoraAtualBR();
             //entity.Role_Id = ( int )Role.Assistant; // Mudança: Role é inserido com base no Role_Id do request, não é mais Role.Assistant por padrão
 

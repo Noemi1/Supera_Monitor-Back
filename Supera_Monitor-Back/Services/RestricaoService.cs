@@ -20,13 +20,11 @@ public class RestricaoService : IRestricaoService {
     private readonly DataContext _db;
     private readonly IMapper _mapper;
     private readonly Account? _account;
-    private readonly IHttpContextAccessor? _httpContextAccessor;
 
     public RestricaoService(DataContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor) {
         _db = db;
         _mapper = mapper;
-        _httpContextAccessor = httpContextAccessor;
-        _account = (Account?) _httpContextAccessor?.HttpContext?.Items["Account"];
+        _account = (Account?)httpContextAccessor?.HttpContext?.Items["Account"];
     }
 
     public RestricaoModel Get(int restricaoId) {
@@ -61,16 +59,18 @@ public class RestricaoService : IRestricaoService {
                 return new ResponseModel { Message = "Descrição da restrição não pode ser nula/vazia" };
             }
 
-            Aluno_Restricao newRestricao = new() {
+            Aluno_Restricao newRestricao = new()
+            {
                 Descricao = model.Descricao,
                 Aluno_Id = model.Aluno_Id,
 
                 Created = TimeFunctions.HoraAtualBR(),
                 Deactivated = null,
-                Account_Created_Id = _account.Id,
+                Account_Created_Id = _account!.Id,
             };
 
-            _db.Aluno_Historicos.Add(new Aluno_Historico {
+            _db.Aluno_Historicos.Add(new Aluno_Historico
+            {
                 Aluno_Id = model.Aluno_Id,
                 Account_Id = _account.Id,
                 Descricao = $"Restrição '{model.Descricao}' foi criada para o aluno",
@@ -83,7 +83,8 @@ public class RestricaoService : IRestricaoService {
             response.Success = true;
             response.Message = $"Restrição criada com sucesso";
             response.Object = _mapper.Map<RestricaoModel>(newRestricao);
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Não foi possível criar a restrição: {ex}";
         }
 
@@ -108,9 +109,10 @@ public class RestricaoService : IRestricaoService {
 
             restricao.Descricao = model.Descricao;
 
-            _db.Aluno_Historicos.Add(new Aluno_Historico {
+            _db.Aluno_Historicos.Add(new Aluno_Historico
+            {
                 Aluno_Id = model.Aluno_Id,
-                Account_Id = _account.Id,
+                Account_Id = _account?.Id,
                 Descricao = $"Restrição do aluno foi atualizada de '{oldRestricao?.Descricao}' para '{model.Descricao}'",
                 Data = TimeFunctions.HoraAtualBR(),
             });
@@ -122,7 +124,8 @@ public class RestricaoService : IRestricaoService {
             response.Message = "Restrição atualizada com sucesso";
             response.Object = _mapper.Map<RestricaoModel>(restricao);
             response.OldObject = _mapper.Map<RestricaoModel>(oldRestricao);
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = $"Não foi possível atualizar a restrição: {ex}";
         }
 
@@ -142,9 +145,10 @@ public class RestricaoService : IRestricaoService {
             var restricaoToString = restricao.Deactivated.HasValue ? "reativada" : "desativada";
             restricao.Deactivated = restricao.Deactivated.HasValue ? null : TimeFunctions.HoraAtualBR();
 
-            _db.Aluno_Historicos.Add(new Aluno_Historico {
+            _db.Aluno_Historicos.Add(new Aluno_Historico
+            {
                 Aluno_Id = restricao.Aluno_Id,
-                Account_Id = _account.Id,
+                Account_Id = _account?.Id,
                 Descricao = $"Restrição do aluno foi '{restricaoToString}'",
                 Data = TimeFunctions.HoraAtualBR(),
             });
@@ -155,7 +159,8 @@ public class RestricaoService : IRestricaoService {
             response.Success = true;
             response.Object = _mapper.Map<RestricaoModel>(restricao);
             response.Message = $"Restrição {restricaoToString} com sucesso";
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             response.Message = "Não foi possível desativar a restrição: " + ex.ToString();
         }
 

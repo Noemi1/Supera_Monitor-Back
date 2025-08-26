@@ -17,7 +17,6 @@ public interface ISalaService {
     bool IsSalaRecurrentlyOccupied(int Sala_Id, int DiaSemana, TimeSpan Horario, int? IgnoredTurmaId, int DuracaoMinutos = 120);
 }
 
-
 public class SalaService : ISalaService {
     private readonly DataContext _db;
     private readonly IMapper _mapper;
@@ -28,7 +27,7 @@ public class SalaService : ISalaService {
     }
 
     public List<SalaModel> GetAllSalas() {
-        List<Sala> salas = _db.Salas
+        var salas = _db.Salas
             .OrderBy(s => s.Andar)
             .ThenBy(s => s.NumeroSala)
             .ToList();
@@ -68,7 +67,7 @@ public class SalaService : ISalaService {
             response.Object = _mapper.Map<SalaModel>(newSala);
         }
         catch (Exception ex) {
-            response.Message = "Falha ao inserir nova sala: " + ex.ToString();
+            response.Message = $"Falha ao inserir nova sala: {ex}";
         }
 
         return response;
@@ -108,7 +107,7 @@ public class SalaService : ISalaService {
             response.Object = _mapper.Map<SalaModel>(sala);
         }
         catch (Exception ex) {
-            response.Message = "Falha ao atualizar sala: " + ex.ToString();
+            response.Message = $"Falha ao atualizar sala: {ex}";
         }
 
         return response;
@@ -132,7 +131,7 @@ public class SalaService : ISalaService {
             response.Message = "Sala removida com sucesso";
         }
         catch (Exception ex) {
-            response.Message = "Falha ao remover sala: " + ex.ToString();
+            response.Message = $"Falha ao remover sala: {ex}";
         }
 
         return response;

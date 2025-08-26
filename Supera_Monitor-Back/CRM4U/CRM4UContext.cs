@@ -1,6 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Supera_Monitor_Back.Entities;
-using Supera_Monitor_Back.Entities.Views;
 
 namespace Supera_Monitor_Back.CRM4U;
 
@@ -19,7 +17,8 @@ public partial class CRM4UContext : DbContext {
 
             var connectionString = configuration.GetConnectionString("CRM4U_ConnectionString");
 
-            optionsBuilder.UseSqlServer(connectionString, options => {
+            optionsBuilder.UseSqlServer(connectionString, options =>
+            {
                 options.CommandTimeout(1200); // 20 minutos
                 options.EnableRetryOnFailure(
                     maxRetryCount: 3,

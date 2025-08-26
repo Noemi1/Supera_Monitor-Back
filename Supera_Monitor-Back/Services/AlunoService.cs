@@ -13,20 +13,17 @@ namespace Supera_Monitor_Back.Services;
 public interface IAlunoService {
     AlunoListWithChecklist Get(int alunoId);
     List<AlunoList> GetAll();
+    List<AlunoHistoricoList> GetHistoricoById(int alunoId);
     List<AlunoListWithChecklist> GetAllWithChecklist(AlunoRequest request);
     List<AlunoChecklistItemList> GetAlunoChecklistItemList(AlunoRequest request);
-    ResponseModel Insert(CreateAlunoRequest model);
-    ResponseModel Update(UpdateAlunoRequest model);
-    ResponseModel ToggleDeactivate(int alunoId);
-
     ResponseModel GetProfileImage(int alunoId);
     ResponseModel GetSummaryByAluno(int alunoId);
     List<ApostilaList> GetApostilasByAluno(int alunoId);
-
-    List<AlunoHistoricoList> GetHistoricoById(int alunoId);
-
-    ResponseModel Reposicao(ReposicaoRequest model);
+    ResponseModel Insert(CreateAlunoRequest model);
     ResponseModel PrimeiraAula(PrimeiraAulaRequest model);
+    ResponseModel Reposicao(ReposicaoRequest model);
+    ResponseModel Update(UpdateAlunoRequest model);
+    ResponseModel ToggleDeactivate(int alunoId);
 }
 
 public class AlunoService : IAlunoService {
@@ -36,7 +33,6 @@ public class AlunoService : IAlunoService {
     private readonly IChecklistService _checklistService;
 
     private readonly Account? _account;
-    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public AlunoService(
         DataContext db,
@@ -51,8 +47,6 @@ public class AlunoService : IAlunoService {
         _dbCRM = dbCRM;
         _mapper = mapper;
         _checklistService = checklistService;
-
-        _httpContextAccessor = httpContextAccessor;
         _account = (Account?)httpContextAccessor?.HttpContext?.Items["Account"];
     }
 
@@ -287,21 +281,19 @@ public class AlunoService : IAlunoService {
                 _db.Aluno_Historicos.Add(new Aluno_Historico
                 {
                     Aluno_Id = aluno.Id,
-                    Descricao = $"Perfil cognitivo do aluno foi atualizado de '{currentPerfilCognitivo?.Descricao}' para '{updatedPerfilCognitivo.Descricao}'.",
+                    Descricao = $"Perfil cognitivo do aluno foi atualizado de '{currentPerfilCognitivo?.Descricao}' para '{updatedPerfilCognitivo?.Descricao}'.",
                     Account_Id = _account!.Id,
                     Data = TimeFunctions.HoraAtualBR(),
                 });
             }
 
-            bool isSwitchingTurma = aluno.Turma_Id != model.Turma_Id;
-
             // Se aluno estiver trocando de turma, deve-se garantir que a turma destino tem espaço disponível
             // Não considera reposição, pois não estamos olhando para uma aula específica
-            if (isSwitchingTurma && model.Turma_Id.HasValue) {
-                int amountOfAlunosInTurma = _db.Alunos.Count(a => a.Turma_Id == turmaDestino.Id && a.Deactivated == null);
+            if (turmaDestino is not null && aluno.Turma_Id != turmaDestino.Id) {
+                int countAlunosInTurma = _db.Alunos.Count(a => a.Turma_Id == turmaDestino.Id && a.Deactivated == null);
 
-                if (amountOfAlunosInTurma >= turmaDestino.CapacidadeMaximaAlunos) {
-                    return new ResponseModel { Message = "Turma já está em sua capacidade máxima" };
+                if (countAlunosInTurma >= turmaDestino.CapacidadeMaximaAlunos) {
+                    return new ResponseModel { Message = "Turma destino está em sua capacidade máxima" };
                 }
             }
 
@@ -324,6 +316,7 @@ public class AlunoService : IAlunoService {
 
             // Garantir que RM é unico pra cada aluno
             bool rmIsAlreadyTaken = _db.Alunos.Any(a => a.RM == model.RM && a.Id != model.Id);
+
             if (rmIsAlreadyTaken) {
                 return new ResponseModel { Message = "RM já existe" };
             }
@@ -375,7 +368,10 @@ public class AlunoService : IAlunoService {
              * 3. Criar uma entidade em Aluno_Historico como 'log' da mudança
             */
 
-            if (isSwitchingTurma && model.Turma_Id.HasValue) {
+            bool trocandoDeTurma = turmaDestino is not null && aluno.Turma_Id != turmaDestino.Id;
+            bool removidoDaTurma = aluno.Turma_Id != null && turmaDestino is null;
+
+            if (trocandoDeTurma) {
                 List<Evento> eventosTurmaOriginal = _db.Eventos
                     .Include(e => e.Evento_Aula)
                     .Where(e =>
@@ -418,6 +414,7 @@ public class AlunoService : IAlunoService {
 
                     // Aula não deve registrar aluno se estiver em sua capacidade máxima e nesse caso, -> considera os alunos de reposição <-
                     int amountOfAlunosInAula = evento.Evento_Participacao_Alunos.Count(p => p.Deactivated == null);
+
                     if (amountOfAlunosInAula >= evento.CapacidadeMaximaAlunos) {
                         continue;
                     }
@@ -433,7 +430,7 @@ public class AlunoService : IAlunoService {
                     Data = TimeFunctions.HoraAtualBR(),
                 });
             }
-            else if (isSwitchingTurma) {
+            else if (removidoDaTurma) {
                 _db.Aluno_Historicos.Add(new Aluno_Historico
                 {
                     Aluno_Id = aluno.Id,
@@ -497,7 +494,7 @@ public class AlunoService : IAlunoService {
             response.Object = _db.AlunoLists.AsNoTracking().FirstOrDefault(a => a.Id == aluno.Id);
         }
         catch (Exception ex) {
-            response.Message = "Falha ao ativar/desativar aluno";// + ex.ToString();
+            response.Message = $"Falha ao ativar/desativar aluno: {ex}";
         }
 
         return response;
@@ -518,7 +515,7 @@ public class AlunoService : IAlunoService {
             response.Object = aluno.Aluno_Foto;
         }
         catch (Exception ex) {
-            response.Message = "Falha ao resgatar imagem de perfil do aluno";// + ex.ToString();
+            response.Message = $"Falha ao resgatar imagem de perfil do aluno: {ex}";
         }
 
         return response;
@@ -681,7 +678,7 @@ public class AlunoService : IAlunoService {
             response.Message = "Reposição agendada com sucesso";
         }
         catch (Exception ex) {
-            response.Message = $"Falha ao inserir reposição de aula do aluno";//: {ex}";
+            response.Message = $"Falha ao inserir reposição de aula do aluno: {ex}";
         }
 
         return response;
@@ -749,7 +746,7 @@ public class AlunoService : IAlunoService {
 
         }
         catch (Exception ex) {
-            response.Message = "Falha ao buscar sumário do aluno ";// + ex.ToString();
+            response.Message = $"Falha ao buscar sumário do aluno: {ex}";
         }
 
         return response;
@@ -875,7 +872,7 @@ public class AlunoService : IAlunoService {
             response.Message = "Primeira aula agendada com sucesso";
         }
         catch (Exception ex) {
-            response.Message = $"Falha ao inserir primeira aula do aluno";// : {ex}";
+            response.Message = $"Falha ao inserir primeira aula do aluno: {ex}";
         }
 
         return response;

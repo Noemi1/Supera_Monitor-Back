@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using Supera_Monitor_Back.Helpers;
+using Supera_Monitor_Back.Models.Email;
 using System.Net;
 using System.Net.Mail;
 using System.Net.Mime;

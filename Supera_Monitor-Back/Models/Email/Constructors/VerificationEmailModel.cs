@@ -1,4 +1,4 @@
-﻿namespace Supera_Monitor_Back.Services.Email.Models {
+﻿namespace Supera_Monitor_Back.Models.Email.Constructors {
     public class VerificationEmailModel {
         public string? VerificationToken { get; set; } = string.Empty;
         public string Url { get; set; } = string.Empty;

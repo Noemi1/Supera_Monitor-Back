@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Models;
@@ -19,8 +18,8 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpGet("{alunoId}")]
-		[Authorize(Entities.Role.Admin, Entities.Role.Teacher, Entities.Role.Assistant)]
-		public ActionResult<AlunoListWithChecklist> Get(int alunoId) {
+        [Authorize(Role.Admin, Role.Teacher, Role.Assistant)]
+        public ActionResult<AlunoListWithChecklist> Get(int alunoId) {
             try {
                 var response = _alunoService.Get(alunoId);
 
@@ -33,8 +32,8 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpGet("all")]
-		[Authorize(Entities.Role.Admin, Entities.Role.Teacher, Entities.Role.Assistant)]
-		public ActionResult<List<AlunoList>> GetAll() {
+        [Authorize(Role.Admin, Role.Teacher, Role.Assistant)]
+        public ActionResult<List<AlunoList>> GetAll() {
             try {
                 var response = _alunoService.GetAll();
 
@@ -47,10 +46,10 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpGet("historico/{alunoId}")]
-		[Authorize(Entities.Role.Admin, Entities.Role.Teacher, Entities.Role.Assistant)]
-		public ActionResult<List<AlunoHistoricoList>> GetHistoricoById(int alunoId) {
+        [Authorize(Role.Admin, Role.Teacher, Role.Assistant)]
+        public ActionResult<List<AlunoHistoricoList>> GetHistoricoById(int alunoId) {
             try {
-				List<AlunoHistoricoList> response = _alunoService.GetHistoricoById(alunoId);
+                List<AlunoHistoricoList> response = _alunoService.GetHistoricoById(alunoId);
 
                 return Ok(response);
             }
@@ -61,9 +60,9 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPost()]
-		public ActionResult<ResponseModel> Insert(CreateAlunoRequest model) {
+        public ActionResult<ResponseModel> Insert(CreateAlunoRequest model) {
             try {
-				ResponseModel response = _alunoService.Insert(model);
+                ResponseModel response = _alunoService.Insert(model);
 
                 if (response.Success) {
                     int alunoId = response.Object!.Id;
@@ -80,8 +79,8 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPut()]
-		[Authorize(Entities.Role.Admin, Entities.Role.Teacher, Entities.Role.Assistant)]
-		public ActionResult<ResponseModel> Update(UpdateAlunoRequest model) {
+        [Authorize(Role.Admin, Role.Teacher, Role.Assistant)]
+        public ActionResult<ResponseModel> Update(UpdateAlunoRequest model) {
             try {
                 var response = _alunoService.Update(model);
 
@@ -99,8 +98,8 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPatch("toggle-active/{alunoId}")]
-		[Authorize(Entities.Role.Admin, Entities.Role.Teacher, Entities.Role.Assistant)]
-		public ActionResult<ResponseModel> ToggleDeactivate(int alunoId) {
+        [Authorize(Role.Admin, Role.Teacher, Role.Assistant)]
+        public ActionResult<ResponseModel> ToggleDeactivate(int alunoId) {
             try {
                 ResponseModel response = _alunoService.ToggleDeactivate(alunoId);
 
@@ -120,8 +119,8 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpGet("image/{alunoId}")]
-		[Authorize(Entities.Role.Admin, Entities.Role.Teacher, Entities.Role.Assistant)]
-		public ActionResult<ResponseModel> GetProfileImage(int alunoId) {
+        [Authorize(Role.Admin, Role.Teacher, Role.Assistant)]
+        public ActionResult<ResponseModel> GetProfileImage(int alunoId) {
             try {
                 ResponseModel response = _alunoService.GetProfileImage(alunoId);
 
@@ -134,7 +133,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPost("reposicao")]
-		[Authorize(Entities.Role.Admin, Entities.Role.Teacher, Entities.Role.Assistant)]
+        [Authorize(Role.Admin, Role.Teacher, Role.Assistant)]
         public ActionResult<ResponseModel> Reposicao(ReposicaoRequest model) {
             try {
                 ResponseModel response = _alunoService.Reposicao(model);
@@ -153,7 +152,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPost("primeira-aula")]
-		[Authorize(Entities.Role.Admin, Entities.Role.Teacher, Entities.Role.Assistant)]
+        [Authorize(Role.Admin, Role.Teacher, Role.Assistant)]
         public ActionResult<ResponseModel> PrimeiraAula(PrimeiraAulaRequest model) {
             try {
                 ResponseModel response = _alunoService.PrimeiraAula(model);
@@ -172,7 +171,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpGet("apostilas/{alunoId}")]
-		[Authorize(Entities.Role.Admin, Entities.Role.Teacher, Entities.Role.Assistant)]
+        [Authorize(Role.Admin, Role.Teacher, Role.Assistant)]
         public ActionResult<List<ApostilaList>> GetApostilasByAluno(int alunoId) {
             try {
                 var response = _alunoService.GetApostilasByAluno(alunoId);
@@ -186,7 +185,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpGet("resumo/{alunoId}")]
-		[Authorize(Entities.Role.Admin, Entities.Role.Teacher, Entities.Role.Assistant)]
+        [Authorize(Role.Admin, Role.Teacher, Role.Assistant)]
         public ActionResult<ResponseModel> GetSummaryByAluno(int alunoId) {
             try {
                 var response = _alunoService.GetSummaryByAluno(alunoId);
@@ -200,7 +199,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPost("all/with-checklist")]
-		[Authorize(Entities.Role.Admin, Entities.Role.Teacher, Entities.Role.Assistant)]
+        [Authorize(Role.Admin, Role.Teacher, Role.Assistant)]
         public ActionResult<List<AlunoListWithChecklist>> GetAllWithChecklist(AlunoRequest request) {
             try {
                 var response = _alunoService.GetAllWithChecklist(request);
@@ -214,7 +213,7 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPost("checklists/all")]
-		[Authorize(Entities.Role.Admin, Entities.Role.Teacher, Entities.Role.Assistant)]
+        [Authorize(Role.Admin, Role.Teacher, Role.Assistant)]
         public ActionResult<List<AlunoListWithChecklist>> GetAllAlunoChecklists(AlunoRequest request) {
             try {
                 var response = _alunoService.GetAlunoChecklistItemList(request);

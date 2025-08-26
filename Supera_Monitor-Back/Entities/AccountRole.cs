@@ -2,9 +2,7 @@
 
 public partial class AccountRole {
     public int Id { get; set; }
-
     public string? Role { get; set; }
-
     public virtual ICollection<Account> Accounts { get; set; } = new List<Account>();
 
 }

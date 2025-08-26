@@ -4,6 +4,7 @@ using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Accounts;
 using Supera_Monitor_Back.Models.Aluno;
+using Supera_Monitor_Back.Models.Apostila;
 using Supera_Monitor_Back.Models.Checklist;
 using Supera_Monitor_Back.Models.Dashboard;
 using Supera_Monitor_Back.Models.Eventos;
@@ -49,7 +50,7 @@ namespace Supera_Monitor_Back.Helpers {
 
             CreateMap<Professor_NivelCertificacao, NivelCertificacaoModel>();
 
-            CreateMap<Pessoa_FaixaEtarium, PessoaFaixaEtariaModel>();
+            CreateMap<Pessoa_FaixaEtaria, PessoaFaixaEtariaModel>();
             CreateMap<Pessoa_Geracao, PessoaGeracaoModel>();
             CreateMap<Pessoa_Status, PessoaStatusModel>();
             CreateMap<Pessoa_Sexo, PessoaSexoModel>();
