@@ -71,8 +71,6 @@ public partial class DataContext : DbContext {
 
     public virtual DbSet<Evento_Tipo> Evento_Tipos { get; set; }
 
-    public virtual DbSet<Feriado> Feriados { get; set; }
-
     public virtual DbSet<Log> Logs { get; set; }
 
     public virtual DbSet<LogError> LogErrors { get; set; }
@@ -799,15 +797,6 @@ public partial class DataContext : DbContext {
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<Feriado>(entity =>
-        {
-            entity.ToTable("Feriado");
-
-            entity.Property(e => e.Data).HasColumnType("datetime");
-            entity.Property(e => e.Descricao)
-                .HasMaxLength(50)
-                .IsUnicode(false);
-        });
 
         modelBuilder.Entity<Log>(entity =>
         {
