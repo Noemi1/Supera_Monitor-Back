@@ -756,7 +756,7 @@ public class EventoService : IEventoService {
             Evento_Participacao_Aluno? participacao = _db.Evento_Participacao_Alunos.Find(request.Participacao_Id);
 
             if (participacao is null) {
-                return new ResponseModel { Message = "Participação encontrada" };
+                return new ResponseModel { Message = "Participação não encontrada" };
             }
 
             Apostila? apostilaAbaco = _db.Apostilas.Find(request.Apostila_Abaco_Id);
