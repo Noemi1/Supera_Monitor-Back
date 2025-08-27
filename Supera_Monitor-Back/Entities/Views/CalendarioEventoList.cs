@@ -19,6 +19,8 @@ public partial class CalendarioEventoList {
     public int? Professor_Id { get; set; }
     public int? Turma_Id { get; set; }
     public int CapacidadeMaximaAlunos { get; set; }
+    public int AlunosAtivos { get; set; }
+    public int? VagasDisponiveis { get; set; }
     public int? Roteiro_Id { get; set; }
     public string? CorLegenda { get; set; }
     public string? Professor { get; set; }

@@ -467,6 +467,8 @@ public class EventoService : IEventoService {
                         Evento_Tipo_Id = (int)EventoTipo.Oficina,
                         Evento_Tipo = "Pseudo-Oficina",
                         CapacidadeMaximaAlunos = 12,
+                        VagasDisponiveis = 12,
+                        AlunosAtivos = 0,
 
                         Descricao = "Oficina - Tema indefinido",
                         DuracaoMinutos = 60,
@@ -512,6 +514,7 @@ public class EventoService : IEventoService {
                         Finalizado = false,
                         Sala_Id = 2,
                         CapacidadeMaximaAlunos = 0,
+                        AlunosAtivos = 0,
                         Professores = professores.Select(professor => new CalendarioProfessorList
                         {
                             Evento_Id = -1,
@@ -549,6 +552,10 @@ public class EventoService : IEventoService {
                 if (eventoAula is null) {
                     var roteiro = roteiros.FirstOrDefault(x => data.Date >= x.DataInicio.Date && data.Date <= x.DataFim.Date);
 
+                    var alunosAtivosInTurma = alunosFromTurmas
+                        .Where(a => a.Turma_Id == turma.Id)
+                        .Count(a => a.Deactivated == null);
+
                     CalendarioEventoList pseudoAula = new()
                     {
                         Id = -1,
@@ -567,6 +574,8 @@ public class EventoService : IEventoService {
                         Turma_Id = turma.Id,
                         Turma = turma.Nome,
                         CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
+                        AlunosAtivos = alunosAtivosInTurma,
+                        VagasDisponiveis = turma.CapacidadeMaximaAlunos - alunosAtivosInTurma,
 
                         Professor_Id = turma?.Professor_Id,
                         Professor = turma?.Professor is not null ? turma.Professor.Account.Name : "Professor indefinido",
@@ -1338,6 +1347,8 @@ public class EventoService : IEventoService {
             Roteiro? roteiro = _db.Roteiros.FirstOrDefault(x => data.Date >= x.DataInicio.Date
                                                              && data.Date <= x.DataFim.Date);
 
+            var alunosAtivosInTurma = turma.Alunos.Where(a => a.Turma_Id == turma.Id).Count(a => a.Deactivated == null);
+
             CalendarioEventoList pseudoAula = new()
             {
                 Id = -1,
@@ -1356,6 +1367,8 @@ public class EventoService : IEventoService {
                 Turma_Id = turma.Id,
                 Turma = turma.Nome,
                 CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
+                AlunosAtivos = alunosAtivosInTurma,
+                VagasDisponiveis = turma.CapacidadeMaximaAlunos - alunosAtivosInTurma,
 
                 Professor_Id = turma?.Professor_Id,
                 Professor = turma?.Professor is not null ? turma.Professor.Account.Name : "Professor indefinido",
@@ -1872,8 +1885,7 @@ public class EventoService : IEventoService {
         }
     }
 
-    public async Task<ResponseModel> CancelaEventosFeriado(int ano) 
-	{
+    public async Task<ResponseModel> CancelaEventosFeriado(int ano) {
         ResponseModel response = new();
 
         try {
@@ -1892,216 +1904,209 @@ public class EventoService : IEventoService {
                 .AsSplitQuery()
                 .ToList();
 
-			List<Evento> eventos = _db.Eventos
-				.Where(x => x.Data.Year == ano)
-				.Include(x => x.Evento_Aula)
-				.AsSplitQuery()
-				.ToList();
+            List<Evento> eventos = _db.Eventos
+                .Where(x => x.Data.Year == ano)
+                .Include(x => x.Evento_Aula)
+                .AsSplitQuery()
+                .ToList();
 
 
             List<Roteiro> roteiros = _db.Roteiros
                 .Where(x => x.Deactivated == null)
                 .ToList();
 
-			List<Roteiro> recessos = roteiros.Where(x => x.Recesso == true 
-									&& (x.DataInicio.Year == ano || x.DataFim.Year == ano)).ToList();
+            List<Roteiro> recessos = roteiros.Where(x => x.Recesso == true
+                                    && (x.DataInicio.Year == ano || x.DataFim.Year == ano)).ToList();
 
 
-			List<DateTime> recessoDates = recessos.SelectMany(x =>
-				Enumerable.Range(0, 1 + x.DataFim.Subtract(x.DataInicio).Days)
-					.Select(index => x.DataInicio.AddDays(index).Date)).ToList();
+            List<DateTime> recessoDates = recessos.SelectMany(x =>
+                Enumerable.Range(0, 1 + x.DataFim.Subtract(x.DataInicio).Days)
+                    .Select(index => x.DataInicio.AddDays(index).Date)).ToList();
 
-			List<DateTime> feriadoRecessoDates = feriadosDates.Concat(recessoDates).Distinct().OrderBy(x => x.Date).ToList();
+            List<DateTime> feriadoRecessoDates = feriadosDates.Concat(recessoDates).Distinct().OrderBy(x => x.Date).ToList();
 
-			foreach(DateTime data in feriadoRecessoDates)
-			{
-				int dayOfWeek = (int)data.DayOfWeek;
-				FeriadoResponse? feriado = feriados.FirstOrDefault(x => x.date.Date == data.Date);
-				Roteiro? recesso = recessos.FirstOrDefault(x => data >= x.DataInicio.Date && data <= x.DataFim.Date);
-				Roteiro? roteiro = roteiros.FirstOrDefault(x => data >= x.DataInicio.Date && data <= x.DataFim.Date);
+            foreach (DateTime data in feriadoRecessoDates) {
+                int dayOfWeek = (int)data.DayOfWeek;
+                FeriadoResponse? feriado = feriados.FirstOrDefault(x => x.date.Date == data.Date);
+                Roteiro? recesso = recessos.FirstOrDefault(x => data >= x.DataInicio.Date && data <= x.DataFim.Date);
+                Roteiro? roteiro = roteiros.FirstOrDefault(x => data >= x.DataInicio.Date && data <= x.DataFim.Date);
 
-				if (feriado is not null || recesso is not null)
-				{
-					string observacao = "";
-					DateTime deactivated = TimeFunctions.HoraAtualBR(); 
+                if (feriado is not null || recesso is not null) {
+                    string observacao = "";
+                    DateTime deactivated = TimeFunctions.HoraAtualBR();
 
-					if (feriado is not null)
-						observacao = $"Cancelamento automático <br> Feriado: {feriado.name}";
-					else if (recesso is not null) 
-						observacao = $"Cancelamento automático <br> Recesso: {recesso.Tema}";
+                    if (feriado is not null)
+                        observacao = $"Cancelamento automático <br> Feriado: {feriado.name}";
+                    else if (recesso is not null)
+                        observacao = $"Cancelamento automático <br> Recesso: {recesso.Tema}";
 
 
-					List<Evento> eventosInDayOfWeek = eventos.Where(x => x.Data.Date == data.Date).ToList();
+                    List<Evento> eventosInDayOfWeek = eventos.Where(x => x.Data.Date == data.Date).ToList();
 
-					// Cancela todos os eventos instanciados
-					foreach(Evento evento in eventosInDayOfWeek)
-					{
-						if (evento.Evento_Aula is not null)
-						{
-							if (evento.Evento_Aula.Roteiro_Id is null)
-							{
-								evento.Evento_Aula.Roteiro_Id = roteiro?.Id;
-							}
-						}
+                    // Cancela todos os eventos instanciados
+                    foreach (Evento evento in eventosInDayOfWeek) {
+                        if (evento.Evento_Aula is not null) {
+                            if (evento.Evento_Aula.Roteiro_Id is null) {
+                                evento.Evento_Aula.Roteiro_Id = roteiro?.Id;
+                            }
+                        }
 
-						evento.Deactivated = deactivated;
-						evento.Observacao = observacao;
-						_db.Eventos.Update(evento);
-					}
+                        evento.Deactivated = deactivated;
+                        evento.Observacao = observacao;
+                        _db.Eventos.Update(evento);
+                    }
 
 
-					List<Turma> turmasInDayOfWeek = turmas.Where(t => t.DiaSemana == dayOfWeek).ToList();
+                    List<Turma> turmasInDayOfWeek = turmas.Where(t => t.DiaSemana == dayOfWeek).ToList();
 
-					foreach(Turma turma in turmasInDayOfWeek)
-					{
+                    foreach (Turma turma in turmasInDayOfWeek) {
 
-						Evento? aula = eventos.FirstOrDefault(x => x.Data.Date == data.Date 
-												&& x.Evento_Aula is not null
-												&& x.Evento_Aula?.Turma_Id == turma.Id);
-								//turma.Evento_Aulas
-							//.Select(e => e.Evento)
-							//.FirstOrDefault(e => e.Data.Date == data.Date);
+                        Evento? aula = eventos.FirstOrDefault(x => x.Data.Date == data.Date
+                                                && x.Evento_Aula is not null
+                                                && x.Evento_Aula?.Turma_Id == turma.Id);
+                        //turma.Evento_Aulas
+                        //.Select(e => e.Evento)
+                        //.FirstOrDefault(e => e.Data.Date == data.Date);
 
-						List<Evento_Aula_PerfilCognitivo_Rel> eventoAulaPerfilCognitivoRels = turma.Turma_PerfilCognitivo_Rels
-							.Select(x => new Evento_Aula_PerfilCognitivo_Rel { PerfilCognitivo_Id = x.PerfilCognitivo_Id })
-							.ToList();
+                        List<Evento_Aula_PerfilCognitivo_Rel> eventoAulaPerfilCognitivoRels = turma.Turma_PerfilCognitivo_Rels
+                            .Select(x => new Evento_Aula_PerfilCognitivo_Rel { PerfilCognitivo_Id = x.PerfilCognitivo_Id })
+                            .ToList();
 
-						// Se não tiver, instanciar uma pseudo-aula cancelada
-						if (aula is null)
-						{
-							DateTime dataTurma = new(data.Year, data.Month, data.Day, turma.Horario!.Value.Hours, turma.Horario!.Value.Minutes, 0);
+                        // Se não tiver, instanciar uma pseudo-aula cancelada
+                        if (aula is null) {
+                            DateTime dataTurma = new(data.Year, data.Month, data.Day, turma.Horario!.Value.Hours, turma.Horario!.Value.Minutes, 0);
 
-							aula = new Evento() 
-							{
-								Evento_Tipo_Id = (int)EventoTipo.Aula,
-								Descricao = turma.Nome, // Pseudo aulas ganham o nome da turma
-								DuracaoMinutos = 120, // As pseudo aulas são de uma turma e duram 2h por padrão
-								Data = dataTurma,
-								CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
-								Sala_Id = turma.Sala_Id!.Value,
-								Finalizado = false,
-								Created = deactivated,
-								LastUpdated = deactivated,
-								Account_Created_Id = _account?.Id ?? 5,
-								Deactivated = deactivated,
-								Observacao = observacao,
+                            aula = new Evento()
+                            {
+                                Evento_Tipo_Id = (int)EventoTipo.Aula,
+                                Descricao = turma.Nome, // Pseudo aulas ganham o nome da turma
+                                DuracaoMinutos = 120, // As pseudo aulas são de uma turma e duram 2h por padrão
+                                Data = dataTurma,
+                                CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
+                                Sala_Id = turma.Sala_Id!.Value,
+                                Finalizado = false,
+                                Created = deactivated,
+                                LastUpdated = deactivated,
+                                Account_Created_Id = _account?.Id ?? 5,
+                                Deactivated = deactivated,
+                                Observacao = observacao,
 
-								Evento_Aula = new Evento_Aula
-								{
-									Turma_Id = turma.Id,
-									Roteiro_Id = roteiro?.Id,
-									Professor_Id = turma.Professor_Id!.Value,
-									Evento_Aula_PerfilCognitivo_Rels = eventoAulaPerfilCognitivoRels,
-								},
+                                Evento_Aula = new Evento_Aula
+                                {
+                                    Turma_Id = turma.Id,
+                                    Roteiro_Id = roteiro?.Id,
+                                    Professor_Id = turma.Professor_Id!.Value,
+                                    Evento_Aula_PerfilCognitivo_Rels = eventoAulaPerfilCognitivoRels,
+                                },
 
-								Evento_Participacao_Alunos = turma.Alunos.Select(x => new Evento_Participacao_Aluno
-								{
-									Aluno_Id = x.Id,
-								}).ToList(),
+                                Evento_Participacao_Alunos = turma.Alunos.Select(x => new Evento_Participacao_Aluno
+                                {
+                                    Aluno_Id = x.Id,
+                                }).ToList(),
 
-								Evento_Participacao_Professors = new List<Evento_Participacao_Professor> {
-															 new() {
-																 Professor_Id = turma!.Professor_Id!.Value,
-															 },
-														 },
-							};
+                                Evento_Participacao_Professors = new List<Evento_Participacao_Professor> {
+                                                             new() {
+                                                                 Professor_Id = turma!.Professor_Id!.Value,
+                                                             },
+                                                         },
+                            };
 
-							_db.Eventos.Add(aula);
-						}
-						// Se possuir uma aula instanciada ativa no feriado, desativá-la
-						//else if (aula is not null && aula.Deactivated is null)
-						//{
-						//	aula.Evento_Aula.Roteiro_Id = aula.Evento_Aula.Roteiro_Id ?? roteiro?.Id;
-						//	aula.Deactivated = deactivated;
-						//	aula.Observacao = observacao;
-						//	_db.Eventos.Update(aula);
-						//}
-					}
+                            _db.Eventos.Add(aula);
+                        }
+                        // Se possuir uma aula instanciada ativa no feriado, desativá-la
+                        //else if (aula is not null && aula.Deactivated is null)
+                        //{
+                        //	aula.Evento_Aula.Roteiro_Id = aula.Evento_Aula.Roteiro_Id ?? roteiro?.Id;
+                        //	aula.Deactivated = deactivated;
+                        //	aula.Observacao = observacao;
+                        //	_db.Eventos.Update(aula);
+                        //}
+                    }
 
-				}
-			}
+                }
+            }
 
-			#region antigo cancelamento
-			//         foreach (int dayOfWeek in daysOfWeekWithFeriado) 
-			//{
-			//             IEnumerable<Turma> turmasInDayOfWeek = turmas.Where(t => t.DiaSemana == dayOfWeek);
-			//             List<FeriadoResponse> feriadosInDayOfWeek = feriados.Where(f => (int)f.date.DayOfWeek == dayOfWeek).ToList();
+            #region antigo cancelamento
+            //         foreach (int dayOfWeek in daysOfWeekWithFeriado) 
+            //{
+            //             IEnumerable<Turma> turmasInDayOfWeek = turmas.Where(t => t.DiaSemana == dayOfWeek);
+            //             List<FeriadoResponse> feriadosInDayOfWeek = feriados.Where(f => (int)f.date.DayOfWeek == dayOfWeek).ToList();
 
-			//             // Para cada data de feriado
-			//             foreach (FeriadoResponse feriado in feriadosInDayOfWeek) 
-			//	{
-			//		DateTime feriadoDate = feriado.date.Date;
+            //             // Para cada data de feriado
+            //             foreach (FeriadoResponse feriado in feriadosInDayOfWeek) 
+            //	{
+            //		DateTime feriadoDate = feriado.date.Date;
 
-			//		Roteiro? roteiro = roteiros.FirstOrDefault(x => feriadoDate.Date >= x.DataInicio.Date
-			//													&& feriadoDate.Date <= x.DataFim.Date);
-			//		string? nomeFeriado = feriado.name;
+            //		Roteiro? roteiro = roteiros.FirstOrDefault(x => feriadoDate.Date >= x.DataInicio.Date
+            //													&& feriadoDate.Date <= x.DataFim.Date);
+            //		string? nomeFeriado = feriado.name;
 
-			//                 // Saber se a turma tem um evento nesse feriado
-			//                 foreach (Turma turma in turmasInDayOfWeek) 
-			//		{
-			//                     Evento? aulaInFeriado = turma.Evento_Aulas
-			//                         .Select(e => e.Evento)
-			//                         .FirstOrDefault(e => e.Data.Date == feriadoDate.Date);
+            //                 // Saber se a turma tem um evento nesse feriado
+            //                 foreach (Turma turma in turmasInDayOfWeek) 
+            //		{
+            //                     Evento? aulaInFeriado = turma.Evento_Aulas
+            //                         .Select(e => e.Evento)
+            //                         .FirstOrDefault(e => e.Data.Date == feriadoDate.Date);
 
-			//                     var eventoAulaPerfilCognitivoRels = turma.Turma_PerfilCognitivo_Rels
-			//                         .Select(x => new Evento_Aula_PerfilCognitivo_Rel { PerfilCognitivo_Id = x.PerfilCognitivo_Id })
-			//                         .ToList();
+            //                     var eventoAulaPerfilCognitivoRels = turma.Turma_PerfilCognitivo_Rels
+            //                         .Select(x => new Evento_Aula_PerfilCognitivo_Rel { PerfilCognitivo_Id = x.PerfilCognitivo_Id })
+            //                         .ToList();
 
-			//                     // Se não tiver, instanciar uma pseudo-aula cancelada
-			//                     if (aulaInFeriado is null) 
-			//			{
-			//                         DateTime data = new(feriadoDate.Date.Year, feriadoDate.Date.Month, feriadoDate.Date.Day, turma.Horario!.Value.Hours, turma.Horario!.Value.Minutes, 0);
+            //                     // Se não tiver, instanciar uma pseudo-aula cancelada
+            //                     if (aulaInFeriado is null) 
+            //			{
+            //                         DateTime data = new(feriadoDate.Date.Year, feriadoDate.Date.Month, feriadoDate.Date.Day, turma.Horario!.Value.Hours, turma.Horario!.Value.Minutes, 0);
 
-			//                         Evento pseudoAula = new()
-			//                         {
-			//                             Evento_Tipo_Id = (int)EventoTipo.Aula,
-			//                             Descricao = turma.Nome, // Pseudo aulas ganham o nome da turma
-			//                             DuracaoMinutos = 120, // As pseudo aulas são de uma turma e duram 2h por padrão
-			//                             Data = data,
-			//                             CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
-			//                             Sala_Id = turma.Sala_Id!.Value,
-			//                             Finalizado = false,
-			//                             Created = TimeFunctions.HoraAtualBR(),
-			//                             Account_Created_Id = _account!.Id,
-			//                             Deactivated = TimeFunctions.HoraAtualBR(),
-			//                             Observacao = $"Cancelamento automático <br> Feriado: {nomeFeriado}",
+            //                         Evento pseudoAula = new()
+            //                         {
+            //                             Evento_Tipo_Id = (int)EventoTipo.Aula,
+            //                             Descricao = turma.Nome, // Pseudo aulas ganham o nome da turma
+            //                             DuracaoMinutos = 120, // As pseudo aulas são de uma turma e duram 2h por padrão
+            //                             Data = data,
+            //                             CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
+            //                             Sala_Id = turma.Sala_Id!.Value,
+            //                             Finalizado = false,
+            //                             Created = TimeFunctions.HoraAtualBR(),
+            //                             Account_Created_Id = _account!.Id,
+            //                             Deactivated = TimeFunctions.HoraAtualBR(),
+            //                             Observacao = $"Cancelamento automático <br> Feriado: {nomeFeriado}",
 
-			//                             Evento_Aula = new Evento_Aula
-			//                             {
-			//                                 Turma_Id = turma.Id,
-			//                                 Roteiro_Id = roteiro?.Id,
-			//                                 Professor_Id = turma.Professor_Id!.Value,
-			//                                 Evento_Aula_PerfilCognitivo_Rels = eventoAulaPerfilCognitivoRels,
-			//                             },
+            //                             Evento_Aula = new Evento_Aula
+            //                             {
+            //                                 Turma_Id = turma.Id,
+            //                                 Roteiro_Id = roteiro?.Id,
+            //                                 Professor_Id = turma.Professor_Id!.Value,
+            //                                 Evento_Aula_PerfilCognitivo_Rels = eventoAulaPerfilCognitivoRels,
+            //                             },
 
-			//                             Evento_Participacao_Alunos = turma.Alunos.Select(x => new Evento_Participacao_Aluno
-			//                             {
-			//                                 Aluno_Id = x.Id,
-			//                             }).ToList(),
+            //                             Evento_Participacao_Alunos = turma.Alunos.Select(x => new Evento_Participacao_Aluno
+            //                             {
+            //                                 Aluno_Id = x.Id,
+            //                             }).ToList(),
 
-			//                             Evento_Participacao_Professors = new List<Evento_Participacao_Professor> {
-			//                                 new() {
-			//                                     Professor_Id = turma!.Professor_Id!.Value,
-			//                                 },
-			//                             },
-			//                         };
+            //                             Evento_Participacao_Professors = new List<Evento_Participacao_Professor> {
+            //                                 new() {
+            //                                     Professor_Id = turma!.Professor_Id!.Value,
+            //                                 },
+            //                             },
+            //                         };
 
-			//                         _db.Eventos.Add(pseudoAula);
-			//                     }
+            //                         _db.Eventos.Add(pseudoAula);
+            //                     }
 
-			//                     // Se possuir uma aula instanciada ativa no feriado, desativá-la
-			//                     else if (aulaInFeriado is not null && aulaInFeriado.Deactivated is null) 
-			//			{
-			//                         aulaInFeriado.Deactivated = TimeFunctions.HoraAtualBR();
-			//                         aulaInFeriado.Observacao = $"Cancelamento automático <br> Feriado: {nomeFeriado}";
-			//                         _db.Eventos.Update(aulaInFeriado);
-			//                     }
+            //                     // Se possuir uma aula instanciada ativa no feriado, desativá-la
+            //                     else if (aulaInFeriado is not null && aulaInFeriado.Deactivated is null) 
+            //			{
+            //                         aulaInFeriado.Deactivated = TimeFunctions.HoraAtualBR();
+            //                         aulaInFeriado.Observacao = $"Cancelamento automático <br> Feriado: {nomeFeriado}";
+            //                         _db.Eventos.Update(aulaInFeriado);
+            //                     }
 
-			//                 }
-			//             }
-			//         }
-			#endregion
-			_db.SaveChanges();
+            //                 }
+            //             }
+            //         }
+            #endregion
+            _db.SaveChanges();
 
             response.Message = "Eventos cancelados com sucesso";
             response.Success = true;
