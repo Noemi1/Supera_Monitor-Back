@@ -9,6 +9,7 @@ public partial class TurmaList {
     public TimeSpan? Horario { get; set; }
     public int CapacidadeMaximaAlunos { get; set; }
     public int AlunosAtivos { get; set; }
+    public int VagasDisponiveis { get; set; }
     public int? Unidade_Id { get; set; }
     public string? LinkGrupo { get; set; }
     public int Account_Created_Id { get; set; }

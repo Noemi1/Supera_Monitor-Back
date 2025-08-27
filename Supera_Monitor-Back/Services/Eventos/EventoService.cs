@@ -1601,19 +1601,19 @@ public class EventoService : IEventoService {
                         Semana = roteiro.Semana,
                         Tema = roteiro.Tema,
 
-                        Professor_Id = turma?.Professor_Id,
-                        Professor = turma?.Professor ?? "Professor indefinido",
-                        CorLegenda = turma?.Professor ?? "#000",
+                        Professor_Id = turma.Professor_Id,
+                        Professor = turma.Professor,
+                        CorLegenda = turma.Professor,
 
-                        Sala_Id = turma?.Sala_Id,
-                        NumeroSala = turma?.NumeroSala,
-                        Andar = turma?.Andar,
+                        Sala_Id = turma.Sala_Id,
+                        NumeroSala = turma.NumeroSala,
+                        Andar = turma.Andar,
 
-                        Turma_Id = turma?.Id,
-                        Turma = turma?.Nome,
-                        CapacidadeMaximaAlunos = turma?.CapacidadeMaximaAlunos ?? 12,
-
-
+                        Turma_Id = turma.Id,
+                        Turma = turma.Nome,
+                        CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
+                        VagasDisponiveis = turma.VagasDisponiveis,
+                        AlunosAtivos = turma.AlunosAtivos,
                     };
 
                     List<AlunoList> alunosTurma = alunos.Where(x => x.Turma_Id == turma!.Id).ToList();
