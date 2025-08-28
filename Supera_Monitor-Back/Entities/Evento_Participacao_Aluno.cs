@@ -23,3 +23,15 @@ public partial class Evento_Participacao_Aluno {
     public virtual Evento_Participacao_Aluno_StatusContato? StatusContato { get; set; }
 }
 
+public enum StatusContato : int {
+    NAO_COMPARECEU = 1,
+    AGUARDANDO_RETORNO = 2,
+    OPTOU_NAO_REPOR = 3,
+    AULA_CANCELADA = 4,
+    REPOSICAO_AGENDADA = 5,
+    REPOSICAO_REALIZADA = 6,
+    REPOSICAO_NAO_COMPARECEU = 7,
+    REPOSICAO_DESMARCADA = 8,
+    OUTRO = 9,
+}
+

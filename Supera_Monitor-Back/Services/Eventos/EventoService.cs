@@ -866,6 +866,10 @@ public class EventoService : IEventoService {
             participacao.StatusContato_Id = request.StatusContato_Id;
             participacao.ContatoObservacao = request.ContatoObservacao;
 
+            if (request.ReposicaoDe_Evento_Id.HasValue) {
+                participacao.StatusContato_Id = (int)StatusContato.REPOSICAO_DESMARCADA;
+            }
+
             _db.Evento_Participacao_Alunos.Update(participacao);
             _db.SaveChanges();
 
@@ -895,22 +899,24 @@ public class EventoService : IEventoService {
             }
 
             // Validations passed
-            List<Aluno> alunosInEvento = _db.Evento_Participacao_Alunos
+            List<Evento_Participacao_Aluno> participacoes = _db.Evento_Participacao_Alunos
+                .Include(p => p.Aluno)
                 .Where(p => p.Evento_Id == evento.Id)
-                .Select(p => p.Aluno)
                 .ToList();
 
-            foreach (var aluno in alunosInEvento) {
-                if (aluno.PrimeiraAula_Id == evento.Id) {
-                    aluno.PrimeiraAula_Id = null;
+            foreach (var participacao in participacoes) {
+                if (participacao.Aluno.PrimeiraAula_Id == evento.Id) {
+                    participacao.Aluno.PrimeiraAula_Id = null;
                 }
 
-                if (aluno.AulaZero_Id == evento.Id) {
-                    aluno.AulaZero_Id = null;
+                if (participacao.Aluno.AulaZero_Id == evento.Id) {
+                    participacao.Aluno.AulaZero_Id = null;
                 }
+
+                participacao.StatusContato_Id = (int)StatusContato.AULA_CANCELADA;
             }
 
-            _db.Alunos.UpdateRange(alunosInEvento);
+            _db.UpdateRange(participacoes);
 
             evento.Deactivated = TimeFunctions.HoraAtualBR();
             evento.Observacao = request.Observacao;
@@ -1180,6 +1186,23 @@ public class EventoService : IEventoService {
                 return eventValidation;
             }
 
+            var reposicaoIds = request.Alunos
+                .Select(a => a.ReposicaoDe_Evento_Id)
+                .Where(id => id.HasValue)
+                .Select(id => id!.Value)
+                .Distinct();
+
+            var eventosExistentes = _db.Eventos
+                .Where(e => reposicaoIds.Contains(e.Id))
+                .Select(e => e.Id)
+                .ToList();
+
+            var idsSemEvento = reposicaoIds.Except(eventosExistentes);
+
+            if (idsSemEvento.Any()) {
+                return new ResponseModel { Message = $"Uma ou mais reposições estão sem Evento associado: {string.Join(", ", idsSemEvento)}" };
+            }
+
             var existingApostilas = _db.Apostilas.ToList();
 
             List<int> apostilasAbacoIds = request.Alunos
@@ -1239,6 +1262,9 @@ public class EventoService : IEventoService {
                 participacao.Observacao = participacaoModel.Observacao;
                 participacao.Presente = participacaoModel.Presente;
 
+                participacao.ReposicaoDe_Evento_Id = participacaoModel.ReposicaoDe_Evento_Id;
+                participacao.StatusContato_Id = CalcularStatusContato(participacaoModel.Presente, participacaoModel.ReposicaoDe_Evento_Id);
+
                 if (!participacaoModel.Presente) {
                     _db.Aluno_Historicos.Add(new Aluno_Historico
                     {
@@ -1278,6 +1304,22 @@ public class EventoService : IEventoService {
         }
 
         return response;
+    }
+
+    private static int? CalcularStatusContato(bool Presente, int? ReposicaoDe_Evento_Id) {
+        switch (Presente, ReposicaoDe_Evento_Id.HasValue) {
+            case (true, true):
+                return (int)StatusContato.REPOSICAO_REALIZADA;
+
+            case (true, false):
+                return null;
+
+            case (false, true):
+                return (int)StatusContato.REPOSICAO_NAO_COMPARECEU;
+
+            case (false, false):
+                return (int)StatusContato.NAO_COMPARECEU;
+        }
     }
 
     public List<CalendarioEventoList> GetOficinas() {

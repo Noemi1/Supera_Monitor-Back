@@ -25,4 +25,5 @@ public class ParticipacaoAlunoModel {
     public int? NumeroPaginaAbaco { get; set; }
     public int? Apostila_Ah_Id { get; set; }
     public int? NumeroPaginaAh { get; set; }
+    public int? ReposicaoDe_Evento_Id { get; set; }
 }
