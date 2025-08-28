@@ -466,9 +466,9 @@ public class EventoService : IEventoService {
                         Id = -1,
                         Evento_Tipo_Id = (int)EventoTipo.Oficina,
                         Evento_Tipo = "Pseudo-Oficina",
-                        CapacidadeMaximaAlunos = 12,
-                        VagasDisponiveis = 12,
-                        AlunosAtivos = 0,
+                        CapacidadeMaximaEvento = 12,
+                        VagasDisponiveisEvento = 12,
+                        AlunosAtivosEvento = 0,
 
                         Descricao = "Oficina - Tema indefinido",
                         DuracaoMinutos = 60,
@@ -513,8 +513,7 @@ public class EventoService : IEventoService {
                         DuracaoMinutos = 60,
                         Finalizado = false,
                         Sala_Id = 2,
-                        CapacidadeMaximaAlunos = 0,
-                        AlunosAtivos = 0,
+
                         Professores = professores.Select(professor => new CalendarioProfessorList
                         {
                             Evento_Id = -1,
@@ -573,9 +572,14 @@ public class EventoService : IEventoService {
 
                         Turma_Id = turma.Id,
                         Turma = turma.Nome,
-                        CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
-                        AlunosAtivos = alunosAtivosInTurma,
-                        VagasDisponiveis = turma.CapacidadeMaximaAlunos - alunosAtivosInTurma,
+
+                        VagasDisponiveisTurma = turma.CapacidadeMaximaAlunos - alunosAtivosInTurma,
+                        CapacidadeMaximaTurma = turma.CapacidadeMaximaAlunos,
+                        AlunosAtivosTurma = alunosAtivosInTurma,
+
+                        VagasDisponiveisEvento = turma.CapacidadeMaximaAlunos - alunosAtivosInTurma,
+                        CapacidadeMaximaEvento = turma.CapacidadeMaximaAlunos,
+                        AlunosAtivosEvento = alunosAtivosInTurma,
 
                         Professor_Id = turma?.Professor_Id,
                         Professor = turma?.Professor is not null ? turma.Professor.Account.Name : "Professor indefinido",
@@ -1380,16 +1384,16 @@ public class EventoService : IEventoService {
                         && x.DiaSemana == (int)request.DataHora.DayOfWeek
                         && x.Horario.Value == request.DataHora.TimeOfDay);
 
-
             if (turma is null) {
                 throw new Exception("Turma não encontrada!");
             }
 
-
             Roteiro? roteiro = _db.Roteiros.FirstOrDefault(x => data.Date >= x.DataInicio.Date
                                                              && data.Date <= x.DataFim.Date);
 
-            var alunosAtivosInTurma = turma.Alunos.Where(a => a.Turma_Id == turma.Id).Count(a => a.Deactivated == null);
+            var alunosAtivosInTurma = turma.Alunos
+                .Where(a => a.Turma_Id == turma.Id)
+                .Count(a => a.Deactivated == null);
 
             CalendarioEventoList pseudoAula = new()
             {
@@ -1408,9 +1412,14 @@ public class EventoService : IEventoService {
 
                 Turma_Id = turma.Id,
                 Turma = turma.Nome,
-                CapacidadeMaximaAlunos = turma.CapacidadeMaximaAlunos,
-                AlunosAtivos = alunosAtivosInTurma,
-                VagasDisponiveis = turma.CapacidadeMaximaAlunos - alunosAtivosInTurma,
+
+                VagasDisponiveisEvento = turma.CapacidadeMaximaAlunos - alunosAtivosInTurma,
+                CapacidadeMaximaEvento = turma.CapacidadeMaximaAlunos,
+                AlunosAtivosEvento = alunosAtivosInTurma,
+
+                VagasDisponiveisTurma = turma.CapacidadeMaximaAlunos - alunosAtivosInTurma,
+                CapacidadeMaximaTurma = turma.CapacidadeMaximaAlunos,
+                AlunosAtivosTurma = alunosAtivosInTurma,
 
                 Professor_Id = turma?.Professor_Id,
                 Professor = turma?.Professor is not null ? turma.Professor.Account.Name : "Professor indefinido",
@@ -1421,7 +1430,6 @@ public class EventoService : IEventoService {
                 NumeroSala = turma?.Sala?.NumeroSala,
                 Andar = turma?.Sala?.Andar,
             };
-
 
             // Em pseudo-aulas, adicionar só os alunos da turma original após o início de sua vigência
             List<AlunoList> alunos = _db.AlunoLists
@@ -1457,7 +1465,6 @@ public class EventoService : IEventoService {
             return pseudoAula;
         }
     }
-
 
     public async Task<Dashboard_Response> Dashboard(DashboardRequest request) {
 

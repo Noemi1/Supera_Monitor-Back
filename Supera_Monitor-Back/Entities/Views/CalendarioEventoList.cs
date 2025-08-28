@@ -18,9 +18,12 @@ public partial class CalendarioEventoList {
     public int? ReagendamentoPara_Evento_Id { get; set; }
     public int? Professor_Id { get; set; }
     public int? Turma_Id { get; set; }
-    public int CapacidadeMaximaAlunos { get; set; }
-    public int AlunosAtivos { get; set; }
-    public int? VagasDisponiveis { get; set; }
+    public int? CapacidadeMaximaEvento { get; set; }
+    public int? AlunosAtivosEvento { get; set; }
+    public int? VagasDisponiveisEvento { get; set; }
+    public int? CapacidadeMaximaTurma { get; set; }
+    public int? AlunosAtivosTurma { get; set; }
+    public int? VagasDisponiveisTurma { get; set; }
     public int? Roteiro_Id { get; set; }
     public string? CorLegenda { get; set; }
     public string? Professor { get; set; }
