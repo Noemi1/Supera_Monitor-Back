@@ -1128,9 +1128,9 @@ public class EventoService : IEventoService {
             return new ResponseModel { Message = $"Participação de aluno no evento ID: '{evento.Id}' Participacao_Id: '{participacaoAluno.Participacao_Id}' não foi encontrada" };
         }
 
-        if (participacao.Deactivated.HasValue) {
-            return new ResponseModel { Message = $"Participação de aluno no evento ID: '{evento.Id}' Participacao_Id: '{participacaoAluno.Participacao_Id}' está desativada" };
-        }
+        //if (participacao.Deactivated.HasValue) {
+        //    return new ResponseModel { Message = $"Participação de aluno no evento ID: '{evento.Id}' Participacao_Id: '{participacaoAluno.Participacao_Id}' está desativada" };
+        //}
 
         // Alunos devem possuir as apostilas em que estão tentando marcar progresso
 
