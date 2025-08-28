@@ -650,8 +650,6 @@ public class AlunoService : IAlunoService {
                 NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
                 Apostila_AH_Id = aluno.Apostila_AH_Id,
                 NumeroPaginaAH = aluno.NumeroPaginaAH,
-
-                StatusContato_Id = (int)StatusContato.REPOSICAO_AGENDADA,
             };
 
             // Se a reposição for feita após o horário da aula, ocasiona falta
@@ -661,6 +659,7 @@ public class AlunoService : IAlunoService {
 
             // Desativar o registro da aula
             registroSource.Deactivated = TimeFunctions.HoraAtualBR();
+            registroSource.StatusContato_Id = (int)StatusContato.REPOSICAO_AGENDADA;
 
             _db.Evento_Participacao_Alunos.Update(registroSource);
             _db.Evento_Participacao_Alunos.Add(registroDest);
