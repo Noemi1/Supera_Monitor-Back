@@ -43,7 +43,8 @@ public class EventoService : IEventoService {
 
     private readonly Account? _account;
 
-    public EventoService(DataContext db,
+    public EventoService(
+        DataContext db,
         IMapper mapper,
         IProfessorService professorService,
         ISalaService salaService,
@@ -577,29 +578,30 @@ public class EventoService : IEventoService {
                         CapacidadeMaximaTurma = turma.CapacidadeMaximaAlunos,
                         AlunosAtivosTurma = alunosAtivosInTurma,
 
-                        VagasDisponiveisEvento = turma.CapacidadeMaximaAlunos - alunosAtivosInTurma,
                         CapacidadeMaximaEvento = turma.CapacidadeMaximaAlunos,
-                        AlunosAtivosEvento = alunosAtivosInTurma,
+                        // VagasDisponiveisEvento e AlunosAtivosEvento são calculados depois, quando puxo os alunos da turma
 
-                        Professor_Id = turma?.Professor_Id,
-                        Professor = turma?.Professor is not null ? turma.Professor.Account.Name : "Professor indefinido",
-                        CorLegenda = turma?.Professor is not null ? turma.Professor.CorLegenda : "#000",
+                        Professor_Id = turma.Professor_Id,
+                        Professor = turma.Professor is not null ? turma.Professor.Account.Name : "Professor indefinido",
+                        CorLegenda = turma.Professor is not null ? turma.Professor.CorLegenda : "#000",
 
                         Finalizado = false,
-                        Sala_Id = turma?.Sala?.Id,
-                        NumeroSala = turma?.Sala?.NumeroSala,
-                        Andar = turma?.Sala?.Andar,
+                        Sala_Id = turma.Sala?.Id,
+                        NumeroSala = turma.Sala?.NumeroSala,
+                        Andar = turma.Sala?.Andar,
                     };
 
-
-                    // Em pseudo-aulas, adicionar só os alunos da turma original após o início de sua vigência e que tenham sido dessativado só depois da data da aula
+                    // Em pseudo-aulas, adicionar só os alunos da turma original após o início de sua vigência e que tenham sido desativado só depois da data da aula
                     List<AlunoList> alunos = alunosFromTurmas
-                        .Where(a => a.Turma_Id == turma!.Id
+                        .Where(a => a.Turma_Id == turma.Id
                             && a.DataInicioVigencia.Date <= data.Date
+                            && (a.DataFimVigencia == null || a.DataFimVigencia.Value.Date >= data.Date)
                             && (a.Deactivated == null || a.Deactivated.Value.Date > data.Date))
                         .OrderBy(a => a.Nome)
                         .ToList();
 
+                    pseudoAula.AlunosAtivosEvento = alunos.Count;
+                    pseudoAula.VagasDisponiveisEvento = pseudoAula.CapacidadeMaximaEvento - alunos.Count;
                     pseudoAula.Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos)
                         .OrderBy(a => a.Aluno).ToList();
 
@@ -607,8 +609,8 @@ public class EventoService : IEventoService {
                     {
                         Id = null,
                         Evento_Id = pseudoAula.Id,
-                        Professor_Id = (int)turma!.Professor_Id!,
-                        Nome = turma!.Professor!.Account.Name,
+                        Professor_Id = (int)turma.Professor!.Id,
+                        Nome = turma.Professor.Account.Name,
                         CorLegenda = turma.Professor.CorLegenda,
                         Presente = null,
                         Observacao = "",

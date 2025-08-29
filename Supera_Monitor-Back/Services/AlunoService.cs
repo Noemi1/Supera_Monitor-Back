@@ -190,7 +190,7 @@ public class AlunoService : IAlunoService {
                 LoginApp = pessoa.Email ?? $"{randomRM}@supera",
                 SenhaApp = "Supera@123",
 
-                DataInicioVigencia = DateTime.Now,
+                DataInicioVigencia = TimeFunctions.HoraAtualBR(),
                 DataFimVigencia = null,
                 Turma_Id = null,
                 PerfilCognitivo_Id = null,
