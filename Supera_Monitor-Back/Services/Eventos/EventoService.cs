@@ -1948,7 +1948,7 @@ public class EventoService : IEventoService {
 
             List<Turma> turmas = _db.Turmas
                 .Where(x => x.Deactivated == null)
-                //.Include(x => x.Alunos)
+                .Include(x => x.Alunos)
                 //.Include(x => x.Turma_PerfilCognitivo_Rels)
                 //.Include(x => x.Evento_Aulas)
                 //    .ThenInclude(x => x.Evento)
