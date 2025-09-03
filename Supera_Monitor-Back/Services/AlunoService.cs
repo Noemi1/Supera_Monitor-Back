@@ -139,7 +139,6 @@ public class AlunoService : IAlunoService {
                 return new ResponseModel { Message = "Pessoa não pertence a uma unidade cadastrada" };
             }
 
-
             // Só pode ser cadastrado um aluno por pessoa
             bool alunoAlreadyRegistered = _db.Pessoas.Any(a => a.PessoaCRM_Id == model.Pessoa_Id);
             if (alunoAlreadyRegistered) {
@@ -267,7 +266,9 @@ public class AlunoService : IAlunoService {
             }
 
             // Aluno só pode ser operado em atualizações ou troca de turma se for uma turma válida
-            Turma? turmaDestino = _db.Turmas.FirstOrDefault(t => t.Id == model.Turma_Id);
+            Turma? turmaDestino = _db.Turmas
+                .Include(t => t.Alunos)
+                .FirstOrDefault(t => t.Id == model.Turma_Id);
 
             if (turmaDestino is null && model.Turma_Id.HasValue) {
                 return new ResponseModel { Message = "Turma não encontrada" };
@@ -289,11 +290,14 @@ public class AlunoService : IAlunoService {
 
             // Se aluno estiver trocando de turma, deve-se garantir que a turma destino tem espaço disponível
             // Não considera reposição, pois não estamos olhando para uma aula específica
-            if (turmaDestino is not null && aluno.Turma_Id != turmaDestino.Id) {
-                int countAlunosInTurma = _db.Alunos.Count(a => a.Turma_Id == turmaDestino.Id && a.Deactivated == null);
+            aluno.DataInicioVigencia = model.DataInicioVigencia ?? aluno.DataInicioVigencia;
+            aluno.DataFimVigencia = model.DataFimVigencia ?? aluno.DataFimVigencia;
 
-                if (countAlunosInTurma >= turmaDestino.CapacidadeMaximaAlunos) {
-                    return new ResponseModel { Message = "Turma destino está em sua capacidade máxima" };
+            if (turmaDestino is not null && aluno.Turma_Id != turmaDestino.Id) {
+                bool vigenciaCompativel = turmaDestino.VerificarCompatibilidadeVigencia(aluno);
+
+                if (!vigenciaCompativel) {
+                    return new ResponseModel { Message = "Não é possível adicionar o aluno na turma. Turma extrapolará a capacidade máxima de alunos." };
                 }
             }
 
