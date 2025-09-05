@@ -95,6 +95,81 @@ public class EventoServiceTests : BaseIntegrationTest {
     }
 
     [Fact]
+    public void Should_FinalizarAulaZero() {
+        // Arrange (constructor)
+
+        int perfilCognitivoId = 1;
+
+        var turma = TurmaFactory.Create(_db, new Turma
+        {
+            DiaSemana = 1,
+            Horario = new TimeSpan(10, 0, 0),
+            Sala_Id = 1,
+            Professor_Id = 1,
+            Nome = "Test Turma",
+            CapacidadeMaximaAlunos = 12,
+            Unidade_Id = 1,
+            Account_Created_Id = 3,
+        }, [perfilCognitivoId]);
+
+        var evento = EventoFactory.Create(_db, new Evento
+        {
+            Descricao = "Test Evento Finalizar",
+            Data = TimeFunctions.HoraAtualBR().AddDays(1),
+            Evento_Tipo_Id = (int)EventoTipo.AulaZero,
+            DuracaoMinutos = 60,
+            Sala_Id = 1,
+            CapacidadeMaximaAlunos = 999,
+            Account_Created_Id = 3, // Admin
+            Created = TimeFunctions.HoraAtualBR(),
+            Evento_Aula = new Evento_Aula
+            {
+                Professor_Id = 1,
+                Roteiro_Id = null,
+                Turma_Id = null,
+            },
+        });
+
+        Assert.NotNull(evento);
+
+        var aluno = AlunoFactory.Create(_db, new Aluno { });
+
+        var participacao = EventoFactory.CreateParticipacaoAluno(_db, evento, aluno);
+
+        // Act
+        var response = sut.FinalizarAulaZero(new FinalizarAulaZeroRequest
+        {
+            Evento_Id = evento.Id,
+            Observacao = "Aula zero finalizada",
+            Alunos = [
+                new() {
+                    Aluno_Id = aluno.Id,
+                    Participacao_Id = participacao.Id,
+                    Apostila_Kit_Id = 1,
+                    PerfilCognitivo_Id = perfilCognitivoId,
+                    Presente = true,
+                    Turma_Id = turma.Id,
+                },
+            ],
+        });
+
+        // Assert
+        Assert.NotNull(response);
+        Assert.True(response.Success, response.Message);
+
+        var eventoResult = _db.Eventos.Find(evento.Id);
+        Assert.NotNull(eventoResult);
+        Assert.True(eventoResult.Finalizado);
+
+        var alunoResult = _db.Alunos.Find(aluno.Id);
+        Assert.NotNull(alunoResult);
+
+        Assert.Equal(turma.Id, alunoResult.Turma_Id);
+        Assert.Equal(perfilCognitivoId, alunoResult.PerfilCognitivo_Id);
+        Assert.Equal(1, alunoResult.Apostila_Kit_Id);
+    }
+
+    [Fact]
     public void Should_MarkAlunoPresenteCorrectly() {
         // Arrange (constructor)
 
@@ -201,6 +276,36 @@ public class EventoServiceTests : BaseIntegrationTest {
     }
 
     [Fact]
+    public void Should_InsertParticipacao() {
+        var evento = EventoFactory.Create(_db, new Evento
+        {
+            Data = TimeFunctions.HoraAtualBR(),
+            Sala_Id = 1,
+            CapacidadeMaximaAlunos = 12,
+            DuracaoMinutos = 60,
+            Evento_Tipo_Id = (int)EventoTipo.AulaExtra,
+            Evento_Aula = new Evento_Aula
+            {
+                Roteiro_Id = null,
+                Professor_Id = 1,
+                Turma_Id = null,
+            },
+        });
+
+        var aluno = AlunoFactory.Create(_db, new Aluno { PerfilCognitivo_Id = 1, Apostila_Kit_Id = 1, Apostila_Abaco_Id = 1, Apostila_AH_Id = 3 });
+
+        var response = sut.InsertParticipacao(new() { Aluno_Id = aluno.Id, Evento_Id = evento.Id });
+
+        Assert.NotNull(response);
+        Assert.True(response.Success);
+
+        var participacao = _db.Evento_Participacao_Alunos.FirstOrDefault(p => p.Evento_Id == evento.Id);
+
+        Assert.NotNull(participacao);
+        Assert.Equal(evento.Id, participacao.Evento_Id);
+    }
+
+    [Fact]
     public void Should_AssignDataToAlunoWhenAulaZeroFinishes() {
         // Arrange (constructor)
 
@@ -304,7 +409,7 @@ public class EventoServiceTests : BaseIntegrationTest {
     }
 
     [Fact]
-    public void Should_UpdateParticipacaoCorrectly() {
+    public void Should_UpdateParticipacao() {
         // Arrange (constructor)
 
         var turma = TurmaFactory.Create(_db, new Turma
@@ -325,7 +430,7 @@ public class EventoServiceTests : BaseIntegrationTest {
 
         var evento = EventoFactory.Create(_db, new Evento
         {
-            Descricao = "Test Evento Finalizar",
+            Descricao = "Test Update",
             Data = TimeFunctions.HoraAtualBR().AddDays(1),
             Evento_Tipo_Id = (int)EventoTipo.Aula,
             DuracaoMinutos = 120,
@@ -371,6 +476,45 @@ public class EventoServiceTests : BaseIntegrationTest {
         Evento_Participacao_Aluno? updatedParticipacao = _db.Evento_Participacao_Alunos.Find(participacao.Id);
         Assert.NotNull(updatedParticipacao);
         Assert.Equal("Test Update Participacao", updatedParticipacao.ContatoObservacao);
+    }
+
+    [Fact]
+    public void Should_CancelarParticipacao() {
+        var aluno = AlunoFactory.Create(_db, new Aluno { PerfilCognitivo_Id = 1, Apostila_Kit_Id = 1, Apostila_Abaco_Id = 1, Apostila_AH_Id = 3 });
+
+        var evento = EventoFactory.Create(_db, new Evento
+        {
+            Descricao = "Test Evento Finalizar",
+            Data = TimeFunctions.HoraAtualBR().AddDays(1),
+            Evento_Tipo_Id = (int)EventoTipo.Oficina,
+            DuracaoMinutos = 120,
+            Sala_Id = 1,
+            CapacidadeMaximaAlunos = 10,
+            Account_Created_Id = 3, // Admin
+            Created = TimeFunctions.HoraAtualBR(),
+        });
+
+        Assert.NotNull(evento);
+
+        var participacao = EventoFactory.CreateParticipacaoAluno(_db, evento, aluno);
+
+        Assert.NotNull(participacao);
+
+        var response = sut.CancelarParticipacao(new()
+        {
+            Participacao_Id = participacao.Id,
+            Observacao = "Cancelar participação",
+        });
+
+        Assert.NotNull(response);
+        Assert.True(response.Success);
+
+        var participacaoCancelada = _db.Evento_Participacao_Alunos.FirstOrDefault(p => p.Id == participacao.Id);
+        Assert.NotNull(participacaoCancelada);
+
+        // Cancelar participação insere Deactivated e Presente = False
+        Assert.NotNull(participacaoCancelada.Deactivated);
+        Assert.False(participacaoCancelada.Presente);
     }
 
     [Fact]
