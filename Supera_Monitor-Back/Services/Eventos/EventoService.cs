@@ -2050,7 +2050,9 @@ public class EventoService : IEventoService {
                                     Evento_Aula_PerfilCognitivo_Rels = eventoAulaPerfilCognitivoRels,
                                 },
 
-                                Evento_Participacao_Alunos = turma.Alunos.Select(x => new Evento_Participacao_Aluno
+                                Evento_Participacao_Alunos = turma.Alunos
+                                .Where(x => x.DataInicioVigencia.Date < dataTurma.Date && (!x.DataFimVigencia.HasValue || x.DataFimVigencia.Value < dataTurma))
+                                .Select(x => new Evento_Participacao_Aluno
                                 {
                                     Aluno_Id = x.Id,
                                     StatusContato_Id = (int)StatusContato.AULA_CANCELADA,
