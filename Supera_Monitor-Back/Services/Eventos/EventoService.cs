@@ -1958,7 +1958,6 @@ public class EventoService : IEventoService {
             List<Evento> eventos = _db.Eventos
                 .Where(x => x.Data.Year == ano)
                 .Include(x => x.Evento_Aula)
-                .AsSplitQuery()
                 .ToList();
 
 
@@ -2015,9 +2014,6 @@ public class EventoService : IEventoService {
                         Evento? aula = eventos.FirstOrDefault(x => x.Data.Date == data.Date
                                                 && x.Evento_Aula is not null
                                                 && x.Evento_Aula?.Turma_Id == turma.Id);
-                        //turma.Evento_Aulas
-                        //.Select(e => e.Evento)
-                        //.FirstOrDefault(e => e.Data.Date == data.Date);
 
                         List<Evento_Aula_PerfilCognitivo_Rel> eventoAulaPerfilCognitivoRels = turma.Turma_PerfilCognitivo_Rels
                             .Select(x => new Evento_Aula_PerfilCognitivo_Rel { PerfilCognitivo_Id = x.PerfilCognitivo_Id })

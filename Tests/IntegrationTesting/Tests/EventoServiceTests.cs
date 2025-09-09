@@ -35,7 +35,7 @@ public class EventoServiceTests : BaseIntegrationTest {
     }
 
     [Fact]
-    public void Should_FinalizarEvento() {
+    public void Deve_FinalizarEvento() {
         // Arrange (constructor)
 
         var turma = TurmaFactory.Create(_db, new Turma
@@ -95,7 +95,7 @@ public class EventoServiceTests : BaseIntegrationTest {
     }
 
     [Fact]
-    public void Should_FinalizarAulaZero() {
+    public void Deve_FinalizarAulaZero() {
         // Arrange (constructor)
 
         int perfilCognitivoId = 1;
@@ -170,7 +170,7 @@ public class EventoServiceTests : BaseIntegrationTest {
     }
 
     [Fact]
-    public void Should_MarkAlunoPresenteCorrectly() {
+    public void Deve_MarcarPresencaDoAluno() {
         // Arrange (constructor)
 
         var turma = TurmaFactory.Create(_db, new Turma
@@ -238,7 +238,7 @@ public class EventoServiceTests : BaseIntegrationTest {
     }
 
     [Fact]
-    public void Should_GetCalendario() {
+    public void Deve_ObterCalendario() {
         // Arrange (constructor)
         var startOfWeek = DateTime.Now.Date.AddDays(-(int)DateTime.Now.DayOfWeek);
         var endOfWeek = startOfWeek.AddDays(6);
@@ -276,7 +276,7 @@ public class EventoServiceTests : BaseIntegrationTest {
     }
 
     [Fact]
-    public void Should_InsertParticipacao() {
+    public void Deve_InserirParticipacao() {
         var evento = EventoFactory.Create(_db, new Evento
         {
             Data = TimeFunctions.HoraAtualBR(),
@@ -306,7 +306,7 @@ public class EventoServiceTests : BaseIntegrationTest {
     }
 
     [Fact]
-    public void Should_AssignDataToAlunoWhenAulaZeroFinishes() {
+    public void Deve_AtualizarDadosAlunoAoFinalizarAulaZero() {
         // Arrange (constructor)
 
         var turma = TurmaFactory.Create(_db, new Turma
@@ -371,7 +371,7 @@ public class EventoServiceTests : BaseIntegrationTest {
     }
 
     [Fact]
-    public void ShouldNot_ShowEventsFromDeactivatedTurma() {
+    public void NaoDeve_MostrarEventosDeTurmaDesativada() {
         // Arrange (constructor)
         var startOfWeek = DateTime.Now.Date.AddDays(-(int)DateTime.Now.DayOfWeek);
         var endOfWeek = startOfWeek.AddDays(6);
@@ -409,7 +409,7 @@ public class EventoServiceTests : BaseIntegrationTest {
     }
 
     [Fact]
-    public void Should_UpdateParticipacao() {
+    public void Deve_AtualizarParticipacao() {
         // Arrange (constructor)
 
         var turma = TurmaFactory.Create(_db, new Turma
@@ -479,7 +479,7 @@ public class EventoServiceTests : BaseIntegrationTest {
     }
 
     [Fact]
-    public void Should_CancelarParticipacao() {
+    public void Deve_CancelarParticipacao() {
         var aluno = AlunoFactory.Create(_db, new Aluno { PerfilCognitivo_Id = 1, Apostila_Kit_Id = 1, Apostila_Abaco_Id = 1, Apostila_AH_Id = 3 });
 
         var evento = EventoFactory.Create(_db, new Evento
@@ -518,7 +518,7 @@ public class EventoServiceTests : BaseIntegrationTest {
     }
 
     [Fact]
-    public void Should_BeAbleToCreateOficina() {
+    public void Deve_SerPossivelCriarOficina() {
         // Arrange (constructor)
 
         // Act
@@ -536,7 +536,7 @@ public class EventoServiceTests : BaseIntegrationTest {
     }
 
     [Fact]
-    public void Should_CancelarEvento() {
+    public void Deve_CancelarEvento() {
         // Arrange (constructor)
 
         var evento = EventoFactory.Create(_db, new Evento
@@ -572,5 +572,58 @@ public class EventoServiceTests : BaseIntegrationTest {
         Evento? eventoCancelado = _db.Eventos.SingleOrDefault(e => e.Id == evento.Id);
         Assert.NotNull(eventoCancelado);
         Assert.NotNull(eventoCancelado.Deactivated);
+    }
+
+    [Fact]
+    public void Deve_AtualizarProgressoDoAlunoNasApostilas() {
+        // Arrange (constructor)
+        var alunoPresente = AlunoFactory.Create(_db, new Aluno { PerfilCognitivo_Id = 1, Apostila_Kit_Id = 1, Apostila_Abaco_Id = 1, Apostila_AH_Id = 3, NumeroPaginaAbaco = 1, NumeroPaginaAH = 1 });
+
+        var evento = EventoFactory.Create(_db, new Evento
+        {
+            Descricao = "Test atualizar numero página do aluno",
+            Data = TimeFunctions.HoraAtualBR().AddDays(1),
+            Evento_Tipo_Id = (int)EventoTipo.AulaExtra,
+            DuracaoMinutos = 120,
+            Sala_Id = 1,
+            CapacidadeMaximaAlunos = 10,
+            Account_Created_Id = 3, // Admin
+            Created = TimeFunctions.HoraAtualBR(),
+            Evento_Aula = new Evento_Aula
+            {
+                Professor_Id = 1,
+                Roteiro_Id = null,
+                Turma_Id = null,
+            },
+        });
+
+        Assert.NotNull(evento);
+
+        var participacaoPresente = EventoFactory.CreateParticipacaoAluno(_db, evento, alunoPresente);
+
+        // Act
+        var response = sut.Finalizar(new FinalizarEventoRequest
+        {
+            Evento_Id = evento.Id,
+            Observacao = "Evento concluído",
+            Alunos = [
+                new ParticipacaoAlunoModel { Participacao_Id = participacaoPresente.Id, Presente = true, Apostila_Abaco_Id = 1, Apostila_Ah_Id = 3, NumeroPaginaAbaco = 5, NumeroPaginaAh = 5},
+            ],
+        });
+
+        // Assert
+        Assert.NotNull(response);
+        Assert.True(response.Success, response.Message);
+
+        var participacaoResult = _db.Evento_Participacao_Alunos.Find(participacaoPresente.Id);
+        Assert.NotNull(participacaoResult);
+        Assert.True(participacaoResult.Presente);
+        Assert.Equal(5, participacaoResult.NumeroPaginaAbaco);
+        Assert.Equal(5, participacaoResult.NumeroPaginaAH);
+
+        var alunoResult = _db.Alunos.Find(alunoPresente.Id);
+        Assert.NotNull(alunoResult);
+        Assert.Equal(5, alunoResult.NumeroPaginaAbaco);
+        Assert.Equal(5, alunoResult.NumeroPaginaAH);
     }
 }
