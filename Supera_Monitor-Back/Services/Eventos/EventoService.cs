@@ -1958,6 +1958,7 @@ public class EventoService : IEventoService {
             List<Evento> eventos = _db.Eventos
                 .Where(x => x.Data.Year == ano)
                 .Include(x => x.Evento_Aula)
+                .Include(x => x.Evento_Participacao_Alunos)
                 .ToList();
 
 
@@ -2001,11 +2002,14 @@ public class EventoService : IEventoService {
                             }
                         }
 
+                        foreach (var participacao in evento.Evento_Participacao_Alunos) {
+                            participacao.StatusContato_Id = (int)StatusContato.AULA_CANCELADA;
+                        }
+
                         evento.Deactivated = deactivated;
                         evento.Observacao = observacao;
                         _db.Eventos.Update(evento);
                     }
-
 
                     List<Turma> turmasInDayOfWeek = turmas.Where(t => t.DiaSemana == dayOfWeek).ToList();
 
@@ -2049,6 +2053,7 @@ public class EventoService : IEventoService {
                                 Evento_Participacao_Alunos = turma.Alunos.Select(x => new Evento_Participacao_Aluno
                                 {
                                     Aluno_Id = x.Id,
+                                    StatusContato_Id = (int)StatusContato.AULA_CANCELADA,
                                 }).ToList(),
 
                                 Evento_Participacao_Professors = new List<Evento_Participacao_Professor> {
