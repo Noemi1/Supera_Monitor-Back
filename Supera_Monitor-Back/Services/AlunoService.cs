@@ -6,7 +6,6 @@ using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Aluno;
-using Supera_Monitor_Back.Services.Email;
 
 namespace Supera_Monitor_Back.Services;
 
@@ -38,10 +37,8 @@ public class AlunoService : IAlunoService {
         DataContext db,
         CRM4UContext dbCRM,
         IMapper mapper,
-        IPessoaService pessoaService,
         IHttpContextAccessor httpContextAccessor,
-        IChecklistService checklistService,
-        IEmailService emailService
+        IChecklistService checklistService
         ) {
         _db = db;
         _dbCRM = dbCRM;
@@ -294,10 +291,10 @@ public class AlunoService : IAlunoService {
             aluno.DataFimVigencia = model.DataFimVigencia ?? aluno.DataFimVigencia;
 
             if (turmaDestino is not null && aluno.Turma_Id != turmaDestino.Id) {
-                bool vigenciaCompativel = turmaDestino.VerificarCompatibilidadeVigencia(aluno);
+                int countAlunosInTurma = _db.Alunos.Count(a => a.Turma_Id == turmaDestino.Id && a.Deactivated == null);
 
-                if (!vigenciaCompativel) {
-                    return new ResponseModel { Message = "Não é possível adicionar o aluno na turma. Turma extrapolará a capacidade máxima de alunos." };
+                if (countAlunosInTurma >= turmaDestino.CapacidadeMaximaAlunos) {
+                    return new ResponseModel { Message = "Turma destino está em sua capacidade máxima" };
                 }
             }
 

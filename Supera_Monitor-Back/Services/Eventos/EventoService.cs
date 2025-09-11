@@ -2184,24 +2184,19 @@ public class EventoService : IEventoService {
 
             List<ParticipacaoAulaZeroModel> alunosPresentes = request.Alunos.Where(model => model.Presente).ToList();
 
+            var alunosPorTurma = alunosPresentes
+                .GroupBy(a => a.Turma_Id)
+                .ToDictionary(g => g.Key, g => g.Count());
+
             // Valida turmas
-            foreach (var participacao in alunosPresentes) {
-                var turma = _db.Turmas.FirstOrDefault(t => t.Id == participacao.Turma_Id);
+            foreach (var turmaId in alunosPorTurma.Keys) {
+                var turma = _db.TurmaLists.FirstOrDefault(t => t.Id == turmaId) ?? throw new Exception($"Turma ID: '{turmaId}' não encontrada.");
 
-                if (turma is null) {
-                    return new ResponseModel { Message = "Turma não encontrada" };
-                }
+                int vagasDisponiveis = turma.VagasDisponiveis;
+                alunosPorTurma.TryGetValue(key: turmaId, out int vagasNecessarias);
 
-                var aluno = evento.Evento_Participacao_Alunos.FirstOrDefault(p => p.Id == participacao.Participacao_Id)!.Aluno;
-
-                if (aluno is null) {
-                    return new ResponseModel { Message = "Aluno não encontrado" };
-                }
-
-                bool vigenciaCompativel = turma.VerificarCompatibilidadeVigencia(aluno);
-
-                if (!vigenciaCompativel) {
-                    return new ResponseModel { Message = "Não é possível adicionar o aluno na turma. Turma extrapolará a capacidade máxima de alunos." };
+                if (vagasDisponiveis < vagasNecessarias) {
+                    throw new Exception($"Turma {turma.Nome} não possui capacidade para acomodar mais {vagasNecessarias} alunos.");
                 }
             }
 
