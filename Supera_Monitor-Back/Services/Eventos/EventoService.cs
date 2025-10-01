@@ -1958,7 +1958,7 @@ public class EventoService : IEventoService {
             List<Evento> eventos = _db.Eventos
                 .Where(x => x.Data.Year == ano)
                 .Include(x => x.Evento_Aula)
-                .AsSplitQuery()
+                .Include(x => x.Evento_Participacao_Alunos)
                 .ToList();
 
 
@@ -2002,11 +2002,14 @@ public class EventoService : IEventoService {
                             }
                         }
 
+                        foreach (var participacao in evento.Evento_Participacao_Alunos) {
+                            participacao.StatusContato_Id = (int)StatusContato.AULA_CANCELADA;
+                        }
+
                         evento.Deactivated = deactivated;
                         evento.Observacao = observacao;
                         _db.Eventos.Update(evento);
                     }
-
 
                     List<Turma> turmasInDayOfWeek = turmas.Where(t => t.DiaSemana == dayOfWeek).ToList();
 
@@ -2015,9 +2018,6 @@ public class EventoService : IEventoService {
                         Evento? aula = eventos.FirstOrDefault(x => x.Data.Date == data.Date
                                                 && x.Evento_Aula is not null
                                                 && x.Evento_Aula?.Turma_Id == turma.Id);
-                        //turma.Evento_Aulas
-                        //.Select(e => e.Evento)
-                        //.FirstOrDefault(e => e.Data.Date == data.Date);
 
                         List<Evento_Aula_PerfilCognitivo_Rel> eventoAulaPerfilCognitivoRels = turma.Turma_PerfilCognitivo_Rels
                             .Select(x => new Evento_Aula_PerfilCognitivo_Rel { PerfilCognitivo_Id = x.PerfilCognitivo_Id })
@@ -2050,9 +2050,12 @@ public class EventoService : IEventoService {
                                     Evento_Aula_PerfilCognitivo_Rels = eventoAulaPerfilCognitivoRels,
                                 },
 
-                                Evento_Participacao_Alunos = turma.Alunos.Select(x => new Evento_Participacao_Aluno
+                                Evento_Participacao_Alunos = turma.Alunos
+                                .Where(x => x.DataInicioVigencia.Date < dataTurma.Date && (!x.DataFimVigencia.HasValue || x.DataFimVigencia.Value < dataTurma))
+                                .Select(x => new Evento_Participacao_Aluno
                                 {
                                     Aluno_Id = x.Id,
+                                    StatusContato_Id = (int)StatusContato.AULA_CANCELADA,
                                 }).ToList(),
 
                                 Evento_Participacao_Professors = new List<Evento_Participacao_Professor> {
@@ -2181,15 +2184,15 @@ public class EventoService : IEventoService {
 
             List<ParticipacaoAulaZeroModel> alunosPresentes = request.Alunos.Where(model => model.Presente).ToList();
 
-            // Valida turmas
             var alunosPorTurma = alunosPresentes
                 .GroupBy(a => a.Turma_Id)
                 .ToDictionary(g => g.Key, g => g.Count());
 
+            // Valida turmas
             foreach (var turmaId in alunosPorTurma.Keys) {
                 var turma = _db.TurmaLists.FirstOrDefault(t => t.Id == turmaId) ?? throw new Exception($"Turma ID: '{turmaId}' não encontrada.");
 
-                int vagasDisponiveis = turma.CapacidadeMaximaAlunos - turma.AlunosAtivos;
+                int vagasDisponiveis = turma.VagasDisponiveis;
                 alunosPorTurma.TryGetValue(key: turmaId, out int vagasNecessarias);
 
                 if (vagasDisponiveis < vagasNecessarias) {

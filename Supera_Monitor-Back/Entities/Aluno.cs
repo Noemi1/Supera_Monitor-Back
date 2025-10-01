@@ -68,4 +68,12 @@ public partial class Aluno {
     public virtual Turma Turma { get; set; } = null!;
 
     public bool Active => !Deactivated.HasValue;
+
+    public DateTime ObterFimVigencia() {
+        if (!DataFimVigencia.HasValue) {
+            return DataInicioVigencia.AddYears(100);
+        }
+
+        return DataFimVigencia.Value;
+    }
 }

@@ -36,15 +36,17 @@ public class DataSeeder(DataContext db) {
             new() { Id = 4, Descricao = "Aula cancelada"},
             new() { Id = 5, Descricao = "Reposição - Agendada"},
             new() { Id = 6, Descricao = "Reposição - Realizada"},
-            new() { Id = 7, Descricao = "Reposição - Desmarcada"},
-            new() { Id = 8, Descricao = "Reposição - Não compareceu"},
+            new() { Id = 7, Descricao = "Reposição - Não compareceu"},
+            new() { Id = 8, Descricao = "Reposição - Desmarcada"},
             new() { Id = 9, Descricao = "Outro"},
         };
 
         _db.Evento_Participacao_Aluno_StatusContato.AddRange(statusContatos);
         await _db.SaveChangesAsync();
 
-        _db.Evento_Participacao_Aluno_StatusContato.AddRange();
+        _db.Database.ExecuteSqlRaw("SET IDENTITY_INSERT [Evento_Participacao_Aluno_StatusContato] OFF");
+
+        await transaction.CommitAsync();
     }
 
     private async Task SeedApostilaTipos() {

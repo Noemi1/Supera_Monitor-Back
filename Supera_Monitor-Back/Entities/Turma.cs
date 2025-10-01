@@ -26,4 +26,65 @@ public partial class Turma {
 
         return (vagasDisponiveis - vagasRequisitadas) >= 0;
     }
+
+    public List<SequenciaVigencia> ExtrairSequenciaVigencias() {
+        if (this.Alunos is null) {
+            throw new Exception("Verifique se os alunos estão incluídos na turma.");
+        }
+
+        var inicioVigencias = this.Alunos
+            .Where(a => a.Deactivated == null)
+            .Select(a => new SequenciaVigencia { Tipo = VigenciaTipo.Inicio, Data = a.DataInicioVigencia });
+
+        var fimVigencias = this.Alunos
+            .Where(a => a.Deactivated == null)
+            .Select(a => new SequenciaVigencia
+            {
+                Tipo = VigenciaTipo.Fim,
+                Data = a.DataFimVigencia ?? a.DataInicioVigencia.AddYears(100)
+            });
+
+        List<SequenciaVigencia> sequenciaVigencias = inicioVigencias.Concat(fimVigencias).OrderBy(v => v.Data).ToList();
+
+        return sequenciaVigencias;
+    }
+
+    public bool VerificarCompatibilidadeVigencia(Aluno novoAluno) {
+        var turmaVigencias = this.ExtrairSequenciaVigencias();
+
+        // Adicionar início e fim da vigência do novo aluno
+        turmaVigencias.Add(new SequenciaVigencia { Tipo = VigenciaTipo.Inicio, Data = novoAluno.DataInicioVigencia });
+        turmaVigencias.Add(new SequenciaVigencia { Tipo = VigenciaTipo.Fim, Data = novoAluno.DataFimVigencia ?? novoAluno.DataInicioVigencia.AddYears(100) });
+
+        turmaVigencias = turmaVigencias.OrderBy(tv => tv.Data).ToList();
+
+        // Verificar se em qualquer momento da vigência após a inclusão do novo aluno, o número de alunos ativos extrapola o limite da turma
+        int alunosAtivos = 0;
+
+        foreach (var vigencia in turmaVigencias) {
+            if (vigencia.Tipo == VigenciaTipo.Inicio) {
+                alunosAtivos++;
+            }
+            else {
+                alunosAtivos--;
+            }
+
+            // Verificar se a capacidade excedida em algum ponto
+            if (alunosAtivos > this.CapacidadeMaximaAlunos) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
+public enum VigenciaTipo {
+    Inicio = 1,
+    Fim = 2,
+}
+
+public class SequenciaVigencia {
+    public VigenciaTipo Tipo { get; set; }
+    public DateTime Data { get; set; }
 }

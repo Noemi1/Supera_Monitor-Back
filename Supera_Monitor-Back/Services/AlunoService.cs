@@ -6,7 +6,6 @@ using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Aluno;
-using Supera_Monitor_Back.Services.Email;
 
 namespace Supera_Monitor_Back.Services;
 
@@ -38,10 +37,8 @@ public class AlunoService : IAlunoService {
         DataContext db,
         CRM4UContext dbCRM,
         IMapper mapper,
-        IPessoaService pessoaService,
         IHttpContextAccessor httpContextAccessor,
-        IChecklistService checklistService,
-        IEmailService emailService
+        IChecklistService checklistService
         ) {
         _db = db;
         _dbCRM = dbCRM;
@@ -138,7 +135,6 @@ public class AlunoService : IAlunoService {
             if (pessoaCRM.Unidade_Id != 1) {
                 return new ResponseModel { Message = "Pessoa não pertence a uma unidade cadastrada" };
             }
-
 
             // Só pode ser cadastrado um aluno por pessoa
             bool alunoAlreadyRegistered = _db.Pessoas.Any(a => a.PessoaCRM_Id == model.Pessoa_Id);
@@ -267,7 +263,9 @@ public class AlunoService : IAlunoService {
             }
 
             // Aluno só pode ser operado em atualizações ou troca de turma se for uma turma válida
-            Turma? turmaDestino = _db.Turmas.FirstOrDefault(t => t.Id == model.Turma_Id);
+            Turma? turmaDestino = _db.Turmas
+                .Include(t => t.Alunos)
+                .FirstOrDefault(t => t.Id == model.Turma_Id);
 
             if (turmaDestino is null && model.Turma_Id.HasValue) {
                 return new ResponseModel { Message = "Turma não encontrada" };
@@ -289,6 +287,9 @@ public class AlunoService : IAlunoService {
 
             // Se aluno estiver trocando de turma, deve-se garantir que a turma destino tem espaço disponível
             // Não considera reposição, pois não estamos olhando para uma aula específica
+            aluno.DataInicioVigencia = model.DataInicioVigencia ?? aluno.DataInicioVigencia;
+            aluno.DataFimVigencia = model.DataFimVigencia ?? aluno.DataFimVigencia;
+
             if (turmaDestino is not null && aluno.Turma_Id != turmaDestino.Id) {
                 int countAlunosInTurma = _db.Alunos.Count(a => a.Turma_Id == turmaDestino.Id && a.Deactivated == null);
 
