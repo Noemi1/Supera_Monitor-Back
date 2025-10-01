@@ -34,11 +34,12 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
-        [HttpGet("all")]
-        public ActionResult<List<RoteiroModel>> GetAll() {
-            try {
-                var response = _roteiroService.GetAll();
-
+        [HttpGet("all/{ano}")]
+        public ActionResult<List<RoteiroModel>> GetAll(int? ano) {
+            
+			try 
+			{
+                var response = _roteiroService.GetAll(ano);
                 return Ok(response);
             }
             catch (Exception e) {
