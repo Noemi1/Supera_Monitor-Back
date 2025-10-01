@@ -50,8 +50,9 @@ public class RoteiroService : IRoteiroService {
 			.ToList();
 
 		DateTime dataDe = new DateTime(ano.Value, 1, 1);
+		DateTime dataAte = dataDe.AddYears(1).AddDays(-1);
 		DateTimeFormatInfo dfi = DateTimeFormatInfo.CurrentInfo;
-		int weeksInYear = dfi.Calendar.GetWeekOfYear(dataDe, dfi.CalendarWeekRule, dfi.FirstDayOfWeek);
+		int weeksInYear = dfi.Calendar.GetWeekOfYear(dataAte, dfi.CalendarWeekRule, dfi.FirstDayOfWeek);
 		Roteiro[] roteirosArray = new Roteiro[weeksInYear];
 		list.ForEach(roteiro =>
 		{
