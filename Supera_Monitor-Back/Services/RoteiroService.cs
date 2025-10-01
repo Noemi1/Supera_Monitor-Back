@@ -1,15 +1,17 @@
 ﻿using AutoMapper;
+using Azure.Core;
 using Microsoft.EntityFrameworkCore;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Roteiro;
+using System.Globalization;
 
 namespace Supera_Monitor_Back.Services;
 
 public interface IRoteiroService {
     public RoteiroModel? Get(int roteiroId);
-    List<RoteiroModel> GetAll();
+    List<RoteiroModel> GetAll(int? ano);
     ResponseModel Insert(CreateRoteiroRequest model);
     ResponseModel Update(UpdateRoteiroRequest model);
     ResponseModel ToggleDeactivate(int roteiroId);
@@ -38,12 +40,72 @@ public class RoteiroService : IRoteiroService {
         return _mapper.Map<RoteiroModel>(roteiro);
     }
 
-    public List<RoteiroModel> GetAll() {
-        List<Roteiro> listRoteiros = _db.Roteiros
-            .OrderBy(j => j.Semana)
-            .ToList();
+    public List<RoteiroModel> GetAll(int? ano) {
+		if (!ano.HasValue)
+			ano = DateTime.Now.Year;
 
-        return _mapper.Map<List<RoteiroModel>>(listRoteiros);
+        List<Roteiro> list = _db.Roteiros
+			.Where(x => x.DataInicio.Year == ano.Value || x.DataFim.Year == ano.Value)
+			.OrderBy(x => x.Semana)
+			.ToList();
+
+		DateTime dataDe = new DateTime(ano.Value, 1, 1);
+		DateTimeFormatInfo dfi = DateTimeFormatInfo.CurrentInfo;
+		int weeksInYear = dfi.Calendar.GetWeekOfYear(dataDe, dfi.CalendarWeekRule, dfi.FirstDayOfWeek);
+		Roteiro[] roteirosArray = new Roteiro[weeksInYear];
+		list.ForEach(roteiro =>
+		{
+			int week = dfi.Calendar.GetWeekOfYear(roteiro.DataInicio, dfi.CalendarWeekRule, dfi.FirstDayOfWeek);
+
+			if (roteiro.DataInicio.Year == ano.Value - 1)
+				week = 1;
+			else if (roteiro.DataFim.Year == ano.Value + 1)
+				week = weeksInYear;
+
+			roteirosArray[week - 1] = roteiro;
+		});
+		for (int index = 0; index < roteirosArray.Length; index++)
+		{
+			Roteiro roteiro = roteirosArray[index];
+
+			// Se não tiver roteiro salva pseudo roteirosy
+			if (roteiro == null)
+			{
+				int semana;
+				DateTime dataInicio;
+				DateTime dataFim;
+
+				if (index == 0) // Se for a semana 0
+				{
+					semana = 0;
+					dataInicio = dataDe.AddDays((int)dataDe.DayOfWeek - 5); // Segunda-feira
+				}
+				else
+				{
+					Roteiro lastRoteiro = roteirosArray[index - 1];
+					DateTime domingo = lastRoteiro.DataInicio.AddDays(7 - (int)lastRoteiro.DataInicio.DayOfWeek);
+					dataInicio = domingo.AddDays(1); // Segunda-feira
+					semana = lastRoteiro.Semana + 1;
+				}
+
+				dataFim = dataInicio.AddDays(6 - (int)dataInicio.DayOfWeek);
+
+				roteiro = new Roteiro
+				{
+					Id = -1,
+					DataInicio = dataInicio,
+					DataFim = dataFim,
+					Semana = semana,
+					Tema = "Tema Indefinido",
+					CorLegenda = "#3f3f3f"
+				};
+				roteirosArray[index] = roteiro;
+
+			}
+		}
+
+
+		return _mapper.Map<List<RoteiroModel>>(roteirosArray);
     }
 
     public ResponseModel Insert(CreateRoteiroRequest model) {
