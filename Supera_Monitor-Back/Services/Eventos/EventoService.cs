@@ -1254,12 +1254,12 @@ public class EventoService : IEventoService
 
 		// Alunos devem possuir as apostilas em que estão tentando marcar progresso
 
-		var alunoApostilaKitId = participacao.Aluno.Apostila_Kit_Id;
+		//var alunoApostilaKitId = participacao.Aluno.Apostila_Kit_Id;
 
-		if (alunoApostilaKitId == null)
-		{
-			return new ResponseModel { Message = $"Aluno ID: '{participacao.Aluno_Id}' não possui kit de apostilas" };
-		}
+		//if (alunoApostilaKitId == null)
+		//{
+		//	return new ResponseModel { Message = $"Aluno ID: '{participacao.Aluno.Pessoa.Nome}' não possui kit de apostilas" };
+		//}
 
 		var alunoApostilaKitRels = _db.Apostila_Kit_Rels.Where(a => a.Apostila_Kit_Id == alunoApostilaKitId).ToList();
 
