@@ -102,15 +102,6 @@ public class AulaService : IAulaService {
                 return new ResponseModel { Message = "Esta sala se encontra ocupada neste horário" };
             }
 
-            Roteiro? roteiro = _db.Roteiros.Find(request.Roteiro_Id);
-
-            // Não devo poder criar aula de turma com um roteiro que não existe
-            if (request.Roteiro_Id != -1 && request.Roteiro_Id.HasValue && roteiro is null) {
-                return new ResponseModel { Message = "Roteiro não encontrado" };
-            }
-
-            // Se foi passado um roteiro na requisição, então buscar o roteiro da data da aula, senão continua null
-            roteiro ??= _db.Roteiros.FirstOrDefault(r => request.Data.Date >= r.DataInicio.Date && request.Data.Date <= r.DataFim.Date);
 
             bool hasTurmaConflict = _professorService.HasTurmaTimeConflict(
                 professorId: professor.Id,
@@ -133,6 +124,21 @@ public class AulaService : IAulaService {
             if (hasParticipacaoConflict) {
                 return new ResponseModel { Message = $"Professor: {professor.Account.Name} possui participação em outro evento nesse mesmo horário" };
             }
+
+			Roteiro? roteiro;
+			if (request.Roteiro_Id.HasValue && request.Roteiro_Id.Value != -1)
+			{
+				roteiro = _db.Roteiros.Find(request.Roteiro_Id);
+
+				// Não devo poder criar aula de turma com um roteiro que não existe
+				if (roteiro is null) {
+					return new ResponseModel { Message = "Roteiro não encontrado" };
+				}
+			}
+			else
+			{
+				roteiro = _db.Roteiros.FirstOrDefault(r => request.Data.Date >= r.DataInicio.Date && request.Data.Date <= r.DataFim.Date);
+			}
 
             // Validations passed
 
@@ -263,15 +269,6 @@ public class AulaService : IAulaService {
             }
 
 
-			// Não devo poder criar aula de turma com um roteiro que não existe, mas deve poder criar com roteiro nulo
-			if (request.Roteiro_Id != -1 && request.Roteiro_Id.HasValue) {
-                bool roteiroExists = _db.Roteiros.Any(r => r.Id == request.Roteiro_Id);
-
-                if (!roteiroExists) {
-                    return new ResponseModel { Message = "Roteiro não encontrado" };
-                }
-            }
-
             // O professor associado não pode possuir conflitos de horário
 
             bool hasTurmaConflict = _professorService.HasTurmaTimeConflict(
@@ -308,9 +305,26 @@ public class AulaService : IAulaService {
                 return new ResponseModel { Message = "Número máximo de alunos excedido" };
             }
 
-            // Validations passed
 
-            Evento? eventoReagendado = _db.Eventos
+			Roteiro? roteiro;
+			if (request.Roteiro_Id.HasValue && request.Roteiro_Id.Value != -1)
+			{
+				roteiro = _db.Roteiros.Find(request.Roteiro_Id);
+
+				// Não devo poder criar aula de turma com um roteiro que não existe
+				if (roteiro is null)
+				{
+					return new ResponseModel { Message = "Roteiro não encontrado" };
+				}
+			}
+			else
+			{
+				roteiro = _db.Roteiros.FirstOrDefault(r => request.Data.Date >= r.DataInicio.Date && request.Data.Date <= r.DataFim.Date);
+			}
+
+			// Validations passed
+
+			Evento? eventoReagendado = _db.Eventos
                 .Include(e => e.Evento_Participacao_Professors)
                 .Include(e => e.Evento_Participacao_Alunos)
                 .FirstOrDefault(e => e.Id == request.ReagendamentoDe_Evento_Id);
@@ -343,7 +357,7 @@ public class AulaService : IAulaService {
                 Evento_Aula = new Evento_Aula
                 {
                     Turma_Id = null,
-                    Roteiro_Id = request.Roteiro_Id,
+                    Roteiro_Id = roteiro?.Id,
                     Professor_Id = request.Professor_Id,
                 },
 
@@ -616,15 +630,7 @@ public class AulaService : IAulaService {
                 return new ResponseModel { Message = "Esta sala se encontra ocupada neste horário" };
             }
 
-            // Não devo poder atualizar turma com um roteiro que não existe
-            if (request.Roteiro_Id != -1 && request.Roteiro_Id.HasValue) {
-                bool roteiroExists = _db.Roteiros.Any(r => r.Id == request.Roteiro_Id);
-
-                if (!roteiroExists) {
-                    return new ResponseModel { Message = "Roteiro não encontrado" };
-                }
-            }
-
+         
             // Não devo poder atualizar turma com um professor que está desativado
             if (professor.Account.Deactivated is not null) {
                 return new ResponseModel { Message = "Professor está desativado" };
@@ -666,9 +672,25 @@ public class AulaService : IAulaService {
                 }
             }
 
-            // Validations passed
+			Roteiro? roteiro;
+			if (request.Roteiro_Id.HasValue && request.Roteiro_Id.Value != -1)
+			{
+				roteiro = _db.Roteiros.Find(request.Roteiro_Id);
 
-            evento.Observacao = request.Observacao ?? request.Observacao;
+				// Não devo poder criar aula de turma com um roteiro que não existe
+				if (roteiro is null)
+				{
+					return new ResponseModel { Message = "Roteiro não encontrado" };
+				}
+			}
+			else
+			{
+				roteiro = _db.Roteiros.FirstOrDefault(r => request.Data.Date >= r.DataInicio.Date && request.Data.Date <= r.DataFim.Date);
+			}
+
+			// Validations passed
+
+			evento.Observacao = request.Observacao ?? request.Observacao;
             evento.Descricao = request.Descricao ?? evento.Descricao;
             evento.Sala_Id = request.Sala_Id;
             evento.Data = request.Data;
@@ -679,7 +701,7 @@ public class AulaService : IAulaService {
 
             evento.Evento_Aula!.Professor_Id = request.Professor_Id;
             evento.Evento_Aula.Turma_Id = request.Turma_Id;
-            evento.Evento_Aula.Roteiro_Id = request.Roteiro_Id ?? evento.Evento_Aula.Roteiro_Id;
+            evento.Evento_Aula.Roteiro_Id = roteiro?.Id;
 
             _db.Update(evento);
             _db.SaveChanges();
