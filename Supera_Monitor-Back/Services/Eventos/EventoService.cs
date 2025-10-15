@@ -860,6 +860,7 @@ public class EventoService : IEventoService
 			participacao.StatusContato_Id = request.StatusContato_Id;
 
 			_db.Evento_Participacao_Alunos.Update(participacao);
+			_db.SaveChanges();
 
 			response.Message = "Participação do aluno foi atualizada com sucesso.";
 			response.Success = true;
