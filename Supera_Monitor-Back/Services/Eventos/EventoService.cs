@@ -1535,9 +1535,18 @@ public class EventoService : IEventoService
 			Roteiro? roteiro = _db.Roteiros.FirstOrDefault(x => data.Date >= x.DataInicio.Date
 															 && data.Date <= x.DataFim.Date);
 
-			var alunosAtivosInTurma = turma.Alunos
-				.Where(a => a.Turma_Id == turma.Id)
-				.Count(a => a.Deactivated == null);
+			// Em pseudo-aulas, adicionar só os alunos da turma original
+			// e após o início de sua vigência
+			// e que tenham sido desativado só depois da data da aula
+			List<AlunoList> alunos = _db.AlunoLists
+				.Where(x => x.Turma_Id == request.Turma_Id
+					&& x.DataInicioVigencia.Date <= data.Date
+					&& (x.DataFimVigencia == null || x.DataFimVigencia.Value.Date >= data.Date)
+					&& (x.Deactivated == null || x.Deactivated.Value.Date > data.Date))
+				.OrderBy(x => x.Nome)
+				.ToList();
+
+			var alunosAtivosInTurma = alunos.Count;
 
 			CalendarioEventoList pseudoAula = new()
 			{
@@ -1575,11 +1584,6 @@ public class EventoService : IEventoService
 				Andar = turma?.Sala?.Andar,
 			};
 
-			// Em pseudo-aulas, adicionar só os alunos da turma original após o início de sua vigência
-			List<AlunoList> alunos = _db.AlunoLists
-				.Where(x => x.Turma_Id == request.Turma_Id && x.DataInicioVigencia.Date <= data.Date)
-				.OrderBy(x => x.Nome)
-				.ToList();
 
 			pseudoAula.Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos).ToList();
 

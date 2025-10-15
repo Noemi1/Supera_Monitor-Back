@@ -214,22 +214,10 @@ public class AulaService : IAulaService {
             _db.Evento_Aula_PerfilCognitivo_Rels.AddRange(eventoAulaPerfisCognitivos);
             _db.SaveChanges();
 
-            var responseObject = _db.CalendarioEventoLists.First(e => e.Id == evento.Id);
 
-            responseObject.Alunos = _db.CalendarioAlunoLists.Where(
-                a => a.Evento_Id == evento.Id
-                && a.DataInicioVigencia.HasValue
-                && a.DataInicioVigencia.Value.Date <= evento.Data.Date
-                && (a.DataFimVigencia == null || a.DataFimVigencia.Value.Date >= evento.Data.Date))
-            .ToList();
+			CalendarioEventoList? responseObject = this.GetById(evento.Id);
 
-            responseObject.Professores = _db.CalendarioProfessorLists.Where(p => p.Evento_Id == evento.Id).ToList();
-            responseObject.PerfilCognitivo = _db.PerfilCognitivos
-                .Where(p => eventoAulaPerfisCognitivos.Select(e => e.PerfilCognitivo_Id).Contains(p.Id))
-                .ProjectTo<PerfilCognitivoModel>(_mapper.ConfigurationProvider)
-                .ToList();
-
-            response.Message = $"Evento de aula para a turma '{turma.Nome}' registrado com sucesso";
+			response.Message = $"Evento de aula para a turma '{turma.Nome}' registrado com sucesso";
             response.Object = responseObject;
             response.Success = true;
         }
