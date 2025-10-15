@@ -28,8 +28,7 @@ public class SalaService : ISalaService {
 
     public List<SalaModel> GetAllSalas() {
         var salas = _db.Salas
-            .OrderBy(s => s.Andar)
-            .ThenBy(s => s.NumeroSala)
+            .OrderBy(s => s.Descricao)
             .ToList();
 
         return _mapper.Map<List<SalaModel>>(salas);
@@ -144,9 +143,9 @@ public class SalaService : ISalaService {
             return false;
         }
 
-        if (sala.Online) {
-            return false;
-        }
+        //if (sala.Online) {
+        //    return false;
+        //}
 
         var novoEventoInicio = date;
         var novoEventoFim = date.AddMinutes(duracaoMinutos);
@@ -165,9 +164,9 @@ public class SalaService : ISalaService {
     public bool IsSalaRecurrentlyOccupied(int Sala_Id, int DiaSemana, TimeSpan Horario, int? IgnoredTurmaId, int DuracaoMinutos = 120) {
         Sala sala = _db.Salas.Find(Sala_Id) ?? throw new Exception("Sala não encontrada");
 
-        if (sala.Online) {
-            return false;
-        }
+        //if (sala.Online) {
+        //    return false;
+        //}
 
         TimeSpan duracaoMinutos = TimeSpan.FromMinutes((int)DuracaoMinutos!);
 

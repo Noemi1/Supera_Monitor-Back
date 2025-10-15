@@ -4,6 +4,7 @@ public class SalaModel {
     public int Id { get; set; }
     public int NumeroSala { get; set; }
     public int Andar { get; set; }
+    public bool Online { get; set; }
 
-    public string Descricao { get; set; } = string.Empty;
+	public string Descricao { get; set; } = string.Empty;
 }
