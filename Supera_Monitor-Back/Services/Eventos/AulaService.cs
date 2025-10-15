@@ -6,6 +6,7 @@ using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Eventos.Aula;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Supera_Monitor_Back.Services.Eventos;
 
@@ -168,14 +169,20 @@ public class AulaService : IAulaService {
             _db.Add(evento);
             _db.SaveChanges();
 
-            // Inserir os registros dos alunos originais da turma na aula recém criada
-            List<Aluno> alunos = _db.Alunos.Where(a =>
-                a.Turma_Id == turma.Id &&
-                a.Deactivated == null)
-            .ToList();
+      
 
-            // Inserir participação do professor
-            Evento_Participacao_Professor participacaoProfessor = new()
+			// Em pseudo-aulas, adicionar só os alunos da turma original
+			// e após o início de sua vigência
+			// e que tenham sido desativado só depois da data da aula
+			List<Aluno> alunos = _db.Alunos
+				.Where(x => x.Turma_Id == request.Turma_Id
+				&& x.DataInicioVigencia.Date <= request.Data.Date
+					&& (x.DataFimVigencia == null || x.DataFimVigencia.Value.Date >= request.Data.Date)
+					&& (x.Deactivated == null || x.Deactivated.Value.Date > request.Data.Date))
+				.ToList();
+
+			// Inserir participação do professor
+			Evento_Participacao_Professor participacaoProfessor = new()
             {
                 Evento_Id = evento.Id,
                 Professor_Id = professor.Id,
