@@ -24,6 +24,7 @@ public partial class TurmaList {
     public int? Sala_Id { get; set; }
     public int? Andar { get; set; }
     public int? NumeroSala { get; set; }
+    public string? Sala { get; set; }
     public List<PerfilCognitivoModel> PerfilCognitivo { get; set; } = new();
 }
 
