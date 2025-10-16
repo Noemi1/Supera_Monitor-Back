@@ -5,7 +5,9 @@ using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
+using Supera_Monitor_Back.Models.Eventos;
 using Supera_Monitor_Back.Models.Eventos.Aula;
+using Supera_Monitor_Back.Models.Eventos.Participacao;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Supera_Monitor_Back.Services.Eventos;
@@ -476,8 +478,8 @@ public class AulaService : IAulaService {
 					CalendarioAlunoList? participacao = _db.CalendarioAlunoLists.FirstOrDefault(x => x.Aluno_Id == aluno.Id && x.Evento_Id == aluno.AulaZero_Id);
 					
 					if (aulaZero is not null && participacao is not null ) {
-						if (aulaZero.Finalizada && participacao.Presente) {
-                    		return new ResponseModel { Message = $"Aluno: '{participacao.Aluno}' já participou de aula zero no dia {aulaZero.Data.ToString(""dd/MM/yyyy HH:mm"")}." };
+						if (aulaZero.Finalizado == true && participacao.Presente == true) {
+                    		return new ResponseModel { Message = $"Aluno: '{participacao.Aluno}' já participou de aula zero no dia {aulaZero.Data.ToString("dd/MM/yyyy HH:mm")}." };
 						}
 					}
                 }
@@ -570,14 +572,14 @@ public class AulaService : IAulaService {
 					if (aulaZero is not null && participacoes.Count == 1) {
 						_eventoService.Cancelar(new CancelarEventoRequest() {
 							Id = aulaZero.Id,
-							Observacoes = $"Cancelamento automático. <br> Uma nova aula zero foi agendada para o dia {aulaZero.Data.ToString(""dd/MM/yyyy HH:mm"")}"
+							Observacao = $"Cancelamento automático. <br> Uma nova aula zero foi agendada para o dia {request.Data.ToString("dd/MM/yyyy HH:mm")}"
 						});
 					}
 					// Cancela participacao
 					if (participacao is not null) {
 						_eventoService.CancelarParticipacao(new CancelarParticipacaoRequest() {
 							Participacao_Id = participacao.Id,
-							Observacao = $"Cancelamento automático. <br> Uma nova aula zero foi agendada para o dia {aulaZero.Data.ToString(""dd/MM/yyyy HH:mm"")}"
+							Observacao = $"Cancelamento automático. <br> Uma nova aula zero foi agendada para o dia {request.Data.ToString("dd/MM/yyyy HH:mm")}",
 							ContatoObservacao = null,
 							AlunoContactado = null,
 							StatusContato_Id = 9,
