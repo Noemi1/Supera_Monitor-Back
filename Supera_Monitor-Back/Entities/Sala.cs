@@ -14,3 +14,15 @@ public partial class Sala {
         return Andar == 0 || Online == true;
     }
 }
+
+public enum SalaAulaId
+{
+	Online1 = 1,
+	Online2 = 2,
+	SalaComercial = 3,
+	SalaPedagogica = 4,
+	SalaDiretoria = 5,
+	NeuroSalaNeuronio = 6,
+	NeuroSalaSinapse = 7,
+	NeuroSalaAxonio = 8,
+}

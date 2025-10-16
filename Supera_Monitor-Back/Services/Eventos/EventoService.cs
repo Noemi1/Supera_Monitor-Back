@@ -525,6 +525,7 @@ public class EventoService : IEventoService
 						Data = new DateTime(data.Year, data.Month, data.Day, 10, 0, 0),
 						Finalizado = false,
 						Sala_Id = null,
+						Sala = "Sala Indefinida"
 					};
 
 					// Se está aplicado um filtro de professor ou turma, não deve mostrar pseudo-oficinas, já que esses dados ainda não estão definidos
@@ -560,8 +561,9 @@ public class EventoService : IEventoService
 						Descricao = descricao,
 						DuracaoMinutos = 60,
 						Finalizado = false,
-						Sala_Id = 2,
-
+						Sala_Id = (int)SalaAulaId.SalaPedagogica,
+						Sala = "Sala Pedagógica",
+						
 						Professores = professores.Select(professor => new CalendarioProfessorList
 						{
 							Evento_Id = -1,
@@ -636,6 +638,7 @@ public class EventoService : IEventoService
 						CorLegenda = turma.Professor is not null ? turma.Professor.CorLegenda : "#000",
 
 						Finalizado = false,
+						Sala = turma.Sala?.Descricao ?? "Sala Indefinida",
 						Sala_Id = turma.Sala?.Id,
 						NumeroSala = turma.Sala?.NumeroSala,
 						Andar = turma.Sala?.Andar,
@@ -1580,6 +1583,8 @@ public class EventoService : IEventoService
 				CorLegenda = turma?.Professor is not null ? turma.Professor.CorLegenda : "#000",
 
 				Finalizado = false,
+
+				Sala = turma?.Sala?.Descricao ?? "SalaIndefinida",
 				Sala_Id = turma?.Sala?.Id,
 				NumeroSala = turma?.Sala?.NumeroSala,
 				Andar = turma?.Sala?.Andar,
@@ -1819,6 +1824,7 @@ public class EventoService : IEventoService
 						Professor = turma.Professor,
 						CorLegenda = turma.Professor,
 
+						Sala = turma.Sala ?? "Sala Indefinida",
 						Sala_Id = turma.Sala_Id,
 						NumeroSala = turma.NumeroSala,
 						Andar = turma.Andar,

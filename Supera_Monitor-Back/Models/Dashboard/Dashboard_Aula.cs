@@ -34,6 +34,8 @@
         public int? ReagendamentoPara_Evento_Id { get; set; }
 
 
+        public string? Sala { get; set; }
+
         public int? Sala_Id { get; set; }
 
         public int? Andar { get; set; }

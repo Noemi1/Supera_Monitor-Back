@@ -6,7 +6,6 @@ public partial class CalendarioEventoList {
     public int Id { get; set; }
     public int Evento_Tipo_Id { get; set; }
     public DateTime Data { get; set; }
-    public int? Sala_Id { get; set; }
     public string Descricao { get; set; } = null!;
     public string? Observacao { get; set; }
     public int DuracaoMinutos { get; set; }
@@ -29,8 +28,12 @@ public partial class CalendarioEventoList {
     public string? Professor { get; set; }
     public string? Tema { get; set; }
     public int? Semana { get; set; }
-    public int? Andar { get; set; }
+
+	public string? Sala { get; set; }
+	public int? Sala_Id { get; set; }
+	public int? Andar { get; set; }
     public int? NumeroSala { get; set; }
+
     public string? Turma { get; set; }
     public string Evento_Tipo { get; set; } = null!;
     public int? Account_Created_Id { get; set; }
