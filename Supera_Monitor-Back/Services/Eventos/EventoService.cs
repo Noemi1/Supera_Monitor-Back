@@ -245,12 +245,12 @@ public class EventoService : IEventoService
 
 			_db.SaveChanges();
 
-			var responseObject = _db.CalendarioEventoLists.First(e => e.Id == evento.Id);
+			var responseObject = this.GetEventoById(evento.Id);
 			responseObject.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).ToList();
 			responseObject.Professores = _db.CalendarioProfessorLists.Where(p => p.Evento_Id == evento.Id).ToList();
 
 			response.Success = true;
-			response.Message = $"Evento de '{responseObject.Evento_Tipo}' registrado com sucesso";
+			response.Message = $"{responseObject.Evento_Tipo} registrada com sucesso";
 			response.Object = responseObject;
 		}
 		catch (Exception ex)
@@ -1487,7 +1487,11 @@ public class EventoService : IEventoService
 
 	public CalendarioEventoList GetEventoById(int eventoId)
 	{
-		CalendarioEventoList evento = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == eventoId) ?? throw new Exception("Evento não encontrado");
+		CalendarioEventoList? evento = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == eventoId) ;
+		if (evento is null)
+		{
+			throw new Exception("Evento não encontrado");
+		}
 
 		evento.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).ToList();
 		evento.Professores = _db.CalendarioProfessorLists.Where(e => e.Evento_Id == evento.Id).ToList();

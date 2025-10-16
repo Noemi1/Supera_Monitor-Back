@@ -150,16 +150,19 @@ public class SalaService : ISalaService {
         var novoEventoInicio = date;
         var novoEventoFim = date.AddMinutes(duracaoMinutos);
 
-        bool isSalaOccupied = _db.Eventos.Any(e =>
-            e.Id != ignoredEventoId
-            && e.Deactivated == null
-            && e.Sala_Id == Sala_Id
-                                              
-            && e.Data < novoEventoFim // Tem algum evento que comeca antes do Novo evento acabar?
-            && e.Data.AddMinutes(e.DuracaoMinutos - 1) >= novoEventoInicio // Tem algum evento que termina depois de comecar o Novo Evento?
-        );
 
-        return isSalaOccupied;
+
+
+		Evento? evento = _db.Eventos.FirstOrDefault(e =>
+			e.Id != ignoredEventoId
+			&& e.Deactivated == null
+			&& e.Sala_Id == Sala_Id
+			&& e.Data < novoEventoFim // Tem algum evento que comeca antes do Novo evento acabar?
+			&& e.Data.AddMinutes(e.DuracaoMinutos - 1) >= novoEventoInicio // Tem algum evento que termina depois de comecar o Novo Evento?
+		);
+		bool isSalaOccupied = evento != null;
+
+		return isSalaOccupied;
     }
 
     public bool IsSalaRecurrentlyOccupied(int Sala_Id, int DiaSemana, TimeSpan Horario, int? IgnoredTurmaId, int DuracaoMinutos = 120) {

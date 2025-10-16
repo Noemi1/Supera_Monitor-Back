@@ -108,7 +108,7 @@ public class AulaService : IAulaService {
             }
 
             // Sala deve estar livre no horário do evento
-            bool isSalaOccupied = _salaService.IsSalaOccupied(request.Sala_Id, request.Data, request.DuracaoMinutos, null);
+            bool isSalaOccupied = _salaService.IsSalaOccupied(request.Sala_Id, request.Data, request.DuracaoMinutos, -1);
 
             if (isSalaOccupied) {
                 return new ResponseModel { Message = "Esta sala se encontra ocupada neste horário" };
