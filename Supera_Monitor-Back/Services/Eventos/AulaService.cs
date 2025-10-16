@@ -25,14 +25,23 @@ public class AulaService : IAulaService {
     private readonly IMapper _mapper;
     private readonly IProfessorService _professorService;
     private readonly ISalaService _salaService;
+    private readonly IEventoService _eventoService;
 
     private readonly Account? _account;
 
-    public AulaService(DataContext db, IMapper mapper, IProfessorService professorService, ISalaService salaService, IHttpContextAccessor httpContextAccessor) {
+    public AulaService(
+		DataContext db, 
+		IMapper mapper, 
+		IProfessorService professorService, 
+		ISalaService salaService, 
+		IEventoService eventoService, 
+		IHttpContextAccessor httpContextAccessor
+	) {
         _db = db;
         _mapper = mapper;
         _professorService = professorService;
         _salaService = salaService;
+        _eventoService = eventoService;
         _account = (Account?)httpContextAccessor.HttpContext?.Items["Account"];
     }
 
@@ -460,9 +469,19 @@ public class AulaService : IAulaService {
                 return new ResponseModel { Message = "Sala não encontrada" };
             }
 
-			// Novo:
-			// Deve cancelar participacao da aula zero existente
-			// Se a aula zero tiver apenas esse aluno, cancela a aula zero também
+			// Se o aluno já tiver participado de uma aula zero -> participacao.presente = true e aulazero.finalizado = true
+			foreach (var aluno in alunosInRequest) {
+                if (aluno.AulaZero_Id != null) {
+					CalendarioEventoList? aulaZero = _db.CalendarioEventoLists.FirstOrDefault(x => x.Id == aluno.AulaZero_Id);
+					CalendarioAlunoList? participacao = _db.CalendarioAlunoLists.FirstOrDefault(x => x.Aluno_Id == aluno.Id && x.Evento_Id == aluno.AulaZero_Id);
+					
+					if (aulaZero is not null && participacao is not null ) {
+						if (aulaZero.Finalizada && participacao.Presente) {
+                    		return new ResponseModel { Message = $"Aluno: '{participacao.Aluno}' já participou de aula zero no dia {aulaZero.Data.ToString(""dd/MM/yyyy HH:mm"")}." };
+						}
+					}
+                }
+            }
 			
             // // Se algum aluno já participou de alguma aula zero, não deve ser possível inscrevê-lo novamente
             // foreach (var aluno in alunosInRequest) {
@@ -539,6 +558,35 @@ public class AulaService : IAulaService {
 
             // Inserir progressos dos alunos no evento, associar evento à aula zero e gerar entidade de log
             foreach (var aluno in alunosInRequest) {
+
+				// Novo:
+				// Se o aluno jjá tiver uma aula zero agendada, cancela a participacao e se necessário a aula zero também
+				if (aluno.AulaZero_Id != null) {
+					CalendarioEventoList? aulaZero = _db.CalendarioEventoLists.FirstOrDefault(x => x.Id == aluno.AulaZero_Id);
+					List<CalendarioAlunoList> participacoes = _db.CalendarioAlunoLists.Where(x => x.Evento_Id == aluno.AulaZero_Id).ToList();
+					CalendarioAlunoList? participacao = participacoes.FirstOrDefault(x => x.Aluno_Id == aluno.Id);
+
+					// Cancela aula zero	
+					if (aulaZero is not null && participacoes.Count == 1) {
+						_eventoService.Cancelar(new CancelarEventoRequest() {
+							Id = aulaZero.Id,
+							Observacoes = $"Cancelamento automático. <br> Uma nova aula zero foi agendada para o dia {aulaZero.Data.ToString(""dd/MM/yyyy HH:mm"")}"
+						});
+					}
+					// Cancela participacao
+					if (participacao is not null) {
+						_eventoService.CancelarParticipacao(new CancelarParticipacaoRequest() {
+							Participacao_Id = participacao.Id,
+							Observacao = $"Cancelamento automático. <br> Uma nova aula zero foi agendada para o dia {aulaZero.Data.ToString(""dd/MM/yyyy HH:mm"")}"
+							ContatoObservacao = null,
+							AlunoContactado = null,
+							StatusContato_Id = 9,
+							ReposicaoDe_Evento_Id = null
+						});
+						
+					}
+				}
+				
                 participacoesAlunos.Add(new Evento_Participacao_Aluno
                 {
                     Aluno_Id = aluno.Id,
