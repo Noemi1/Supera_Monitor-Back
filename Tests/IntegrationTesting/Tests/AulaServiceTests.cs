@@ -16,6 +16,7 @@ public class AulaServiceTests : BaseIntegrationTest {
     private readonly IAccountService _accountService;
     private readonly IUserService _userService;
     private readonly IProfessorService _professorService;
+    private readonly IEventoService _eventoService;
 
     private readonly AulaService sut;
 
@@ -29,8 +30,9 @@ public class AulaServiceTests : BaseIntegrationTest {
         _accountService = new AccountService(_db, _appSettings, _mapper, _emailService, httpContextAccessor);
         _userService = new UserService(_db, _mapper, httpContextAccessor, _emailService, _accountService);
         _professorService = new ProfessorService(_db, _mapper, _userService);
+        _eventoService = new EventoService(_db, _mapper, _professorService, _salaService, httpContextAccessor);
 
-        sut = new AulaService(_db, _mapper, _professorService, _salaService, httpContextAccessor);
+		sut = new AulaService(_db, _mapper, _professorService, _salaService, _eventoService, httpContextAccessor);
     }
 
     [Fact]
