@@ -154,8 +154,9 @@ public class SalaService : ISalaService {
             e.Id != ignoredEventoId
             && e.Deactivated == null
             && e.Sala_Id == Sala_Id
-            && e.Data < novoEventoFim // O evento existente começa antes do fim do novo evento
-            && e.Data.AddMinutes(e.DuracaoMinutos) > novoEventoInicio // O evento existente termina depois do início do novo evento
+                                              
+            && e.Data < novoEventoFim // Tem algum evento que comeca antes do Novo evento acabar?
+            && e.Data.AddMinutes(e.DuracaoMinutos - 1) >= novoEventoInicio // Tem algum evento que termina depois de comecar o Novo Evento?
         );
 
         return isSalaOccupied;
