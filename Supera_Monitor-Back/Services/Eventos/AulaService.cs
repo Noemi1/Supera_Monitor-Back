@@ -460,12 +460,16 @@ public class AulaService : IAulaService {
                 return new ResponseModel { Message = "Sala não encontrada" };
             }
 
-            // Se algum aluno já participou de alguma aula zero, não deve ser possível inscrevê-lo novamente
-            foreach (var aluno in alunosInRequest) {
-                if (aluno.AulaZero_Id != null) {
-                    return new ResponseModel { Message = $"Aluno ID: '{aluno.Id}' já participou de aula zero ou possui uma agendada." };
-                }
-            }
+			// Novo:
+			// Deve cancelar participacao da aula zero existente
+			// Se a aula zero tiver apenas esse aluno, cancela a aula zero também
+			
+            // // Se algum aluno já participou de alguma aula zero, não deve ser possível inscrevê-lo novamente
+            // foreach (var aluno in alunosInRequest) {
+            //     if (aluno.AulaZero_Id != null) {
+            //         return new ResponseModel { Message = $"Aluno: '{aluno.Id}' já participou de aula zero ou possui uma agendada." };
+            //     }
+            // }
 
             // Sala deve estar livre no horário do evento
             bool isSalaOccupied = _salaService.IsSalaOccupied(request.Sala_Id, request.Data, request.DuracaoMinutos, null);
