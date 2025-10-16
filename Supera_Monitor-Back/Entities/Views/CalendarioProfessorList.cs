@@ -12,4 +12,6 @@ public partial class CalendarioProfessorList {
     public string? Observacao { get; set; }
     public TimeSpan? ExpedienteInicio { get; set; }
     public TimeSpan? ExpedienteFim { get; set; }
+    public DateTime? Deactivated { get; set; }
+    public bool Active => !Deactivated.HasValue;
 }
