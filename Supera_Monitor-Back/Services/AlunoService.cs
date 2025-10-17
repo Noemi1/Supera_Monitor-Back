@@ -357,6 +357,9 @@ public class AlunoService : IAlunoService
 
             // Validations passed
 
+            bool trocandoDeTurma = turmaDestino is not null && aluno.Turma_Id != turmaDestino.Id;
+            bool removidoDaTurma = aluno.Turma_Id != null && turmaDestino is null;
+
             // Atualizando dados de Aluno
             aluno.RM = model.RM;
             aluno.LoginApp = model.LoginApp ?? aluno.LoginApp;
@@ -370,7 +373,7 @@ public class AlunoService : IAlunoService
             aluno.Apostila_Kit_Id = model.Apostila_Kit_Id;
             aluno.DataInicioVigencia = model.DataInicioVigencia ?? aluno.DataInicioVigencia;
             aluno.DataFimVigencia = model.DataFimVigencia;
-            aluno.RestricaoMobilidade = model.RestricaoMobilidade ?? aluno.RestricaoMobilidade;
+            aluno.RestricaoMobilidade = model.RestricaoMobilidade;
 
             // Atualizando dados de Pessoa
             aluno.Pessoa.Nome = model.Nome ?? aluno.Pessoa.Nome;
@@ -401,9 +404,6 @@ public class AlunoService : IAlunoService
              * 2. Adicionar seu registro nas próximas aulas da turma destino
              * 3. Criar uma entidade em Aluno_Historico como 'log' da mudança
             */
-
-            bool trocandoDeTurma = turmaDestino is not null && aluno.Turma_Id != turmaDestino.Id;
-            bool removidoDaTurma = aluno.Turma_Id != null && turmaDestino is null;
 
             if (trocandoDeTurma)
             {
