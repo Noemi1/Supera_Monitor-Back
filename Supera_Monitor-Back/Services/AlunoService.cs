@@ -9,7 +9,8 @@ using Supera_Monitor_Back.Models.Aluno;
 
 namespace Supera_Monitor_Back.Services;
 
-public interface IAlunoService {
+public interface IAlunoService
+{
     AlunoListWithChecklist Get(int alunoId);
     List<AlunoList> GetAll();
     List<AlunoHistoricoList> GetHistoricoById(int alunoId);
@@ -25,7 +26,8 @@ public interface IAlunoService {
     ResponseModel ToggleDeactivate(int alunoId);
 }
 
-public class AlunoService : IAlunoService {
+public class AlunoService : IAlunoService
+{
     private readonly DataContext _db;
     private readonly CRM4UContext _dbCRM;
     private readonly IMapper _mapper;
@@ -39,7 +41,8 @@ public class AlunoService : IAlunoService {
         IMapper mapper,
         IHttpContextAccessor httpContextAccessor,
         IChecklistService checklistService
-        ) {
+        )
+    {
         _db = db;
         _dbCRM = dbCRM;
         _mapper = mapper;
@@ -47,10 +50,12 @@ public class AlunoService : IAlunoService {
         _account = (Account?)httpContextAccessor?.HttpContext?.Items["Account"];
     }
 
-    public AlunoListWithChecklist Get(int alunoId) {
+    public AlunoListWithChecklist Get(int alunoId)
+    {
         AlunoList? aluno = _db.AlunoLists.AsNoTracking().SingleOrDefault(a => a.Id == alunoId);
 
-        if (aluno is null) {
+        if (aluno is null)
+        {
             throw new Exception("Aluno não encontrado");
         }
 
@@ -67,27 +72,32 @@ public class AlunoService : IAlunoService {
         return alunoListWithChecklist;
     }
 
-    public List<AlunoList> GetAll() {
+    public List<AlunoList> GetAll()
+    {
         List<AlunoList> alunos = _db.AlunoLists.OrderBy(a => a.Nome).ToList();
 
         return alunos;
     }
 
-    public List<AlunoListWithChecklist> GetAllWithChecklist(AlunoRequest request) {
+    public List<AlunoListWithChecklist> GetAllWithChecklist(AlunoRequest request)
+    {
         IQueryable<AlunoList> alunosQueryable = _db.AlunoLists
           .Where(a => a.Deactivated == null)
           .AsQueryable();
 
 
-        if (request.Turma_Id.HasValue) {
+        if (request.Turma_Id.HasValue)
+        {
             alunosQueryable = alunosQueryable.Where(a => a.Turma_Id == request.Turma_Id);
         }
 
-        if (request.Professor_Id.HasValue) {
+        if (request.Professor_Id.HasValue)
+        {
             alunosQueryable = alunosQueryable.Where(a => a.Professor_Id == request.Professor_Id);
         }
 
-        if (request.Aluno_Id.HasValue) {
+        if (request.Aluno_Id.HasValue)
+        {
             alunosQueryable = alunosQueryable.Where(a => a.Id == request.Aluno_Id);
         }
 
@@ -114,31 +124,37 @@ public class AlunoService : IAlunoService {
         return alunosWithChecklist;
     }
 
-    public ResponseModel Insert(CreateAlunoRequest model) {
+    public ResponseModel Insert(CreateAlunoRequest model)
+    {
 
         ResponseModel response = new() { Success = false };
 
-        try {
+        try
+        {
             PessoaCRM? pessoaCRM = _dbCRM.Pessoa.Find(model.Pessoa_Id);
 
             // Aluno só pode ser cadastrado se a pessoa existir no CRM
-            if (pessoaCRM == null) {
+            if (pessoaCRM == null)
+            {
                 return new ResponseModel { Message = "Pessoa não encontrada" };
             }
 
             // Aluno só pode ser cadastrado se tiver status matriculado
-            if (pessoaCRM.Pessoa_Status_Id != (int)PessoaStatus.Matriculado) {
+            if (pessoaCRM.Pessoa_Status_Id != (int)PessoaStatus.Matriculado)
+            {
                 return new ResponseModel { Message = "Aluno não está matriculado" };
             }
 
             // Aluno só pode ser cadastrado se tiver Unidade_Id = 1 (Supera Brigadeiro)
-            if (pessoaCRM.Unidade_Id != 1) {
+            if (pessoaCRM.Unidade_Id != 1)
+            {
                 return new ResponseModel { Message = "Pessoa não pertence a uma unidade cadastrada" };
             }
 
             // Só pode ser cadastrado um aluno por pessoa
             bool alunoAlreadyRegistered = _db.Pessoas.Any(a => a.PessoaCRM_Id == model.Pessoa_Id);
-            if (alunoAlreadyRegistered) {
+            if (alunoAlreadyRegistered)
+            {
                 return new ResponseModel { Message = "Aluno já matriculado." };
             }
 
@@ -207,7 +223,8 @@ public class AlunoService : IAlunoService {
 
             ResponseModel populateChecklistResponse = _checklistService.PopulateAlunoChecklist(aluno.Id);
 
-            if (!populateChecklistResponse.Success) {
+            if (!populateChecklistResponse.Success)
+            {
                 return populateChecklistResponse;
             }
 
@@ -226,39 +243,46 @@ public class AlunoService : IAlunoService {
             response.Object = _db.AlunoLists.AsNoTracking().FirstOrDefault(a => a.Id == aluno.Id);
             response.Success = true;
         }
-        catch (Exception ex) {
+        catch (Exception ex)
+        {
             response.Message = $"Falha ao registrar aluno: {ex}";
         }
 
         return response;
     }
 
-    public ResponseModel Update(UpdateAlunoRequest model) {
+    public ResponseModel Update(UpdateAlunoRequest model)
+    {
         ResponseModel response = new() { Success = false };
 
-        try {
+        try
+        {
             Aluno? aluno = _db.Alunos
                 .Include(a => a.Pessoa)
                 .FirstOrDefault(a => a.Id == model.Id);
 
-            if (aluno == null) {
+            if (aluno == null)
+            {
                 return new ResponseModel { Message = "Aluno não encontrado" };
             }
 
-            if (aluno.Pessoa is null) {
+            if (aluno.Pessoa is null)
+            {
                 return new ResponseModel { Message = "Aluno não encontrado" };
             }
 
             AlunoList? oldObject = _db.AlunoLists.AsNoTracking().FirstOrDefault(a => a.Id == model.Id);
 
-            if (oldObject is null) {
+            if (oldObject is null)
+            {
                 return new ResponseModel { Message = "Aluno não encontrado" };
             }
 
             // Não deve ser possível atualizar um aluno com um perfil cognitivo que não existe
             var updatedPerfilCognitivo = _db.PerfilCognitivos.FirstOrDefault(p => p.Id == model.PerfilCognitivo_Id);
 
-            if (model.PerfilCognitivo_Id.HasValue && updatedPerfilCognitivo is null) {
+            if (model.PerfilCognitivo_Id.HasValue && updatedPerfilCognitivo is null)
+            {
                 return new ResponseModel { Message = "Não é possível atualizar um aluno com um perfil cognitivo que não existe" };
             }
 
@@ -267,13 +291,15 @@ public class AlunoService : IAlunoService {
                 .Include(t => t.Alunos)
                 .FirstOrDefault(t => t.Id == model.Turma_Id);
 
-            if (turmaDestino is null && model.Turma_Id.HasValue) {
+            if (turmaDestino is null && model.Turma_Id.HasValue)
+            {
                 return new ResponseModel { Message = "Turma não encontrada" };
             }
 
             bool isChangingPerfilCognitivo = aluno.PerfilCognitivo_Id != model.PerfilCognitivo_Id;
 
-            if (isChangingPerfilCognitivo) {
+            if (isChangingPerfilCognitivo)
+            {
                 var currentPerfilCognitivo = _db.PerfilCognitivos.Find(aluno.PerfilCognitivo_Id);
 
                 _db.Aluno_Historicos.Add(new Aluno_Historico
@@ -290,27 +316,33 @@ public class AlunoService : IAlunoService {
             aluno.DataInicioVigencia = model.DataInicioVigencia ?? aluno.DataInicioVigencia;
             aluno.DataFimVigencia = model.DataFimVigencia ?? aluno.DataFimVigencia;
 
-            if (turmaDestino is not null && aluno.Turma_Id != turmaDestino.Id) {
+            if (turmaDestino is not null && aluno.Turma_Id != turmaDestino.Id)
+            {
                 int countAlunosInTurma = _db.Alunos.Count(a => a.Turma_Id == turmaDestino.Id && a.Deactivated == null);
 
-                if (countAlunosInTurma >= turmaDestino.CapacidadeMaximaAlunos) {
+                if (countAlunosInTurma >= turmaDestino.CapacidadeMaximaAlunos)
+                {
                     return new ResponseModel { Message = "Turma destino está em sua capacidade máxima" };
                 }
             }
 
             // O aluno só pode receber um kit que esteja cadastrado ou nulo
-            if (model.Apostila_Kit_Id is not null && model.Apostila_Kit_Id.HasValue) {
+            if (model.Apostila_Kit_Id is not null && model.Apostila_Kit_Id.HasValue)
+            {
                 bool apostilaKitExists = _db.Apostila_Kits.Any(k => k.Id == model.Apostila_Kit_Id);
 
-                if (!apostilaKitExists) {
+                if (!apostilaKitExists)
+                {
                     return new ResponseModel { Message = "Não é possível atualizar um aluno com um kit que não existe" };
                 }
             }
 
-            if (model.Pessoa_Sexo_Id.HasValue) {
+            if (model.Pessoa_Sexo_Id.HasValue)
+            {
                 bool pessoaSexoExists = _db.Pessoa_Sexos.Any(s => s.Id == model.Pessoa_Sexo_Id);
 
-                if (pessoaSexoExists == false) {
+                if (pessoaSexoExists == false)
+                {
                     return new ResponseModel { Message = "Campo 'Pessoa_Sexo_Id' é inválido" };
                 }
             }
@@ -318,7 +350,8 @@ public class AlunoService : IAlunoService {
             // Garantir que RM é unico pra cada aluno
             bool rmIsAlreadyTaken = _db.Alunos.Any(a => a.RM == model.RM && a.Id != model.Id);
 
-            if (rmIsAlreadyTaken) {
+            if (rmIsAlreadyTaken)
+            {
                 return new ResponseModel { Message = "RM já existe" };
             }
 
@@ -336,7 +369,7 @@ public class AlunoService : IAlunoService {
             aluno.Aluno_Foto = model.Aluno_Foto;
             aluno.Apostila_Kit_Id = model.Apostila_Kit_Id;
             aluno.DataInicioVigencia = model.DataInicioVigencia ?? aluno.DataInicioVigencia;
-            aluno.DataFimVigencia = model.DataFimVigencia ?? aluno.DataFimVigencia;
+            aluno.DataFimVigencia = model.DataFimVigencia;
             aluno.RestricaoMobilidade = model.RestricaoMobilidade ?? aluno.RestricaoMobilidade;
 
             // Atualizando dados de Pessoa
@@ -372,7 +405,8 @@ public class AlunoService : IAlunoService {
             bool trocandoDeTurma = turmaDestino is not null && aluno.Turma_Id != turmaDestino.Id;
             bool removidoDaTurma = aluno.Turma_Id != null && turmaDestino is null;
 
-            if (trocandoDeTurma) {
+            if (trocandoDeTurma)
+            {
                 List<Evento> eventosTurmaOriginal = _db.Eventos
                     .Include(e => e.Evento_Aula)
                     .Where(e =>
@@ -382,13 +416,15 @@ public class AlunoService : IAlunoService {
                     .ToList();
 
                 // Para cada aula da turma original, remover os registros do aluno sendo trocado, se existirem
-                foreach (Evento evento in eventosTurmaOriginal) {
+                foreach (Evento evento in eventosTurmaOriginal)
+                {
                     Evento_Participacao_Aluno? participacaoAluno = _db.Evento_Participacao_Alunos
                         .FirstOrDefault(p =>
                             p.Evento_Id == evento.Id &&
                             p.Aluno_Id == aluno.Id);
 
-                    if (participacaoAluno is null) {
+                    if (participacaoAluno is null)
+                    {
                         continue;
                     }
 
@@ -405,7 +441,8 @@ public class AlunoService : IAlunoService {
                     .ToList();
 
                 // Inserir novos registros deste aluno nas aulas futuras da turma destino
-                foreach (Evento evento in eventosTurmaDestino) {
+                foreach (Evento evento in eventosTurmaDestino)
+                {
                     Evento_Participacao_Aluno newParticipacao = new()
                     {
                         Presente = null,
@@ -416,7 +453,8 @@ public class AlunoService : IAlunoService {
                     // Aula não deve registrar aluno se estiver em sua capacidade máxima e nesse caso, -> considera os alunos de reposição <-
                     int amountOfAlunosInAula = evento.Evento_Participacao_Alunos.Count(p => p.Deactivated == null);
 
-                    if (amountOfAlunosInAula >= evento.CapacidadeMaximaAlunos) {
+                    if (amountOfAlunosInAula >= evento.CapacidadeMaximaAlunos)
+                    {
                         continue;
                     }
 
@@ -431,7 +469,8 @@ public class AlunoService : IAlunoService {
                     Data = TimeFunctions.HoraAtualBR(),
                 });
             }
-            else if (removidoDaTurma) {
+            else if (removidoDaTurma)
+            {
                 _db.Aluno_Historicos.Add(new Aluno_Historico
                 {
                     Aluno_Id = aluno.Id,
@@ -449,24 +488,29 @@ public class AlunoService : IAlunoService {
             response.Success = true;
 
         }
-        catch (Exception ex) {
+        catch (Exception ex)
+        {
             response.Message = $"Falha ao atualizar aluno: {ex}";
         }
 
         return response;
     }
 
-    public ResponseModel ToggleDeactivate(int alunoId) {
+    public ResponseModel ToggleDeactivate(int alunoId)
+    {
         ResponseModel response = new() { Success = false };
 
-        try {
+        try
+        {
             Aluno? aluno = _db.Alunos.Find(alunoId);
 
-            if (aluno == null) {
+            if (aluno == null)
+            {
                 return new ResponseModel { Message = "Aluno não encontrado." };
             }
 
-            if (_account == null) {
+            if (_account == null)
+            {
                 return new ResponseModel { Message = "Não foi possível completar a ação. Autenticação do autor não encontrada." };
             }
 
@@ -494,20 +538,24 @@ public class AlunoService : IAlunoService {
             response.Message = $"Aluno foi {toggleResult} com sucesso";
             response.Object = _db.AlunoLists.AsNoTracking().FirstOrDefault(a => a.Id == aluno.Id);
         }
-        catch (Exception ex) {
+        catch (Exception ex)
+        {
             response.Message = $"Falha ao ativar/desativar aluno: {ex}";
         }
 
         return response;
     }
 
-    public ResponseModel GetProfileImage(int alunoId) {
+    public ResponseModel GetProfileImage(int alunoId)
+    {
         ResponseModel response = new() { Success = false };
 
-        try {
+        try
+        {
             Aluno? aluno = _db.Alunos.Find(alunoId);
 
-            if (aluno is null) {
+            if (aluno is null)
+            {
                 return new ResponseModel { Message = "Aluno não encontrado" };
             }
 
@@ -515,30 +563,36 @@ public class AlunoService : IAlunoService {
             response.Message = "Imagem de perfil encontrada";
             response.Object = aluno.Aluno_Foto;
         }
-        catch (Exception ex) {
+        catch (Exception ex)
+        {
             response.Message = $"Falha ao resgatar imagem de perfil do aluno: {ex}";
         }
 
         return response;
     }
 
-    public ResponseModel Reposicao(ReposicaoRequest model) {
+    public ResponseModel Reposicao(ReposicaoRequest model)
+    {
         ResponseModel response = new() { Success = false };
 
-        try {
+        try
+        {
             Aluno? aluno = _db.Alunos
                 .Include(a => a.Pessoa)
                 .FirstOrDefault(a => a.Id == model.Aluno_Id);
 
-            if (aluno is null) {
+            if (aluno is null)
+            {
                 return new ResponseModel { Message = "Aluno não encontrado" };
             }
 
-            if (aluno.Pessoa is null) {
+            if (aluno.Pessoa is null)
+            {
                 return new ResponseModel { Message = "Pessoa não encontrada" };
             }
 
-            if (aluno.Active == false) {
+            if (aluno.Active == false)
+            {
                 return new ResponseModel { Message = "O aluno está desativado" };
             }
 
@@ -547,11 +601,13 @@ public class AlunoService : IAlunoService {
                 .Include(e => e.Evento_Participacao_Alunos)
                 .FirstOrDefault(e => e.Id == model.Source_Aula_Id);
 
-            if (eventoSource is null) {
+            if (eventoSource is null)
+            {
                 return new ResponseModel { Message = "Evento original não encontrado" };
             }
 
-            if (eventoSource.Evento_Aula is null) {
+            if (eventoSource.Evento_Aula is null)
+            {
                 return new ResponseModel { Message = "Aula original não encontrada" };
             }
 
@@ -561,25 +617,31 @@ public class AlunoService : IAlunoService {
                 .ThenInclude(e => e.Turma)
                 .FirstOrDefault(e => e.Evento_Aula != null && e.Id == model.Dest_Aula_Id);
 
-            if (eventoDest is null) {
+            if (eventoDest is null)
+            {
                 return new ResponseModel { Message = "Evento destino não encontrada" };
             }
 
-            if (eventoDest.Evento_Aula is null) {
+            if (eventoDest.Evento_Aula is null)
+            {
                 return new ResponseModel { Message = "Aula destino não encontrada" };
             }
 
-            if (model.Source_Aula_Id == model.Dest_Aula_Id) {
+            if (model.Source_Aula_Id == model.Dest_Aula_Id)
+            {
                 return new ResponseModel { Message = "Aula original e aula destino não podem ser iguais" };
             }
 
-            if (eventoDest.Evento_Aula.Turma_Id.HasValue) {
-                if (eventoSource.Evento_Aula.Turma_Id == eventoDest.Evento_Aula.Turma_Id) {
+            if (eventoDest.Evento_Aula.Turma_Id.HasValue)
+            {
+                if (eventoSource.Evento_Aula.Turma_Id == eventoDest.Evento_Aula.Turma_Id)
+                {
                     return new ResponseModel { Message = "Aluno não pode repor aula na própria turma" };
                 }
             }
 
-            if (eventoDest.Finalizado) {
+            if (eventoDest.Finalizado)
+            {
                 return new ResponseModel { Message = "Não é possível marcar reposição para uma aula finalizada" };
             }
 
@@ -587,17 +649,20 @@ public class AlunoService : IAlunoService {
             //    return new ResponseModel { Message = "Não é possível marcar reposição para uma aula no passado" };
             //}
 
-            if (eventoDest.Deactivated != null) {
+            if (eventoDest.Deactivated != null)
+            {
                 return new ResponseModel { Message = "Não é possível marcar reposição em uma aula desativada" };
             }
 
-            if (Math.Abs((eventoDest.Data - eventoSource.Data).TotalDays) > 30) {
+            if (Math.Abs((eventoDest.Data - eventoSource.Data).TotalDays) > 30)
+            {
                 return new ResponseModel { Message = "A data da aula destino não pode ultrapassar 30 dias de diferença da aula original" };
             }
 
             bool registroAlreadyExists = eventoDest.Evento_Participacao_Alunos.Any(p => p.Aluno_Id == aluno.Id);
 
-            if (registroAlreadyExists) {
+            if (registroAlreadyExists)
+            {
                 return new ResponseModel { Message = "Aluno já está cadastrado no evento destino" };
             }
 
@@ -607,14 +672,16 @@ public class AlunoService : IAlunoService {
                     ep.Evento_Aula_Id == eventoDest.Id &&
                     ep.PerfilCognitivo_Id == aluno.PerfilCognitivo_Id);
 
-            if (perfilCognitivoMatches == false) {
+            if (perfilCognitivoMatches == false)
+            {
                 return new ResponseModel { Message = "O perfil cognitivo da aula não é adequado para este aluno" };
             }
 
             int registrosAtivos = eventoDest.Evento_Participacao_Alunos.Count(p => p.Deactivated == null);
 
             // O evento deve ter espaço para comportar o aluno
-            if (registrosAtivos >= eventoDest.CapacidadeMaximaAlunos) {
+            if (registrosAtivos >= eventoDest.CapacidadeMaximaAlunos)
+            {
                 return new ResponseModel { Message = "Esse evento de aula já está em sua capacidade máxima" };
             }
 
@@ -623,18 +690,21 @@ public class AlunoService : IAlunoService {
                 && p.Aluno_Id == aluno.Id
                 && p.Evento_Id == eventoSource.Id);
 
-            if (registroSource is null) {
+            if (registroSource is null)
+            {
                 return new ResponseModel { Message = "Registro do aluno não foi encontrado na aula original" };
             }
 
-            if (registroSource.Presente == true) {
+            if (registroSource.Presente == true)
+            {
                 return new ResponseModel { Message = "Não é possível de marcar uma reposição de aula se o aluno estava presente na aula original" };
             }
 
             // Validations passed
 
             // Se for a primeira aula do aluno, atualizar a data de primeira aula para a data da aula destino
-            if (eventoSource.Id == aluno.PrimeiraAula_Id) {
+            if (eventoSource.Id == aluno.PrimeiraAula_Id)
+            {
                 aluno.PrimeiraAula_Id = eventoDest.Id;
             }
 
@@ -654,7 +724,8 @@ public class AlunoService : IAlunoService {
             };
 
             // Se a reposição for feita após o horário da aula, ocasiona falta
-            if (TimeFunctions.HoraAtualBR() > eventoSource.Data) {
+            if (TimeFunctions.HoraAtualBR() > eventoSource.Data)
+            {
                 registroSource.Presente = false;
             }
 
@@ -679,17 +750,20 @@ public class AlunoService : IAlunoService {
             response.Object = _db.CalendarioAlunoLists.FirstOrDefault(r => r.Id == registroDest.Id);
             response.Message = "Reposição agendada com sucesso";
         }
-        catch (Exception ex) {
+        catch (Exception ex)
+        {
             response.Message = $"Falha ao inserir reposição de aula do aluno: {ex}";
         }
 
         return response;
     }
 
-    public List<ApostilaList> GetApostilasByAluno(int alunoId) {
+    public List<ApostilaList> GetApostilasByAluno(int alunoId)
+    {
         Aluno? aluno = _db.Alunos.Find(alunoId);
 
-        if (aluno is null) {
+        if (aluno is null)
+        {
             throw new Exception("Aluno não encontrado");
         }
 
@@ -700,13 +774,16 @@ public class AlunoService : IAlunoService {
         return apostilas;
     }
 
-    public ResponseModel GetSummaryByAluno(int alunoId) {
+    public ResponseModel GetSummaryByAluno(int alunoId)
+    {
         ResponseModel response = new() { Success = false };
 
-        try {
+        try
+        {
             Aluno? aluno = _db.Alunos.AsNoTracking().FirstOrDefault(a => a.Id == alunoId);
 
-            if (aluno is null) {
+            if (aluno is null)
+            {
                 return new ResponseModel { Message = "Aluno não encontrado" };
             }
 
@@ -747,14 +824,16 @@ public class AlunoService : IAlunoService {
             response.Message = "Sumário foi retornado com sucesso";
 
         }
-        catch (Exception ex) {
+        catch (Exception ex)
+        {
             response.Message = $"Falha ao buscar sumário do aluno: {ex}";
         }
 
         return response;
     }
 
-    public List<AlunoHistoricoList> GetHistoricoById(int alunoId) {
+    public List<AlunoHistoricoList> GetHistoricoById(int alunoId)
+    {
         List<AlunoHistoricoList> historicos = _db.AlunoHistoricoList
             .Where(h => h.Aluno_Id == alunoId)
             .ToList();
@@ -763,39 +842,47 @@ public class AlunoService : IAlunoService {
 
     }
 
-    public List<AlunoChecklistItemList> GetAlunoChecklistItemList(AlunoRequest request) {
+    public List<AlunoChecklistItemList> GetAlunoChecklistItemList(AlunoRequest request)
+    {
         IQueryable<AlunoChecklistItemList> listQueryable = _db.AlunoChecklistItemLists
             .Where(a => a.Finalizado == 0)
             .AsQueryable();
 
-        if (request.Turma_Id.HasValue) {
+        if (request.Turma_Id.HasValue)
+        {
             listQueryable = listQueryable.Where(a => a.Turma_Id == request.Turma_Id);
         }
 
-        if (request.Professor_Id.HasValue) {
+        if (request.Professor_Id.HasValue)
+        {
             listQueryable = listQueryable.Where(a => a.Professor_Id == request.Professor_Id);
         }
 
-        if (request.Aluno_Id.HasValue) {
+        if (request.Aluno_Id.HasValue)
+        {
             listQueryable = listQueryable.Where(a => a.Aluno_Id == request.Aluno_Id);
         }
 
         return listQueryable.ToList();
     }
 
-    public ResponseModel PrimeiraAula(PrimeiraAulaRequest model) {
+    public ResponseModel PrimeiraAula(PrimeiraAulaRequest model)
+    {
         ResponseModel response = new() { Success = false };
 
-        try {
+        try
+        {
             Aluno? aluno = _db.Alunos
                 .Include(a => a.PrimeiraAula)
                 .FirstOrDefault(a => a.Id == model.Aluno_Id);
 
-            if (aluno is null) {
+            if (aluno is null)
+            {
                 return new ResponseModel { Message = "Aluno não encontrado" };
             }
 
-            if (aluno.Deactivated != null) {
+            if (aluno.Deactivated != null)
+            {
                 return new ResponseModel { Message = "O aluno está desativado" };
             }
 
@@ -803,19 +890,23 @@ public class AlunoService : IAlunoService {
                 .Include(e => e.Evento_Participacao_Alunos)
                 .FirstOrDefault(e => e.Id == model.Evento_Id);
 
-            if (evento is null) {
+            if (evento is null)
+            {
                 return new ResponseModel { Message = "Evento não encontrado" };
             }
 
-            if (evento.Finalizado == true) {
+            if (evento.Finalizado == true)
+            {
                 return new ResponseModel { Message = "Não foi possível continuar. Este evento já está finalizado." };
             }
 
-            if (evento.Deactivated != null) {
+            if (evento.Deactivated != null)
+            {
                 return new ResponseModel { Message = "Não foi possível continuar. Este evento se encontra desativado." };
             }
 
-            if (aluno.PrimeiraAula != null) {
+            if (aluno.PrimeiraAula != null)
+            {
                 return new ResponseModel { Message = $"Aluno já possui uma primeira aula marcada dia: {aluno.PrimeiraAula.Data}" };
             }
 
@@ -825,14 +916,16 @@ public class AlunoService : IAlunoService {
                     ep.Evento_Aula_Id == evento.Id &&
                     ep.PerfilCognitivo_Id == aluno.PerfilCognitivo_Id);
 
-            if (perfilCognitivoMatches == false) {
+            if (perfilCognitivoMatches == false)
+            {
                 return new ResponseModel { Message = "O perfil cognitivo da aula não é adequado para este aluno" };
             }
 
             int registrosAtivos = evento.Evento_Participacao_Alunos.Count(p => p.Deactivated == null);
 
             // O evento deve ter espaço para comportar o aluno
-            if (registrosAtivos >= evento.CapacidadeMaximaAlunos) {
+            if (registrosAtivos >= evento.CapacidadeMaximaAlunos)
+            {
                 return new ResponseModel { Message = "Esse evento já está em sua capacidade máxima" };
             }
 
@@ -840,7 +933,8 @@ public class AlunoService : IAlunoService {
             bool alunoIsAlreadyInEvent = evento.Evento_Participacao_Alunos.Any(a => a.Aluno_Id == aluno.Id);
 
             // Validations passed
-            if (!alunoIsAlreadyInEvent) {
+            if (!alunoIsAlreadyInEvent)
+            {
                 Evento_Participacao_Aluno participacao = new()
                 {
                     Aluno_Id = aluno.Id,
@@ -873,7 +967,8 @@ public class AlunoService : IAlunoService {
             response.Object = _db.CalendarioAlunoLists.FirstOrDefault(r => r.Id == aluno.Id);
             response.Message = "Primeira aula agendada com sucesso";
         }
-        catch (Exception ex) {
+        catch (Exception ex)
+        {
             response.Message = $"Falha ao inserir primeira aula do aluno: {ex}";
         }
 
