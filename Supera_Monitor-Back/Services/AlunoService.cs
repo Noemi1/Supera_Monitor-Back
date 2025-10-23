@@ -374,6 +374,7 @@ public class AlunoService : IAlunoService
             aluno.DataInicioVigencia = model.DataInicioVigencia ?? aluno.DataInicioVigencia;
             aluno.DataFimVigencia = model.DataFimVigencia;
             aluno.RestricaoMobilidade = model.RestricaoMobilidade;
+            aluno.UltimaTrocaTurma = trocandoDeTurma ? TimeFunctions.HoraAtualBR() : aluno.UltimaTrocaTurma;
 
             // Atualizando dados de Pessoa
             aluno.Pessoa.Nome = model.Nome ?? aluno.Pessoa.Nome;
@@ -386,6 +387,7 @@ public class AlunoService : IAlunoService
             aluno.Pessoa.Pessoa_Sexo_Id = model.Pessoa_Sexo_Id ?? aluno.Pessoa.Pessoa_Sexo_Id;
 
             aluno.LastUpdated = TimeFunctions.HoraAtualBR();
+
 
             _db.Aluno_Historicos.Add(new Aluno_Historico
             {

@@ -1,6 +1,7 @@
 ﻿namespace Supera_Monitor_Back.Entities.Views;
 
-public partial class CalendarioAlunoList {
+public partial class CalendarioAlunoList
+{
     public int Id { get; set; }
     public int Aluno_Id { get; set; }
     public int Evento_Id { get; set; }
@@ -12,6 +13,7 @@ public partial class CalendarioAlunoList {
     public string? Aluno_Foto { get; set; }
     public int? Turma_Id { get; set; }
     public string? Turma { get; set; }
+    public DateTime? UltimaTrocaTurma { get; set; }
     public DateTime? DataInicioVigencia { get; set; }
     public DateTime? DataFimVigencia { get; set; }
     public int? PrimeiraAula_Id { get; set; }

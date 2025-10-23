@@ -648,7 +648,8 @@ public class EventoService : IEventoService
                         .Where(a => a.Turma_Id == turma.Id
                             && a.DataInicioVigencia.Date <= data.Date
                             && (a.DataFimVigencia == null || a.DataFimVigencia.Value.Date >= data.Date)
-                            && (a.Deactivated == null || a.Deactivated.Value.Date > data.Date))
+                            && (a.Deactivated == null || a.Deactivated.Value.Date >= data.Date)
+                            && (a.UltimaTrocaTurma == null || data.Date > a.UltimaTrocaTurma.Value.Date))
                         .OrderBy(a => a.Nome)
                         .ToList();
 
@@ -2459,6 +2460,24 @@ public class EventoService : IEventoService
             foreach (var model in alunosPresentes)
             {
                 Aluno aluno = alunosInEvento.FirstOrDefault(a => a.Id == model.Aluno_Id) ?? throw new Exception("Aluno não encontrado.");
+
+                if (aluno.Turma_Id != null)
+                {
+                    bool trocandoDeTurma = aluno.Turma_Id != model.Turma_Id;
+
+                    if (trocandoDeTurma)
+                    {
+                        aluno.UltimaTrocaTurma = TimeFunctions.HoraAtualBR();
+
+                        _db.Aluno_Historicos.Add(new Aluno_Historico
+                        {
+                            Aluno_Id = aluno.Id,
+                            Descricao = $"Aluno foi transferido da turma: '{aluno.Turma_Id}' para a turma : '{model.Turma_Id}' como resultado de um evento de aula zero.",
+                            Account_Id = _account!.Id,
+                            Data = TimeFunctions.HoraAtualBR(),
+                        });
+                    }
+                }
 
                 kitsDictionary.TryGetValue(model.Apostila_Kit_Id, out var apostilas);
 

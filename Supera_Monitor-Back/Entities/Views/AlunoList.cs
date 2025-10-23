@@ -1,6 +1,7 @@
 ﻿namespace Supera_Monitor_Back.Entities.Views;
 
-public partial class AlunoList {
+public partial class AlunoList
+{
     public int Id { get; set; }
     public int Pessoa_Id { get; set; }
     public string? Nome { get; set; }
@@ -9,6 +10,7 @@ public partial class AlunoList {
     public DateTime DataInicioVigencia { get; set; }
     public DateTime? DataFimVigencia { get; set; }
     public String? CorLegenda { get; set; }
+    public DateTime? UltimaTrocaTurma { get; set; }
     public int? PrimeiraAula_Id { get; set; }
     public DateTime? PrimeiraAula { get; set; }
     public int? AulaZero_Id { get; set; }

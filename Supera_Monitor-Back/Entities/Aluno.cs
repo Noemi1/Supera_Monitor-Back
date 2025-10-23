@@ -1,6 +1,7 @@
 ﻿namespace Supera_Monitor_Back.Entities;
 
-public partial class Aluno {
+public partial class Aluno
+{
     public int Id { get; set; }
 
     public int Pessoa_Id { get; set; }
@@ -45,6 +46,8 @@ public partial class Aluno {
 
     public int? PrimeiraAula_Id { get; set; }
 
+    public DateTime? UltimaTrocaTurma { get; set; }
+
     public virtual ICollection<Aluno_Checklist_Item> Aluno_Checklist_Items { get; set; } = new List<Aluno_Checklist_Item>();
 
     public virtual ICollection<Aluno_Historico> Aluno_Historicos { get; set; } = new List<Aluno_Historico>();
@@ -69,8 +72,10 @@ public partial class Aluno {
 
     public bool Active => !Deactivated.HasValue;
 
-    public DateTime ObterFimVigencia() {
-        if (!DataFimVigencia.HasValue) {
+    public DateTime ObterFimVigencia()
+    {
+        if (!DataFimVigencia.HasValue)
+        {
             return DataInicioVigencia.AddYears(100);
         }
 
