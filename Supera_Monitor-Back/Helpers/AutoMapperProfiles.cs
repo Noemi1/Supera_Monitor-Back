@@ -16,8 +16,10 @@ using Supera_Monitor_Back.Models.Roteiro;
 using Supera_Monitor_Back.Models.Sala;
 using Supera_Monitor_Back.Models.Turma;
 
-namespace Supera_Monitor_Back.Helpers {
-    public class AutoMapperProfiles : Profile {
+namespace Supera_Monitor_Back.Helpers
+{
+    public class AutoMapperProfiles : Profile
+    {
 
         public AutoMapperProfiles()
         {
@@ -97,19 +99,19 @@ namespace Supera_Monitor_Back.Helpers {
                 .ForMember(dest => dest.Sala, opt => opt.MapFrom(src => $"{src.Sala.NumeroSala} - Andar: {src.Sala.Andar}"));
 
 
-			// Dashboard
-			CreateMap<CalendarioAlunoList, Dashboard_Participacao>();
-			CreateMap<AlunoList, Dashboard_Aluno>();
-			CreateMap<CalendarioEventoList, Dashboard_Aula>();
-			CreateMap<Roteiro, Dashboard_Roteiro>();
+            // Dashboard
+            CreateMap<CalendarioAlunoList, Dashboard_Participacao>();
+            CreateMap<AlunoList, Dashboard_Aluno>();
+            CreateMap<CalendarioEventoList, Dashboard_Aula>();
+            CreateMap<Roteiro, Dashboard_Roteiro>();
 
-			CreateMap<Roteiro, RoteiroModel>();
-			CreateMap<RoteiroModel, Roteiro>();
-			CreateMap<CreateRoteiroRequest, Roteiro>();
-			CreateMap<UpdateRoteiroRequest, Roteiro>();
+            CreateMap<Roteiro, RoteiroModel>();
+            CreateMap<RoteiroModel, Roteiro>();
+            CreateMap<CreateRoteiroRequest, Roteiro>();
+            CreateMap<UpdateRoteiroRequest, Roteiro>();
 
 
 
-		}
+        }
     }
 }
