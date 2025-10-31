@@ -110,8 +110,11 @@ namespace Supera_Monitor_Back.Helpers
             CreateMap<CreateRoteiroRequest, Roteiro>();
             CreateMap<UpdateRoteiroRequest, Roteiro>();
 
+            CreateMap<Roteiro, DashboardRoteiro>();
+            CreateMap<AlunoList, DashboardAluno>();
 
 
-        }
+
+		}
     }
 }
