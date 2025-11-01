@@ -80,9 +80,11 @@ namespace Supera_Monitor_Back.Models.Dashboard
 		public int Andar { get; set; }
         public int NumeroSala { get; set; }
 
+		public bool Recesso { get; set; }
         public string Tema { get; set; } = String.Empty;
 		public int Semana { get; set; }
         public string RoteiroCorLegenda { get; set; } = String.Empty;
+
 
 		public string Turma { get; set; } = String.Empty;
 		public string Professor { get; set; } = String.Empty;
