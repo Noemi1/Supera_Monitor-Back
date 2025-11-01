@@ -2215,11 +2215,27 @@ public class EventoService : IEventoService
 				}
 			}
 		}
+		var alunosList = alunos.Select(aluno =>
+			{
+				var alunoModel = _mapper.Map<DashboardAluno>(aluno);
+				if (aulasPorAluno.TryGetValue(aluno.Id, out var list))
+				{
+					alunoModel.Items = list.OrderBy(x => x.Aula.Aula.Data).ToList();
+				}
+				else
+				{
+					alunoModel.Items =new List<DashboardAlunoAulaReposicao>();
+				}
+				return alunoModel;
+			})
+		.OrderBy(x => x.Turma_Id)
+		.ThenBy(x => x.Nome)
+		.ToList();
 
 		Dashboard response = new Dashboard
 		{
 			MesesRoteiro = meses,
-			Alunos = _mapper.Map<List<DashboardAluno>>(alunos)
+			Alunos = alunosList
 		};
 
 		return response;
