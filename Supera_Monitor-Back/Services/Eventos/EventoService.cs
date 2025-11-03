@@ -2126,7 +2126,7 @@ public class EventoService : IEventoService
 										Participacao = new DashboardParticipacao()
 									};
 
-									reposicaoPara.Aula = _mapper.Map<DashboardAula>(aula);
+									reposicaoPara.Aula = _mapper.Map<DashboardAula>(aulaReposicaoPara);
 									reposicaoPara.Aula.Feriado = feriadoReposicaoPara is null ? null : new Feriado { Name = feriadoReposicaoPara.name, Date = feriadoReposicaoPara.date };
 									reposicaoPara.Aula.Tema = aulaReposicaoPara.Tema ?? roteiroReposicaoPara.Tema;
 									reposicaoPara.Aula.Semana = aulaReposicaoPara.Semana ?? roteiroReposicaoPara.Semana;
