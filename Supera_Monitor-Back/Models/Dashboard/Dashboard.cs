@@ -101,8 +101,8 @@ namespace Supera_Monitor_Back.Models.Dashboard
         public string Observacao { get; set; } = String.Empty;
 		public DateTime? Deactivated { get; set; }
 		public bool Active => !Deactivated.HasValue;
-		public string ApostilaAbaco { get; set; } = String.Empty;
-		public string ApostilaAH { get; set; } = String.Empty;
+		public string Apostila_Abaco { get; set; } = String.Empty;
+		public string Apostila_AH { get; set; } = String.Empty;
 		public int? NumeroPaginaAbaco { get; set; }
         public int? NumeroPaginaAH { get; set; }
 

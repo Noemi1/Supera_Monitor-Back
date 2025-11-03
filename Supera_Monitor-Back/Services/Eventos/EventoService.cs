@@ -2186,8 +2186,8 @@ public class EventoService : IEventoService
 						DashboardParticipacao dashPart = new DashboardParticipacao
 						{
 							Id = -1,
-							ApostilaAbaco = aluno.Apostila_Abaco ?? string.Empty,
-							ApostilaAH = aluno.Apostila_AH ?? string.Empty,
+							Apostila_Abaco = aluno.Apostila_Abaco ?? string.Empty,
+							Apostila_AH = aluno.Apostila_AH ?? string.Empty,
 							NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
 							NumeroPaginaAH = aluno.NumeroPaginaAH,
 						};
