@@ -2077,74 +2077,76 @@ public class EventoService : IEventoService
 
 						foreach (CalendarioAlunoList participacao in participacoesAula)
 						{
-							DateTime? dataInicioVigencia = participacao.DataInicioVigencia;
-							DateTime? dataFimVigencia = participacao.DataFimVigencia;
-							bool alunoVigente = (dataInicioVigencia.HasValue && aula.Data.Date >= dataInicioVigencia.Value.Date)
-												&& (!dataFimVigencia.HasValue || aula.Data.Date <= dataFimVigencia.Value.Date);
-
-							FeriadoResponse? feriado = feriados.FirstOrDefault(x => x.date.Date == aula.Data.Date);
-
-
-							DashboardAula dashAula = _mapper.Map<DashboardAula>(aula);
-							dashAula.Feriado = feriado is null ? null : new Feriado { Name = feriado.name, Date = feriado.date };
-							dashAula.Tema = aula.Tema ?? roteiro.Tema;
-							dashAula.Semana = aula.Semana ?? roteiro.Semana;
-							dashAula.RoteiroCorLegenda = roteiro.CorLegenda;
-							dashAula.Recesso = roteiro.Recesso;
-
-							DashboardParticipacao dashPart = _mapper.Map<DashboardParticipacao>(participacao);
-
-							DashboardAulaParticipacao dashAulaPart = new DashboardAulaParticipacao
+							if (!participacao.ReposicaoDe_Evento_Id.HasValue)
 							{
-								Aula = dashAula,
-								Participacao = dashPart,
-								
-							};
+								DateTime? dataInicioVigencia = participacao.DataInicioVigencia;
+								DateTime? dataFimVigencia = participacao.DataFimVigencia;
+								bool alunoVigente = (dataInicioVigencia.HasValue && aula.Data.Date >= dataInicioVigencia.Value.Date)
+													&& (!dataFimVigencia.HasValue || aula.Data.Date <= dataFimVigencia.Value.Date);
 
-							DashboardAlunoAulaReposicao item = new DashboardAlunoAulaReposicao
-							{
-								Id = participacao.Id,
-								Show = alunoVigente && intervaloEstaNoRoteiro && dataDoAno && roteiro.Recesso == false,
-								Aula = dashAulaPart,
-								ReposicaoPara = null,
-							};
+								FeriadoResponse? feriado = feriados.FirstOrDefault(x => x.date.Date == aula.Data.Date);
 
-							if (participacao.ReposicaoPara_Evento_Id.HasValue)
-							{
-								var aulaReposicaoPara = eventos.FirstOrDefault(x => x.Id == participacao.ReposicaoPara_Evento_Id.Value);
-								var participacaoReposicaoPara = participacoes.FirstOrDefault(x => x.Aluno_Id == participacao.Aluno_Id && x.Evento_Id == aulaReposicaoPara?.Id);
-								var feriadoReposicaoPara = feriados.FirstOrDefault(x => x.date.Date == aulaReposicaoPara?.Data.Date);
-								var roteiroReposicaoPara = roteirosArray.FirstOrDefault(x => (aulaReposicaoPara!.Roteiro_Id.HasValue 
-																								&& x.Id == aulaReposicaoPara?.Roteiro_Id.Value) || 
-																							(!aulaReposicaoPara!.Roteiro_Id.HasValue
-																								&& aulaReposicaoPara.Data.Date >= x.DataInicio.Date
-																								&& aulaReposicaoPara.Data.Date <= x.DataFim.Date));
-								var reposicaoPara = new DashboardAulaParticipacao()
+
+								DashboardAula dashAula = _mapper.Map<DashboardAula>(aula);
+								dashAula.Feriado = feriado is null ? null : new Feriado { Name = feriado.name, Date = feriado.date };
+								dashAula.Tema = aula.Tema ?? roteiro.Tema;
+								dashAula.Semana = aula.Semana ?? roteiro.Semana;
+								dashAula.RoteiroCorLegenda = roteiro.CorLegenda;
+								dashAula.Recesso = roteiro.Recesso;
+
+								DashboardParticipacao dashPart = _mapper.Map<DashboardParticipacao>(participacao);
+
+								DashboardAulaParticipacao dashAulaPart = new DashboardAulaParticipacao
 								{
-									Aula = new DashboardAula(),
-									Participacao = new DashboardParticipacao()
+									Aula = dashAula,
+									Participacao = dashPart,
 								};
 
-								reposicaoPara.Aula = _mapper.Map<DashboardAula>(aula);
-								reposicaoPara.Aula.Feriado = feriadoReposicaoPara is null ? null : new Feriado { Name = feriadoReposicaoPara.name, Date = feriadoReposicaoPara.date };
-								reposicaoPara.Aula.Tema = aulaReposicaoPara.Tema ?? roteiroReposicaoPara.Tema;
-								reposicaoPara.Aula.Semana = aulaReposicaoPara.Semana ?? roteiroReposicaoPara.Semana;
-								reposicaoPara.Aula.RoteiroCorLegenda = roteiroReposicaoPara.CorLegenda;
-								reposicaoPara.Aula.Recesso = roteiroReposicaoPara.Recesso;
+								DashboardAlunoAulaReposicao item = new DashboardAlunoAulaReposicao
+								{
+									Id = participacao.Id,
+									Show = alunoVigente && intervaloEstaNoRoteiro && dataDoAno && roteiro.Recesso == false,
+									Aula = dashAulaPart,
+									ReposicaoPara = null,
+								};
 
-								reposicaoPara.Participacao = _mapper.Map<DashboardParticipacao>(participacaoReposicaoPara);
+								if (participacao.ReposicaoPara_Evento_Id.HasValue)
+								{
+									var aulaReposicaoPara = eventos.FirstOrDefault(x => x.Id == participacao.ReposicaoPara_Evento_Id.Value);
+									var participacaoReposicaoPara = participacoes.FirstOrDefault(x => x.Aluno_Id == participacao.Aluno_Id && x.Evento_Id == aulaReposicaoPara?.Id);
+									var feriadoReposicaoPara = feriados.FirstOrDefault(x => x.date.Date == aulaReposicaoPara?.Data.Date);
+									var roteiroReposicaoPara = roteirosArray.FirstOrDefault(x => (aulaReposicaoPara!.Roteiro_Id.HasValue 
+																									&& x.Id == aulaReposicaoPara?.Roteiro_Id.Value) || 
+																								(!aulaReposicaoPara!.Roteiro_Id.HasValue
+																									&& aulaReposicaoPara.Data.Date >= x.DataInicio.Date
+																									&& aulaReposicaoPara.Data.Date <= x.DataFim.Date));
+									var reposicaoPara = new DashboardAulaParticipacao()
+									{
+										Aula = new DashboardAula(),
+										Participacao = new DashboardParticipacao()
+									};
 
-								item.ReposicaoPara = reposicaoPara;
+									reposicaoPara.Aula = _mapper.Map<DashboardAula>(aula);
+									reposicaoPara.Aula.Feriado = feriadoReposicaoPara is null ? null : new Feriado { Name = feriadoReposicaoPara.name, Date = feriadoReposicaoPara.date };
+									reposicaoPara.Aula.Tema = aulaReposicaoPara.Tema ?? roteiroReposicaoPara.Tema;
+									reposicaoPara.Aula.Semana = aulaReposicaoPara.Semana ?? roteiroReposicaoPara.Semana;
+									reposicaoPara.Aula.RoteiroCorLegenda = roteiroReposicaoPara.CorLegenda;
+									reposicaoPara.Aula.Recesso = roteiroReposicaoPara.Recesso;
+
+									reposicaoPara.Participacao = _mapper.Map<DashboardParticipacao>(participacaoReposicaoPara);
+
+									item.ReposicaoPara = reposicaoPara;
 
 
+								}
+
+								if (!aulasPorAluno.TryGetValue(participacao.Aluno_Id, out var list))
+								{
+									list = new List<DashboardAlunoAulaReposicao>();
+									aulasPorAluno[participacao.Aluno_Id] = list;
+								}
+								list.Add(item);
 							}
-
-							if (!aulasPorAluno.TryGetValue(participacao.Aluno_Id, out var list))
-							{
-								list = new List<DashboardAlunoAulaReposicao>();
-								aulasPorAluno[participacao.Aluno_Id] = list;
-							}
-							list.Add(item);
 						}
 					}
 				}
