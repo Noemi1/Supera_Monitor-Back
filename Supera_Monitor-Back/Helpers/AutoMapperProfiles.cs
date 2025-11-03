@@ -112,6 +112,8 @@ namespace Supera_Monitor_Back.Helpers
 
             CreateMap<Roteiro, DashboardRoteiro>();
             CreateMap<AlunoList, DashboardAluno>();
+            CreateMap<CalendarioEventoList, DashboardAula>();
+            CreateMap<CalendarioAlunoList, DashboardParticipacao>();
 
 
 

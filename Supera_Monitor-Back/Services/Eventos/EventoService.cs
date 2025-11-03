@@ -1791,7 +1791,7 @@ public class EventoService : IEventoService
 
 							FeriadoResponse? feriado = feriados.FirstOrDefault(x => x.date.Date == data.Date);
 
-							aulas.Add(new Models.Eventos.Dashboard_Item
+							aulas.Add(new Dashboard_Item
 							{
 								Aula = _mapper.Map<Dashboard_Aula>(aula),
 								Participacao = _mapper.Map<Dashboard_Participacao>(participacao),
@@ -1912,8 +1912,7 @@ public class EventoService : IEventoService
 		IQueryable<CalendarioEventoList> eventosQueryable = _db.CalendarioEventoLists
 			.Where(x => x.Data.Date >= intervaloDe.Date
 						&& x.Data.Date <= intervaloAte.Date
-						&& (x.Evento_Tipo_Id == (int)EventoTipo.Aula
-							|| x.Evento_Tipo_Id == (int)EventoTipo.AulaExtra))
+						&& (x.Evento_Tipo_Id == (int)EventoTipo.Aula || x.Evento_Tipo_Id == (int)EventoTipo.AulaExtra))
 			.AsQueryable();
 
 		IQueryable<CalendarioAlunoList> participacoesQueryable = _db.CalendarioAlunoLists.AsQueryable();
@@ -1939,7 +1938,8 @@ public class EventoService : IEventoService
 		List<AlunoList> alunos = alunosQueryable.OrderBy(x => x.Nome).ToList();
 		List<TurmaList> turmas = turmasQueryable.OrderBy(x => x.Nome).ToList();
 		List<CalendarioAlunoList> participacoes = participacoesQueryable.ToList();
-		List<CalendarioEventoList> eventos = eventosQueryable.OrderBy(x => x.Data).ToList();
+		List<CalendarioEventoList> eventos = eventosQueryable
+			.OrderBy(x => x.Data).ToList();
 
 		List<FeriadoResponse> feriados = await this.GetFeriados(request.Ano);
 
@@ -2084,48 +2084,21 @@ public class EventoService : IEventoService
 
 							FeriadoResponse? feriado = feriados.FirstOrDefault(x => x.date.Date == aula.Data.Date);
 
-							DashboardAula dashAula = new DashboardAula
-							{
-								Id = aula.Id,
-								EventoTipo_Id = (EventoTipo)aula.Evento_Tipo_Id,
-								Data = aula.Data,
-								Descricao = aula.Descricao,
-								Observacao = aula.Observacao ?? string.Empty,
-								Finalizado = aula.Finalizado,
-								Deactivated = aula.Deactivated,
-								Sala = aula.Sala ?? "",
-								Andar = aula.Andar ?? 0,
-								NumeroSala = aula.NumeroSala ?? 0,
-								Tema = aula.Tema ?? roteiro.Tema,
-								Semana = aula.Semana ?? roteiro.Semana,
-								RoteiroCorLegenda = roteiro.CorLegenda,
-								Recesso = roteiro.Recesso,
-								Turma = aula.Turma ?? turma.Nome,
-								Professor = aula.Professor ?? turma.Professor ?? string.Empty,
-								CorLegenda = aula.CorLegenda ?? turma.CorLegenda ?? string.Empty,
-								Feriado = feriado is null ? null : new Feriado { Name = feriado.name, Date = feriado.date },
-							};
 
-							DashboardParticipacao dashPart = new DashboardParticipacao
-							{
-								Id = participacao.Id,
-								Presente = participacao.Presente,
-								Observacao = participacao.Observacao ?? string.Empty,
-								Deactivated = participacao.Deactivated,
-								ApostilaAbaco = participacao.Apostila_Abaco ?? string.Empty,
-								ApostilaAH = participacao.Apostila_AH ?? string.Empty,
-								NumeroPaginaAbaco = participacao.NumeroPaginaAbaco,
-								NumeroPaginaAH = participacao.NumeroPaginaAH,
-								AlunoContactado = participacao.AlunoContactado,
-								StatusContato_Id = participacao.StatusContato_Id.HasValue ? (StatusContato?)participacao.StatusContato_Id.Value : null,
-								ContatoObservacao = participacao.ContatoObservacao ?? string.Empty,
-							};
+							DashboardAula dashAula = _mapper.Map<DashboardAula>(aula);
+							dashAula.Feriado = feriado is null ? null : new Feriado { Name = feriado.name, Date = feriado.date };
+							dashAula.Tema = aula.Tema ?? roteiro.Tema;
+							dashAula.Semana = aula.Semana ?? roteiro.Semana;
+							dashAula.RoteiroCorLegenda = roteiro.CorLegenda;
+							dashAula.Recesso = roteiro.Recesso;
+
+							DashboardParticipacao dashPart = _mapper.Map<DashboardParticipacao>(participacao);
 
 							DashboardAulaParticipacao dashAulaPart = new DashboardAulaParticipacao
 							{
-								//Id = participacao.Id,
 								Aula = dashAula,
 								Participacao = dashPart,
+								
 							};
 
 							DashboardAlunoAulaReposicao item = new DashboardAlunoAulaReposicao
@@ -2135,6 +2108,36 @@ public class EventoService : IEventoService
 								Aula = dashAulaPart,
 								ReposicaoPara = null,
 							};
+
+							if (participacao.ReposicaoPara_Evento_Id.HasValue)
+							{
+								var aulaReposicaoPara = eventos.FirstOrDefault(x => x.Id == participacao.ReposicaoPara_Evento_Id.Value);
+								var participacaoReposicaoPara = participacoes.FirstOrDefault(x => x.Aluno_Id == participacao.Aluno_Id && x.Evento_Id == aulaReposicaoPara?.Id);
+								var feriadoReposicaoPara = feriados.FirstOrDefault(x => x.date.Date == aulaReposicaoPara?.Data.Date);
+								var roteiroReposicaoPara = roteirosArray.FirstOrDefault(x => (aulaReposicaoPara!.Roteiro_Id.HasValue 
+																								&& x.Id == aulaReposicaoPara?.Roteiro_Id.Value) || 
+																							(!aulaReposicaoPara!.Roteiro_Id.HasValue
+																								&& aulaReposicaoPara.Data.Date >= x.DataInicio.Date
+																								&& aulaReposicaoPara.Data.Date <= x.DataFim.Date));
+								var reposicaoPara = new DashboardAulaParticipacao()
+								{
+									Aula = new DashboardAula(),
+									Participacao = new DashboardParticipacao()
+								};
+
+								reposicaoPara.Aula = _mapper.Map<DashboardAula>(aula);
+								reposicaoPara.Aula.Feriado = feriadoReposicaoPara is null ? null : new Feriado { Name = feriadoReposicaoPara.name, Date = feriadoReposicaoPara.date };
+								reposicaoPara.Aula.Tema = aulaReposicaoPara.Tema ?? roteiroReposicaoPara.Tema;
+								reposicaoPara.Aula.Semana = aulaReposicaoPara.Semana ?? roteiroReposicaoPara.Semana;
+								reposicaoPara.Aula.RoteiroCorLegenda = roteiroReposicaoPara.CorLegenda;
+								reposicaoPara.Aula.Recesso = roteiroReposicaoPara.Recesso;
+
+								reposicaoPara.Participacao = _mapper.Map<DashboardParticipacao>(participacaoReposicaoPara);
+
+								item.ReposicaoPara = reposicaoPara;
+
+
+							}
 
 							if (!aulasPorAluno.TryGetValue(participacao.Aluno_Id, out var list))
 							{
@@ -2148,9 +2151,9 @@ public class EventoService : IEventoService
 				else
 				{
 					// Pseudo aulas for each aluno in turma
-					var alunosTurma = alunos.Where(x => x.Turma_Id == turma.Id).ToList();
+					List<AlunoList> alunosTurma = alunos.Where(x => x.Turma_Id == turma.Id).ToList();
 
-					var dashAula = new DashboardAula
+					DashboardAula dashAula = new DashboardAula
 					{
 						Id = -1,
 						EventoTipo_Id = EventoTipo.Aula,
@@ -2178,19 +2181,13 @@ public class EventoService : IEventoService
 						bool alunoVigente = (dataInicioVigencia.HasValue && date >= dataInicioVigencia.Value.Date)
 											&& (!dataFimVigencia.HasValue || date <= dataFimVigencia.Value.Date);
 
-						var dashPart = new DashboardParticipacao
+						DashboardParticipacao dashPart = new DashboardParticipacao
 						{
 							Id = -1,
-							Presente = null,
-							Observacao = string.Empty,
-							Deactivated = null,
 							ApostilaAbaco = aluno.Apostila_Abaco ?? string.Empty,
 							ApostilaAH = aluno.Apostila_AH ?? string.Empty,
 							NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
 							NumeroPaginaAH = aluno.NumeroPaginaAH,
-							AlunoContactado = null,
-							StatusContato_Id = null,
-							ContatoObservacao = string.Empty,
 						};
 
 						DashboardAulaParticipacao dashAulaPart = new DashboardAulaParticipacao

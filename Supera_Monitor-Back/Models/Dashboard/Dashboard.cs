@@ -109,6 +109,8 @@ namespace Supera_Monitor_Back.Models.Dashboard
         public DateTime? AlunoContactado { get; set; }
         public StatusContato? StatusContato_Id { get; set; }
         public string? ContatoObservacao { get; set; } 
+		public int? ReposicaoPara_Evento_Id { get; set; }
+		public int? ReposicaoDe_Evento_Id { get; set; }
 	}
 
     public class Feriado
