@@ -1550,8 +1550,8 @@ public class EventoService : IEventoService
 				throw new Exception("Turma não encontrada!");
 			}
 
-			Roteiro? roteiro = _db.Roteiros.FirstOrDefault(x => data.Date >= x.DataInicio.Date
-															 && data.Date <= x.DataFim.Date);
+			var roteiros = _roteiroService.GetAll(data.Year);
+			Roteiro? roteiro = roteiros.FirstOrDefault(x => x.DataInicio.Date <= data.Date && x.DataFim.Date >= data.Date);
 
 			// Em pseudo-aulas, adicionar só os alunos da turma original
 			// e após o início de sua vigência
