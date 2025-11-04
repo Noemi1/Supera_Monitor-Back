@@ -17,6 +17,10 @@
 		public string Professor { get; set; } = String.Empty;
 		
 		public string CorLegenda { get; set; } = String.Empty;
+		
+		public int Account_Id { get; set; }
+
+		public string Account { get; set; } = String.Empty;
 
 		public DateTime DataInicioVigencia { get; set; }
 		

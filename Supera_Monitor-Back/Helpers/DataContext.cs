@@ -156,6 +156,10 @@ public partial class DataContext : DbContext
 			entity.HasOne(d => d.Account_Created).WithMany(p => p.InverseAccount_Created).HasForeignKey(d => d.Account_Created_Id);
 
 			entity.HasOne(d => d.Role).WithMany(p => p.Accounts).HasForeignKey(d => d.Role_Id);
+
+			entity.HasMany(d => d.Aluno_Turma_Vigencia)
+				.WithOne(p => p.Account)
+				.HasForeignKey(d => d.Account_Id);
 		});
 
 		modelBuilder.Entity<AccountList>(entity =>
@@ -374,17 +378,38 @@ public partial class DataContext : DbContext
 			entity.Property(e => e.Aluno)
 				.HasMaxLength(50)
 				.IsUnicode(false);
+			
 			entity.Property(e => e.Turma)
 				.HasMaxLength(50)
 				.IsUnicode(false);
+			
+			entity.Property(e => e.Professor)
+				.HasMaxLength(50)
+				.IsUnicode(false);
+			
+			entity.Property(e => e.Account)
+				.HasMaxLength(50)
+				.IsUnicode(false);
+			
 			entity.Property(e => e.Aluno_Id)
 				.HasMaxLength(128)
 				.IsUnicode(false);
+			
 			entity.Property(e => e.Turma_Id)
 				.HasMaxLength(128)
 				.IsUnicode(false);
+			
+			entity.Property(e => e.Professor_Id)
+				.HasMaxLength(128)
+				.IsUnicode(false);
+			
+			entity.Property(e => e.Account_Id)
+				.HasMaxLength(128)
+				.IsUnicode(false);
+			
 			entity.Property(e => e.DataInicioVigencia)
 				.HasColumnType("datetime");
+
 			entity.Property(e => e.DataFimVigencia)
 				.HasColumnType("datetime");
 		});
