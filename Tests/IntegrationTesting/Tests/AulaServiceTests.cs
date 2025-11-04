@@ -17,6 +17,7 @@ public class AulaServiceTests : BaseIntegrationTest {
     private readonly IUserService _userService;
     private readonly IProfessorService _professorService;
     private readonly IEventoService _eventoService;
+    private readonly IRoteiroService _roteiroService;
 
     private readonly AulaService sut;
 
@@ -27,12 +28,18 @@ public class AulaServiceTests : BaseIntegrationTest {
         var httpContextAccessor = new HttpContextAccessor { HttpContext = httpContext };
 
         _emailService = new ConsoleEmailService();
-        _accountService = new AccountService(_db, _appSettings, _mapper, _emailService, httpContextAccessor);
-        _userService = new UserService(_db, _mapper, httpContextAccessor, _emailService, _accountService);
-        _professorService = new ProfessorService(_db, _mapper, _userService);
-        _eventoService = new EventoService(_db, _mapper, _professorService, _salaService, httpContextAccessor);
+        
+		_accountService = new AccountService(_db, _appSettings, _mapper, _emailService, httpContextAccessor);
+        
+		_userService = new UserService(_db, _mapper, httpContextAccessor, _emailService, _accountService);
+        
+		_professorService = new ProfessorService(_db, _mapper, _userService);
+        
+		_roteiroService = new RoteiroService(_db, _mapper, httpContextAccessor);
 
-		sut = new AulaService(_db, _mapper, _professorService, _salaService, _eventoService, httpContextAccessor);
+        _eventoService = new EventoService(_db, _mapper, _professorService, _salaService, _roteiroService, httpContextAccessor);
+
+		sut = new AulaService(_db, _mapper, _professorService, _salaService, _eventoService, _httpContextAccessor);
     }
 
     [Fact]
