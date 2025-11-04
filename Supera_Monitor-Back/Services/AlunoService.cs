@@ -426,6 +426,7 @@ public class AlunoService : IAlunoService
 
 				_db.Aluno_Turma_Vigencia.Add(new Aluno_Turma_Vigencia
 				{
+					Account_Id = _account.Id,
 					Aluno_Id = aluno.Id,
 					Turma_Id = aluno.Turma_Id.Value,
 					DataInicioVigencia = data,
