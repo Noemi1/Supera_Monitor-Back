@@ -17,6 +17,8 @@ public partial class DataContext : DbContext {
 
     public virtual DbSet<Aluno> Alunos { get; set; }
 
+    public virtual DbSet<Aluno_Turma_Vigencia> Aluno_Turma_Vigencia { get; set; }
+
     public virtual DbSet<AlunoChecklistItemList> AlunoChecklistItemLists { get; set; }
 
     public virtual DbSet<AlunoChecklistView> AlunoChecklistViews { get; set; }
@@ -231,7 +233,11 @@ public partial class DataContext : DbContext {
                 .HasForeignKey(d => d.Turma_Id)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Aluno_Turma");
-        });
+
+			entity.HasMany(d => d.Aluno_Turma_Vigencia)
+				.WithOne(p => p.Aluno)
+				.HasForeignKey(d => d.Aluno_Id);
+		});
 
         modelBuilder.Entity<AlunoChecklistItemList>(entity =>
         {
@@ -391,6 +397,7 @@ public partial class DataContext : DbContext {
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Aluno_Checklist_Item_Checklist_Item");
         });
+
 
         modelBuilder.Entity<Aluno_Historico>(entity =>
         {
@@ -1049,6 +1056,7 @@ public partial class DataContext : DbContext {
             entity.ToTable("Turma");
 
             entity.Property(e => e.LinkGrupo).IsUnicode(false);
+
             entity.Property(e => e.Nome)
                 .HasMaxLength(100)
                 .IsUnicode(false);
@@ -1065,7 +1073,11 @@ public partial class DataContext : DbContext {
             entity.HasOne(d => d.Sala).WithMany(p => p.Turmas)
                 .HasForeignKey(d => d.Sala_Id)
                 .HasConstraintName("FK_Turma_Sala");
-        });
+
+			entity.HasMany(d => d.Aluno_Turma_Vigencia)
+				.WithOne(p => p.Turma)
+				.HasForeignKey(d => d.Turma_Id);
+		});
 
         modelBuilder.Entity<TurmaList>(entity =>
         {
@@ -1080,7 +1092,7 @@ public partial class DataContext : DbContext {
             entity.Property(e => e.Nome)
                 .HasMaxLength(100)
                 .IsUnicode(false);
-        });
+		});
 
         modelBuilder.Entity<Turma_PerfilCognitivo_Rel>(entity =>
         {

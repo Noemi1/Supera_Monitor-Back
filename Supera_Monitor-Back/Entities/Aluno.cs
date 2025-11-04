@@ -54,6 +54,8 @@ public partial class Aluno
 
     public virtual ICollection<Aluno_Restricao> Aluno_Restricaos { get; set; } = new List<Aluno_Restricao>();
 
+    public virtual ICollection<Aluno_Turma_Vigencia> Aluno_Turma_Vigencia  { get; set; } = new List<Aluno_Turma_Vigencia>();
+
     public virtual Apostila? Apostila_AH { get; set; }
 
     public virtual Apostila? Apostila_Abaco { get; set; }

@@ -19,6 +19,7 @@ public partial class Turma {
     public virtual ICollection<Evento_Aula> Evento_Aulas { get; set; } = new List<Evento_Aula>();
     public virtual Professor? Professor { get; set; }
     public virtual Sala? Sala { get; set; }
+    public virtual ICollection<Aluno_Turma_Vigencia> Aluno_Turma_Vigencia { get; set; } = new List<Aluno_Turma_Vigencia>();
     public virtual ICollection<Turma_PerfilCognitivo_Rel> Turma_PerfilCognitivo_Rels { get; set; } = new List<Turma_PerfilCognitivo_Rel>();
 
     public bool PossuiVagas(int vagasOcupadas, int vagasRequisitadas) {

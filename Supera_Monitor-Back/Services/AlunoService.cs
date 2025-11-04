@@ -6,6 +6,7 @@ using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Aluno;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Supera_Monitor_Back.Services;
 
@@ -259,7 +260,8 @@ public class AlunoService : IAlunoService
         {
             Aluno? aluno = _db.Alunos
                 .Include(a => a.Pessoa)
-                .FirstOrDefault(a => a.Id == model.Id);
+                .Include(a => a.Aluno_Turma_Vigencia)
+				.FirstOrDefault(a => a.Id == model.Id);
 
             if (aluno == null)
             {
@@ -409,7 +411,26 @@ public class AlunoService : IAlunoService
 
             if (trocandoDeTurma)
             {
-                List<Evento> eventosTurmaOriginal = _db.Eventos
+
+				DateTime data = TimeFunctions.HoraAtualBR();
+				Aluno_Turma_Vigencia? ultimaVigencia = _db.Aluno_Turma_Vigencia.FirstOrDefault(x => x.Turma_Id == oldObject.Turma_Id
+																					&& x.Aluno_Id == model.Id
+																					&& !x.DataFimVigencia.HasValue);
+				if (ultimaVigencia is not null)
+				{
+					ultimaVigencia.DataFimVigencia = data;
+					_db.Aluno_Turma_Vigencia.Update(ultimaVigencia);
+				}
+
+
+				_db.Aluno_Turma_Vigencia.Add(new Aluno_Turma_Vigencia
+				{
+					Aluno_Id = aluno.Id,
+					Turma_Id = aluno.Turma_Id.Value,
+					DataInicioVigencia = data,
+				});
+
+				List<Evento> eventosTurmaOriginal = _db.Eventos
                     .Include(e => e.Evento_Aula)
                     .Where(e =>
                         e.Evento_Aula != null
@@ -472,8 +493,17 @@ public class AlunoService : IAlunoService
                 });
             }
             else if (removidoDaTurma)
-            {
-                _db.Aluno_Historicos.Add(new Aluno_Historico
+			{
+				DateTime data = TimeFunctions.HoraAtualBR();
+				Aluno_Turma_Vigencia ultimaVigencia = _db.Aluno_Turma_Vigencia.First(x => x.Turma_Id == oldObject.Turma_Id
+																					&& x.Aluno_Id == model.Id
+																					&& !x.DataFimVigencia.HasValue);
+
+				ultimaVigencia.DataFimVigencia = data;
+
+				_db.Aluno_Turma_Vigencia.Update(ultimaVigencia);
+
+				_db.Aluno_Historicos.Add(new Aluno_Historico
                 {
                     Aluno_Id = aluno.Id,
                     Descricao = $"Aluno foi removido da turma: '{oldObject?.Turma}'.",
@@ -516,13 +546,32 @@ public class AlunoService : IAlunoService
                 return new ResponseModel { Message = "Não foi possível completar a ação. Autenticação do autor não encontrada." };
             }
 
-            // Validations passed
+			// Validations passed
 
-            bool isAlunoActive = aluno.Deactivated == null;
+			bool isAlunoActive = aluno.Active;
 
-            aluno.Deactivated = isAlunoActive ? TimeFunctions.HoraAtualBR() : null;
 
-            _db.Alunos.Update(aluno);
+			// Toggle Status Aluno
+			aluno.Turma_Id = null;
+
+			if (aluno.Active)
+			{
+				DateTime data = TimeFunctions.HoraAtualBR();
+
+				Aluno_Turma_Vigencia ultimaVigencia = _db.Aluno_Turma_Vigencia.First(x => x.Aluno_Id == aluno.Id && !x.DataFimVigencia.HasValue);
+				ultimaVigencia.DataFimVigencia = data;
+				_db.Aluno_Turma_Vigencia.Update(ultimaVigencia);
+				
+				aluno.Deactivated = data;
+
+			}
+			else
+			{
+				aluno.Deactivated = null;
+			}
+
+
+			_db.Alunos.Update(aluno);
 
             _db.Aluno_Historicos.Add(new Aluno_Historico
             {
