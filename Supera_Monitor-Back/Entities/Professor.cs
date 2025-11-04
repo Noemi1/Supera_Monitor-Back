@@ -17,7 +17,7 @@ public partial class Professor {
 
     public TimeSpan? ExpedienteFim { get; set; }
 
-    public virtual Account Account { get; set; } = null!;
+	public virtual Account Account { get; set; } = null!;
 
     public virtual ICollection<Evento_Aula> Evento_Aulas { get; set; } = new List<Evento_Aula>();
 

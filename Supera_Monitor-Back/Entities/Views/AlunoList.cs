@@ -4,7 +4,7 @@ public partial class AlunoList
 {
     public int Id { get; set; }
     public int Pessoa_Id { get; set; }
-    public string? Nome { get; set; }
+    public string Nome { get; set; }
     public int? Checklist_Id { get; set; }
     public string? Checklist { get; set; }
     public DateTime DataInicioVigencia { get; set; }
@@ -35,8 +35,8 @@ public partial class AlunoList
     public DateTime Created { get; set; }
     public DateTime? LastUpdated { get; set; }
     public DateTime? Deactivated { get; set; }
-    public bool Active => !Deactivated.HasValue;
-    public string AspNetUsers_Created_Id { get; set; } = null!;
+	public bool Active { get; set; }
+	public string AspNetUsers_Created_Id { get; set; } = null!;
     public string? AspNetUsers_Created { get; set; }
     public int? Apostila_Kit_Id { get; set; }
     public string? Kit { get; set; }

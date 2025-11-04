@@ -43,6 +43,7 @@ public class EventoService : IEventoService
 	private readonly IMapper _mapper;
 	private readonly IProfessorService _professorService;
 	private readonly ISalaService _salaService;
+	private readonly IRoteiroService _roteiroService;
 
 	private readonly Account? _account;
 
@@ -51,6 +52,7 @@ public class EventoService : IEventoService
 		IMapper mapper,
 		IProfessorService professorService,
 		ISalaService salaService,
+		IRoteiroService roteiroService,
 		IHttpContextAccessor httpContextAccessor
 	)
 	{
@@ -58,6 +60,7 @@ public class EventoService : IEventoService
 		_mapper = mapper;
 		_professorService = professorService;
 		_salaService = salaService;
+		_roteiroService = roteiroService;
 		_account = (Account?)httpContextAccessor.HttpContext?.Items["Account"];
 	}
 
@@ -478,7 +481,13 @@ public class EventoService : IEventoService
 		PopulateCalendarioEvents(calendarioResponse);
 
 		// Carrega lista de roteiros no intervalo selecionado
-		List<Roteiro> roteiros = _db.Roteiros.ToList();
+
+		var roteiros = _roteiroService.GetAll(request.IntervaloDe.Value.Year);
+		if (request.IntervaloDe.Value.Year != request.IntervaloAte.Value.Year)
+		{
+			var roteirosAte = _roteiroService.GetAll(request.IntervaloAte.Value.Year);
+			roteiros.AddRange(roteirosAte);
+		}
 
 		// Adicionar aulas não instanciadas ao retorno
 		DateTime data = request.IntervaloDe.Value;

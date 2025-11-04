@@ -51,8 +51,6 @@ public partial class DataContext : DbContext {
 
     public virtual DbSet<CalendarioEventoList> CalendarioEventoLists { get; set; }
 
-    public virtual DbSet<CalendarioParticipacaoAlunoList> CalendarioParticipacaoAlunoLists { get; set; }
-
     public virtual DbSet<CalendarioProfessorList> CalendarioProfessorLists { get; set; }
 
     public virtual DbSet<Checklist> Checklists { get; set; }
@@ -594,7 +592,6 @@ public partial class DataContext : DbContext {
             entity.Property(e => e.PerfilCognitivo)
                 .HasMaxLength(50)
                 .IsUnicode(false);
-            entity.Property(e => e.PrimeiraAula).HasColumnType("datetime");
             entity.Property(e => e.Turma)
                 .HasMaxLength(100)
                 .IsUnicode(false);

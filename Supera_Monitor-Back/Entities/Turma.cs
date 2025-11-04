@@ -14,6 +14,7 @@ public partial class Turma {
     public int Account_Created_Id { get; set; }
     public int? Sala_Id { get; set; }
     public string? LinkGrupo { get; set; }
+    public bool Active => !Deactivated.HasValue;
     public virtual Account Account_Created { get; set; } = null!;
     public virtual ICollection<Aluno> Alunos { get; set; } = new List<Aluno>();
     public virtual ICollection<Evento_Aula> Evento_Aulas { get; set; } = new List<Evento_Aula>();

@@ -18,6 +18,7 @@ public partial class Account {
     public DateTime Created { get; set; }
     public DateTime? LastUpdated { get; set; }
     public DateTime? Deactivated { get; set; }
+    public bool Active => !Deactivated.HasValue;
     public virtual ICollection<AccountRefreshToken> AccountRefreshTokens { get; set; } = new List<AccountRefreshToken>();
     public virtual Account? Account_Created { get; set; }
     public virtual ICollection<Aluno_Checklist_Item> Aluno_Checklist_Items { get; set; } = new List<Aluno_Checklist_Item>();

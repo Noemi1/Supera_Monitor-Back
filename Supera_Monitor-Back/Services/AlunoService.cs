@@ -499,9 +499,11 @@ public class AlunoService : IAlunoService
 																					&& x.Aluno_Id == model.Id
 																					&& !x.DataFimVigencia.HasValue);
 
-				ultimaVigencia.DataFimVigencia = data;
-
-				_db.Aluno_Turma_Vigencia.Update(ultimaVigencia);
+				if (ultimaVigencia is not null)
+				{
+					ultimaVigencia.DataFimVigencia = data;
+					_db.Aluno_Turma_Vigencia.Update(ultimaVigencia);
+				}
 
 				_db.Aluno_Historicos.Add(new Aluno_Historico
                 {

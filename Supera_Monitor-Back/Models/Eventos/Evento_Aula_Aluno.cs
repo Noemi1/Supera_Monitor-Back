@@ -19,7 +19,6 @@ public class Evento_Roteiro {
     public DateTime Created { get; set; }
     public DateTime? LastUpdated { get; set; }
     public DateTime? Deactivated { get; set; }
-    public List<CalendarioParticipacaoAlunoList> Aulas { get; set; } = new List<CalendarioParticipacaoAlunoList>();
 }
 
 public class Evento_Aula_Participacao {

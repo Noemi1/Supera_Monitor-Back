@@ -41,6 +41,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ILogService, LogService>();
 builder.Services.AddScoped<IEventoService, EventoService>();
+builder.Services.AddScoped<ICalendarioService, CalendarioService>();
 
 builder.Services.AddScoped<IEmailTemplateFactory, EmailTemplateFactory>();
 

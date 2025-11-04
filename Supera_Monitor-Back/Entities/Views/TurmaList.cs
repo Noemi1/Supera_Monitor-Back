@@ -17,7 +17,7 @@ public partial class TurmaList {
     public DateTime Created { get; set; }
     public DateTime? LastUpdated { get; set; }
     public DateTime? Deactivated { get; set; }
-    public bool Active => !Deactivated.HasValue;
+    public bool Active { get; set; }
     public int? Professor_Id { get; set; }
     public string? Professor { get; set; }
     public string? CorLegenda { get; set; }

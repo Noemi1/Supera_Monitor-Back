@@ -20,11 +20,18 @@ public class EventosController : _BaseController
     private readonly IEventoService _eventoService;
     private readonly IAulaService _aulaService;
     private readonly ILogService _logger;
+    private readonly ICalendarioService _calendarioService;
 
-    public EventosController(IEventoService eventoService, IAulaService aulaService, ILogService logger)
+	public EventosController(
+		IEventoService eventoService, 
+		IAulaService aulaService, 
+		ICalendarioService calendarioService,
+		ILogService logger
+	)
     {
         _eventoService = eventoService;
         _aulaService = aulaService;
+        _calendarioService = calendarioService;
         _logger = logger;
     }
 
@@ -80,7 +87,7 @@ public class EventosController : _BaseController
     {
         try
         {
-            var response = _eventoService.GetCalendario(request);
+            var response = _calendarioService.GetCalendario(request);
 
             return Ok(response);
         }
@@ -412,48 +419,6 @@ public class EventosController : _BaseController
         try
         {
             ResponseModel response = _eventoService.Cancelar(request);
-
-            if (response.Success)
-            {
-                return Ok(response);
-            }
-
-            return BadRequest(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-            return StatusCode(500, e);
-        }
-    }
-
-    [HttpGet("aulas/alunos/{ano}")]
-    public ActionResult<List<Evento_Aula_Aluno>> AlunosAulas(int ano)
-    {
-        try
-        {
-            // Se ano for menor que 2025, ele será ajustado para 2025
-            // Se ano for maior que o ano atual, ele será ajustado para o ano atual
-            // Se ano já estiver dentro do intervalo, ele permanece inalterado.
-            ano = Math.Clamp(ano, 2025, DateTime.Now.Year);
-
-            var response = _aulaService.AlunosAulas(ano);
-
-            return Ok(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-            return StatusCode(500, e);
-        }
-    }
-
-    [HttpPost("reagendar")]
-    public ActionResult<ResponseModel> Reagendar(ReagendarEventoRequest request)
-    {
-        try
-        {
-            ResponseModel response = _eventoService.Reagendar(request);
 
             if (response.Success)
             {
