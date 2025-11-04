@@ -45,21 +45,40 @@ namespace Supera_Monitor_Back.Controllers {
             }
         }
 
-        [HttpGet("historico/{alunoId}")]
-        [Authorize(Role.Admin, Role.Teacher, Role.Assistant)]
-        public ActionResult<List<AlunoHistoricoList>> GetHistoricoById(int alunoId) {
-            try {
-                List<AlunoHistoricoList> response = _alunoService.GetHistoricoById(alunoId);
+		[HttpGet("historico/{alunoId}")]
+		[Authorize(Role.Admin, Role.Teacher, Role.Assistant)]
+		public ActionResult<List<AlunoHistoricoList>> GetHistoricoById(int alunoId)
+		{
+			try
+			{
+				List<AlunoHistoricoList> response = _alunoService.GetHistoricoById(alunoId);
 
-                return Ok(response);
-            }
-            catch (Exception e) {
-                // _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-                return StatusCode(500, e);
-            }
-        }
+				return Ok(response);
+			}
+			catch (Exception e)
+			{
+				// _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+				return StatusCode(500, e);
+			}
+		}
+		[HttpGet("vigencia/{alunoId}")]
+		[Authorize(Role.Admin, Role.Teacher, Role.Assistant)]
+		public ActionResult<List<AlunoVigenciaList>> GetVigenciaById(int alunoId)
+		{
+			try
+			{
+				List<AlunoVigenciaList> response = _alunoService.GetVigenciaById(alunoId);
 
-        [HttpPost()]
+				return Ok(response);
+			}
+			catch (Exception e)
+			{
+				// _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+				return StatusCode(500, e);
+			}
+		}
+
+		[HttpPost()]
         public ActionResult<ResponseModel> Insert(CreateAlunoRequest model) {
             try {
                 ResponseModel response = _alunoService.Insert(model);

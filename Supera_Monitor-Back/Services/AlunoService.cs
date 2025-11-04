@@ -15,6 +15,7 @@ public interface IAlunoService
     AlunoListWithChecklist Get(int alunoId);
     List<AlunoList> GetAll();
     List<AlunoHistoricoList> GetHistoricoById(int alunoId);
+    List<AlunoVigenciaList> GetVigenciaById(int alunoId);
     List<AlunoListWithChecklist> GetAllWithChecklist(AlunoRequest request);
     List<AlunoChecklistItemList> GetAlunoChecklistItemList(AlunoRequest request);
     ResponseModel GetProfileImage(int alunoId);
@@ -885,17 +886,27 @@ public class AlunoService : IAlunoService
         return response;
     }
 
-    public List<AlunoHistoricoList> GetHistoricoById(int alunoId)
-    {
-        List<AlunoHistoricoList> historicos = _db.AlunoHistoricoList
-            .Where(h => h.Aluno_Id == alunoId)
-            .ToList();
+	public List<AlunoHistoricoList> GetHistoricoById(int alunoId)
+	{
+		List<AlunoHistoricoList> list = _db.AlunoHistoricoList
+			.Where(h => h.Aluno_Id == alunoId)
+			.ToList();
 
-        return historicos;
+		return list;
 
-    }
+	}
 
-    public List<AlunoChecklistItemList> GetAlunoChecklistItemList(AlunoRequest request)
+	public List<AlunoVigenciaList> GetVigenciaById(int alunoId)
+	{
+		List<AlunoVigenciaList> list = _db.AlunoVigenciaList
+			.Where(h => h.Aluno_Id == alunoId)
+			.ToList();
+
+		return list;
+
+	}
+
+	public List<AlunoChecklistItemList> GetAlunoChecklistItemList(AlunoRequest request)
     {
         IQueryable<AlunoChecklistItemList> listQueryable = _db.AlunoChecklistItemLists
             .Where(a => a.Finalizado == 0)
