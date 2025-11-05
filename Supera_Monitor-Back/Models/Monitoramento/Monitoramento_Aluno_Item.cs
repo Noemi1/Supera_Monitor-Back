@@ -6,7 +6,7 @@
 
 		public bool Show { get; set; }
 
-		public virtual Monitoramento_Aula_Participacao_Rel Aula { get; set; } = null!;
+		public virtual Monitoramento_Aula_Participacao_Rel? Aula { get; set; } = null!;
 
 		public virtual Monitoramento_Aula_Participacao_Rel? ReposicaoPara { get; set; }
 	}

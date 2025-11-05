@@ -1,5 +1,7 @@
 ﻿using System.Globalization;
+using System.Linq;
 using AutoMapper;
+using Azure;
 using Microsoft.EntityFrameworkCore;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
@@ -42,6 +44,8 @@ public class MonitoramentoService : IMonitoramentoService
 	{
 		DateTime intervaloDe = new(request.Ano, 1, 1);
 		DateTime intervaloAte = intervaloDe.AddYears(1).AddDays(-1);
+
+		var response = new Monitoramento_Response();
 
 		var eventosQueryable = _db.CalendarioEventoLists
 				.Where(x => x.Data.Date >= intervaloDe.Date && x.Data.Date <= intervaloAte.Date
@@ -89,7 +93,12 @@ public class MonitoramentoService : IMonitoramentoService
 			.AsNoTracking()
 			.ToList();
 
-		
+		//
+		// Somente alunos com alguma vigencia poderão participar do monitoramento (redução de request)
+		//
+		var alunosVigenciasIds = vigencias.Select(x => x.Aluno_Id);
+		alunos = alunos.Where(x => alunosVigenciasIds.Contains(x.Id)).ToList();
+
 		var roteirosTask = _roteiroService.GetAllAsync(request.Ano);
 		var feriadosTask = _eventoService.GetFeriados(request.Ano);
 
@@ -105,9 +114,13 @@ public class MonitoramentoService : IMonitoramentoService
 			.GroupBy(x => (x.Turma_Id, x.Data.Date))
 			.ToDictionary(g => g.Key, g => g.First());
 
-		var participacoesPorEvento = participacoes
-			.GroupBy(x => x.Evento_Id)
-			.ToDictionary(g => g.Key, g => g.ToList());
+		var eventosPorTurmaAluno = eventos
+			.GroupBy(x => (x.Turma_Id, x.Data.Date))
+			.ToDictionary(g => g.Key, g => g.First());
+
+		//var participacoesPorEvento = participacoes
+		//	.GroupBy(x => x.Evento_Id)
+		//	.ToDictionary(g => g.Key, g => g.ToList());
 
 		var participacaoPorAlunoEvento = participacoes
 			.GroupBy(x => new { x.Aluno_Id, x.Evento_Id })
@@ -120,11 +133,15 @@ public class MonitoramentoService : IMonitoramentoService
 
 		var roteirosPorId = roteiros.Where(x => x.Id != -1)
 			.ToDictionary(r => r.Id, r => r);
-		
+
+		var turmasPorId = turmas
+			.ToDictionary(x => x.Id, x => x);
+
 		var roteirosPorDataInicio = roteiros
 			.ToDictionary(r => r.DataInicio.ToString(dateFormatDict), r => r);
 
-		var meses = new List<Monitoramento_Mes>();
+		//var vigenciaPorAlunoData = vigencias
+		//	.ToDictionary(x => x.Aluno_Id, x => x);
 
 		var cultura = new CultureInfo("pt-BR");
 
@@ -152,177 +169,118 @@ public class MonitoramentoService : IMonitoramentoService
 			   .OrderBy(x => x.DataInicio)
 			   .ToList();
 
-
-			Monitoramento_Mes mes = new()
+			Monitoramento_Mes mes = new Monitoramento_Mes()
 			{
 				Mes = mesIndex,
 				MesString = cultura.DateTimeFormat.GetMonthName(mesIndex),
 				Roteiros = _mapper.Map<List<Monitoramento_Roteiro>>(roteirosDoMes),
 			};
-			meses.Add(mes);
+			response.MesesRoteiro.Add(mes);
 		}
 
-		//
-		// Insere aulas
-		//
-		var aulasPorAluno = new Dictionary<int, List<Monitoramento_Aluno_Item>>();
 
-		foreach (RoteiroModel roteiro in roteiros)
+		foreach (AlunoList aluno in alunos)
 		{
-			DateTime data = roteiro.DataInicio.Date;
-			while (data <= roteiro.DataFim.Date)
+			var monitoramentoAluno = _mapper.Map<Monitoramento_Aluno>(aluno);
+
+			foreach (RoteiroModel roteiro in roteiros)
 			{
-				var turmasDoDia = turmas.Where(x => x.DiaSemana == (int)data.DayOfWeek).ToList();
-				bool dataDoAno = data.Year == request.Ano;
+				var vigenciaAlunoRoteiro = vigencias
+					.FirstOrDefault(x => x.Aluno_Id == aluno.Id
+								&& x.DataInicioVigencia.Date <= roteiro.DataInicio.Date
+								&& (!x.DataFimVigencia.HasValue || x.DataFimVigencia.Value.Date >= roteiro.DataFim.Date));
 
-				foreach (TurmaList turma in turmasDoDia)
+				DateTime dataTurma = roteiro.DataInicio.Date;
+				var monitoramentoAlunoItem = new Monitoramento_Aluno_Item();
+				var monitoramentoAula = new Monitoramento_Aula();
+				var monitoramentoParticipacao = new Monitoramento_Participacao();
+				Monitoramento_Aula_Participacao_Rel? monitoramentoReposicaoPara = null;
+
+				if (vigenciaAlunoRoteiro is not null)
 				{
-					eventosPorTurmaData.TryGetValue((turma.Id, data.Date), out var eventoAula);
 
-					//
-					// Aulas Instanciadas
-					//
-					if (eventoAula is not null)
+					// Celula/Aula da vigencia do roteiro
+					if (turmasPorId.TryGetValue(vigenciaAlunoRoteiro.Turma_Id, out var turma))
 					{
-						//var participacoesAula = participacoes
-						//	.Where(x => x.Evento_Id == eventoAula.Id)
-						//	.ToList();
+						dataTurma = GetDataTurmaFromInterval(turma, roteiro.DataInicio, roteiro.DataFim);
+						feriadosPorData.TryGetValue(dataTurma.ToString(dateFormatDict), out var feriado);
 
-
-						if (participacoesPorEvento.TryGetValue(eventoAula.Id, out var participacoesAula))
+						//
+						// Aula Instanciada
+						//
+						if (eventosPorTurmaData.TryGetValue((turma.Id, dataTurma.Date), out var aula))
 						{
-							foreach (CalendarioAlunoList participacao in participacoesAula)
+							monitoramentoAula = _mapper.Map<Monitoramento_Aula>(aula);
+							monitoramentoAula.Feriado = feriado is null ? null : new Monitoramento_Feriado { Name = feriado.name, Date = feriado.date };
+							monitoramentoAula.Tema = aula.Tema ?? roteiro.Tema;
+							monitoramentoAula.Semana = aula.Semana ?? roteiro.Semana;
+							monitoramentoAula.RoteiroCorLegenda = roteiro.CorLegenda;
+							monitoramentoAula.Recesso = roteiro.Recesso;
+
+
+							if (participacaoPorAlunoEvento.TryGetValue((aluno.Id, aula.Id), out var participacao))
 							{
-								if (!participacao.ReposicaoDe_Evento_Id.HasValue)
+								monitoramentoParticipacao = _mapper.Map<Monitoramento_Participacao>(participacao);
+
+								if (participacao.ReposicaoPara_Evento_Id.HasValue)
 								{
-									//var feriado = feriados.FirstOrDefault(x => x.date.Date == eventoAula.Data.Date);
-									feriadosPorData.TryGetValue(eventoAula.Data.ToString(""), out var feriado);
-
-									var dashAula = _mapper.Map<Monitoramento_Aula>(eventoAula);
-
-									dashAula.Feriado = feriado is null ? null : new Monitoramento_Feriado { Name = feriado.name, Date = feriado.date };
-									dashAula.Tema = eventoAula.Tema ?? roteiro.Tema;
-									dashAula.Semana = eventoAula.Semana ?? roteiro.Semana;
-									dashAula.RoteiroCorLegenda = roteiro.CorLegenda;
-									dashAula.Recesso = roteiro.Recesso;
-
-									var dashPart = _mapper.Map<Monitoramento_Participacao>(participacao);
-
-									var dashAulaPart = new Monitoramento_Aula_Participacao_Rel
+									if (eventosPorId.TryGetValue(participacao.ReposicaoPara_Evento_Id.Value, out var reposicaoPara))
 									{
-										Aula = dashAula,
-										Participacao = dashPart,
-									};
+										participacaoPorAlunoEvento.TryGetValue((aluno.Id, participacao.ReposicaoPara_Evento_Id.Value), out var participacaoReposicaoPara);
+										feriadosPorData.TryGetValue(aula.Data.ToString(dateFormatDict), out var feriadoReposicaoPara);
 
-									var item = new Monitoramento_Aluno_Item
-									{
-										Id = participacao.Id,
-										Show = dataDoAno && roteiro.Recesso == false,
-										Aula = dashAulaPart,
-										ReposicaoPara = null,
-									};
-
-									if (participacao.ReposicaoPara_Evento_Id.HasValue)
-									{
-										// var aulaReposicaoPara = eventos.FirstOrDefault(x => x.Id == participacao.ReposicaoPara_Evento_Id.Value);
-										if (eventosPorId.TryGetValue(participacao.ReposicaoPara_Evento_Id.Value, out var aulaReposicaoPara))
+										RoteiroModel? roteiroReposicaoPara;
+										if (reposicaoPara.Roteiro_Id.HasValue)
 										{
-											//var participacaoReposicaoPara = participacoes
-											//	.FirstOrDefault(x => x.Aluno_Id == participacao.Aluno_Id
-											//						&& x.Evento_Id == aulaReposicaoPara.Id);
-											participacaoPorAlunoEvento.TryGetValue((participacao.Aluno_Id, aulaReposicaoPara.Id), out var participacaoReposicaoPara);
-
-											//var feriadoReposicaoPara = feriados.FirstOrDefault(x => x.date.Date == aulaReposicaoPara.Data.Date);
-											feriadosPorData.TryGetValue(eventoAula.Data.ToString(dateFormatDict), out var feriadoReposicaoPara);
-
-											RoteiroModel? roteiroReposicaoPara;
-											if (aulaReposicaoPara.Roteiro_Id.HasValue)
-											{
-												roteirosPorId.TryGetValue(aulaReposicaoPara.Roteiro_Id.Value, out var roteiroDict);
-												roteiroReposicaoPara = roteiroDict;
-											}
-											else
-											{
-												roteirosPorDataInicio.TryGetValue(data.Date.ToString(dateFormatDict), out var roteiroDict);
-												roteiroReposicaoPara = roteiroDict;
-
-												//roteiroReposicaoPara = roteiros.FirstOrDefault(x => aulaReposicaoPara.Data.Date >= x.DataInicio.Date
-												//												&& aulaReposicaoPara.Data.Date <= x.DataFim.Date);
-											}
-
-											var reposicaoPara = new Monitoramento_Aula_Participacao_Rel();
-
-											reposicaoPara.Aula = _mapper.Map<Monitoramento_Aula>(aulaReposicaoPara);
-											reposicaoPara.Aula.Feriado = feriadoReposicaoPara is null ? null : new Monitoramento_Feriado { Name = feriadoReposicaoPara.name, Date = feriadoReposicaoPara.date };
-											reposicaoPara.Aula.Tema = aulaReposicaoPara.Tema ?? roteiroReposicaoPara?.Tema ?? "Tema indefinido";
-											reposicaoPara.Aula.Semana = aulaReposicaoPara.Semana ?? roteiroReposicaoPara?.Semana ?? -1;
-											reposicaoPara.Aula.RoteiroCorLegenda = roteiroReposicaoPara?.CorLegenda ?? "";
-											reposicaoPara.Aula.Recesso = roteiroReposicaoPara?.Recesso ?? false;
-
-											reposicaoPara.Participacao = _mapper.Map<Monitoramento_Participacao>(participacaoReposicaoPara);
-
-											item.ReposicaoPara = reposicaoPara;
+											roteirosPorId.TryGetValue(reposicaoPara.Roteiro_Id.Value, out var roteiroDict);
+											roteiroReposicaoPara = roteiroDict;
 										}
+										else
+										{
+											roteirosPorDataInicio.TryGetValue(aula.Data.ToString(dateFormatDict), out var roteiroDict);
+											roteiroReposicaoPara = roteiroDict;
+										}
+
+										monitoramentoReposicaoPara = new Monitoramento_Aula_Participacao_Rel();
+										monitoramentoReposicaoPara.Aula = _mapper.Map<Monitoramento_Aula>(reposicaoPara);
+										monitoramentoReposicaoPara.Aula.Feriado = feriadoReposicaoPara is null ? null : new Monitoramento_Feriado { Name = feriadoReposicaoPara.name, Date = feriadoReposicaoPara.date };
+										monitoramentoReposicaoPara.Aula.Tema = reposicaoPara.Tema ?? roteiroReposicaoPara?.Tema ?? "Tema indefinido";
+										monitoramentoReposicaoPara.Aula.Semana = reposicaoPara.Semana ?? roteiroReposicaoPara?.Semana ?? -1;
+										monitoramentoReposicaoPara.Aula.RoteiroCorLegenda = roteiroReposicaoPara?.CorLegenda ?? "";
+										monitoramentoReposicaoPara.Aula.Recesso = roteiroReposicaoPara?.Recesso ?? false;
+										monitoramentoReposicaoPara.Participacao = _mapper.Map<Monitoramento_Participacao>(participacaoReposicaoPara);
+
 									}
 
-									if (!aulasPorAluno.TryGetValue(participacao.Aluno_Id, out var list))
-									{
-										list = new List<Monitoramento_Aluno_Item>();
-										aulasPorAluno[participacao.Aluno_Id] = list;
-									}
-									list.Add(item);
 								}
 							}
 						}
-
-
-					}
-					//
-					// Pseudo Aulas
-					//
-					else
-					{
-						var vigenciasDaTurma = vigencias
-							.Where(x => x.Turma_Id == turma.Id
-									&& data.Date >= x.DataInicioVigencia.Date
-									&& (!x.DataFimVigencia.HasValue || data.Date <= x.DataFimVigencia.Value.Date))
-							.ToList();
-
-						var alunosDoDiaId = vigenciasDaTurma
-							.Select(x => x.Aluno_Id)
-							.ToList();
-
-						var alunosTurma = alunos
-							.Where(x => alunosDoDiaId.Contains(x.Id))
-							.ToList();
-
-						feriadosPorData.TryGetValue(data.Date.ToString(dateFormatDict), out var feriado);
-
-						Monitoramento_Aula pseudoAula = new Monitoramento_Aula
+						//
+						// Pseudo Aula
+						//
+						else
 						{
-							Id = -1,
-							EventoTipo_Id = (int)EventoTipo.Aula,
-							Data = new DateTime(data.Year, data.Month, data.Day, turma!.Horario!.Value.Hours, turma.Horario.Value.Minutes, 0),
-							Descricao = turma.Nome,
-							Observacao = string.Empty,
-							Finalizado = false,
-							Sala = turma.Sala ?? "Sala Indefinida",
-							Andar = turma.Andar ?? 0,
-							NumeroSala = turma.NumeroSala ?? 0,
-							Tema = roteiro.Tema,
-							Semana = roteiro.Semana,
-							Recesso = roteiro.Recesso,
-							RoteiroCorLegenda = roteiro.CorLegenda,
-							Turma = turma.Nome,
-							Professor = turma.Professor ?? string.Empty,
-							CorLegenda = turma.CorLegenda ?? string.Empty,
-							Feriado = feriado is not null ? new Monitoramento_Feriado { Name = feriado.name, Date = feriado.date } : null,
-						};
-
-						foreach (var aluno in alunosTurma)
-						{
-
-							Monitoramento_Participacao dashPart = new Monitoramento_Participacao
+							monitoramentoAula = new Monitoramento_Aula
+							{
+								Id = -1,
+								EventoTipo_Id = (int)EventoTipo.Aula,
+								Data = dataTurma,
+								Descricao = turma.Nome,
+								Observacao = string.Empty,
+								Finalizado = false,
+								Sala = turma.Sala ?? "Sala Indefinida",
+								Andar = turma.Andar ?? 0,
+								NumeroSala = turma.NumeroSala ?? 0,
+								Tema = roteiro.Tema,
+								Semana = roteiro.Semana,
+								Recesso = roteiro.Recesso,
+								RoteiroCorLegenda = roteiro.CorLegenda,
+								Turma = turma.Nome,
+								Professor = turma.Professor ?? string.Empty,
+								CorLegenda = turma.CorLegenda ?? string.Empty,
+								Feriado = feriado is not null ? new Monitoramento_Feriado { Name = feriado.name, Date = feriado.date } : null,
+							};
+							monitoramentoParticipacao = new Monitoramento_Participacao
 							{
 								Id = -1,
 								Apostila_Abaco = aluno.Apostila_Abaco ?? string.Empty,
@@ -330,60 +288,287 @@ public class MonitoramentoService : IMonitoramentoService
 								NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
 								NumeroPaginaAH = aluno.NumeroPaginaAH,
 							};
-
-							Monitoramento_Aula_Participacao_Rel dashAulaPart = new Monitoramento_Aula_Participacao_Rel
-							{
-								Aula = pseudoAula,
-								Participacao = dashPart,
-							};
-
-							Monitoramento_Aluno_Item item = new Monitoramento_Aluno_Item
-							{
-								Id = -1,
-								Show = dataDoAno && roteiro.Recesso == false,
-								Aula = dashAulaPart,
-								ReposicaoPara = null,
-							};
-
-							if (!aulasPorAluno.TryGetValue(aluno.Id, out var list))
-							{
-								list = new List<Monitoramento_Aluno_Item>();
-								aulasPorAluno[aluno.Id] = list;
-							}
-							list.Add(item);
 						}
+							
+
 					}
 				}
+				else if (turmasPorId.TryGetValue(aluno.Turma_Id!.Value, out var turma))
+				{
+					dataTurma = GetDataTurmaFromInterval(turma, roteiro.DataInicio, roteiro.DataFim);
+					feriadosPorData.TryGetValue(dataTurma.ToString(dateFormatDict), out var feriado);
 
+					monitoramentoAula = new Monitoramento_Aula
+					{
+						Id = -1,
+						EventoTipo_Id = (int)EventoTipo.Aula,
+						Data = dataTurma,
+						Descricao = turma.Nome,
+						Observacao = string.Empty,
+						Finalizado = false,
+						Sala = turma.Sala ?? "Sala Indefinida",
+						Andar = turma.Andar ?? 0,
+						NumeroSala = turma.NumeroSala ?? 0,
+						Tema = roteiro.Tema,
+						Semana = roteiro.Semana,
+						Recesso = roteiro.Recesso,
+						RoteiroCorLegenda = roteiro.CorLegenda,
+						Turma = turma.Nome,
+						Professor = turma.Professor ?? string.Empty,
+						CorLegenda = turma.CorLegenda ?? string.Empty,
+						Feriado = feriado is not null ? new Monitoramento_Feriado { Name = feriado.name, Date = feriado.date } : null,
+					};
+					monitoramentoParticipacao = new Monitoramento_Participacao
+						{
+							Id = -1,
+							Apostila_Abaco = aluno.Apostila_Abaco ?? string.Empty,
+							Apostila_AH = aluno.Apostila_AH ?? string.Empty,
+							NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
+							NumeroPaginaAH = aluno.NumeroPaginaAH,
+						};
+				}
 
-				data = data.AddDays(1);
+				monitoramentoAlunoItem.Id = monitoramentoAula.Id;
+				monitoramentoAlunoItem.Show = dataTurma.Year == request.Ano && roteiro.Recesso == false;
+				monitoramentoAlunoItem.ReposicaoPara = monitoramentoReposicaoPara;
+				monitoramentoAlunoItem.Aula = new Monitoramento_Aula_Participacao_Rel
+				{
+					Aula = monitoramentoAula,
+					Participacao = monitoramentoParticipacao,
+				};
+				monitoramentoAluno.Items.Add(monitoramentoAlunoItem);
+			
 			}
 
+			response.Alunos.Add(monitoramentoAluno);
 		}
-		var alunosList = alunos.Select(aluno =>
-		{
-			var alunoModel = _mapper.Map<Monitoramento_Aluno>(aluno);
-			if (aulasPorAluno.TryGetValue(aluno.Id, out var list))
-			{
-				alunoModel.Items = list.OrderBy(x => x.Aula.Aula.Data).ToList();
-			}
-			else
-			{
-				alunoModel.Items = new List<Monitoramento_Aluno_Item>();
-			}
-			return alunoModel;
-		})
-		.OrderBy(x => x.Turma_Id)
-		.ThenBy(x => x.Nome)
-		.ToList();
-
-		Monitoramento_Response response = new Monitoramento_Response
-		{
-			MesesRoteiro = meses,
-			Alunos = alunosList
-		};
 
 		return response;
+
+		#region old
+		////
+		//// Insere aulas
+		////
+		//var aulasPorAluno = new Dictionary<int, List<Monitoramento_Aluno_Item>>();
+
+		//foreach (RoteiroModel roteiro in roteiros)
+		//{
+		//	DateTime data = roteiro.DataInicio.Date;
+		//	while (data <= roteiro.DataFim.Date)
+		//	{
+		//		var turmasDoDia = turmas.Where(x => x.DiaSemana == (int)data.DayOfWeek).ToList();
+		//		bool dataDoAno = data.Year == request.Ano;
+
+		//		foreach (TurmaList turma in turmasDoDia)
+		//		{
+		//			eventosPorTurmaData.TryGetValue((turma.Id, data.Date), out var eventoAula);
+
+		//			//
+		//			// Aulas Instanciadas
+		//			//
+		//			if (eventoAula is not null)
+		//			{
+		//				if (participacoesPorEvento.TryGetValue(eventoAula.Id, out var participacoesAula))
+		//				{
+		//					foreach (CalendarioAlunoList participacao in participacoesAula)
+		//					{
+		//						if (!participacao.ReposicaoDe_Evento_Id.HasValue)
+		//						{
+		//							feriadosPorData.TryGetValue(eventoAula.Data.ToString(""), out var feriado);
+
+		//							var dashAula = _mapper.Map<Monitoramento_Aula>(eventoAula);
+
+		//							dashAula.Feriado = feriado is null ? null : new Monitoramento_Feriado { Name = feriado.name, Date = feriado.date };
+		//							dashAula.Tema = eventoAula.Tema ?? roteiro.Tema;
+		//							dashAula.Semana = eventoAula.Semana ?? roteiro.Semana;
+		//							dashAula.RoteiroCorLegenda = roteiro.CorLegenda;
+		//							dashAula.Recesso = roteiro.Recesso;
+
+		//							var dashPart = _mapper.Map<Monitoramento_Participacao>(participacao);
+
+		//							var dashAulaPart = new Monitoramento_Aula_Participacao_Rel
+		//							{
+		//								Aula = dashAula,
+		//								Participacao = dashPart,
+		//							};
+
+		//							var item = new Monitoramento_Aluno_Item
+		//							{
+		//								Id = participacao.Id,
+		//								Show = dataDoAno && roteiro.Recesso == false,
+		//								Aula = dashAulaPart,
+		//								ReposicaoPara = null,
+		//							};
+
+		//							if (participacao.ReposicaoPara_Evento_Id.HasValue)
+		//							{
+		//								if (eventosPorId.TryGetValue(participacao.ReposicaoPara_Evento_Id.Value, out var aulaReposicaoPara))
+		//								{
+		//									participacaoPorAlunoEvento.TryGetValue((participacao.Aluno_Id, aulaReposicaoPara.Id), out var participacaoReposicaoPara);
+
+		//									feriadosPorData.TryGetValue(eventoAula.Data.ToString(dateFormatDict), out var feriadoReposicaoPara);
+
+		//									RoteiroModel? roteiroReposicaoPara;
+		//									if (aulaReposicaoPara.Roteiro_Id.HasValue)
+		//									{
+		//										roteirosPorId.TryGetValue(aulaReposicaoPara.Roteiro_Id.Value, out var roteiroDict);
+		//										roteiroReposicaoPara = roteiroDict;
+		//									}
+		//									else
+		//									{
+		//										roteirosPorDataInicio.TryGetValue(data.Date.ToString(dateFormatDict), out var roteiroDict);
+		//										roteiroReposicaoPara = roteiroDict;
+		//									}
+
+		//									var reposicaoPara = new Monitoramento_Aula_Participacao_Rel();
+
+		//									reposicaoPara.Aula = _mapper.Map<Monitoramento_Aula>(aulaReposicaoPara);
+		//									reposicaoPara.Aula.Feriado = feriadoReposicaoPara is null ? null : new Monitoramento_Feriado { Name = feriadoReposicaoPara.name, Date = feriadoReposicaoPara.date };
+		//									reposicaoPara.Aula.Tema = aulaReposicaoPara.Tema ?? roteiroReposicaoPara?.Tema ?? "Tema indefinido";
+		//									reposicaoPara.Aula.Semana = aulaReposicaoPara.Semana ?? roteiroReposicaoPara?.Semana ?? -1;
+		//									reposicaoPara.Aula.RoteiroCorLegenda = roteiroReposicaoPara?.CorLegenda ?? "";
+		//									reposicaoPara.Aula.Recesso = roteiroReposicaoPara?.Recesso ?? false;
+
+		//									reposicaoPara.Participacao = _mapper.Map<Monitoramento_Participacao>(participacaoReposicaoPara);
+
+		//									item.ReposicaoPara = reposicaoPara;
+		//								}
+		//							}
+
+		//							if (!aulasPorAluno.TryGetValue(participacao.Aluno_Id, out var list))
+		//							{
+		//								list = new List<Monitoramento_Aluno_Item>();
+		//								aulasPorAluno[participacao.Aluno_Id] = list;
+		//							}
+		//							list.Add(item);
+		//						}
+		//					}
+		//				}
+
+
+		//			}
+		//			//
+		//			// Pseudo Aulas
+		//			//
+		//			else
+		//			{
+		//				var vigenciasDaTurma = vigencias
+		//					.Where(x => x.Turma_Id == turma.Id
+		//							&& data.Date >= x.DataInicioVigencia.Date
+		//							&& (!x.DataFimVigencia.HasValue || data.Date <= x.DataFimVigencia.Value.Date))
+		//					.ToList();
+
+		//				var alunosDoDiaId = vigenciasDaTurma
+		//					.Select(x => x.Aluno_Id)
+		//					.ToList();
+
+		//				var alunosTurma = alunos
+		//					.Where(x => alunosDoDiaId.Contains(x.Id))
+		//					.ToList();
+
+		//				feriadosPorData.TryGetValue(data.Date.ToString(dateFormatDict), out var feriado);
+
+		//				Monitoramento_Aula pseudoAula = new Monitoramento_Aula
+		//				{
+		//					Id = -1,
+		//					EventoTipo_Id = (int)EventoTipo.Aula,
+		//					Data = new DateTime(data.Year, data.Month, data.Day, turma!.Horario!.Value.Hours, turma.Horario.Value.Minutes, 0),
+		//					Descricao = turma.Nome,
+		//					Observacao = string.Empty,
+		//					Finalizado = false,
+		//					Sala = turma.Sala ?? "Sala Indefinida",
+		//					Andar = turma.Andar ?? 0,
+		//					NumeroSala = turma.NumeroSala ?? 0,
+		//					Tema = roteiro.Tema,
+		//					Semana = roteiro.Semana,
+		//					Recesso = roteiro.Recesso,
+		//					RoteiroCorLegenda = roteiro.CorLegenda,
+		//					Turma = turma.Nome,
+		//					Professor = turma.Professor ?? string.Empty,
+		//					CorLegenda = turma.CorLegenda ?? string.Empty,
+		//					Feriado = feriado is not null ? new Monitoramento_Feriado { Name = feriado.name, Date = feriado.date } : null,
+		//				};
+
+		//				foreach (var aluno in alunosTurma)
+		//				{
+
+		//					Monitoramento_Participacao dashPart = new Monitoramento_Participacao
+		//					{
+		//						Id = -1,
+		//						Apostila_Abaco = aluno.Apostila_Abaco ?? string.Empty,
+		//						Apostila_AH = aluno.Apostila_AH ?? string.Empty,
+		//						NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
+		//						NumeroPaginaAH = aluno.NumeroPaginaAH,
+		//					};
+
+		//					Monitoramento_Aula_Participacao_Rel dashAulaPart = new Monitoramento_Aula_Participacao_Rel
+		//					{
+		//						Aula = pseudoAula,
+		//						Participacao = dashPart,
+		//					};
+
+		//					Monitoramento_Aluno_Item item = new Monitoramento_Aluno_Item
+		//					{
+		//						Id = -1,
+		//						Show = dataDoAno && roteiro.Recesso == false,
+		//						Aula = dashAulaPart,
+		//						ReposicaoPara = null,
+		//					};
+
+		//					if (!aulasPorAluno.TryGetValue(aluno.Id, out var list))
+		//					{
+		//						list = new List<Monitoramento_Aluno_Item>();
+		//						aulasPorAluno[aluno.Id] = list;
+		//					}
+		//					list.Add(item);
+		//				}
+		//			}
+		//		}
+
+
+		//		data = data.AddDays(1);
+		//	}
+
+		//}
+		//var alunosList = alunos.Select(aluno =>
+		//{
+		//	var alunoModel = _mapper.Map<Monitoramento_Aluno>(aluno);
+		//	if (aulasPorAluno.TryGetValue(aluno.Id, out var list))
+		//	{
+		//		alunoModel.Items = list.OrderBy(x => x.Aula.Aula.Data).ToList();
+		//	}
+		//	else
+		//	{
+		//		alunoModel.Items = new List<Monitoramento_Aluno_Item>();
+		//	}
+		//	return alunoModel;
+		//})
+		//.OrderBy(x => x.Turma_Id)
+		//.ThenBy(x => x.Nome)
+		//.ToList();
+
+		//Monitoramento_Response response = new Monitoramento_Response
+		//{
+		//	MesesRoteiro = meses,
+		//	Alunos = alunosList
+		//};
+		#endregion
+
+	}
+
+	public DateTime GetDataTurmaFromInterval(TurmaList turma, DateTime intervaloDe, DateTime intervaloAte)
+	{
+		var data = intervaloDe;
+
+		while(turma.DiaSemana != (int)data.DayOfWeek)
+		{
+			data = data.AddDays(1);
+		}
+
+		data = new DateTime(data.Year, data.Month, data.Day, turma.Horario.Value.Hours, turma.Horario.Value.Minutes, 0);
+
+		return data;
+
 	}
 
 
