@@ -82,11 +82,11 @@ public class EventosController : _BaseController
     }
 
     [HttpPost("calendario")]
-    public ActionResult<List<CalendarioEventoList>> GetCalendario(CalendarioRequest request)
+    public async Task<ActionResult<List<CalendarioEventoList>>> GetCalendario(CalendarioRequest request)
     {
         try
         {
-            var response = _calendarioService.GetCalendario(request);
+            var response =await _calendarioService.GetCalendario(request);
 
             return Ok(response);
         }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
+using Supera_Monitor_Back.Models.Eventos;
 
 namespace Supera_Monitor_Back.Helpers;
 
@@ -678,7 +679,11 @@ public partial class DataContext : DbContext
 			entity.Property(e => e.Turma)
 				.HasMaxLength(100)
 				.IsUnicode(false);
+			entity.Ignore(x => x.Feriado);
+
 		});
+
+		modelBuilder.Entity<FeriadoResponse>().HasNoKey();
 
 		modelBuilder.Entity<CalendarioProfessorList>(entity =>
 		{

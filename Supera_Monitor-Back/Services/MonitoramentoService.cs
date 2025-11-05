@@ -118,10 +118,7 @@ public class MonitoramentoService : IMonitoramentoService
 			.GroupBy(x => (x.Turma_Id, x.Data.Date))
 			.ToDictionary(g => g.Key, g => g.First());
 
-		//var participacoesPorEvento = participacoes
-		//	.GroupBy(x => x.Evento_Id)
-		//	.ToDictionary(g => g.Key, g => g.ToList());
-
+		
 		var participacaoPorAlunoEvento = participacoes
 			.GroupBy(x => new { x.Aluno_Id, x.Evento_Id })
 			.ToDictionary(g => (g.Key.Aluno_Id, g.Key.Evento_Id), g => g.First());
@@ -247,8 +244,9 @@ public class MonitoramentoService : IMonitoramentoService
 											}
 											else
 											{
-												roteirosPorDataInicio.TryGetValue(aula.Data.ToString(dateFormatDict), out var roteiroDict);
-												roteiroReposicaoPara = roteiroDict;
+												//roteirosPorDataInicio.TryGetValue(aula.Data.ToString(dateFormatDict), out var roteiroDict);
+												var aulaData = aula.Data.Date;
+												roteiroReposicaoPara = roteiros.FirstOrDefault(x => aulaData >= x.DataInicio && aulaData <= x.DataFim);
 											}
 
 											monitoramentoReposicaoPara = new Monitoramento_Aula_Participacao_Rel();

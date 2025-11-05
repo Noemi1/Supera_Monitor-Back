@@ -5,12 +5,14 @@ using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Eventos;
+using Supera_Monitor_Back.Models.Roteiro;
+using Supera_Monitor_Back.Services.Eventos;
 
 namespace Supera_Monitor_Back.Services;
 
 public interface ICalendarioService
 {
-	public List<CalendarioEventoList> GetCalendario(CalendarioRequest request);
+	public Task<List<CalendarioEventoList>> GetCalendario(CalendarioRequest request);
 }
 
 public class CalendarioService : ICalendarioService
@@ -18,6 +20,7 @@ public class CalendarioService : ICalendarioService
 	private readonly DataContext _db;
 	private readonly IMapper _mapper;
 	private readonly IRoteiroService _roteiroService;
+	private readonly IEventoService _eventoService;
 	private readonly ISalaService _salaService;
 
 	private readonly Account? _account;
@@ -26,18 +29,18 @@ public class CalendarioService : ICalendarioService
 		DataContext db,
 		IMapper mapper,
 		IRoteiroService roteiroService,
-		ISalaService salaService,
-		IHttpContextAccessor httpContextAccessor
+		IEventoService eventoService,
+		ISalaService salaService
 	)
 	{
 		_db = db;
 		_mapper = mapper;
 		_roteiroService = roteiroService;
 		_salaService = salaService;
-		_account = (Account?)httpContextAccessor.HttpContext?.Items["Account"];
+		_eventoService = eventoService;
 	}
 
-	public List<CalendarioEventoList> GetCalendario(CalendarioRequest request)
+	public async Task<List<CalendarioEventoList>> GetCalendario(CalendarioRequest request)
 	{
 
 		DateTime now = TimeFunctions.HoraAtualBR();
@@ -49,7 +52,6 @@ public class CalendarioService : ICalendarioService
 		{
 			throw new Exception("Final do intervalo não pode ser antes do seu próprio início");
 		}
-
 
 		var eventosQueryable = _db.CalendarioEventoLists
 			.Where(e => e.Data.Date >= request.IntervaloDe.Value.Date && e.Data.Date <= request.IntervaloAte.Value.Date)
@@ -106,51 +108,100 @@ public class CalendarioService : ICalendarioService
 			}
 		}
 
-		var turmasIds = turmasQueryable.Select(x => x.Id);
-		var alunosIds = alunosQueryable.Select(x => x.Id);
+		var turmasIds = turmasQueryable.AsNoTracking().Select(x => x.Id);
+		var alunosIds = alunosQueryable.AsNoTracking().Select(x => x.Id);
 
-
-		var turmas = turmasQueryable
-			.ToList();
-		
-		var professores = professoresQueryable
+		var eventos = eventosQueryable
+			.AsNoTracking()
 			.ToList();
 
 		var alunos = alunosQueryable
+			.AsNoTracking()
+			.ToList();
+
+		var turmas = turmasQueryable
+			.AsNoTracking()
+			.ToList();
+
+		var professores = professoresQueryable
+			.AsNoTracking()
 			.ToList();
 
 		var vigencias = _db.Aluno_Turma_Vigencia
-			.Where(x => turmasIds.Contains(x.Turma_Id) 
-							&& alunosIds.Contains(x.Aluno_Id) 
+			.Where(x => turmasIds.Contains(x.Turma_Id)
+							&& alunosIds.Contains(x.Aluno_Id)
 							&& x.DataInicioVigencia.Date <= request.IntervaloDe.Value.Date
 							&& (!x.DataFimVigencia.HasValue || x.DataFimVigencia.Value.Date >= request.IntervaloAte.Value.Date))
+			.AsNoTracking()
 			.ToList();
 
 		var perfisCognitivosTurmas = _db.Turma_PerfilCognitivo_Rels
 			.Where(x => turmasIds.Contains(x.Turma_Id))
 			.Include(x => x.PerfilCognitivo)
+			.AsNoTracking()
 			.ToList();
 
-		var roteiros = _roteiroService.GetAll(request.IntervaloDe.Value.Year);
-		if (request.IntervaloDe.Value.Year != request.IntervaloAte.Value.Year)
+		var anoDe = request.IntervaloDe.Value.Year;
+		var anoAte = request.IntervaloAte.Value.Year;
+
+		var roteirosTask = _roteiroService.GetAllAsync(anoDe);
+		var feriadosTask = _eventoService.GetFeriados(anoDe);
+
+		await Task.WhenAll(roteirosTask, feriadosTask);
+
+		var roteiros = roteirosTask.Result;
+		var feriados = feriadosTask.Result;
+		
+		if (anoDe != anoAte)
 		{
-			var roteirosAte = _roteiroService.GetAll(request.IntervaloAte.Value.Year);
-			roteiros.AddRange(roteirosAte);
+			roteirosTask = _roteiroService.GetAllAsync(anoAte);
+			feriadosTask = _eventoService.GetFeriados(anoAte);
+
+			await Task.WhenAll(roteirosTask, feriadosTask);
+			
+			roteiros.AddRange(roteirosTask.Result);
+			feriados.AddRange(feriadosTask.Result);
 		}
+		
+		var calendarioResponse = eventos;
 
-		var calendarioResponse = eventosQueryable.ToList();
+		PopulateCalendarioEvents(calendarioResponse, feriados, roteiros);
 
-		PopulateCalendarioEvents(calendarioResponse);
+		DateTime data = request.IntervaloDe.Value.Date;
 
-		DateTime data = request.IntervaloDe.Value;
+		string formatDateDict = "ddMMyyyyHHmm";
 
+		var turmasPorDiaSemana = turmas
+			.GroupBy(x => x.DiaSemana)
+			.ToDictionary(x => x.Key, x => x.ToList());
 
-		while(data <= request.IntervaloAte.Value)
+		var eventosByTurmaData = eventos
+			.GroupBy(x => (x.Turma_Id, x.Data.ToString(formatDateDict) ))
+			.ToDictionary(x => x.Key, x => x.First());
+
+		var vigenciasPorTurma = vigencias
+			.GroupBy(x => x.Turma_Id)
+			.ToDictionary(x => x.Key, x => x.ToList());
+
+		var perfilPorTurma = perfisCognitivosTurmas
+			.GroupBy(x => x.Turma_Id)
+			.ToDictionary(x => x.Key, x => x.Select(x => x.PerfilCognitivo).ToList());
+
+		var professoresPorId = professores
+			.ToDictionary(x => x.Id, x => x);
+
+		var feriadosPorData = feriados
+			.ToDictionary(x => x.date.ToString(formatDateDict), x => x);
+
+		var roteirosPorData = roteiros
+			.ToDictionary(x => x.DataInicio.ToString(formatDateDict), x => x);
+
+		while (data <= request.IntervaloAte.Value)
 		{
-
 			var diaSemana = data.DayOfWeek;
 
-			var roteiroDoDia = roteiros.FirstOrDefault(x => data.Date >= x.DataInicio.Date && data.Date <= x.DataFim.Date);
+			roteirosPorData.TryGetValue(data.ToString(formatDateDict), out var roteiroDoDia);
+			feriadosPorData.TryGetValue(data.ToString(formatDateDict), out var feriadoNoDia);
 
 			//
 			// Adiciona Oficina - Se a já existe uma oficina agendada para segunda-feira, não vai adicionar
@@ -159,7 +210,9 @@ public class CalendarioService : ICalendarioService
 			
 			if (diaSemana == DayOfWeek.Monday)
 			{
-				CalendarioEventoList? eventoOficina = calendarioResponse.FirstOrDefault(x => x.Data.Date == data.Date && x.Evento_Tipo_Id == (int)EventoTipo.Oficina);
+				CalendarioEventoList? eventoOficina = calendarioResponse
+					.FirstOrDefault(x => x.Data.Date == data.Date 
+											&& x.Evento_Tipo_Id == (int)EventoTipo.Oficina);
 
 				if (eventoOficina is null)
 				{
@@ -178,11 +231,17 @@ public class CalendarioService : ICalendarioService
 						Roteiro_Id = roteiroDoDia?.Id,
 						Semana = roteiroDoDia?.Semana,
 						Tema = roteiroDoDia?.Tema,
+						RoteiroCorLegenda = roteiroDoDia?.CorLegenda,
 
 						Data = new DateTime(data.Year, data.Month, data.Day, 10, 0, 0),
 						Finalizado = false,
 						Sala_Id = null,
-						Sala = "Sala Indefinida"
+						Sala = "Sala Indefinida",
+
+						Feriado = feriadoNoDia,
+						Deactivated = feriadoNoDia is null ? null : feriadoNoDia.date,
+						Observacao = feriadoNoDia is null ? null : "Cancelamento Automático. <br> Feriado: " + feriadoNoDia.name,
+
 					};
 
 					calendarioResponse.Add(pseudoOficina);
@@ -199,7 +258,9 @@ public class CalendarioService : ICalendarioService
 			var diasReuniao = new DayOfWeek[] { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Friday };
 			if (diasReuniao.Contains(diaSemana)) 
 			{
-				CalendarioEventoList? eventoReuniao = calendarioResponse.FirstOrDefault(x => x.Data.Date == data.Date && x.Evento_Tipo_Id == (int)EventoTipo.Reuniao);
+				CalendarioEventoList? eventoReuniao = calendarioResponse
+														.FirstOrDefault(x => x.Data.Date == data.Date 
+																		&& x.Evento_Tipo_Id == (int)EventoTipo.Reuniao);
 
 				// Não usar mais o continue porque o método adiciona outros pseudo eventos
 				if (eventoReuniao is null)
@@ -223,6 +284,11 @@ public class CalendarioService : ICalendarioService
 						Roteiro_Id = roteiroDoDia?.Id,
 						Semana = roteiroDoDia?.Semana,
 						Tema = roteiroDoDia?.Tema,
+						RoteiroCorLegenda = roteiroDoDia?.CorLegenda,
+
+						Feriado = feriadoNoDia,
+						Deactivated = feriadoNoDia is null ? null : feriadoNoDia.date,
+						Observacao = feriadoNoDia is null ? null : "Cancelamento Automático. <br> Feriado: " + feriadoNoDia.name,
 
 						Professores = professores.Select(professor => new CalendarioProfessorList
 						{
@@ -244,29 +310,26 @@ public class CalendarioService : ICalendarioService
 			#endregion
 
 
-			var	turmasDoDia = turmas.Where(x => x.DiaSemana == (int)data.DayOfWeek)
-								.ToList();
-
+			var turmasDoDia = turmasPorDiaSemana.GetValueOrDefault((int)data.DayOfWeek, new List<TurmaList>());
 
 			foreach (TurmaList turma in turmasDoDia)
 			{
-
 				DateTime dataTurma = new DateTime(data.Year, data.Month, data.Day, turma.Horario!.Value.Hours, turma.Horario!.Value.Minutes, 0);
 
-				var eventoAula = calendarioResponse.FirstOrDefault(x => x.Turma_Id == turma.Id && x.Data == dataTurma);
 
-				if (eventoAula is null)
+				//var eventoAula = calendarioResponse.FirstOrDefault(x => x.Turma_Id == turma.Id && x.Data == dataTurma);
+
+				if (!eventosByTurmaData.TryGetValue((turma.Id, dataTurma.ToString(formatDateDict)), out var eventoAula))
 				{
 
-					var vigenciasDaTurma = vigencias
-						.Where(x => x.Turma_Id == turma.Id
-								&& data.Date >= x.DataInicioVigencia.Date
-								&& (!x.DataFimVigencia.HasValue || data.Date <= x.DataFimVigencia.Value.Date))
+					var vigenciasDaTurma = vigenciasPorTurma.GetValueOrDefault(turma.Id, new List<Aluno_Turma_Vigencia>())
+						.Where(x => data >= x.DataInicioVigencia.Date
+								&& (!x.DataFimVigencia.HasValue || data <= x.DataFimVigencia.Value.Date))
 						.ToList();
 
 					var alunosDoDiaId = vigenciasDaTurma
 						.Select(x => x.Aluno_Id)
-						.ToList();
+						.ToHashSet();
 
 					var alunosTurma = alunos
 						.Where(x => alunosDoDiaId.Contains(x.Id))
@@ -286,6 +349,7 @@ public class CalendarioService : ICalendarioService
 						Roteiro_Id = roteiroDoDia?.Id,
 						Semana = roteiroDoDia?.Semana,
 						Tema = roteiroDoDia?.Tema,
+						RoteiroCorLegenda = roteiroDoDia?.CorLegenda,
 
 						Data = dataTurma,
 
@@ -310,21 +374,21 @@ public class CalendarioService : ICalendarioService
 						NumeroSala = turma.NumeroSala,
 						Andar = turma.Andar,
 
+						Feriado = feriadoNoDia,
+						Deactivated = feriadoNoDia is null ? null : feriadoNoDia.date,
+						Observacao = feriadoNoDia is null ? null : "Cancelamento Automático. <br> Feriado: " + feriadoNoDia.name,
+
 						Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos)
 												.OrderBy(a => a.Aluno)
 												.ToList(),
 					};
 
-					var perfilEvento = perfisCognitivosTurmas
-						.Where(x => x.Turma_Id == turma.Id)
-						.Select(p => p.PerfilCognitivo)
-						.ToList();
-
+					var perfilEvento = perfilPorTurma.GetValueOrDefault(turma.Id, new List<PerfilCognitivo>());
 					pseudoAula.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(perfilEvento);
 
-					var professor = professores.FirstOrDefault(x => x.Id == turma.Professor_Id);
-
-					pseudoAula.Professores = new List<CalendarioProfessorList>()
+					if (professoresPorId.TryGetValue(turma.Professor_Id!.Value, out var professor))
+					{
+						pseudoAula.Professores = new List<CalendarioProfessorList>()
 						{
 							new CalendarioProfessorList
 								{
@@ -341,6 +405,7 @@ public class CalendarioService : ICalendarioService
 									ExpedienteFim = professor.ExpedienteFim,
 								}
 						};
+					}
 
 					var pseudoParticipacoes = alunosTurma
 						.OrderBy(x => x.Nome)
@@ -357,9 +422,6 @@ public class CalendarioService : ICalendarioService
 							Aluno_Foto = null,
 							Turma_Id = x.Turma_Id,
 							Turma = x.Turma,
-							//UltimaTrocaTurma = x.UltimaTrocaTurma,
-							//DataInicioVigencia = x.DataInicioVigencia,
-							//DataFimVigencia = x.DataFimVigencia,
 							PrimeiraAula_Id = x.PrimeiraAula_Id,
 							AulaZero_Id = x.AulaZero_Id,
 							RestricaoMobilidade = x.RestricaoMobilidade,
@@ -386,7 +448,6 @@ public class CalendarioService : ICalendarioService
 
 					pseudoAula.Alunos = pseudoParticipacoes;
 
-
 					calendarioResponse.Add(pseudoAula);
 				}
 
@@ -410,7 +471,7 @@ public class CalendarioService : ICalendarioService
 		return response.AddDays(6);
 	}
 
-	private List<CalendarioEventoList> PopulateCalendarioEvents(List<CalendarioEventoList> events)
+	private List<CalendarioEventoList> PopulateCalendarioEvents(List<CalendarioEventoList> events, List<FeriadoResponse> feriados, List<RoteiroModel> roteiros)
 	{
 		var eventoIds = events.Select(e => e.Id);
 
@@ -450,10 +511,12 @@ public class CalendarioService : ICalendarioService
 
 		var perfisDictionary = allRels
 			.GroupBy(r => r.Evento_Aula_Id)
-			.ToDictionary(
-				g => g.Key,
-				g => g.Select(r => _mapper.Map<PerfilCognitivoModel>(r.PerfilCognitivo)).ToList()
-			);
+			.ToDictionary( g => g.Key, g => _mapper.Map<List<PerfilCognitivoModel>>(g.Select(r => r.PerfilCognitivo)));
+
+		string dateDictFormat = "ddMMyyyy";
+
+		var feriadosDictionary = feriados
+			.ToDictionary(x => x.date.ToString(dateDictFormat), x => x);
 
 		foreach (var calendarioEvent in events)
 		{
@@ -463,13 +526,26 @@ public class CalendarioService : ICalendarioService
 			professorDictionary.TryGetValue(calendarioEvent.Id, out var professoresInEvent);
 			calendarioEvent.Professores = professoresInEvent ?? new List<CalendarioProfessorList>();
 
-			if (perfisDictionary.TryGetValue(calendarioEvent.Id, out var aulaPerfisInEvent))
+			perfisDictionary.TryGetValue(calendarioEvent.Id, out var aulaPerfisInEvent);
+			calendarioEvent.PerfilCognitivo = aulaPerfisInEvent ?? new List<PerfilCognitivoModel>();
+
+			feriadosDictionary.TryGetValue(calendarioEvent.Data.ToString(dateDictFormat), out var feriadoInEvent);
+			calendarioEvent.Feriado = feriadoInEvent;
+			if (feriadoInEvent is not null && calendarioEvent.Active == true)
 			{
-				calendarioEvent.PerfilCognitivo = aulaPerfisInEvent;
+				calendarioEvent.Deactivated = feriadoInEvent is null ? null : feriadoInEvent.date;
+				calendarioEvent.Observacao = feriadoInEvent is null ? null : "Cancelamento Automático. <br> Feriado: " + feriadoInEvent.name;
 			}
-			else
+
+			if (calendarioEvent.Roteiro_Id == null) 
 			{
-				calendarioEvent.PerfilCognitivo = new List<PerfilCognitivoModel>();
+				var aulaData = calendarioEvent.Data.Date;
+				var roteiro = roteiros.FirstOrDefault(x => aulaData >= x.DataInicio && aulaData <= x.DataFim);
+
+				calendarioEvent.Roteiro_Id = roteiro?.Id ?? -1;
+				calendarioEvent.Semana = roteiro?.Semana;
+				calendarioEvent.Tema = roteiro?.Tema;
+				calendarioEvent.RoteiroCorLegenda = roteiro?.CorLegenda;
 			}
 		}
 
