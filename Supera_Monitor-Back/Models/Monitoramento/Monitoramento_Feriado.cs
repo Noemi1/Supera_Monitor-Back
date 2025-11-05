@@ -2,7 +2,9 @@
 {
 	public class Monitoramento_Feriado
 	{
-		public string Name { get; set; } = String.Empty;
-		public DateTime Date { get; set; }
+		public string type { get; set; } = null!;
+		public string name { get; set; } = null!;
+		public string level { get; set; } = null!;
+		public DateTime date { get; set; }
 	}
 }

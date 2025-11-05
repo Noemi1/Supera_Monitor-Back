@@ -201,6 +201,8 @@ public class MonitoramentoService : IMonitoramentoService
 					var monitoramentoAlunoItem = new Monitoramento_Aluno_Item();
 					var monitoramentoAula = new Monitoramento_Aula();
 					var monitoramentoParticipacao = new Monitoramento_Participacao();
+
+					FeriadoResponse? feriado = null;
 					Monitoramento_Aula_Participacao_Rel? monitoramentoReposicaoPara = null;
 
 					if (vigenciaAlunoRoteiro is not null)
@@ -210,7 +212,7 @@ public class MonitoramentoService : IMonitoramentoService
 						if (turmasPorId.TryGetValue(vigenciaAlunoRoteiro.Turma_Id, out var turma))
 						{
 							dataTurma = GetDataTurmaFromInterval(turma, roteiro.DataInicio, roteiro.DataFim);
-							feriadosPorData.TryGetValue(dataTurma.ToString(dateFormatDict), out var feriado);
+							feriadosPorData.TryGetValue(dataTurma.ToString(dateFormatDict), out feriado);
 
 							//
 							// Aula Instanciada
@@ -218,12 +220,10 @@ public class MonitoramentoService : IMonitoramentoService
 							if (eventosPorTurmaData.TryGetValue((turma.Id, dataTurma.Date), out var aula))
 							{
 								monitoramentoAula = _mapper.Map<Monitoramento_Aula>(aula);
-								monitoramentoAula.Feriado = feriado is null ? null : new Monitoramento_Feriado { Name = feriado.name, Date = feriado.date };
 								monitoramentoAula.Tema = aula.Tema ?? roteiro.Tema;
 								monitoramentoAula.Semana = aula.Semana ?? roteiro.Semana;
 								monitoramentoAula.RoteiroCorLegenda = roteiro.CorLegenda;
 								monitoramentoAula.Recesso = roteiro.Recesso;
-
 
 								if (participacaoPorAlunoEvento.TryGetValue((aluno.Id, aula.Id), out var participacao))
 								{
@@ -251,13 +251,19 @@ public class MonitoramentoService : IMonitoramentoService
 
 											monitoramentoReposicaoPara = new Monitoramento_Aula_Participacao_Rel();
 											monitoramentoReposicaoPara.Aula = _mapper.Map<Monitoramento_Aula>(reposicaoPara);
-											monitoramentoReposicaoPara.Aula.Feriado = feriadoReposicaoPara is null ? null : new Monitoramento_Feriado { Name = feriadoReposicaoPara.name, Date = feriadoReposicaoPara.date };
 											monitoramentoReposicaoPara.Aula.Tema = reposicaoPara.Tema ?? roteiroReposicaoPara?.Tema ?? "Tema indefinido";
 											monitoramentoReposicaoPara.Aula.Semana = reposicaoPara.Semana ?? roteiroReposicaoPara?.Semana ?? -1;
 											monitoramentoReposicaoPara.Aula.RoteiroCorLegenda = roteiroReposicaoPara?.CorLegenda ?? "";
 											monitoramentoReposicaoPara.Aula.Recesso = roteiroReposicaoPara?.Recesso ?? false;
 											monitoramentoReposicaoPara.Participacao = _mapper.Map<Monitoramento_Participacao>(participacaoReposicaoPara);
 
+											if (feriadoReposicaoPara is not null && monitoramentoReposicaoPara.Aula.Active == true)
+											{
+
+												monitoramentoReposicaoPara.Aula.Feriado = _mapper.Map<Monitoramento_Feriado>(feriadoReposicaoPara);
+												monitoramentoReposicaoPara.Aula.Observacao = "Cancelamento Automático. <br> Feriado: " + feriadoReposicaoPara.name;
+												monitoramentoReposicaoPara.Aula.Deactivated = feriadoReposicaoPara.date;
+											}
 										}
 
 									}
@@ -286,7 +292,6 @@ public class MonitoramentoService : IMonitoramentoService
 									Turma = turma.Nome,
 									Professor = turma.Professor ?? string.Empty,
 									CorLegenda = turma.CorLegenda ?? string.Empty,
-									Feriado = feriado is not null ? new Monitoramento_Feriado { Name = feriado.name, Date = feriado.date } : null,
 								};
 								monitoramentoParticipacao = new Monitoramento_Participacao
 								{
@@ -304,7 +309,7 @@ public class MonitoramentoService : IMonitoramentoService
 					else if (turmasPorId.TryGetValue(aluno.Turma_Id!.Value, out var turma))
 					{
 						dataTurma = GetDataTurmaFromInterval(turma, roteiro.DataInicio, roteiro.DataFim);
-						feriadosPorData.TryGetValue(dataTurma.ToString(dateFormatDict), out var feriado);
+						feriadosPorData.TryGetValue(dataTurma.ToString(dateFormatDict), out feriado);
 
 						monitoramentoAula = new Monitoramento_Aula
 						{
@@ -324,7 +329,6 @@ public class MonitoramentoService : IMonitoramentoService
 							Turma = turma.Nome,
 							Professor = turma.Professor ?? string.Empty,
 							CorLegenda = turma.CorLegenda ?? string.Empty,
-							Feriado = feriado is not null ? new Monitoramento_Feriado { Name = feriado.name, Date = feriado.date } : null,
 						};
 						monitoramentoParticipacao = new Monitoramento_Participacao
 						{
@@ -336,8 +340,16 @@ public class MonitoramentoService : IMonitoramentoService
 						};
 					}
 
+					if (feriado is not null && monitoramentoAula.Active)
+					{
+						monitoramentoAula.Feriado = _mapper.Map<Monitoramento_Feriado>(feriado);
+						monitoramentoAula.Observacao = "Cancelamento Automático. <br> Feriado: " + feriado.name;
+						monitoramentoAula.Deactivated = feriado.date;
+					}
+
 					monitoramentoAlunoItem.Id = monitoramentoAula.Id;
-					monitoramentoAlunoItem.Show = dataTurma.Year == request.Ano && roteiro.Recesso == false;
+					monitoramentoAlunoItem.Show = dataTurma.Year == request.Ano 
+													&& roteiro.Recesso == false;
 					monitoramentoAlunoItem.ReposicaoPara = monitoramentoReposicaoPara;
 					monitoramentoAlunoItem.Aula = new Monitoramento_Aula_Participacao_Rel
 					{
