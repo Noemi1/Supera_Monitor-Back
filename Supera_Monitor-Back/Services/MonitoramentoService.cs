@@ -348,8 +348,11 @@ public class MonitoramentoService : IMonitoramentoService
 					}
 
 					monitoramentoAlunoItem.Id = monitoramentoAula.Id;
-					monitoramentoAlunoItem.Show = dataTurma.Year == request.Ano 
-													&& roteiro.Recesso == false;
+					monitoramentoAlunoItem.Show = 
+							feriado is null
+							&& dataTurma.Year == request.Ano 
+							&& roteiro.Recesso == false
+							&& vigenciaAlunoRoteiro is not null;
 					monitoramentoAlunoItem.ReposicaoPara = monitoramentoReposicaoPara;
 					monitoramentoAlunoItem.Aula = new Monitoramento_Aula_Participacao_Rel
 					{
