@@ -106,7 +106,7 @@ public partial class DataContext : DbContext
 
 	public virtual DbSet<Professor_NivelCertificacao> Professor_NivelCertificacaos { get; set; }
 
-	public virtual DbSet<Roteiro> Roteiros { get; set; }
+	public virtual DbSet<Roteiro> Roteiro { get; set; }
 
 	public virtual DbSet<Sala> Salas { get; set; }
 
@@ -760,7 +760,8 @@ public partial class DataContext : DbContext
 				.OnDelete(DeleteBehavior.ClientSetNull)
 				.HasConstraintName("FK_Evento_Aula_Professor");
 
-			entity.HasOne(d => d.Roteiro).WithMany(p => p.Evento_Aulas)
+			entity.HasOne(d => d.Roteiro)
+				.WithMany(p => p.Evento_Aula)
 				.HasForeignKey(d => d.Roteiro_Id)
 				.HasConstraintName("FK_Evento_Aula_Roteiro");
 
@@ -1079,16 +1080,28 @@ public partial class DataContext : DbContext
 			entity.Property(e => e.CorLegenda)
 				.HasMaxLength(50)
 				.IsUnicode(false);
-			entity.Property(e => e.Created).HasColumnType("datetime");
-			entity.Property(e => e.DataFim).HasColumnType("datetime");
-			entity.Property(e => e.DataInicio).HasColumnType("datetime");
-			entity.Property(e => e.Deactivated).HasColumnType("datetime");
-			entity.Property(e => e.LastUpdated).HasColumnType("datetime");
+
+			entity.Property(e => e.Created)
+				.HasColumnType("datetime");
+
+			entity.Property(e => e.DataFim)
+				.HasColumnType("datetime");
+
+			entity.Property(e => e.DataInicio)
+				.HasColumnType("datetime");
+
+			entity.Property(e => e.Deactivated)
+				.HasColumnType("datetime");
+
+			entity.Property(e => e.LastUpdated)
+				.HasColumnType("datetime");
+
 			entity.Property(e => e.Tema)
 				.HasMaxLength(250)
 				.IsUnicode(false);
 
-			entity.HasOne(d => d.Account_Created).WithMany(p => p.Roteiros)
+			entity.HasOne(d => d.Account_Created)
+				.WithMany(p => p.Roteiros)
 				.HasForeignKey(d => d.Account_Created_Id)
 				.OnDelete(DeleteBehavior.ClientSetNull)
 				.HasConstraintName("FK_Roteiro_Account_Created");

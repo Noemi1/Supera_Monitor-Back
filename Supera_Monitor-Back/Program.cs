@@ -40,8 +40,6 @@ builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ILogService, LogService>();
-builder.Services.AddScoped<IEventoService, EventoService>();
-builder.Services.AddScoped<ICalendarioService, CalendarioService>();
 
 builder.Services.AddScoped<IEmailTemplateFactory, EmailTemplateFactory>();
 
@@ -55,8 +53,10 @@ builder.Services.AddScoped<ISalaService, SalaService>();
 builder.Services.AddScoped<IRoteiroService, RoteiroService>();
 builder.Services.AddScoped<IRestricaoService, RestricaoService>();
 
+builder.Services.AddScoped<ICalendarioService, CalendarioService>();
 builder.Services.AddScoped<IAulaService, AulaService>();
 builder.Services.AddScoped<IEventoService, EventoService>();
+builder.Services.AddScoped<IMonitoramentoService, MonitoramentoService>();
 
 #endregion
 

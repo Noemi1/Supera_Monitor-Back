@@ -1,55 +1,75 @@
 ﻿using AutoMapper;
-using Azure.Core;
 using Microsoft.EntityFrameworkCore;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Roteiro;
 using System.Globalization;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Supera_Monitor_Back.Services;
 
-public interface IRoteiroService {
-    public RoteiroModel? Get(int roteiroId);
-    List<RoteiroModel> GetAll(int? ano);
-    ResponseModel Insert(CreateRoteiroRequest model);
-    ResponseModel Update(UpdateRoteiroRequest model);
-    ResponseModel ToggleDeactivate(int roteiroId);
+public interface IRoteiroService
+{
+	public List<RoteiroModel> GetAll(int ano);
+
+	public Task<List<RoteiroModel>> GetAllAsync(int ano);
+	
+	public RoteiroModel? Get(int roteiroId);
+
+	public ResponseModel Insert(CreateRoteiroRequest model);
+
+	public ResponseModel Update(UpdateRoteiroRequest model);
+
+	public ResponseModel ToggleDeactivate(int roteiroId);
 }
 
-public class RoteiroService : IRoteiroService {
-    private readonly DataContext _db;
-    private readonly IMapper _mapper;
-    private readonly Account? _account;
-    private readonly IHttpContextAccessor? _httpContextAccessor;
+public class RoteiroService : IRoteiroService
+{
+	private readonly DataContext _db;
+	private readonly IMapper _mapper;
+	private readonly Account? _account;
+	private readonly IHttpContextAccessor? _httpContextAccessor;
 
-    public RoteiroService(DataContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor) {
-        _db = db;
-        _mapper = mapper;
-        _httpContextAccessor = httpContextAccessor;
-        _account = (Account?)_httpContextAccessor?.HttpContext?.Items["Account"];
-    }
+	public RoteiroService(DataContext db, IMapper mapper, IHttpContextAccessor httpContextAccessor)
+	{
+		_db = db;
+		_mapper = mapper;
+		_httpContextAccessor = httpContextAccessor;
+		_account = (Account?)_httpContextAccessor?.HttpContext?.Items["Account"];
+	}
 
-    public RoteiroModel? Get(int roteiroId) {
-        Roteiro? roteiro = _db.Roteiros.Find(roteiroId);
+	public async Task<List<RoteiroModel>> GetAllAsync(int ano)
+	{
 
-        if (roteiro is null) {
-            return null;
-        }
+		var listTask = _db.Roteiro
+			.Where(x => x.DataInicio.Year == ano || x.DataFim.Year == ano)
+			.OrderBy(x => x.Semana)
+			.AsNoTracking()
+			.ToListAsync();
 
-        return _mapper.Map<RoteiroModel>(roteiro);
-    }
+		await Task.WhenAll(listTask);
 
-    public List<RoteiroModel> GetAll(int? ano) {
-		if (!ano.HasValue)
-			ano = DateTime.Now.Year;
+		var list = listTask.Result;
 
-        List<Roteiro> list = _db.Roteiros
-			.Where(x => x.DataInicio.Year == ano.Value || x.DataFim.Year == ano.Value)
+		return CompleteRoteiros(list, ano);
+	}
+
+	public List<RoteiroModel> GetAll(int ano)
+	{
+
+		var list= _db.Roteiro
+			.Where(x => x.DataInicio.Year == ano || x.DataFim.Year == ano)
 			.OrderBy(x => x.Semana)
 			.ToList();
 
-		DateTime dataDe = new DateTime(ano.Value, 1, 1);
+		return CompleteRoteiros(list, ano);
+	}
+
+	private List<RoteiroModel> CompleteRoteiros(List<Roteiro> list, int ano)
+	{
+
+		DateTime dataDe = new DateTime(ano, 1, 1);
 		DateTime dataAte = dataDe.AddYears(1).AddDays(-1);
 		DateTimeFormatInfo dfi = DateTimeFormatInfo.CurrentInfo;
 		int weeksInYear = dfi.Calendar.GetWeekOfYear(dataAte, dfi.CalendarWeekRule, dfi.FirstDayOfWeek);
@@ -58,9 +78,9 @@ public class RoteiroService : IRoteiroService {
 		{
 			int week = dfi.Calendar.GetWeekOfYear(roteiro.DataInicio, dfi.CalendarWeekRule, dfi.FirstDayOfWeek);
 
-			if (roteiro.DataInicio.Year == ano.Value - 1)
+			if (roteiro.DataInicio.Year == ano - 1)
 				week = 1;
-			else if (roteiro.DataFim.Year == ano.Value + 1)
+			else if (roteiro.DataFim.Year == ano + 1)
 				week = weeksInYear;
 
 			roteirosArray[week - 1] = roteiro;
@@ -104,138 +124,164 @@ public class RoteiroService : IRoteiroService {
 
 			}
 		}
-
-
 		return _mapper.Map<List<RoteiroModel>>(roteirosArray);
-    }
 
-    public ResponseModel Insert(CreateRoteiroRequest model) {
-        ResponseModel response = new() { Success = false };
+	}
 
-        try {
-            if (model.DataFim <= model.DataInicio) {
-                return new ResponseModel { Message = "Data de fim não pode ser anterior à data de início" };
-            }
+	public RoteiroModel? Get(int roteiroId)
+	{
+		Roteiro? roteiro = _db.Roteiro.Find(roteiroId);
 
-            // Verifica se o novo roteiro se sobrepõe a outro roteiro existente ativo
-            // As condições cobrem os seguintes casos:
-            // 1. A DataInicio do novo roteiro está dentro do intervalo de um roteiro existente.
-            // 2. A DataFim do novo roteiro está dentro do intervalo de um roteiro existente.
-            // 3. O novo roteiro engloba completamente outro roteiro já cadastrado.
-            Roteiro? isDuringAnotherRoteiro = _db.Roteiros.FirstOrDefault(r =>
-                r.Deactivated == null &&
-                ((model.DataInicio >= r.DataInicio && model.DataInicio <= r.DataFim) || // DataInicio está dentro de outro roteiro
-                 (model.DataFim >= r.DataInicio && model.DataFim <= r.DataFim) ||       // DataFim está dentro de outro roteiro
-                 (model.DataInicio <= r.DataInicio && model.DataFim >= r.DataFim))      // Novo roteiro engloba outro roteiro
-            );
+		if (roteiro is null)
+		{
+			return null;
+		}
 
-            if (isDuringAnotherRoteiro != null) {
-                return new ResponseModel { Message = $"A data do intervalo desse roteiro conflita com outro roteiro: Semana: ${isDuringAnotherRoteiro.Semana}, Tema: ${isDuringAnotherRoteiro.Tema}." };
-            }
+		return _mapper.Map<RoteiroModel>(roteiro);
+	}
 
-            // Validations passed
+	public ResponseModel Insert(CreateRoteiroRequest model)
+	{
+		ResponseModel response = new() { Success = false };
 
-            Roteiro roteiro = _mapper.Map<Roteiro>(model);
-            roteiro.Account_Created_Id = _account!.Id;
-            roteiro.Created = TimeFunctions.HoraAtualBR();
+		try
+		{
+			if (model.DataFim <= model.DataInicio)
+			{
+				return new ResponseModel { Message = "Data de fim não pode ser anterior à data de início" };
+			}
 
-            _db.Roteiros.Add(roteiro);
-            _db.SaveChanges();
+			// Verifica se o novo roteiro se sobrepõe a outro roteiro existente ativo
+			// As condições cobrem os seguintes casos:
+			// 1. A DataInicio do novo roteiro está dentro do intervalo de um roteiro existente.
+			// 2. A DataFim do novo roteiro está dentro do intervalo de um roteiro existente.
+			// 3. O novo roteiro engloba completamente outro roteiro já cadastrado.
+			Roteiro? isDuringAnotherRoteiro = _db.Roteiro.FirstOrDefault(r =>
+				r.Deactivated == null &&
+				((model.DataInicio >= r.DataInicio && model.DataInicio <= r.DataFim) || // DataInicio está dentro de outro roteiro
+				 (model.DataFim >= r.DataInicio && model.DataFim <= r.DataFim) ||       // DataFim está dentro de outro roteiro
+				 (model.DataInicio <= r.DataInicio && model.DataFim >= r.DataFim))      // Novo roteiro engloba outro roteiro
+			);
 
-            response.Success = true;
-            response.Message = "Roteiro inserido com sucesso";
-            response.Object = _mapper.Map<RoteiroModel>(roteiro);
-        }
-        catch (Exception ex) {
-            response.Message = $"Falha ao inserir roteiro: {ex}";
-        }
+			if (isDuringAnotherRoteiro != null)
+			{
+				return new ResponseModel { Message = $"A data do intervalo desse roteiro conflita com outro roteiro: Semana: ${isDuringAnotherRoteiro.Semana}, Tema: ${isDuringAnotherRoteiro.Tema}." };
+			}
 
-        return response;
-    }
+			// Validations passed
 
-    public ResponseModel Update(UpdateRoteiroRequest model) {
-        ResponseModel response = new() { Success = false };
+			Roteiro roteiro = _mapper.Map<Roteiro>(model);
+			roteiro.Account_Created_Id = _account!.Id;
+			roteiro.Created = TimeFunctions.HoraAtualBR();
 
-        try {
-            Roteiro? roteiro = _db.Roteiros.AsNoTracking().FirstOrDefault(r => r.Id == model.Id);
-            if (roteiro == null) {
-                return new ResponseModel { Message = "Roteiro não encontrado." };
-            }
+			_db.Roteiro.Add(roteiro);
+			_db.SaveChanges();
 
-            if (model.DataFim <= model.DataInicio) {
-                return new ResponseModel { Message = "Intervalo de roteiro inválido" };
-            }
+			response.Success = true;
+			response.Message = "Roteiro inserido com sucesso";
+			response.Object = _mapper.Map<RoteiroModel>(roteiro);
+		}
+		catch (Exception ex)
+		{
+			response.Message = $"Falha ao inserir roteiro: {ex}";
+		}
 
-            // Verifica se o novo roteiro se sobrepõe a outro roteiro existente ativo
-            // As condições cobrem os seguintes casos:
-            // 1. A DataInicio do novo roteiro está dentro do intervalo de um roteiro existente.
-            // 2. A DataFim do novo roteiro está dentro do intervalo de um roteiro existente.
-            // 3. O novo roteiro engloba completamente outro roteiro já cadastrado.
-            Roteiro? isDuringAnotherRoteiro = _db.Roteiros.FirstOrDefault(r =>
-                r.Deactivated == null &&
-                r.Id != model.Id &&
-                ((model.DataInicio >= r.DataInicio && model.DataInicio <= r.DataFim) || // DataInicio está dentro de outro roteiro
-                 (model.DataFim >= r.DataInicio && model.DataFim <= r.DataFim) ||       // DataFim está dentro de outro roteiro
-                 (model.DataInicio <= r.DataInicio && model.DataFim >= r.DataFim))      // Novo roteiro engloba outro roteiro
-            );
+		return response;
+	}
 
-            if (isDuringAnotherRoteiro != null) {
-                return new ResponseModel { Message = $"A data do intervalo desse roteiro conflita com outro roteiro: Semana: ${isDuringAnotherRoteiro.Semana}, Tema: ${isDuringAnotherRoteiro.Tema}." };
-            }
+	public ResponseModel Update(UpdateRoteiroRequest model)
+	{
+		ResponseModel response = new() { Success = false };
 
-            // Validations passed
+		try
+		{
+			Roteiro? roteiro = _db.Roteiro.AsNoTracking().FirstOrDefault(r => r.Id == model.Id);
+			if (roteiro == null)
+			{
+				return new ResponseModel { Message = "Roteiro não encontrado." };
+			}
 
-            DateTime created = roteiro.Created;
-            DateTime? deactivated = roteiro.Deactivated;
-            int account_Created_Id = roteiro.Account_Created_Id;
+			if (model.DataFim <= model.DataInicio)
+			{
+				return new ResponseModel { Message = "Intervalo de roteiro inválido" };
+			}
 
-            roteiro = _mapper.Map<Roteiro>(model);
+			// Verifica se o novo roteiro se sobrepõe a outro roteiro existente ativo
+			// As condições cobrem os seguintes casos:
+			// 1. A DataInicio do novo roteiro está dentro do intervalo de um roteiro existente.
+			// 2. A DataFim do novo roteiro está dentro do intervalo de um roteiro existente.
+			// 3. O novo roteiro engloba completamente outro roteiro já cadastrado.
+			Roteiro? isDuringAnotherRoteiro = _db.Roteiro.FirstOrDefault(r =>
+				r.Deactivated == null &&
+				r.Id != model.Id &&
+				((model.DataInicio >= r.DataInicio && model.DataInicio <= r.DataFim) || // DataInicio está dentro de outro roteiro
+				 (model.DataFim >= r.DataInicio && model.DataFim <= r.DataFim) ||       // DataFim está dentro de outro roteiro
+				 (model.DataInicio <= r.DataInicio && model.DataFim >= r.DataFim))      // Novo roteiro engloba outro roteiro
+			);
 
-            roteiro.Created = created;
-            roteiro.Deactivated = deactivated;
-            roteiro.Account_Created_Id = account_Created_Id;
-            roteiro.LastUpdated = TimeFunctions.HoraAtualBR();
+			if (isDuringAnotherRoteiro != null)
+			{
+				return new ResponseModel { Message = $"A data do intervalo desse roteiro conflita com outro roteiro: Semana: ${isDuringAnotherRoteiro.Semana}, Tema: ${isDuringAnotherRoteiro.Tema}." };
+			}
 
-            _db.Roteiros.Update(roteiro);
-            _db.SaveChanges();
+			// Validations passed
 
-            response.Success = true;
-            response.Message = "Roteiro atualizado com sucesso";
-            response.Object = _mapper.Map<RoteiroModel>(roteiro);
-        }
-        catch (Exception ex) {
-            response.Message = $"Falha ao atualizar roteiro: {ex}";
-        }
+			DateTime created = roteiro.Created;
+			DateTime? deactivated = roteiro.Deactivated;
+			int account_Created_Id = roteiro.Account_Created_Id;
 
-        return response;
-    }
+			roteiro = _mapper.Map<Roteiro>(model);
 
-    public ResponseModel ToggleDeactivate(int roteiroId) {
-        ResponseModel response = new() { Success = false };
+			roteiro.Created = created;
+			roteiro.Deactivated = deactivated;
+			roteiro.Account_Created_Id = account_Created_Id;
+			roteiro.LastUpdated = TimeFunctions.HoraAtualBR();
 
-        try {
-            Roteiro? roteiro = _db.Roteiros.FirstOrDefault(r => r.Id == roteiroId);
+			_db.Roteiro.Update(roteiro);
+			_db.SaveChanges();
 
-            if (roteiro == null) {
-                return new ResponseModel { Message = "Roteiro não encontrado." };
-            }
+			response.Success = true;
+			response.Message = "Roteiro atualizado com sucesso";
+			response.Object = _mapper.Map<RoteiroModel>(roteiro);
+		}
+		catch (Exception ex)
+		{
+			response.Message = $"Falha ao atualizar roteiro: {ex}";
+		}
 
-            // Validations passed
+		return response;
+	}
 
-            bool isRoteiroActive = roteiro.Deactivated == null;
+	public ResponseModel ToggleDeactivate(int roteiroId)
+	{
+		ResponseModel response = new() { Success = false };
 
-            roteiro.Deactivated = isRoteiroActive ? TimeFunctions.HoraAtualBR() : null;
+		try
+		{
+			Roteiro? roteiro = _db.Roteiro.FirstOrDefault(r => r.Id == roteiroId);
 
-            _db.Roteiros.Update(roteiro);
-            _db.SaveChanges();
+			if (roteiro == null)
+			{
+				return new ResponseModel { Message = "Roteiro não encontrado." };
+			}
 
-            response.Success = true;
-            response.Message = "Roteiro desativado com sucesso";
-        }
-        catch (Exception ex) {
-            response.Message = $"Falha ao desativar roteiro: {ex}";
-        }
+			// Validations passed
 
-        return response;
-    }
+			bool isRoteiroActive = roteiro.Deactivated == null;
+
+			roteiro.Deactivated = isRoteiroActive ? TimeFunctions.HoraAtualBR() : null;
+
+			_db.Roteiro.Update(roteiro);
+			_db.SaveChanges();
+
+			response.Success = true;
+			response.Message = "Roteiro desativado com sucesso";
+		}
+		catch (Exception ex)
+		{
+			response.Message = $"Falha ao desativar roteiro: {ex}";
+		}
+
+		return response;
+	}
 }

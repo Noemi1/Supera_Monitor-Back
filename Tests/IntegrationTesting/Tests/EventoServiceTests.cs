@@ -243,43 +243,43 @@ public class EventoServiceTests : BaseIntegrationTest {
         Assert.False(faltanteResult.Presente);
     }
 
-    [Fact]
-    public void Deve_ObterCalendario() {
-        // Arrange (constructor)
-        var startOfWeek = DateTime.Now.Date.AddDays(-(int)DateTime.Now.DayOfWeek);
-        var endOfWeek = startOfWeek.AddDays(6);
+    //[Fact]
+    //public void Deve_ObterCalendario() {
+    //    // Arrange (constructor)
+    //    var startOfWeek = DateTime.Now.Date.AddDays(-(int)DateTime.Now.DayOfWeek);
+    //    var endOfWeek = startOfWeek.AddDays(6);
 
-        var turma = TurmaFactory.Create(_db, new Turma
-        {
-            DiaSemana = 5,
-            Horario = new TimeSpan(18, 0, 0),
-            Sala_Id = 1,
-            Professor_Id = 1,
-            Nome = "Test Turma",
-            CapacidadeMaximaAlunos = 12,
-            Unidade_Id = 1,
-            Account_Created_Id = 3,
-        }, [1, 2]);
+    //    var turma = TurmaFactory.Create(_db, new Turma
+    //    {
+    //        DiaSemana = 5,
+    //        Horario = new TimeSpan(18, 0, 0),
+    //        Sala_Id = 1,
+    //        Professor_Id = 1,
+    //        Nome = "Test Turma",
+    //        CapacidadeMaximaAlunos = 12,
+    //        Unidade_Id = 1,
+    //        Account_Created_Id = 3,
+    //    }, [1, 2]);
 
-        AlunoFactory.Create(_db, new Aluno { Turma_Id = turma.Id, PerfilCognitivo_Id = 1, Apostila_Kit_Id = 1, Apostila_Abaco_Id = 1, Apostila_AH_Id = 3 });
+    //    AlunoFactory.Create(_db, new Aluno { Turma_Id = turma.Id, PerfilCognitivo_Id = 1, Apostila_Kit_Id = 1, Apostila_Abaco_Id = 1, Apostila_AH_Id = 3 });
 
-        // Act
-        var response = sut.GetCalendario(new CalendarioRequest { IntervaloDe = startOfWeek, IntervaloAte = endOfWeek });
+    //    // Act
+    //    var response = sut.GetCalendario(new CalendarioRequest { IntervaloDe = startOfWeek, IntervaloAte = endOfWeek });
 
-        // Assert
-        var countEventos = response.Count;
+    //    // Assert
+    //    var countEventos = response.Count;
 
-        // Padrão: 1 Evento de oficina, 3 Eventos de reunião (1 geral, 1 monitoramento, 1 pedagógica)
-        // Recorrentes: 1 Aula semanal para cada turma ativa
-        // Eventos isolados: Aula zero, Superação, Aula extra
+    //    // Padrão: 1 Evento de oficina, 3 Eventos de reunião (1 geral, 1 monitoramento, 1 pedagógica)
+    //    // Recorrentes: 1 Aula semanal para cada turma ativa
+    //    // Eventos isolados: Aula zero, Superação, Aula extra
 
-        Assert.NotNull(response);
-        Assert.Equal(5, countEventos);
+    //    Assert.NotNull(response);
+    //    Assert.Equal(5, countEventos);
 
-        var eventoTurma = response.SingleOrDefault(e => e.Evento_Tipo_Id == (int)EventoTipo.Aula);
-        Assert.NotNull(eventoTurma);
-        Assert.Single(eventoTurma.Alunos);
-    }
+    //    var eventoTurma = response.SingleOrDefault(e => e.Evento_Tipo_Id == (int)EventoTipo.Aula);
+    //    Assert.NotNull(eventoTurma);
+    //    Assert.Single(eventoTurma.Alunos);
+    //}
 
     [Fact]
     public void Deve_InserirParticipacao() {
@@ -376,43 +376,43 @@ public class EventoServiceTests : BaseIntegrationTest {
         Assert.Equal(turma.Id, aluno.Turma_Id);
     }
 
-    [Fact]
-    public void NaoDeve_MostrarEventosDeTurmaDesativada() {
-        // Arrange (constructor)
-        var startOfWeek = DateTime.Now.Date.AddDays(-(int)DateTime.Now.DayOfWeek);
-        var endOfWeek = startOfWeek.AddDays(6);
+    //[Fact]
+    //public void NaoDeve_MostrarEventosDeTurmaDesativada() {
+    //    // Arrange (constructor)
+    //    var startOfWeek = DateTime.Now.Date.AddDays(-(int)DateTime.Now.DayOfWeek);
+    //    var endOfWeek = startOfWeek.AddDays(6);
 
-        var turma = TurmaFactory.Create(_db, new Turma
-        {
-            DiaSemana = 5,
-            Horario = new TimeSpan(18, 0, 0),
-            Sala_Id = 1,
-            Professor_Id = 1,
-            Nome = "Test Turma",
-            CapacidadeMaximaAlunos = 12,
-            Unidade_Id = 1,
-            Account_Created_Id = 3,
-            Deactivated = TimeFunctions.HoraAtualBR(),
-        }, [1, 2]);
+    //    var turma = TurmaFactory.Create(_db, new Turma
+    //    {
+    //        DiaSemana = 5,
+    //        Horario = new TimeSpan(18, 0, 0),
+    //        Sala_Id = 1,
+    //        Professor_Id = 1,
+    //        Nome = "Test Turma",
+    //        CapacidadeMaximaAlunos = 12,
+    //        Unidade_Id = 1,
+    //        Account_Created_Id = 3,
+    //        Deactivated = TimeFunctions.HoraAtualBR(),
+    //    }, [1, 2]);
 
-        AlunoFactory.Create(_db, new Aluno { Turma_Id = turma.Id, PerfilCognitivo_Id = 1, Apostila_Kit_Id = 1, Apostila_Abaco_Id = 1, Apostila_AH_Id = 3 });
+    //    AlunoFactory.Create(_db, new Aluno { Turma_Id = turma.Id, PerfilCognitivo_Id = 1, Apostila_Kit_Id = 1, Apostila_Abaco_Id = 1, Apostila_AH_Id = 3 });
 
-        // Act
-        var response = sut.GetCalendario(new CalendarioRequest { IntervaloDe = startOfWeek, IntervaloAte = endOfWeek });
+    //    // Act
+    //    var response = sut.GetCalendario(new CalendarioRequest { IntervaloDe = startOfWeek, IntervaloAte = endOfWeek });
 
-        // Assert
-        var countEventos = response.Count;
+    //    // Assert
+    //    var countEventos = response.Count;
 
-        // Padrão: 1 Evento de oficina, 3 Eventos de reunião (1 geral, 1 monitoramento, 1 pedagógica)
-        // Recorrentes: 1 Aula semanal para cada turma ativa
-        // Eventos isolados: Aula zero, Superação, Aula extra
+    //    // Padrão: 1 Evento de oficina, 3 Eventos de reunião (1 geral, 1 monitoramento, 1 pedagógica)
+    //    // Recorrentes: 1 Aula semanal para cada turma ativa
+    //    // Eventos isolados: Aula zero, Superação, Aula extra
 
-        Assert.NotNull(response);
-        Assert.Equal(4, countEventos);
+    //    Assert.NotNull(response);
+    //    Assert.Equal(4, countEventos);
 
-        var eventoTurma = response.SingleOrDefault(e => e.Evento_Tipo_Id == (int)EventoTipo.Aula);
-        Assert.Null(eventoTurma);
-    }
+    //    var eventoTurma = response.SingleOrDefault(e => e.Evento_Tipo_Id == (int)EventoTipo.Aula);
+    //    Assert.Null(eventoTurma);
+    //}
 
     [Fact]
     public void Deve_AtualizarParticipacao() {

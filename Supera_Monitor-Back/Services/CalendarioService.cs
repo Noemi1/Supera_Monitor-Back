@@ -1,19 +1,12 @@
-﻿using System.Globalization;
-using System.Text.Json;
-using AutoMapper;
-using AutoMapper.QueryableExtensions;
+﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
-using Supera_Monitor_Back.Models.Dashboard;
 using Supera_Monitor_Back.Models.Eventos;
-using Supera_Monitor_Back.Models.Eventos.Dtos;
-using Supera_Monitor_Back.Models.Eventos.Participacao;
-using Supera_Monitor_Back.Models.Roteiro;
 
-namespace Supera_Monitor_Back.Services.Eventos;
+namespace Supera_Monitor_Back.Services;
 
 public interface ICalendarioService
 {
@@ -250,9 +243,6 @@ public class CalendarioService : ICalendarioService
 
 			#endregion
 
-			var vigenciasDoDia = vigencias.Where(x => data.Date >= x.DataInicioVigencia.Date
-											&& (!x.DataFimVigencia.HasValue || data.Date <= x.DataFimVigencia.Value.Date))
-											.ToList();
 
 			var	turmasDoDia = turmas.Where(x => x.DiaSemana == (int)data.DayOfWeek)
 								.ToList();
@@ -260,129 +250,146 @@ public class CalendarioService : ICalendarioService
 
 			foreach (TurmaList turma in turmasDoDia)
 			{
-				var vigenciasDaTurma = vigenciasDoDia.Where(x => x.Turma_Id == turma.Id).ToList();
-				var alunosDoDiaId = vigenciasDaTurma.Select(x => x.Aluno_Id).ToList();
-				var alunosTurma = alunos.Where(x => alunosDoDiaId.Contains(x.Id)).ToList();
 
 				DateTime dataTurma = new DateTime(data.Year, data.Month, data.Day, turma.Horario!.Value.Hours, turma.Horario!.Value.Minutes, 0);
 
-				int alunosAtivosInTurma = vigenciasDaTurma.Count;
+				var eventoAula = calendarioResponse.FirstOrDefault(x => x.Turma_Id == turma.Id && x.Data == dataTurma);
 
-				CalendarioEventoList pseudoAula = new()
+				if (eventoAula is null)
 				{
-					Id = -1,
-					Evento_Tipo_Id = (int)EventoTipo.Aula,
-					Evento_Tipo = "Pseudo-Aula",
 
-					Descricao = turma.Nome, // Pseudo aulas ganham o nome da turma
-					DuracaoMinutos = 120, // As pseudo aulas são de uma turma e duram 2h por padrão
+					var vigenciasDaTurma = vigencias
+						.Where(x => x.Turma_Id == turma.Id
+								&& data.Date >= x.DataInicioVigencia.Date
+								&& (!x.DataFimVigencia.HasValue || data.Date <= x.DataFimVigencia.Value.Date))
+						.ToList();
 
-					Roteiro_Id = roteiroDoDia?.Id,
-					Semana = roteiroDoDia?.Semana,
-					Tema = roteiroDoDia?.Tema,
+					var alunosDoDiaId = vigenciasDaTurma
+						.Select(x => x.Aluno_Id)
+						.ToList();
 
-					Data = dataTurma,
+					var alunosTurma = alunos
+						.Where(x => alunosDoDiaId.Contains(x.Id))
+						.ToList();
 
-					Turma_Id = turma.Id,
-					Turma = turma.Nome,
+					int alunosAtivosInTurma = vigenciasDaTurma.Count;
 
-					VagasDisponiveisTurma = turma.CapacidadeMaximaAlunos - alunosAtivosInTurma,
-					CapacidadeMaximaTurma = turma.CapacidadeMaximaAlunos,
-					AlunosAtivosTurma = alunosAtivosInTurma,
-
-					VagasDisponiveisEvento = turma.CapacidadeMaximaAlunos - alunosAtivosInTurma,
-					CapacidadeMaximaEvento = turma.CapacidadeMaximaAlunos,
-					AlunosAtivosEvento = alunosAtivosInTurma,
-
-					Professor_Id = turma.Professor_Id,
-					Professor = turma.Professor ?? "Professor indefinido",
-					CorLegenda = turma.CorLegenda ?? "#000",
-
-					Finalizado = false,
-					Sala = turma.Sala ?? "Sala Indefinida",
-					Sala_Id = turma.Sala_Id,
-					NumeroSala = turma.NumeroSala,
-					Andar = turma.Andar,
-
-					Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos)
-											.OrderBy(a => a.Aluno)
-											.ToList(),
-				};
-
-				var perfilEvento = perfisCognitivosTurmas
-					.Where(x => x.Turma_Id == turma.Id)
-					.Select(p => p.PerfilCognitivo)
-					.ToList();
-
-				pseudoAula.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(perfilEvento);
-
-				var professor = professores.FirstOrDefault(x => x.Id == turma.Professor_Id);
-
-				pseudoAula.Professores = new List<CalendarioProfessorList>()
-					{
-						new CalendarioProfessorList
-							{
-								Id = null,
-								Evento_Id = -1,
-								Professor_Id = turma.Professor_Id ?? -1,
-								Nome = turma.Professor,
-								CorLegenda = turma.CorLegenda ?? "#000",
-								Presente = null,
-								Observacao = "",
-								Account_Id = professor?.Account_Id ?? -1,
-								Telefone = professor.Telefone ?? "",
-								ExpedienteInicio = professor.ExpedienteInicio,
-								ExpedienteFim = professor.ExpedienteFim,
-							}
-					};
-
-
-				var pseudoParticipacoes = alunosTurma
-					.OrderBy(x => x.Nome)
-					.Select(x => new CalendarioAlunoList()
+					var pseudoAula = new CalendarioEventoList()
 					{
 						Id = -1,
-						Evento_Id = -1,
-						Aluno_Id = x.Id,
-						Checklist = x.Checklist,
-						Checklist_Id = x.Checklist_Id,
-						Aluno = x.Nome,
-						DataNascimento = x.DataNascimento,
-						Celular = x.Celular,
-						Aluno_Foto = null,
-						Turma_Id = x.Turma_Id,
-						Turma = x.Turma,
-						//UltimaTrocaTurma = x.UltimaTrocaTurma,
-						//DataInicioVigencia = x.DataInicioVigencia,
-						//DataFimVigencia = x.DataFimVigencia,
-						PrimeiraAula_Id = x.PrimeiraAula_Id,
-						AulaZero_Id = x.AulaZero_Id,
-						RestricaoMobilidade = x.RestricaoMobilidade,
-						ReposicaoDe_Evento_Id = null,
-						ReposicaoPara_Evento_Id = null,
-						Presente = null,
-						Apostila_Kit_Id = x.Apostila_Kit_Id,
-						Kit = x.Kit,
-						Apostila_Abaco = x.Apostila_Abaco,
-						Apostila_AH = x.Apostila_AH,
-						Apostila_Abaco_Id = x.Apostila_Abaco_Id,
-						Apostila_AH_Id = x.Apostila_AH_Id,
-						NumeroPaginaAbaco = x.NumeroPaginaAbaco,
-						NumeroPaginaAH = x.NumeroPaginaAH,
-						Observacao = x.Observacao,
-						Deactivated = x.Deactivated,
-						AlunoContactado = null,
-						ContatoObservacao = null,
-						StatusContato_Id = null,
-						PerfilCognitivo_Id = x.PerfilCognitivo_Id,
-						PerfilCognitivo = x.PerfilCognitivo,
-					})
-					.ToList();
+						Evento_Tipo_Id = (int)EventoTipo.Aula,
+						Evento_Tipo = "Pseudo-Aula",
 
-				pseudoAula.Alunos = pseudoParticipacoes;
+						Descricao = turma.Nome, // Pseudo aulas ganham o nome da turma
+						DuracaoMinutos = 120, // As pseudo aulas são de uma turma e duram 2h por padrão
+
+						Roteiro_Id = roteiroDoDia?.Id,
+						Semana = roteiroDoDia?.Semana,
+						Tema = roteiroDoDia?.Tema,
+
+						Data = dataTurma,
+
+						Turma_Id = turma.Id,
+						Turma = turma.Nome,
+
+						VagasDisponiveisTurma = turma.CapacidadeMaximaAlunos - alunosAtivosInTurma,
+						CapacidadeMaximaTurma = turma.CapacidadeMaximaAlunos,
+						AlunosAtivosTurma = alunosAtivosInTurma,
+
+						VagasDisponiveisEvento = turma.CapacidadeMaximaAlunos - alunosAtivosInTurma,
+						CapacidadeMaximaEvento = turma.CapacidadeMaximaAlunos,
+						AlunosAtivosEvento = alunosAtivosInTurma,
+
+						Professor_Id = turma.Professor_Id,
+						Professor = turma.Professor ?? "Professor indefinido",
+						CorLegenda = turma.CorLegenda ?? "#000",
+
+						Finalizado = false,
+						Sala = turma.Sala ?? "Sala Indefinida",
+						Sala_Id = turma.Sala_Id,
+						NumeroSala = turma.NumeroSala,
+						Andar = turma.Andar,
+
+						Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos)
+												.OrderBy(a => a.Aluno)
+												.ToList(),
+					};
+
+					var perfilEvento = perfisCognitivosTurmas
+						.Where(x => x.Turma_Id == turma.Id)
+						.Select(p => p.PerfilCognitivo)
+						.ToList();
+
+					pseudoAula.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(perfilEvento);
+
+					var professor = professores.FirstOrDefault(x => x.Id == turma.Professor_Id);
+
+					pseudoAula.Professores = new List<CalendarioProfessorList>()
+						{
+							new CalendarioProfessorList
+								{
+									Id = null,
+									Evento_Id = -1,
+									Professor_Id = turma.Professor_Id ?? -1,
+									Nome = turma.Professor,
+									CorLegenda = turma.CorLegenda ?? "#000",
+									Presente = null,
+									Observacao = "",
+									Account_Id = professor?.Account_Id ?? -1,
+									Telefone = professor.Telefone ?? "",
+									ExpedienteInicio = professor.ExpedienteInicio,
+									ExpedienteFim = professor.ExpedienteFim,
+								}
+						};
+
+					var pseudoParticipacoes = alunosTurma
+						.OrderBy(x => x.Nome)
+						.Select(x => new CalendarioAlunoList()
+						{
+							Id = -1,
+							Evento_Id = -1,
+							Aluno_Id = x.Id,
+							Checklist = x.Checklist,
+							Checklist_Id = x.Checklist_Id,
+							Aluno = x.Nome,
+							DataNascimento = x.DataNascimento,
+							Celular = x.Celular,
+							Aluno_Foto = null,
+							Turma_Id = x.Turma_Id,
+							Turma = x.Turma,
+							//UltimaTrocaTurma = x.UltimaTrocaTurma,
+							//DataInicioVigencia = x.DataInicioVigencia,
+							//DataFimVigencia = x.DataFimVigencia,
+							PrimeiraAula_Id = x.PrimeiraAula_Id,
+							AulaZero_Id = x.AulaZero_Id,
+							RestricaoMobilidade = x.RestricaoMobilidade,
+							ReposicaoDe_Evento_Id = null,
+							ReposicaoPara_Evento_Id = null,
+							Presente = null,
+							Apostila_Kit_Id = x.Apostila_Kit_Id,
+							Kit = x.Kit,
+							Apostila_Abaco = x.Apostila_Abaco,
+							Apostila_AH = x.Apostila_AH,
+							Apostila_Abaco_Id = x.Apostila_Abaco_Id,
+							Apostila_AH_Id = x.Apostila_AH_Id,
+							NumeroPaginaAbaco = x.NumeroPaginaAbaco,
+							NumeroPaginaAH = x.NumeroPaginaAH,
+							Observacao = x.Observacao,
+							Deactivated = x.Deactivated,
+							AlunoContactado = null,
+							ContatoObservacao = null,
+							StatusContato_Id = null,
+							PerfilCognitivo_Id = x.PerfilCognitivo_Id,
+							PerfilCognitivo = x.PerfilCognitivo,
+						})
+						.ToList();
+
+					pseudoAula.Alunos = pseudoParticipacoes;
 
 
-				calendarioResponse.Add(pseudoAula);
+					calendarioResponse.Add(pseudoAula);
+				}
+
 			}
 
 			data = data.AddDays(1);

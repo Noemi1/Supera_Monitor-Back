@@ -138,7 +138,7 @@ public class AulaService : IAulaService {
 
             Roteiro? roteiro;
             if (request.Roteiro_Id.HasValue && request.Roteiro_Id.Value != -1) {
-                roteiro = _db.Roteiros.Find(request.Roteiro_Id);
+                roteiro = _db.Roteiro.Find(request.Roteiro_Id);
 
                 // Não devo poder criar aula de turma com um roteiro que não existe
                 if (roteiro is null) {
@@ -146,7 +146,7 @@ public class AulaService : IAulaService {
                 }
             }
             else {
-                roteiro = _db.Roteiros.FirstOrDefault(r => request.Data.Date >= r.DataInicio.Date && request.Data.Date <= r.DataFim.Date);
+                roteiro = _db.Roteiro.FirstOrDefault(r => request.Data.Date >= r.DataInicio.Date && request.Data.Date <= r.DataFim.Date);
             }
 
             // Validations passed
@@ -317,7 +317,7 @@ public class AulaService : IAulaService {
 
             Roteiro? roteiro;
             if (request.Roteiro_Id.HasValue && request.Roteiro_Id.Value != -1) {
-                roteiro = _db.Roteiros.Find(request.Roteiro_Id);
+                roteiro = _db.Roteiro.Find(request.Roteiro_Id);
 
                 // Não devo poder criar aula de turma com um roteiro que não existe
                 if (roteiro is null) {
@@ -325,7 +325,7 @@ public class AulaService : IAulaService {
                 }
             }
             else {
-                roteiro = _db.Roteiros.FirstOrDefault(r => request.Data.Date >= r.DataInicio.Date && request.Data.Date <= r.DataFim.Date);
+                roteiro = _db.Roteiro.FirstOrDefault(r => request.Data.Date >= r.DataInicio.Date && request.Data.Date <= r.DataFim.Date);
             }
 
             // Validations passed
@@ -524,7 +524,7 @@ public class AulaService : IAulaService {
 
             // Validations passed
 
-            Roteiro? roteiro = _db.Roteiros.FirstOrDefault(r => request.Data.Date >= r.DataInicio.Date && request.Data.Date <= r.DataFim.Date);
+            Roteiro? roteiro = _db.Roteiro.FirstOrDefault(r => request.Data.Date >= r.DataInicio.Date && request.Data.Date <= r.DataFim.Date);
 
             Evento evento = new()
             {
@@ -723,7 +723,7 @@ public class AulaService : IAulaService {
 
             Roteiro? roteiro;
             if (request.Roteiro_Id.HasValue && request.Roteiro_Id.Value != -1) {
-                roteiro = _db.Roteiros.Find(request.Roteiro_Id);
+                roteiro = _db.Roteiro.Find(request.Roteiro_Id);
 
                 // Não devo poder criar aula de turma com um roteiro que não existe
                 if (roteiro is null) {
@@ -731,7 +731,7 @@ public class AulaService : IAulaService {
                 }
             }
             else {
-                roteiro = _db.Roteiros.FirstOrDefault(r => request.Data.Date >= r.DataInicio.Date && request.Data.Date <= r.DataFim.Date);
+                roteiro = _db.Roteiro.FirstOrDefault(r => request.Data.Date >= r.DataInicio.Date && request.Data.Date <= r.DataFim.Date);
             }
 
             // Validations passed

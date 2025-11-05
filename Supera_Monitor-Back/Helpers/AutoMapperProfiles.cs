@@ -6,9 +6,9 @@ using Supera_Monitor_Back.Models.Accounts;
 using Supera_Monitor_Back.Models.Aluno;
 using Supera_Monitor_Back.Models.Apostila;
 using Supera_Monitor_Back.Models.Checklist;
-using Supera_Monitor_Back.Models.Dashboard;
 using Supera_Monitor_Back.Models.Eventos;
 using Supera_Monitor_Back.Models.Eventos.Aula;
+using Supera_Monitor_Back.Models.Monitoramento;
 using Supera_Monitor_Back.Models.Pessoa;
 using Supera_Monitor_Back.Models.Professor;
 using Supera_Monitor_Back.Models.Restricao;
@@ -99,21 +99,18 @@ namespace Supera_Monitor_Back.Helpers
                 .ForMember(dest => dest.Sala, opt => opt.MapFrom(src => $"{src.Sala.NumeroSala} - Andar: {src.Sala.Andar}"));
 
 
-            // Dashboard
-            CreateMap<CalendarioAlunoList, Dashboard_Participacao>();
-            CreateMap<AlunoList, Dashboard_Aluno>();
-            CreateMap<CalendarioEventoList, Dashboard_Aula>();
-            CreateMap<Roteiro, Dashboard_Roteiro>();
-
+            
             CreateMap<Roteiro, RoteiroModel>();
             CreateMap<RoteiroModel, Roteiro>();
             CreateMap<CreateRoteiroRequest, Roteiro>();
             CreateMap<UpdateRoteiroRequest, Roteiro>();
 
-            CreateMap<Roteiro, DashboardRoteiro>();
-            CreateMap<AlunoList, DashboardAluno>();
-            CreateMap<CalendarioEventoList, DashboardAula>();
-            CreateMap<CalendarioAlunoList, DashboardParticipacao>();
+			// Monitoramento
+            CreateMap<Roteiro, Monitoramento_Roteiro>();
+            CreateMap<RoteiroModel, Monitoramento_Roteiro>();
+            CreateMap<AlunoList, Monitoramento_Aluno>();
+            CreateMap<CalendarioEventoList, Monitoramento_Aula>();
+            CreateMap<CalendarioAlunoList, Monitoramento_Participacao>();
 
 
 
