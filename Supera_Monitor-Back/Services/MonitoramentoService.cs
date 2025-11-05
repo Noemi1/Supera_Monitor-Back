@@ -364,9 +364,9 @@ public class MonitoramentoService : IMonitoramentoService
 				}
 
 
-				response.Alunos.Add(monitoramentoAluno);
 			}
 		}
+		response.Alunos = monitoramentosAlunos;
 
 		#endregion
 

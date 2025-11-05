@@ -199,8 +199,6 @@ public partial class DataContext : DbContext
 				.HasMaxLength(128)
 				.IsUnicode(false);
 			entity.Property(e => e.Created).HasColumnType("datetime");
-			entity.Property(e => e.DataFimVigencia).HasColumnType("date");
-			entity.Property(e => e.DataInicioVigencia).HasColumnType("date");
 			entity.Property(e => e.Deactivated).HasColumnType("datetime");
 			entity.Property(e => e.LastUpdated).HasColumnType("datetime");
 			entity.Property(e => e.LoginApp)
@@ -324,8 +322,6 @@ public partial class DataContext : DbContext
 				.HasMaxLength(20)
 				.IsUnicode(false);
 			entity.Property(e => e.Created).HasColumnType("datetime");
-			entity.Property(e => e.DataFimVigencia).HasColumnType("date");
-			entity.Property(e => e.DataInicioVigencia).HasColumnType("date");
 			entity.Property(e => e.DataNascimento).HasColumnType("date");
 			entity.Property(e => e.Deactivated).HasColumnType("datetime");
 			entity.Property(e => e.Email)

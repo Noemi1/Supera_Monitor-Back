@@ -45,81 +45,81 @@ public class Turma_UnitTests {
         Assert.False(turma.PossuiVagas(vagasOcupadas: turma.Alunos.Count, vagasRequisitadas));
     }
 
-    [Theory]
-    [InlineData(12, 12)]
-    [InlineData(12, 6)]
-    [InlineData(0, 0)]
-    [InlineData(1, 1)]
-    public void ShouldNot_ExtractSequenciaVigenciaCorrectly(int capacidadeMaxima, int quantidadeAlunos) {
-        Turma turma = new()
-        {
-            CapacidadeMaximaAlunos = capacidadeMaxima,
-            Alunos = [],
-        };
+    //[Theory]
+    //[InlineData(12, 12)]
+    //[InlineData(12, 6)]
+    //[InlineData(0, 0)]
+    //[InlineData(1, 1)]
+    //public void ShouldNot_ExtractSequenciaVigenciaCorrectly(int capacidadeMaxima, int quantidadeAlunos) {
+    //    Turma turma = new()
+    //    {
+    //        CapacidadeMaximaAlunos = capacidadeMaxima,
+    //        Alunos = [],
+    //    };
 
-        DateTime now = TimeFunctions.HoraAtualBR();
+    //    DateTime now = TimeFunctions.HoraAtualBR();
 
-        for (int i = 0; i < quantidadeAlunos; i++) {
-            turma.Alunos.Add(new Aluno()
-            {
-                DataInicioVigencia = now,
-                DataFimVigencia = now.AddMonths(6),
-                Deactivated = null
-            });
-        }
+    //    for (int i = 0; i < quantidadeAlunos; i++) {
+    //        turma.Alunos.Add(new Aluno()
+    //        {
+    //            DataInicioVigencia = now,
+    //            DataFimVigencia = now.AddMonths(6),
+    //            Deactivated = null
+    //        });
+    //    }
 
-        List<SequenciaVigencia> sequenciaVigencias = turma.ExtrairSequenciaVigencias();
+    //    List<SequenciaVigencia> sequenciaVigencias = turma.ExtrairSequenciaVigencias();
 
-        Assert.True(sequenciaVigencias.Count == quantidadeAlunos * 2);
-    }
+    //    Assert.True(sequenciaVigencias.Count == quantidadeAlunos * 2);
+    //}
 
-    [Fact]
-    public void ShouldNot_AllowIncompatibleVigencia() {
-        var now = TimeFunctions.HoraAtualBR();
+    //[Fact]
+    //public void ShouldNot_AllowIncompatibleVigencia() {
+    //    var now = TimeFunctions.HoraAtualBR();
 
-        Turma turma = new()
-        {
-            CapacidadeMaximaAlunos = 2,
-            Alunos = [
-                new() { Deactivated = null, DataInicioVigencia = now.Date, DataFimVigencia = now.AddMonths(6).Date },
-                new() { Deactivated = null, DataInicioVigencia = now.Date, DataFimVigencia = now.AddMonths(6).Date },
-            ],
-        };
+    //    Turma turma = new()
+    //    {
+    //        CapacidadeMaximaAlunos = 2,
+    //        Alunos = [
+    //            new() { Deactivated = null, DataInicioVigencia = now.Date, DataFimVigencia = now.AddMonths(6).Date },
+    //            new() { Deactivated = null, DataInicioVigencia = now.Date, DataFimVigencia = now.AddMonths(6).Date },
+    //        ],
+    //    };
 
-        Aluno novoAluno = new()
-        {
-            Deactivated = null,
-            DataInicioVigencia = now.AddMonths(3).Date,
-            DataFimVigencia = now.AddMonths(6).Date,
-        };
+    //    Aluno novoAluno = new()
+    //    {
+    //        Deactivated = null,
+    //        DataInicioVigencia = now.AddMonths(3).Date,
+    //        DataFimVigencia = now.AddMonths(6).Date,
+    //    };
 
-        bool vigenciaValidada = turma.VerificarCompatibilidadeVigencia(novoAluno);
+    //    bool vigenciaValidada = turma.VerificarCompatibilidadeVigencia(novoAluno);
 
-        Assert.False(vigenciaValidada);
-    }
+    //    Assert.False(vigenciaValidada);
+    //}
 
-    [Fact]
-    public void Should_AllowCompatibleVigencia() {
-        var now = TimeFunctions.HoraAtualBR();
+    //[Fact]
+    //public void Should_AllowCompatibleVigencia() {
+    //    var now = TimeFunctions.HoraAtualBR();
 
-        Turma turma = new()
-        {
-            CapacidadeMaximaAlunos = 2,
-            Alunos = [
-                new() { Deactivated = null, DataInicioVigencia = now.Date, DataFimVigencia = now.AddMonths(6).Date },
-                new() { Deactivated = null, DataInicioVigencia = now.Date, DataFimVigencia = now.AddMonths(12).Date },
-            ],
-        };
+    //    Turma turma = new()
+    //    {
+    //        CapacidadeMaximaAlunos = 2,
+    //        Alunos = [
+    //            new() { Deactivated = null, DataInicioVigencia = now.Date, DataFimVigencia = now.AddMonths(6).Date },
+    //            new() { Deactivated = null, DataInicioVigencia = now.Date, DataFimVigencia = now.AddMonths(12).Date },
+    //        ],
+    //    };
 
-        Aluno novoAluno = new()
-        {
-            Deactivated = null,
-            DataInicioVigencia = now.AddMonths(6).Date,
-            DataFimVigencia = now.AddMonths(12).Date,
-        };
+    //    Aluno novoAluno = new()
+    //    {
+    //        Deactivated = null,
+    //        DataInicioVigencia = now.AddMonths(6).Date,
+    //        DataFimVigencia = now.AddMonths(12).Date,
+    //    };
 
-        bool vigenciaValida = turma.VerificarCompatibilidadeVigencia(novoAluno);
+    //    bool vigenciaValida = turma.VerificarCompatibilidadeVigencia(novoAluno);
 
-        Assert.True(vigenciaValida);
-    }
+    //    Assert.True(vigenciaValida);
+    //}
 }

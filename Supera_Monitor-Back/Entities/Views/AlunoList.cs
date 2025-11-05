@@ -4,13 +4,13 @@ public partial class AlunoList
 {
     public int Id { get; set; }
     public int Pessoa_Id { get; set; }
-    public string Nome { get; set; }
+    public string Nome { get; set; } = string.Empty;
     public int? Checklist_Id { get; set; }
     public string? Checklist { get; set; }
-    public DateTime DataInicioVigencia { get; set; }
-    public DateTime? DataFimVigencia { get; set; }
-    public String? CorLegenda { get; set; }
-    public DateTime? UltimaTrocaTurma { get; set; }
+    //public DateTime DataInicioVigencia { get; set; }
+    //public DateTime? DataFimVigencia { get; set; }
+    //public DateTime? UltimaTrocaTurma { get; set; }
+    public string? CorLegenda { get; set; }
     public int? PrimeiraAula_Id { get; set; }
     public DateTime? PrimeiraAula { get; set; }
     public int? AulaZero_Id { get; set; }

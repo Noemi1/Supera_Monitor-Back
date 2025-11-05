@@ -39,7 +39,7 @@ public class AulaServiceTests : BaseIntegrationTest {
 
         _eventoService = new EventoService(_db, _mapper, _professorService, _salaService, _roteiroService, httpContextAccessor);
 
-		sut = new AulaService(_db, _mapper, _professorService, _salaService, _eventoService, _httpContextAccessor);
+		sut = new AulaService(_db, _mapper, _professorService, _salaService, _eventoService, _roteiroService, _httpContextAccessor);
     }
 
     [Fact]

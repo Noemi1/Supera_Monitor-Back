@@ -163,7 +163,8 @@ public class ChecklistService : IChecklistService {
         return response;
     }
 
-    public ResponseModel PopulateAlunoChecklist(int alunoId) {
+    public ResponseModel PopulateAlunoChecklist(int alunoId) 
+	{
         ResponseModel response = new() { Success = false };
 
         try {
@@ -191,7 +192,7 @@ public class ChecklistService : IChecklistService {
                     int semana = checklists.FirstOrDefault(c => c.Id == item.Checklist_Id)?.NumeroSemana ?? 0;
 
                     // Obtém a data de início do aluno
-                    DateTime dataInicio = aluno.DataInicioVigencia;
+                    DateTime dataInicio = aluno.Created;
 
                     // Calcula quantos dias faltam para o próximo domingo após a data de início
                     int diasAteDomingo = ((int)DayOfWeek.Sunday - (int)dataInicio.DayOfWeek + 7) % 7;

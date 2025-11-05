@@ -524,11 +524,11 @@ public class EventoServiceTests : BaseIntegrationTest {
     }
 
     [Fact]
-    public void Deve_SerPossivelCriarOficina() {
+    public async Task Deve_SerPossivelCriarOficina() {
         // Arrange (constructor)
 
         // Act
-        var response = sut.Insert(new CreateEventoRequest
+        var response = await sut.Insert(new CreateEventoRequest
         {
             Sala_Id = 1,
             CapacidadeMaximaAlunos = 12,

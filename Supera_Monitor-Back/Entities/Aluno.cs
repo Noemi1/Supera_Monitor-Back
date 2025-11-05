@@ -20,9 +20,9 @@ public partial class Aluno
 
     public int? Apostila_Kit_Id { get; set; }
 
-    public DateTime DataInicioVigencia { get; set; }
+    //public DateTime DataInicioVigencia { get; set; }
 
-    public DateTime? DataFimVigencia { get; set; }
+    //public DateTime? DataFimVigencia { get; set; }
 
     public int? PerfilCognitivo_Id { get; set; }
 
@@ -74,13 +74,13 @@ public partial class Aluno
 
     public bool Active => !Deactivated.HasValue;
 
-    public DateTime ObterFimVigencia()
-    {
-        if (!DataFimVigencia.HasValue)
-        {
-            return DataInicioVigencia.AddYears(100);
-        }
+    //public DateTime ObterFimVigencia()
+    //{
+    //    if (!DataFimVigencia.HasValue)
+    //    {
+    //        return DataInicioVigencia.AddYears(100);
+    //    }
 
-        return DataFimVigencia.Value;
-    }
+    //    return DataFimVigencia.Value;
+    //}
 }

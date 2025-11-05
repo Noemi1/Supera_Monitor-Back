@@ -27,7 +27,6 @@ static class AlunoFactory {
             .RuleFor(a => a.PrimeiraAula_Id, f => aluno?.PrimeiraAula_Id ?? null)
 
             .RuleFor(a => a.Created, TimeFunctions.HoraAtualBR())
-            .RuleFor(a => a.DataInicioVigencia, TimeFunctions.HoraAtualBR())
             .RuleFor(a => a.AspNetUsers_Created_Id, f => aluno?.AspNetUsers_Created_Id ?? "testcontainers");
 
         var mockAluno = mockAlunoGenerator.Generate();
