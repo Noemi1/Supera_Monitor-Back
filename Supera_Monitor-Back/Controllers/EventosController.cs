@@ -35,11 +35,11 @@ public class EventosController : _BaseController
     }
 
     [HttpGet("{eventoId}")]
-    public ActionResult<List<EventoAulaModel>> GetEventoById(int eventoId)
+    public async Task<ActionResult<List<EventoAulaModel>>> GetEventoById(int eventoId)
     {
         try
         {
-            var response = _eventoService.GetEventoById(eventoId);
+            var response = await _eventoService.GetEventoById(eventoId);
 
             return Ok(response);
         }
@@ -51,11 +51,11 @@ public class EventosController : _BaseController
     }
 
     [HttpPost("pseudo-aula")]
-    public ActionResult<CalendarioEventoList> GetPseudoAula(PseudoEventoRequest request)
+    public async Task<ActionResult<CalendarioEventoList>> GetPseudoAula(PseudoEventoRequest request)
     {
         try
         {
-            var response = _eventoService.GetPseudoAula(request);
+            var response = await _eventoService.GetPseudoAula(request);
             return Ok(response);
         }
         catch (Exception e)
@@ -203,12 +203,11 @@ public class EventosController : _BaseController
     }
 
     [HttpPost("oficinas")]
-    public ActionResult<ResponseModel> InsertOficina(CreateEventoRequest request)
+    public async Task<ActionResult<ResponseModel>> InsertOficina(CreateEventoRequest request)
     {
         try
         {
-            var response = _eventoService.Insert(request, (int)EventoTipo.Oficina);
-
+            var response = await _eventoService.Insert(request, (int)EventoTipo.Oficina);
             if (response.Success == false)
             {
                 return BadRequest(response);
@@ -245,11 +244,12 @@ public class EventosController : _BaseController
     }
 
     [HttpPost("reunioes")]
-    public ActionResult<ResponseModel> InsertReuniao(CreateEventoRequest request)
-    {
-        try
+    public async Task<ActionResult<ResponseModel>> InsertReuniao(CreateEventoRequest request)
+
+	{
+		try
         {
-            var response = _eventoService.Insert(request, (int)EventoTipo.Reuniao);
+            var response = await _eventoService.Insert(request, (int)EventoTipo.Reuniao);
 
             if (response.Success == false)
             {
@@ -287,11 +287,11 @@ public class EventosController : _BaseController
     }
 
     [HttpPost("superacao")]
-    public ActionResult<ResponseModel> InsertSuperacao(CreateEventoRequest request)
+    public async Task<ActionResult<ResponseModel>> InsertSuperacao(CreateEventoRequest request)
     {
         try
         {
-            var response = _eventoService.Insert(request, (int)EventoTipo.Superacao);
+            var response = await _eventoService.Insert(request, (int)EventoTipo.Superacao);
 
             if (response.Success == false)
             {
@@ -475,21 +475,6 @@ public class EventosController : _BaseController
         }
     }
 
-    [HttpGet("oficinas/all")]
-    public ActionResult<ResponseModel> GetOficinas()
-    {
-        try
-        {
-            var response = _eventoService.GetOficinas();
-
-            return Ok(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-            return StatusCode(500, e);
-        }
-    }
 
     //[HttpPost("cancelar-eventos-feriado/{ano}")]
     //public async Task<ActionResult<ResponseModel>> CancelaEventos(int ano)

@@ -15,14 +15,14 @@ namespace Supera_Monitor_Back.Services.Eventos;
 
 public interface IEventoService
 {
-	public CalendarioEventoList GetPseudoAula(PseudoEventoRequest request);
-	public List<CalendarioEventoList> GetOficinas();
 
-	public CalendarioEventoList GetEventoById(int eventoId);
-	public ResponseModel Insert(CreateEventoRequest request, int eventoTipoId);
+	public Task<CalendarioEventoList> GetPseudoAula(PseudoEventoRequest request);
+	public Task<CalendarioEventoList> GetEventoById(int eventoId);
+	public Task<List<FeriadoResponse>> GetFeriados(int ano);
+
+	public Task<ResponseModel> Insert(CreateEventoRequest request, int eventoTipoId);
 	public ResponseModel Update(UpdateEventoRequest request);
 	public ResponseModel Cancelar(CancelarEventoRequest request);
-	//public Task<ResponseModel> CancelaEventosFeriado(int ano);
 	public ResponseModel Finalizar(FinalizarEventoRequest request);
 	public ResponseModel FinalizarAulaZero(FinalizarAulaZeroRequest request);
 	public ResponseModel Reagendar(ReagendarEventoRequest request);
@@ -32,7 +32,6 @@ public interface IEventoService
 	public ResponseModel CancelarParticipacao(CancelarParticipacaoRequest request);
 	public ResponseModel RemoveParticipacao(int participacaoId);
 
-	public Task<List<FeriadoResponse>> GetFeriados(int ano);
 }
 
 public class EventoService : IEventoService
@@ -62,7 +61,7 @@ public class EventoService : IEventoService
 		_account = (Account?)httpContextAccessor.HttpContext?.Items["Account"];
 	}
 
-	public ResponseModel Insert(CreateEventoRequest request, int eventoTipoId)
+	public async Task<ResponseModel> Insert(CreateEventoRequest request, int eventoTipoId)
 	{
 		ResponseModel response = new() { Success = false };
 
@@ -246,9 +245,7 @@ public class EventoService : IEventoService
 
 			_db.SaveChanges();
 
-			var responseObject = this.GetEventoById(evento.Id);
-			responseObject.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).ToList();
-			responseObject.Professores = _db.CalendarioProfessorLists.Where(p => p.Evento_Id == evento.Id).ToList();
+			var responseObject = await this.GetEventoById(evento.Id);
 
 			response.Success = true;
 			response.Message = $"{responseObject.Evento_Tipo} registrada com sucesso";
@@ -1155,32 +1152,16 @@ public class EventoService : IEventoService
 		}
 	}
 
-	public List<CalendarioEventoList> GetOficinas()
-	{
-		var oficinas = _db.CalendarioEventoLists
-			.Where(e =>
-				e.Evento_Tipo_Id == (int)EventoTipo.Oficina
-				&& e.Data > TimeFunctions.HoraAtualBR())
-			.OrderBy(e => e.Data)
-			.ToList();
-
-		foreach (var evento in oficinas)
-		{
-			evento.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).ToList();
-
-			evento.Professores = _db.CalendarioProfessorLists.Where(e => e.Evento_Id == evento.Id).ToList();
-		}
-
-		return oficinas;
-	}
-
-	public CalendarioEventoList GetEventoById(int eventoId)
+	public async Task<CalendarioEventoList> GetEventoById(int eventoId)
 	{
 		CalendarioEventoList? evento = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == eventoId);
+
 		if (evento is null)
 		{
 			throw new Exception("Evento não encontrado");
 		}
+
+
 
 		evento.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).ToList();
 		evento.Professores = _db.CalendarioProfessorLists.Where(e => e.Evento_Id == evento.Id).ToList();
@@ -1193,53 +1174,75 @@ public class EventoService : IEventoService
 
 		evento.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(PerfisCognitivos);
 
+		var feriados = await this.GetFeriados(evento.Data.Year);
+		var feriado = feriados.FirstOrDefault(x => x.date.Date == evento.Data.Date);
+		evento.Feriado = feriado;
+
+		if (feriado is not null && evento.Active == true)
+		{
+			evento.Observacao = "Cancelamento Automático. <br> Feriado: " + feriado.name;
+			evento.Deactivated = feriado.date;
+		}
 		return evento;
 	}
 
 
-	public CalendarioEventoList GetPseudoAula(PseudoEventoRequest request)
+	public async Task<CalendarioEventoList> GetPseudoAula(PseudoEventoRequest request)
 	{
-
 		CalendarioEventoList? eventoAula = _db.CalendarioEventoLists.FirstOrDefault(x =>
 				  x.Data == request.DataHora
 				  && x.Turma_Id == request.Turma_Id);
 
 		if (eventoAula != null)
 		{
-			eventoAula = this.GetEventoById(eventoAula.Id);
+			eventoAula = await this.GetEventoById(eventoAula.Id);
 			return eventoAula;
 		}
 		else
 		{
-			DateTime data = request.DataHora;
 
-			Turma? turma = _db.Turmas
-				.Include(x => x.Alunos)
-				.ThenInclude(x => x.Aluno_Checklist_Items)
-				.Include(t => t.Professor!)
-				.ThenInclude(t => t.Account)
-				.Include(t => t.Sala)
+			var turma = _db.TurmaLists
 				.FirstOrDefault(x => x.Id == request.Turma_Id
 						&& x.Deactivated == null
 						&& x.DiaSemana == (int)request.DataHora.DayOfWeek
-						&& x.Horario.Value == request.DataHora.TimeOfDay);
+						&& x.Horario!.Value == request.DataHora.TimeOfDay);
+
 
 			if (turma is null)
 			{
 				throw new Exception("Turma não encontrada!");
 			}
 
-			var roteiros = _roteiroService.GetAll(data.Year);
-			var roteiro = roteiros.FirstOrDefault(x => x.DataInicio.Date <= data.Date && x.DataFim.Date >= data.Date);
+			var professorTurma = _db.ProfessorLists.FirstOrDefault(x => x.Id == turma.Professor_Id);
+			if (professorTurma is null)
+			{
+				throw new Exception("Professor não encontrado!");
+			}
 
-			// Em pseudo-aulas, adicionar só os alunos da turma original
-			// e após o início de sua vigência
-			// e que tenham sido desativado só depois da data da aula
-			List<AlunoList> alunos = _db.AlunoLists
-				.Where(x => x.Turma_Id == request.Turma_Id
-					&& x.DataInicioVigencia.Date <= data.Date
-					&& (x.DataFimVigencia == null || x.DataFimVigencia.Value.Date >= data.Date)
-					&& (x.Deactivated == null || x.Deactivated.Value.Date > data.Date))
+			var roteirosTask = _roteiroService.GetAllAsync(request.DataHora.Year);
+			var feriadosTask = this.GetFeriados(request.DataHora.Year);
+
+			await Task.WhenAll(roteirosTask, feriadosTask);
+
+			var roteiros = roteirosTask.Result;
+			var feriados = feriadosTask.Result;
+
+			var data = request.DataHora.Date;
+
+			var roteiro = roteiros.FirstOrDefault(x => x.DataInicio.Date <= data && x.DataFim.Date >= data);
+			var feriado = feriados.FirstOrDefault(x => x.date.Date == data);
+
+			
+			var vigenciasTurma = _db.Aluno_Turma_Vigencia
+									.Where(x => x.Turma_Id == request.Turma_Id
+										&& x.DataInicioVigencia.Date <= data
+										&& (!x.DataFimVigencia.HasValue || x.DataFimVigencia.Value.Date >= data))
+									.ToList();
+
+			var alunosVigentes = vigenciasTurma.Select(x => x.Aluno_Id);
+
+			var alunos = _db.AlunoLists
+				.Where(x => alunosVigentes.Contains(x.Id))
 				.OrderBy(x => x.Nome)
 				.ToList();
 
@@ -1257,6 +1260,7 @@ public class EventoService : IEventoService
 				Roteiro_Id = roteiro?.Id,
 				Semana = roteiro?.Semana,
 				Tema = roteiro?.Tema,
+				RoteiroCorLegenda = roteiro?.CorLegenda,
 
 				Data = request.DataHora,
 
@@ -1271,18 +1275,24 @@ public class EventoService : IEventoService
 				CapacidadeMaximaTurma = turma.CapacidadeMaximaAlunos,
 				AlunosAtivosTurma = alunosAtivosInTurma,
 
-				Professor_Id = turma?.Professor_Id,
-				Professor = turma?.Professor is not null ? turma.Professor.Account.Name : "Professor indefinido",
-				CorLegenda = turma?.Professor is not null ? turma.Professor.CorLegenda : "#000",
+				Professor_Id = turma.Professor_Id,
+				Professor = turma.Professor ?? "Professor Indefinido" ,
+				CorLegenda = turma.CorLegenda ?? "#000",
 
 				Finalizado = false,
 
-				Sala = turma?.Sala?.Descricao ?? "SalaIndefinida",
-				Sala_Id = turma?.Sala?.Id,
-				NumeroSala = turma?.Sala?.NumeroSala,
-				Andar = turma?.Sala?.Andar,
+				Sala = turma.Sala ?? "SalaIndefinida",
+				Sala_Id = turma.Sala_Id,
+				NumeroSala = turma.NumeroSala,
+				Andar = turma.Andar,
 			};
 
+			if (feriado is not null)
+			{
+				pseudoAula.Feriado = feriado;
+				pseudoAula.Deactivated = feriado.date;
+				pseudoAula.Observacao = "Cancelamento Automático. <br> Feriado: " + feriado.name;
+			}
 
 			pseudoAula.Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos).ToList();
 
@@ -1290,15 +1300,15 @@ public class EventoService : IEventoService
 			{
 				Id = null,
 				Evento_Id = pseudoAula.Id,
-				Professor_Id = (int)turma!.Professor_Id!,
-				Nome = turma!.Professor!.Account.Name,
-				CorLegenda = turma.Professor.CorLegenda,
+				Professor_Id = professorTurma.Id,
+				Nome = professorTurma.Nome,
+				CorLegenda = professorTurma.CorLegenda,
 				Presente = null,
 				Observacao = "",
-				Account_Id = turma.Professor.Account.Id,
-				Telefone = turma.Professor.Account.Phone,
-				ExpedienteFim = turma.Professor.ExpedienteFim,
-				ExpedienteInicio = turma.Professor.ExpedienteInicio,
+				Account_Id = professorTurma.Account_Id,
+				Telefone = professorTurma.Telefone,
+				ExpedienteFim = professorTurma.ExpedienteFim,
+				ExpedienteInicio = professorTurma.ExpedienteInicio,
 			});
 
 			List<PerfilCognitivo> perfisCognitivos = _db.Turma_PerfilCognitivo_Rels
