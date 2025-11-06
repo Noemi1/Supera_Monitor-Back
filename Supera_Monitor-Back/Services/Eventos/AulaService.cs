@@ -160,21 +160,15 @@ public class AulaService : IAulaService
 				return new ResponseModel { Message = $"Professor: {professor.Account.Name} possui participação em outro evento nesse mesmo horário" };
 			}
 
-			var roteiros = _roteiroService.GetAll(request.Data.Year);
-			if (request.Roteiro_Id.HasValue && request.Roteiro_Id.Value != -1)
-			{
-				// Não devo poder criar aula de turma com um roteiro que não existe
-				if (!roteiros.Any(x => x.Id == request.Roteiro_Id))
-				{
-					return new ResponseModel { Message = "Roteiro não encontrado" };
-				}
-			}
-
 			//
 			// Validations passed
 			//
+			var roteiros = _roteiroService.GetAll(request.Data.Year);
+			var roteiro = roteiros.FirstOrDefault(x => request.Data.Date >= x.DataInicio.Date 
+															&& request.Data.Date <= x.DataFim.Date
+															&& x.Id != -1);
 
-			var roteiro = roteiros.FirstOrDefault(r => request.Data.Date >= r.DataInicio.Date && request.Data.Date <= r.DataFim.Date);
+
 
 			var turmaPerfisCognitivos = _db.Turma_PerfilCognitivo_Rels
 				.Where(t => t.Turma_Id == turma.Id)
@@ -348,48 +342,13 @@ public class AulaService : IAulaService
 				return new ResponseModel { Message = "Número máximo de alunos excedido" };
 			}
 
-
-			Roteiro? roteiro;
-			if (request.Roteiro_Id.HasValue && request.Roteiro_Id.Value != -1)
-			{
-				roteiro = _db.Roteiro.Find(request.Roteiro_Id);
-
-				// Não devo poder criar aula de turma com um roteiro que não existe
-				if (roteiro is null)
-				{
-					return new ResponseModel { Message = "Roteiro não encontrado" };
-				}
-			}
-			else
-			{
-				roteiro = _db.Roteiro.FirstOrDefault(r => request.Data.Date >= r.DataInicio.Date && request.Data.Date <= r.DataFim.Date);
-			}
-
+			var roteiros = _roteiroService.GetAll(request.Data.Year);
+			var roteiro = roteiros.FirstOrDefault(x => request.Data.Date >= x.DataInicio.Date
+															&& request.Data.Date <= x.DataFim.Date
+															&& x.Id != -1);
+			//
 			// Validations passed
-
-			Evento? eventoReagendado = _db.Eventos
-				.Include(e => e.Evento_Participacao_Professors)
-				.Include(e => e.Evento_Participacao_Alunos)
-				.FirstOrDefault(e => e.Id == request.ReagendamentoDe_Evento_Id);
-
-			if (eventoReagendado is not null)
-			{
-				eventoReagendado.Deactivated = TimeFunctions.HoraAtualBR();
-
-				// Desativar participação dos alunos e professores
-				foreach (var alunoReagendado in eventoReagendado.Evento_Participacao_Alunos)
-				{
-					alunoReagendado.Deactivated = TimeFunctions.HoraAtualBR();
-				}
-
-				foreach (var professorReagendado in eventoReagendado.Evento_Participacao_Professors)
-				{
-					professorReagendado.Deactivated = TimeFunctions.HoraAtualBR();
-				}
-
-				_db.Update(eventoReagendado);
-			}
-
+			//
 			Evento evento = new()
 			{
 				Data = request.Data,
@@ -411,7 +370,6 @@ public class AulaService : IAulaService
 				LastUpdated = null,
 				Deactivated = null,
 				Finalizado = false,
-				ReagendamentoDe_Evento_Id = eventoReagendado?.Id,
 				Account_Created_Id = _account!.Id,
 			};
 
@@ -534,13 +492,6 @@ public class AulaService : IAulaService
 					}
 				}
 			}
-
-			// // Se algum aluno já participou de alguma aula zero, não deve ser possível inscrevê-lo novamente
-			// foreach (var aluno in alunosInRequest) {
-			//     if (aluno.AulaZero_Id != null) {
-			//         return new ResponseModel { Message = $"Aluno: '{aluno.Id}' já participou de aula zero ou possui uma agendada." };
-			//     }
-			// }
 
 			// Sala deve estar livre no horário do evento
 			bool isSalaOccupied = _salaService.IsSalaOccupied(request.Sala_Id, request.Data, request.DuracaoMinutos, null);
@@ -810,6 +761,8 @@ public class AulaService : IAulaService
 			{
 				roteiro = _db.Roteiro.FirstOrDefault(r => request.Data.Date >= r.DataInicio.Date && request.Data.Date <= r.DataFim.Date);
 			}
+
+
 
 			// Validations passed
 

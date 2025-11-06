@@ -25,7 +25,6 @@ public interface IEventoService
 	public ResponseModel Cancelar(CancelarEventoRequest request);
 	public ResponseModel Finalizar(FinalizarEventoRequest request);
 	public ResponseModel FinalizarAulaZero(FinalizarAulaZeroRequest request);
-	public ResponseModel Reagendar(ReagendarEventoRequest request);
 
 	public ResponseModel InsertParticipacao(InsertParticipacaoRequest request);
 	public ResponseModel UpdateParticipacao(UpdateParticipacaoRequest request);
@@ -728,171 +727,6 @@ public class EventoService : IEventoService
 		return response;
 	}
 
-	public ResponseModel Reagendar(ReagendarEventoRequest request)
-	{
-		ResponseModel response = new() { Success = false };
-
-		try
-		{
-			Evento? evento = _db.Eventos
-				.Include(e => e.Evento_Participacao_Alunos)
-				.Include(e => e.Evento_Participacao_Professors)
-				.Include(e => e.Evento_Aula)
-				.FirstOrDefault(e => e.Id == request.Evento_Id);
-
-			if (evento is null)
-			{
-				return new ResponseModel { Message = "Evento não encontrado." };
-			}
-
-			if (evento.Deactivated.HasValue)
-			{
-				return new ResponseModel { Message = "Evento está desativado." };
-			}
-
-			if (request.Data <= TimeFunctions.HoraAtualBR())
-			{
-				return new ResponseModel { Message = "Não é possível reagendar um evento para uma data no passado." };
-			}
-
-			// Sala deve estar livre no horário do evento
-			bool isSalaOccupied = _salaService.IsSalaOccupied(request.Sala_Id, request.Data, evento.DuracaoMinutos, evento.Id);
-
-			if (isSalaOccupied)
-			{
-				return new ResponseModel { Message = "Esta sala se encontra ocupada neste horário" };
-			}
-
-			// Todos os professores devem estar livres no horário do evento
-
-			List<Evento_Participacao_Professor> professorParticipacoes = evento.Evento_Participacao_Professors.ToList();
-
-			foreach (var participacao in professorParticipacoes)
-			{
-				bool hasTurmaConflict = _professorService.HasTurmaTimeConflict(
-					professorId: participacao.Professor_Id,
-					DiaSemana: (int)request.Data.DayOfWeek,
-					Horario: request.Data.TimeOfDay,
-					IgnoredTurmaId: null
-				);
-
-				if (hasTurmaConflict)
-				{
-					return new ResponseModel { Message = $"Professor ID: '{participacao.Professor_Id}' possui uma turma nesse mesmo horário" };
-				}
-
-				bool hasParticipacaoConflict = _professorService.HasEventoParticipacaoConflict(
-					professorId: participacao.Professor_Id,
-					Data: request.Data,
-					DuracaoMinutos: evento.DuracaoMinutos,
-					IgnoredEventoId: evento.Id
-				);
-
-				if (hasParticipacaoConflict)
-				{
-					return new ResponseModel { Message = $"Professor ID: {participacao.Professor_Id} possui participação em outro evento nesse mesmo horário" };
-				}
-			}
-			// Validations passed
-
-			evento.Deactivated = TimeFunctions.HoraAtualBR();
-
-			_db.Eventos.Update(evento);
-
-			Evento newEvento = new()
-			{
-				Data = request.Data,
-				Observacao = request.Observacao ?? evento.Observacao,
-				Sala_Id = request.Sala_Id,
-				DuracaoMinutos = evento.DuracaoMinutos,
-				Evento_Tipo_Id = evento.Evento_Tipo_Id,
-				Account_Created_Id = evento.Account_Created_Id,
-				ReagendamentoDe_Evento_Id = evento.Id,
-				Descricao = evento.Descricao,
-				CapacidadeMaximaAlunos = evento.CapacidadeMaximaAlunos,
-
-				Created = TimeFunctions.HoraAtualBR(),
-				Deactivated = null,
-				Finalizado = false,
-			};
-
-			if (evento.Evento_Aula is not null)
-			{
-				Evento_Aula newEventoAula = new()
-				{
-					Professor_Id = evento.Evento_Aula.Professor_Id,
-					Roteiro_Id = evento.Evento_Aula.Roteiro_Id,
-					Turma_Id = evento.Evento_Aula.Turma_Id,
-				};
-
-				newEvento.Evento_Aula = newEventoAula;
-			}
-
-			_db.Add(newEvento);
-			_db.SaveChanges();
-
-			// Adicionar uma nova participação na data indicada no request, e em seguida desativar a participação original
-			foreach (var participacao in evento.Evento_Participacao_Alunos)
-			{
-				Evento_Participacao_Aluno newParticipacao = new()
-				{
-					Evento_Id = newEvento.Id,
-					Aluno_Id = participacao.Aluno_Id,
-					Observacao = participacao.Observacao,
-					Presente = participacao.Presente,
-					Apostila_Abaco_Id = participacao.Apostila_Abaco_Id,
-					Apostila_AH_Id = participacao.Apostila_AH_Id,
-					NumeroPaginaAbaco = participacao.NumeroPaginaAbaco,
-					NumeroPaginaAH = participacao.NumeroPaginaAH,
-					ReposicaoDe_Evento_Id = participacao.ReposicaoDe_Evento_Id,
-					Deactivated = participacao.Deactivated,
-				};
-
-				_db.Evento_Participacao_Alunos.Add(newParticipacao);
-
-				participacao.Deactivated = TimeFunctions.HoraAtualBR();
-				_db.Evento_Participacao_Alunos.Update(participacao);
-			}
-
-			// Fazer o mesmo com a participação do professor
-			foreach (var participacao in evento.Evento_Participacao_Professors)
-			{
-				Evento_Participacao_Professor newParticipacao = new()
-				{
-					Evento_Id = newEvento.Id,
-					Professor_Id = participacao.Professor_Id,
-					Observacao = participacao.Observacao,
-					Presente = participacao.Presente,
-					Deactivated = participacao.Deactivated,
-				};
-
-				_db.Evento_Participacao_Professors.Add(newParticipacao);
-
-				participacao.Deactivated = TimeFunctions.HoraAtualBR();
-				_db.Evento_Participacao_Professors.Update(participacao);
-			}
-
-			_db.SaveChanges();
-
-			var responseObject = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == newEvento.Id)!;
-			responseObject.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == newEvento.Id).ToList();
-			responseObject.Professores = _db.CalendarioProfessorLists.Where(p => p.Evento_Id == newEvento.Id).ToList();
-
-			var oldObject = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == evento.Id);
-
-			response.Message = $"Evento foi reagendado com sucesso para o dia {responseObject?.Data:g}";
-			response.OldObject = oldObject;
-			response.Object = responseObject;
-			response.Success = true;
-		}
-		catch (Exception ex)
-		{
-			response.Message = $"Falha ao reagendar evento: {ex}";
-		}
-
-		return response;
-	}
-
 	private static ResponseModel ValidateEvent(Evento? evento)
 	{
 		if (evento is null)
@@ -1186,7 +1020,6 @@ public class EventoService : IEventoService
 		return evento;
 	}
 
-
 	public async Task<CalendarioEventoList> GetPseudoAula(PseudoEventoRequest request)
 	{
 		CalendarioEventoList? eventoAula = _db.CalendarioEventoLists.FirstOrDefault(x =>
@@ -1232,7 +1065,7 @@ public class EventoService : IEventoService
 			var roteiro = roteiros.FirstOrDefault(x => x.DataInicio.Date <= data && x.DataFim.Date >= data);
 			var feriado = feriados.FirstOrDefault(x => x.date.Date == data);
 
-			
+
 			var vigenciasTurma = _db.Aluno_Turma_Vigencia
 									.Where(x => x.Turma_Id == request.Turma_Id
 										&& x.DataInicioVigencia.Date <= data
@@ -1276,7 +1109,7 @@ public class EventoService : IEventoService
 				AlunosAtivosTurma = alunosAtivosInTurma,
 
 				Professor_Id = turma.Professor_Id,
-				Professor = turma.Professor ?? "Professor Indefinido" ,
+				Professor = turma.Professor ?? "Professor Indefinido",
 				CorLegenda = turma.CorLegenda ?? "#000",
 
 				Finalizado = false,
@@ -1322,7 +1155,6 @@ public class EventoService : IEventoService
 			return pseudoAula;
 		}
 	}
-
 
 	public ResponseModel CreateEventValidation(CreateEventDto dto)
 	{
@@ -1461,75 +1293,6 @@ public class EventoService : IEventoService
 		}
 
 		return response;
-	}
-
-	// Performance: Always 4 queries for n events
-	private List<CalendarioEventoList> PopulateCalendarioEvents(List<CalendarioEventoList> events)
-	{
-		List<int> eventoIds = events.Select(e => e.Id).ToList();
-
-		List<int> eventoAulaIds = events
-			.Where(e => e.Evento_Tipo_Id == (int)EventoTipo.Aula || e.Evento_Tipo_Id == (int)EventoTipo.AulaExtra)
-			.Select(e => e.Id)
-			.ToList();
-
-		// Fazendo o possível pra otimizar, mas CalendarioAlunoList é uma view, então não lida muito bem com chaves
-		var query = from a in _db.CalendarioAlunoLists
-					join p in _db.Evento_Participacao_Alunos
-						on a.Id equals p.Id
-					where eventoIds.Contains(p.Evento_Id)
-					orderby a.Aluno
-					select a;
-
-		var allAlunos = query.ToList();
-
-		List<CalendarioProfessorList> allProfessores = _db.CalendarioProfessorLists
-			.Where(p => eventoIds.Contains(p.Evento_Id))
-			.ToList();
-
-		List<Evento_Aula_PerfilCognitivo_Rel> allRels = _db.Evento_Aula_PerfilCognitivo_Rels
-		   .AsNoTracking()
-		   .Where(r => eventoAulaIds.Contains(r.Evento_Aula_Id))
-		   .Include(r => r.PerfilCognitivo)
-		   .ToList();
-
-		// Create dictionaries that group alunos / professores by Evento_Id, will improve lookup performance
-		// Key: GroupBy key Value: List of items in that group 
-
-		var alunosDictionary = allAlunos
-			.GroupBy(p => p.Evento_Id)
-			.ToDictionary(g => g.Key, g => g.ToList());
-
-		var professorDictionary = allProfessores
-			.GroupBy(p => p.Evento_Id)
-			.ToDictionary(g => g.Key, g => g.ToList());
-
-		var perfisDictionary = allRels
-			.GroupBy(r => r.Evento_Aula_Id)
-			.ToDictionary(
-				g => g.Key,
-				g => g.Select(r => _mapper.Map<PerfilCognitivoModel>(r.PerfilCognitivo)).ToList()
-			);
-
-		foreach (var calendarioEvent in events)
-		{
-			alunosDictionary.TryGetValue(calendarioEvent.Id, out var alunosInEvent);
-			calendarioEvent.Alunos = alunosInEvent ?? new List<CalendarioAlunoList>();
-
-			professorDictionary.TryGetValue(calendarioEvent.Id, out var professoresInEvent);
-			calendarioEvent.Professores = professoresInEvent ?? new List<CalendarioProfessorList>();
-
-			if (perfisDictionary.TryGetValue(calendarioEvent.Id, out var aulaPerfisInEvent))
-			{
-				calendarioEvent.PerfilCognitivo = aulaPerfisInEvent;
-			}
-			else
-			{
-				calendarioEvent.PerfilCognitivo = new List<PerfilCognitivoModel>();
-			}
-		}
-
-		return events;
 	}
 
 	public async Task<List<FeriadoResponse>> GetFeriados(int ano)
