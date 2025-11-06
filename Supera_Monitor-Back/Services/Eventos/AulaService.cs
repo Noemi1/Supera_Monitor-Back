@@ -190,7 +190,7 @@ public class AulaService : IAulaService
 				Evento_Tipo_Id = (int)EventoTipo.Aula,
 				Evento_Aula = new Evento_Aula
 				{
-					Roteiro_Id = roteiro?.Id,
+					Roteiro_Id = roteiro?.Id ?? null,
 					Turma_Id = turma.Id,
 					Professor_Id = request.Professor_Id,
 					Evento_Aula_PerfilCognitivo_Rels = perfis
@@ -201,7 +201,7 @@ public class AulaService : IAulaService
 				Deactivated = null,
 				Finalizado = false,
 				ReagendamentoDe_Evento_Id = null,
-				Account_Created_Id = _account!.Id,
+				Account_Created_Id = _account?.Id ?? 1, 
 			};
 
 
@@ -220,8 +220,8 @@ public class AulaService : IAulaService
 			// Alunos
 			//
 			var vigenciasTurma = _db.Aluno_Turma_Vigencia.Where(x => x.Turma_Id == request.Turma_Id
-														&& x.DataInicioVigencia <= request.Data.Date
-														&& (!x.DataFimVigencia.HasValue || x.DataFimVigencia.Value.Date >= request.Data.Date))
+														&& x.DataInicioVigencia <= request.Data
+														&& (!x.DataFimVigencia.HasValue || x.DataFimVigencia.Value >= request.Data))
 													.ToList();
 
 			var alunosVigentesId = vigenciasTurma.Select(x => x.Aluno_Id);

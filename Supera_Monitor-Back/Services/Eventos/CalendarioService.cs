@@ -57,7 +57,7 @@ public class CalendarioService : ICalendarioService
 			.AsQueryable();
 
 		var alunosQueryable = _db.AlunoLists
-			.Where(x => x.Active == true)
+			//.Where(x => x.Deactivated == null || (x.Deactivated.Value.Date < request.IntervaloDe.Value && x.Deactivated.Value.Date > request.IntervaloAte.Value.Date ))
 			.AsQueryable();
 
 		var professoresQueryable = _db.ProfessorLists
@@ -128,9 +128,7 @@ public class CalendarioService : ICalendarioService
 
 		var vigencias = _db.Aluno_Turma_Vigencia
 			.Where(x => turmasIds.Contains(x.Turma_Id)
-							&& alunosIds.Contains(x.Aluno_Id)
-							&& x.DataInicioVigencia.Date <= request.IntervaloDe.Value.Date
-							&& (!x.DataFimVigencia.HasValue || x.DataFimVigencia.Value.Date >= request.IntervaloAte.Value.Date))
+							&& alunosIds.Contains(x.Aluno_Id))
 			.AsNoTracking()
 			.ToList();
 
@@ -320,10 +318,9 @@ public class CalendarioService : ICalendarioService
 
 				if (!eventosByTurmaData.TryGetValue((turma.Id, dataTurma.ToString(formatDateDict)), out var eventoAula))
 				{
-
 					var vigenciasDaTurma = vigenciasPorTurma.GetValueOrDefault(turma.Id, new List<Aluno_Turma_Vigencia>())
-						.Where(x => data >= x.DataInicioVigencia.Date
-								&& (!x.DataFimVigencia.HasValue || data <= x.DataFimVigencia.Value.Date))
+						.Where(x => x.DataInicioVigencia <= data
+								&& (!x.DataFimVigencia.HasValue || x.DataFimVigencia.Value >= data))
 						.ToList();
 
 					var alunosDoDiaId = vigenciasDaTurma
