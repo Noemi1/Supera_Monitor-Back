@@ -613,40 +613,47 @@ public partial class DataContext : DbContext
 
 		modelBuilder.Entity<CalendarioAlunoList>(entity =>
 		{
-			entity
-				.HasNoKey()
-				.ToView("CalendarioAlunoList");
+			entity.HasNoKey().ToView("CalendarioAlunoList");
 
-			entity.Property(e => e.Aluno)
-				.HasMaxLength(250)
-				.IsUnicode(false);
-			entity.Property(e => e.Aluno_Foto).IsUnicode(false);
-			entity.Property(e => e.Apostila_AH)
-				.HasMaxLength(50)
-				.IsUnicode(false);
-			entity.Property(e => e.Apostila_Abaco)
-				.HasMaxLength(50)
-				.IsUnicode(false);
-			entity.Property(e => e.Celular)
-				.HasMaxLength(256)
-				.IsUnicode(false);
-			entity.Property(e => e.Checklist)
-				.HasMaxLength(50)
-				.IsUnicode(false);
-			entity.Property(e => e.DataFimVigencia).HasColumnType("date");
-			entity.Property(e => e.DataInicioVigencia).HasColumnType("date");
-			entity.Property(e => e.DataNascimento).HasColumnType("date");
-			entity.Property(e => e.Deactivated).HasColumnType("datetime");
-			entity.Property(e => e.Kit)
-				.HasMaxLength(50)
-				.IsUnicode(false);
-			entity.Property(e => e.Observacao).IsUnicode(false);
-			entity.Property(e => e.PerfilCognitivo)
-				.HasMaxLength(50)
-				.IsUnicode(false);
-			entity.Property(e => e.Turma)
-				.HasMaxLength(100)
-				.IsUnicode(false);
+			entity.Property(x => x.Id);
+			entity.Property(x => x.Aluno_Id);
+			entity.Property(x => x.Evento_Id);
+			entity.Property(x => x.Checklist);
+			entity.Property(x => x.Checklist_Id);
+
+			entity.Property(x => x.DataNascimento)
+				.HasColumnType("date");
+
+			entity.Property(x => x.Celular);
+			entity.Property(x => x.Aluno_Foto);
+			entity.Property(x => x.Turma_Id);
+			entity.Property(x => x.Turma);
+			entity.Property(x => x.PrimeiraAula_Id);
+			entity.Property(x => x.AulaZero_Id);
+			entity.Property(x => x.RestricaoMobilidade);
+			entity.Property(x => x.ReposicaoDe_Evento_Id);
+			entity.Property(x => x.ReposicaoPara_Evento_Id);
+			entity.Property(x => x.Presente);
+			entity.Property(x => x.Apostila_Kit_Id);
+			entity.Property(x => x.Kit);
+			entity.Property(x => x.Apostila_Abaco);
+			entity.Property(x => x.Apostila_AH);
+			entity.Property(x => x.Apostila_Abaco_Id);
+			entity.Property(x => x.Apostila_AH_Id);
+			entity.Property(x => x.NumeroPaginaAbaco);
+			entity.Property(x => x.NumeroPaginaAH);
+			entity.Property(x => x.Observacao);
+					
+			entity.Property(x => x.Deactivated)
+				.HasColumnType("datetime");
+				
+			entity.Property(x => x.AlunoContactado)
+				.HasColumnType("datetime");
+			entity.Property(x => x.ContatoObservacao);
+			entity.Property(x => x.StatusContato_Id);
+			//entity.Property(x => x.Active);
+			entity.Property(x => x.PerfilCognitivo_Id);
+			entity.Property(x => x.PerfilCognitivo);
 		});
 
 		modelBuilder.Entity<CalendarioEventoList>(entity =>

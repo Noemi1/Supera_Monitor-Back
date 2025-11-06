@@ -476,17 +476,19 @@ public class CalendarioService : ICalendarioService
 		var eventoIds = events.Select(e => e.Id);
 
 		var eventoAulaIds = events
-			.Where(e => e.Evento_Tipo_Id == (int)EventoTipo.Aula || e.Evento_Tipo_Id == (int)EventoTipo.AulaExtra)
+			//.Where(e => e.Evento_Tipo_Id == (int)EventoTipo.Aula || e.Evento_Tipo_Id == (int)EventoTipo.AulaExtra)
 			.Select(e => e.Id);
 
-		// Fazendo o possível pra otimizar, mas CalendarioAlunoList é uma view, então não lida muito bem com chaves
-		var query = from a in _db.CalendarioAlunoLists
-					join p in _db.Evento_Participacao_Alunos on a.Id equals p.Id
-					where eventoIds.Contains(p.Evento_Id)
-					orderby a.Aluno
-					select a;
+		//// Fazendo o possível pra otimizar, mas CalendarioAlunoList é uma view, então não lida muito bem com chaves
+		//var query = from a in _db.CalendarioAlunoLists
+		//			// join p in _db.Evento_Participacao_Alunos on a.Id equals p.Id
+		//			where eventoIds.Contains(a.Evento_Id)
+		//			orderby a.Aluno
+		//			select a;
 
-		var allAlunos = query.ToList();
+		//var allAlunos = query.ToList();
+
+		var allAlunos = _db.CalendarioAlunoLists.Where(x => eventoAulaIds.Contains(x.Evento_Id)).ToList();
 
 		List<CalendarioProfessorList> allProfessores = _db.CalendarioProfessorLists
 			.Where(p => eventoIds.Contains(p.Evento_Id))
@@ -522,6 +524,8 @@ public class CalendarioService : ICalendarioService
 		{
 			alunosDictionary.TryGetValue(calendarioEvent.Id, out var alunosInEvent);
 			calendarioEvent.Alunos = alunosInEvent ?? new List<CalendarioAlunoList>();
+
+
 
 			professorDictionary.TryGetValue(calendarioEvent.Id, out var professoresInEvent);
 			calendarioEvent.Professores = professoresInEvent ?? new List<CalendarioProfessorList>();
