@@ -68,7 +68,6 @@ public class AulaServiceTests : BaseIntegrationTest {
             Descricao = "Test Create Aula For Turma",
             DuracaoMinutos = 120,
             Observacao = "Test Obs",
-            Roteiro_Id = null,
         });
 
         // Assert
