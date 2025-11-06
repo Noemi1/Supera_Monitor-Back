@@ -32,7 +32,7 @@ public partial class CalendarioAlunoList
 	public DateTime? AlunoContactado { get; set; }
 	public string? ContatoObservacao { get; set; }
 	public int? StatusContato_Id { get; set; }
-	public bool Active { get; set; }
+	public bool Active => Deactivated == null;
 	public int? PerfilCognitivo_Id { get; set; }
 	public string? PerfilCognitivo { get; set; }
 }

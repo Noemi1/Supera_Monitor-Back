@@ -651,9 +651,11 @@ public partial class DataContext : DbContext
 				.HasColumnType("datetime");
 			entity.Property(x => x.ContatoObservacao);
 			entity.Property(x => x.StatusContato_Id);
-			entity.Property(x => x.Active);
 			entity.Property(x => x.PerfilCognitivo_Id);
 			entity.Property(x => x.PerfilCognitivo);
+
+
+			entity.Ignore(x => x.Active);
 		});
 
 		modelBuilder.Entity<CalendarioEventoList>(entity =>
