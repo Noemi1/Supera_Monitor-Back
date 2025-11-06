@@ -1307,11 +1307,11 @@ public class EventoService : IEventoService
 				HttpResponseMessage response = await client.GetAsync(url);
 				//response.EnsureSuccessStatusCode(); // Lança uma exceção para códigos de status de erro
 				string responseContent = await response.Content.ReadAsStringAsync();
-				feriados = JsonSerializer.Deserialize<List<FeriadoResponse>>(responseContent);
+				feriados = JsonSerializer.Deserialize<List<FeriadoResponse>>(responseContent) ?? feriados;
 				feriados = feriados!.OrderBy(x => x.date).ToList();
 
 			}
-			catch (HttpRequestException e)
+			catch (Exception e)
 			{
 				Console.WriteLine("\nException Caught!");
 				Console.WriteLine("Message :{0} ", e.Message);

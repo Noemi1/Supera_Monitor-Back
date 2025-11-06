@@ -151,15 +151,21 @@ public class CalendarioService : ICalendarioService
 		
 		if (anoDe != anoAte)
 		{
-			roteirosTask = _roteiroService.GetAllAsync(anoAte);
-			feriadosTask = _eventoService.GetFeriados(anoAte);
+			var roteirosTask2 = _roteiroService.GetAllAsync(anoAte);
+			var feriadosTask2 = _eventoService.GetFeriados(anoAte);
 
-			await Task.WhenAll(roteirosTask, feriadosTask);
+			await Task.WhenAll(roteirosTask2, feriadosTask2);
 			
-			roteiros.AddRange(roteirosTask.Result);
-			feriados.AddRange(feriadosTask.Result);
+			roteiros.AddRange(roteirosTask2.Result);
+			feriados.AddRange(feriadosTask2.Result);
 		}
+
+		roteiros = roteiros
+			.GroupBy(x => (x.Id, x.DataInicio, x.DataFim))
+			.Select(x => x.First())
+			.ToList();
 		
+
 		var calendarioResponse = eventos;
 
 		PopulateCalendarioEvents(calendarioResponse, feriados, roteiros);
