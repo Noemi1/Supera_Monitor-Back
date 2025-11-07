@@ -45,23 +45,18 @@ public class JornadaSuperaService : IJornadaSuperaService
 		//
 		var alunosQueryable = _db.AlunoLists
 			.Where(x => x.Active == true)
-			.AsQueryable()
 			.AsNoTracking();
 
 		var alunosChecklistItemsQueryable = _db.Aluno_Checklist_Items
-			.OrderByDescending(x => x.Prazo)
+			.Where(x => x.DataFinalizacao == null)
 			.AsQueryable()
 			.AsNoTracking();
 
 		var itemsQueryable = _db.Checklist_Items
 			.Where(x => x.Deactivated == null)
-			.OrderBy(x => x.Ordem)
-			.AsQueryable()
 			.AsNoTracking();
 
 		var checklistQueryable = _db.Checklists
-			.OrderBy(x => x.Ordem)
-			.AsQueryable()
 			.AsNoTracking();
 
 		if (request.Aluno_Id.HasValue)
@@ -140,7 +135,10 @@ public class JornadaSuperaService : IJornadaSuperaService
 				Nome = checklist.Nome,
 			};
 
-			var itemsPorChecklist = itemsPorChecklistId[checklist.Id];
+			var itemsPorChecklist = itemsPorChecklistId[checklist.Id]
+									.OrderBy(x => x.Ordem)
+									.ToList();
+
 			foreach (Checklist_Item item in itemsPorChecklist)
 			{
 
@@ -179,16 +177,24 @@ public class JornadaSuperaService : IJornadaSuperaService
 							Account_Id = account?.Id,
 							Observacoes = alunoItem.Observacoes
 						};
+						
 						jornadaItem.Alunos.Add(jornadaAluno);
 					}
 				}
-
+				jornadaItem.Alunos = jornadaItem.Alunos
+					.OrderBy(x => x.Status)
+					.ThenBy(x => x.Aluno)
+					.ToList();
 				jornadaChecklist.Items.Add(jornadaItem);
 			}
 
 			lock (response)
 				response.Add(jornadaChecklist);
 		});
+
+		response = response
+			.OrderBy(x => x.Ordem)
+			.ToList();
 
 		return response;
 	}
