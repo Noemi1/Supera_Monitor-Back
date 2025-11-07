@@ -68,6 +68,7 @@ public class CalendarioService : ICalendarioService
 			.Where(x => x.Active == true)
 			.AsQueryable();
 
+
 		if (request.Perfil_Cognitivo_Id.HasValue)
 		{
 			// Eventos que contem o perfil cognitivo 
@@ -77,6 +78,9 @@ public class CalendarioService : ICalendarioService
 			eventosQueryable = eventosQueryable.Where(e => eventosContemPerfilCognitivo.Any(x => x.Evento_Aula_Id == e.Id));
 			turmasQueryable = turmasQueryable.Where(t => turmasContemPerfilCognitivo.Any(x => x.Turma_Id == t.Id));
 		}
+
+
+		var e1 = eventosQueryable.ToList();
 
 		if (request.Turma_Id.HasValue)
 		{
@@ -127,8 +131,7 @@ public class CalendarioService : ICalendarioService
 			.ToList();
 
 		var vigencias = _db.Aluno_Turma_Vigencia
-			.Where(x => turmasIds.Contains(x.Turma_Id)
-							&& alunosIds.Contains(x.Aluno_Id))
+			.Where(x => turmasIds.Contains(x.Turma_Id) && alunosIds.Contains(x.Aluno_Id))
 			.AsNoTracking()
 			.ToList();
 
@@ -402,8 +405,8 @@ public class CalendarioService : ICalendarioService
 									Presente = null,
 									Observacao = "",
 									Account_Id = professor?.Account_Id ?? -1,
-									Telefone = professor.Telefone ?? "",
-									ExpedienteInicio = professor.ExpedienteInicio,
+									Telefone = professor?.Telefone ?? "",
+									ExpedienteInicio = professor?.ExpedienteInicio,
 									ExpedienteFim = professor.ExpedienteFim,
 								}
 						};
@@ -490,7 +493,9 @@ public class CalendarioService : ICalendarioService
 
 		//var allAlunos = query.ToList();
 
-		var allAlunos = _db.CalendarioAlunoLists.Where(x => eventoAulaIds.Contains(x.Evento_Id)).ToList();
+		var allAlunos = _db.CalendarioAlunoLists
+			.Where(x => eventoAulaIds.Contains(x.Evento_Id))
+			.ToList();
 
 		List<CalendarioProfessorList> allProfessores = _db.CalendarioProfessorLists
 			.Where(p => eventoIds.Contains(p.Evento_Id))
@@ -526,8 +531,6 @@ public class CalendarioService : ICalendarioService
 		{
 			alunosDictionary.TryGetValue(calendarioEvent.Id, out var alunosInEvent);
 			calendarioEvent.Alunos = alunosInEvent ?? new List<CalendarioAlunoList>();
-
-
 
 			professorDictionary.TryGetValue(calendarioEvent.Id, out var professoresInEvent);
 			calendarioEvent.Professores = professoresInEvent ?? new List<CalendarioProfessorList>();

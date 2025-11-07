@@ -43,15 +43,16 @@ builder.Services.AddScoped<ILogService, LogService>();
 
 builder.Services.AddScoped<IEmailTemplateFactory, EmailTemplateFactory>();
 
-builder.Services.AddScoped<ITurmaService, TurmaService>();
 builder.Services.AddScoped<IAlunoService, AlunoService>();
-builder.Services.AddScoped<IProfessorService, ProfessorService>();
-builder.Services.AddScoped<IPessoaService, PessoaService>();
-builder.Services.AddScoped<IListaEsperaService, ListaEsperaService>();
 builder.Services.AddScoped<IChecklistService, ChecklistService>();
-builder.Services.AddScoped<ISalaService, SalaService>();
+builder.Services.AddScoped<IJornadaSuperaService, JornadaSuperaService>();
+builder.Services.AddScoped<IListaEsperaService, ListaEsperaService>();
+builder.Services.AddScoped<IPessoaService, PessoaService>();
+builder.Services.AddScoped<IProfessorService, ProfessorService>();
 builder.Services.AddScoped<IRoteiroService, RoteiroService>();
 builder.Services.AddScoped<IRestricaoService, RestricaoService>();
+builder.Services.AddScoped<ISalaService, SalaService>();
+builder.Services.AddScoped<ITurmaService, TurmaService>();
 
 builder.Services.AddScoped<ICalendarioService, CalendarioService>();
 builder.Services.AddScoped<IAulaService, AulaService>();

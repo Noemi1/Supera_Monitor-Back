@@ -4,7 +4,7 @@ public partial class Aluno_Checklist_Item {
     public int Id { get; set; }
     public int Aluno_Id { get; set; }
     public int Checklist_Item_Id { get; set; }
-    public DateTime? Prazo { get; set; }
+    public DateTime Prazo { get; set; }
     public DateTime? DataFinalizacao { get; set; }
     public int? Account_Finalizacao_Id { get; set; }
     public string? Observacoes { get; set; }
