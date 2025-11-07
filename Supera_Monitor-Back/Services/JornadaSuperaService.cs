@@ -85,7 +85,8 @@ public class JornadaSuperaService : IJornadaSuperaService
 			.ToHashSet();
 
 		var alunosChecklistItems = alunosChecklistItemsQueryable
-			.Where(x => alunosIds.Contains(x.Aluno_Id))
+				//.Where(x => alunosIds.Contains(x.Aluno_Id))
+			.Join(alunos, x => x.Aluno_Id, a => a.Id, (x, a) => x)
 			.ToList();
 
 		var items = itemsQueryable
