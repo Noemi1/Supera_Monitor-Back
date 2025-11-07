@@ -7,5 +7,7 @@
 		public int? Professor_Id { get; set; }
 		
 		public int? Aluno_Id { get; set; }
+
+		public bool PendentesSemana { get; set; }
 	}
 }

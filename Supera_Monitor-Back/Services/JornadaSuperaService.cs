@@ -74,6 +74,15 @@ public class JornadaSuperaService : IJornadaSuperaService
 		{
 			alunosQueryable = alunosQueryable.Where(x => x.Professor_Id == request.Professor_Id);
 		}
+		if (request.PendentesSemana == true)
+		{
+			//DateTime dataInicioPrazo = Prazo.AddDays((NumeroSemana * 6) * -1).Date;
+			//else if (dataInicioPrazo >= hoje && hoje <= Prazo.Date)
+			
+			var hoje = TimeFunctions.HoraAtualBR().Date;
+			alunosChecklistItemsQueryable = alunosChecklistItemsQueryable
+				.Where(x => hoje <= x.Prazo.Date && hoje <= x.Prazo.AddDays(-6));
+		}
 
 		//
 		// Materialização
