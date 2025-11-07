@@ -29,6 +29,8 @@ namespace Supera_Monitor_Back.Models.JornadaSupera.Card
 
 		public string? Observacoes { get; set; }
 
+		public bool Finalizado => DataFinalizacao != null;
+
 		public StatusChecklistItem Status => JornadaSuperaStatus.getStatus(NumeroSemana, Prazo, DataFinalizacao);
 
 	}
