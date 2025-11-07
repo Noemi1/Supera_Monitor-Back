@@ -29,6 +29,10 @@ namespace Supera_Monitor_Back.Models.JornadaSupera.List
 			{
 				return StatusChecklistItem.EmAndamento;
 			}
+			else if (Items.Any(x => x.Status == StatusChecklistItem.FinalizadoComAtraso))
+			{
+				return StatusChecklistItem.FinalizadoComAtraso;
+			}
 			else if (Items.All(x => x.Status == StatusChecklistItem.Finalizado))
 			{
 				return StatusChecklistItem.Finalizado;

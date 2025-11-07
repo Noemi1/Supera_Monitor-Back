@@ -125,7 +125,7 @@ public class JornadaSuperaService : IJornadaSuperaService
 		// 
 		// Mapeia os checklists
 		//
-		Parallel.ForEach(checklists, checklist =>
+		foreach(var checklist in checklists)
 		{
 			var jornadaChecklist = new JornadaSupera_Card_Checklist()
 			{
@@ -196,9 +196,8 @@ public class JornadaSuperaService : IJornadaSuperaService
 				jornadaChecklist.Items.Add(jornadaItem);
 			}
 
-			lock (response)
 				response.Add(jornadaChecklist);
-		});
+		}
 
 		response = response
 			.OrderBy(x => x.Ordem)
@@ -273,8 +272,7 @@ public class JornadaSuperaService : IJornadaSuperaService
 		// 
 		// Mapeia os alunos
 		//
-
-		Parallel.ForEach(alunos, aluno =>
+		foreach(var aluno in alunos)
 		{
 			var jornadaAluno = new JornadaSupera_List_Aluno()
 			{
@@ -317,11 +315,12 @@ public class JornadaSuperaService : IJornadaSuperaService
 				}
 
 				jornadaAluno.Checklists.Add(jornadaChecklist);
+
+				var a = jornadaChecklist.Status;
 			}
 
-			lock (response)
-				response.Add(jornadaAluno);
-		});
+			response.Add(jornadaAluno);
+		}
 
 		return response;
 	}
