@@ -10,7 +10,7 @@ namespace Supera_Monitor_Back.Models.JornadaSupera
 		{
 			DateTime hoje = TimeFunctions.HoraAtualBR().Date;
 
-			DateTime dataInicioPrazo = x.Prazo.AddDays(-6).Date;
+			DateTime dataInicioPrazo = Prazo.AddDays(-6).Date;
 
 			if (DataFinalizacao.HasValue && DataFinalizacao.Value.Date > Prazo.Date )
 			{
