@@ -74,16 +74,6 @@ public class JornadaSuperaService : IJornadaSuperaService
 		{
 			alunosQueryable = alunosQueryable.Where(x => x.Professor_Id == request.Professor_Id);
 		}
-		if (request.PendentesSemana == true)
-		{
-			//DateTime dataInicioPrazo = Prazo.AddDays((NumeroSemana * 6) * -1).Date;
-			//else if (dataInicioPrazo >= hoje && hoje <= Prazo.Date)
-			
-			var hoje = TimeFunctions.HoraAtualBR().Date;
-			alunosChecklistItemsQueryable = alunosChecklistItemsQueryable
-				.Where(x => hoje <= x.Prazo.Date && hoje <= x.Prazo.AddDays(-6));
-		}
-
 		//
 		// Materialização
 		//
@@ -186,8 +176,16 @@ public class JornadaSuperaService : IJornadaSuperaService
 							Account_Id = account?.Id,
 							Observacoes = alunoItem.Observacoes
 						};
-						
-						jornadaItem.Alunos.Add(jornadaAluno);
+
+						if (request.PendentesSemana == true && jornadaAluno.Status == StatusChecklistItem.EmAndamento)
+						{
+							jornadaItem.Alunos.Add(jornadaAluno);
+						}
+						else if (request.PendentesSemana == false)
+						{
+							jornadaItem.Alunos.Add(jornadaAluno);
+						}
+
 					}
 				}
 				jornadaItem.Alunos = jornadaItem.Alunos
