@@ -208,8 +208,6 @@ public class AlunoService : IAlunoService
 				LoginApp = pessoa.Email ?? $"{randomRM}@supera",
 				SenhaApp = "Supera@123",
 
-				//DataInicioVigencia = TimeFunctions.HoraAtualBR(),
-				//DataFimVigencia = null,
 				Turma_Id = null,
 				PerfilCognitivo_Id = null,
 				AulaZero_Id = null,
@@ -318,11 +316,6 @@ public class AlunoService : IAlunoService
 				});
 			}
 
-			// Se aluno estiver trocando de turma, deve-se garantir que a turma destino tem espaço disponível
-			// Não considera reposição, pois não estamos olhando para uma aula específica
-			//aluno.DataInicioVigencia = model.DataInicioVigencia ?? aluno.DataInicioVigencia;
-			//aluno.DataFimVigencia = model.DataFimVigencia ?? aluno.DataFimVigencia;
-
 			if (turmaDestino is not null && aluno.Turma_Id != turmaDestino.Id)
 			{
 				int countAlunosInTurma = _db.Alunos.Count(a => a.Turma_Id == turmaDestino.Id && a.Deactivated == null);
@@ -378,8 +371,6 @@ public class AlunoService : IAlunoService
 			aluno.Turma_Id = model.Turma_Id;
 			aluno.Aluno_Foto = model.Aluno_Foto;
 			aluno.Apostila_Kit_Id = model.Apostila_Kit_Id;
-			//aluno.DataInicioVigencia = model.DataInicioVigencia ?? aluno.DataInicioVigencia;
-			//aluno.DataFimVigencia = model.DataFimVigencia;
 			aluno.RestricaoMobilidade = model.RestricaoMobilidade;
 			aluno.UltimaTrocaTurma = trocandoDeTurma ? TimeFunctions.HoraAtualBR() : aluno.UltimaTrocaTurma;
 

@@ -10,10 +10,6 @@ public class UpdateAlunoRequest
 
 	public int? PerfilCognitivo_Id { get; set; }
 
-	//public DateTime? DataInicioVigencia { get; set; }
-
-	//public DateTime? DataFimVigencia { get; set; }
-
 	public int? PrimeiraAula_Id { get; set; }
 
 	public int? AulaZero_Id { get; set; }

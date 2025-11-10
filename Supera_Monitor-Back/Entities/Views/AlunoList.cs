@@ -7,9 +7,6 @@ public partial class AlunoList
     public string Nome { get; set; } = string.Empty;
     public int? Checklist_Id { get; set; }
     public string? Checklist { get; set; }
-    //public DateTime DataInicioVigencia { get; set; }
-    //public DateTime? DataFimVigencia { get; set; }
-    //public DateTime? UltimaTrocaTurma { get; set; }
     public string? CorLegenda { get; set; }
     public int? PrimeiraAula_Id { get; set; }
     public DateTime? PrimeiraAula { get; set; }
