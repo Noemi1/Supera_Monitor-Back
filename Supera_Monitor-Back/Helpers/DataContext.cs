@@ -559,20 +559,10 @@ public partial class DataContext : DbContext
 			entity.Property(e => e.Email)
 				.HasMaxLength(256)
 				.IsUnicode(false);
-			entity.Property(e => e.EmailSenha)
-				.HasMaxLength(45)
-				.IsUnicode(false);
-			entity.Property(e => e.LockoutEndDateUtc).HasColumnType("datetime");
 			entity.Property(e => e.Name)
 				.HasMaxLength(45)
 				.IsUnicode(false);
-			entity.Property(e => e.PasswordHash)
-				.HasMaxLength(256)
-				.IsUnicode(false);
 			entity.Property(e => e.PhoneNumber)
-				.HasMaxLength(256)
-				.IsUnicode(false);
-			entity.Property(e => e.SecurityStamp)
 				.HasMaxLength(256)
 				.IsUnicode(false);
 			entity.Property(e => e.UserName)

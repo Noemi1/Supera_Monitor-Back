@@ -31,7 +31,7 @@ public interface IAlunoService
 public class AlunoService : IAlunoService
 {
 	private readonly DataContext _db;
-	private readonly CRM4UContext _dbCRM;
+	private readonly _CRM4UContext _dbCRM;
 	private readonly IMapper _mapper;
 	private readonly IChecklistService _checklistService;
 
@@ -39,7 +39,7 @@ public class AlunoService : IAlunoService
 
 	public AlunoService(
 		DataContext db,
-		CRM4UContext dbCRM,
+		_CRM4UContext dbCRM,
 		IMapper mapper,
 		IHttpContextAccessor httpContextAccessor,
 		IChecklistService checklistService
@@ -130,38 +130,52 @@ public class AlunoService : IAlunoService
 		return alunosWithChecklist;
 	}
 
-	public ResponseModel Insert(CreateAlunoRequest model)
+	public ResponseModel Insert(CreateAlunoRequest request)
 	{
 
 		ResponseModel response = new() { Success = false };
 
 		try
 		{
-			PessoaCRM? pessoaCRM = _dbCRM.Pessoa.Find(model.Pessoa_Id);
+			PessoaCRM? pessoaCRM = _dbCRM.Pessoa.Find(request.Pessoa_Id);
 
 			// Aluno só pode ser cadastrado se a pessoa existir no CRM
-			if (pessoaCRM == null)
-			{
-				return new ResponseModel { Message = "Pessoa não encontrada" };
-			}
+			//if (pessoaCRM == null)
+			//{
+			//	return new ResponseModel { Message = "Pessoa não encontrada" };
+			//}
 
-			// Aluno só pode ser cadastrado se tiver status matriculado
-			if (pessoaCRM.Pessoa_Status_Id != (int)PessoaStatus.Matriculado)
-			{
-				return new ResponseModel { Message = "Aluno não está matriculado" };
-			}
+			//// Aluno só pode ser cadastrado se tiver status matriculado
+			//if (pessoaCRM.Pessoa_Status_Id != (int)PessoaStatus.Matriculado)
+			//{
+			//	return new ResponseModel { Message = "Aluno não está matriculado" };
+			//}
 
-			// Aluno só pode ser cadastrado se tiver Unidade_Id = 1 (Supera Brigadeiro)
-			if (pessoaCRM.Unidade_Id != 1)
-			{
-				return new ResponseModel { Message = "Pessoa não pertence a uma unidade cadastrada" };
-			}
+			//// Aluno só pode ser cadastrado se tiver Unidade_Id = 1 (Supera Brigadeiro)
+			//if (pessoaCRM.Unidade_Id != 1)
+			//{
+			//	return new ResponseModel { Message = "Pessoa não pertence a uma unidade cadastrada" };
+			//}
 
-			// Só pode ser cadastrado um aluno por pessoa
-			bool alunoAlreadyRegistered = _db.Pessoas.Any(a => a.PessoaCRM_Id == model.Pessoa_Id);
-			if (alunoAlreadyRegistered)
+			//// Só pode ser cadastrado um aluno por pessoa
+			//bool alunoAlreadyRegistered = _db.Pessoas.Any(a => a.PessoaCRM_Id == request.Pessoa_Id);
+			//if (alunoAlreadyRegistered)
+			//{
+			//	return new ResponseModel { Message = "Aluno já matriculado." };
+			//}
+
+			if(!_db.AspNetUsers.Any(x => x.Id == request.AspNetUsers_Created_Id))
 			{
-				return new ResponseModel { Message = "Aluno já matriculado." };
+				var aspNetUser = _dbCRM.AspNetUsers.FirstOrDefault(x => x.Id == request.AspNetUsers_Created_Id);
+				_db.AspNetUsers.Add(new AspNetUser
+				{
+					Id = aspNetUser.Id,
+					Name = aspNetUser.Name,
+					UserName = aspNetUser.UserName,
+					Email = aspNetUser.Email,
+					PhoneNumber = aspNetUser.PhoneNumber,
+				});
+				_db.SaveChanges();
 			}
 
 			// Validations passed
@@ -194,7 +208,7 @@ public class AlunoService : IAlunoService
 			Aluno aluno = new Aluno()
 			{
 				Pessoa_Id = pessoa.Id,
-				AspNetUsers_Created_Id = model.AspNetUsers_Created_Id,
+				AspNetUsers_Created_Id = request.AspNetUsers_Created_Id,
 				Created = TimeFunctions.HoraAtualBR(),
 				LastUpdated = null,
 				Deactivated = null,
@@ -221,7 +235,7 @@ public class AlunoService : IAlunoService
 			{
 				Aluno_Id = aluno.Id,
 				Descricao = "Aluno cadastrado",
-				AspNetUser_Id = model.AspNetUsers_Created_Id,
+				AspNetUser_Id = request.AspNetUsers_Created_Id,
 				Account_Id = _account?.Id,
 				Data = TimeFunctions.HoraAtualBR(),
 			});

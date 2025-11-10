@@ -29,7 +29,7 @@ builder.Services.AddHttpContextAccessor();
 #region SQL
 
 builder.Services.AddDbContext<DataContext>();
-builder.Services.AddDbContext<CRM4UContext>();
+builder.Services.AddDbContext<_CRM4UContext>();
 
 #endregion
 
