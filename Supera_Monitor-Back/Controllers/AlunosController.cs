@@ -7,7 +7,6 @@ using Supera_Monitor_Back.Services;
 
 namespace Supera_Monitor_Back.Controllers
 {
-	[Authorize(Role.Admin, Role.Teacher, Role.Assistant)]
 	[ApiController]
 	[Route("back/[controller]")]
 	public class AlunosController : _BaseController
@@ -24,6 +23,7 @@ namespace Supera_Monitor_Back.Controllers
 			_logger = logService;
 		}
 
+		[Authorize]
 		[HttpGet("all")]
 		public ActionResult<List<AlunoList>> GetAll()
 		{
@@ -39,7 +39,8 @@ namespace Supera_Monitor_Back.Controllers
 				return StatusCode(500, e);
 			}
 		}
-
+		
+		[Authorize]
 		[HttpGet("{alunoId}")]
 		public ActionResult<AlunoResponse> Get(int alunoId)
 		{
@@ -55,6 +56,7 @@ namespace Supera_Monitor_Back.Controllers
 			}
 		}
 
+		[Authorize]
 		[HttpGet("historico/{alunoId}")]
 		public ActionResult<List<AlunoHistoricoList>> GetHistoricoById(int alunoId)
 		{
@@ -70,7 +72,8 @@ namespace Supera_Monitor_Back.Controllers
 				return StatusCode(500, e);
 			}
 		}
-		
+
+		[Authorize]
 		[HttpGet("vigencia/{alunoId}")]
 		public ActionResult<List<AlunoVigenciaList>> GetVigenciaById(int alunoId)
 		{
@@ -110,6 +113,7 @@ namespace Supera_Monitor_Back.Controllers
 			}
 		}
 
+		[Authorize]
 		[HttpPut()]
 		public ActionResult<ResponseModel> Update(UpdateAlunoRequest model)
 		{
@@ -132,6 +136,7 @@ namespace Supera_Monitor_Back.Controllers
 			}
 		}
 
+		[Authorize]
 		[HttpPatch("toggle-active/{alunoId}")]
 		public ActionResult<ResponseModel> ToggleDeactivate(int alunoId)
 		{
@@ -156,6 +161,7 @@ namespace Supera_Monitor_Back.Controllers
 			}
 		}
 
+		[Authorize]
 		[HttpGet("image/{alunoId}")]
 		public ActionResult<ResponseModel> GetProfileImage(int alunoId)
 		{
@@ -172,6 +178,7 @@ namespace Supera_Monitor_Back.Controllers
 			}
 		}
 
+		[Authorize]
 		[HttpPost("reposicao")]
 		public ActionResult<ResponseModel> Reposicao(ReposicaoRequest model)
 		{
@@ -194,6 +201,7 @@ namespace Supera_Monitor_Back.Controllers
 			}
 		}
 
+		[Authorize]
 		[HttpPost("primeira-aula")]
 		public ActionResult<ResponseModel> PrimeiraAula(PrimeiraAulaRequest model)
 		{
@@ -216,36 +224,38 @@ namespace Supera_Monitor_Back.Controllers
 			}
 		}
 
-		[HttpGet("apostilas/{alunoId}")]
-		public ActionResult<List<ApostilaList>> GetApostilasByAluno(int alunoId)
-		{
-			try
-			{
-				var response = _alunoService.GetApostilasByAluno(alunoId);
+		//[Authorize]
+		//[HttpGet("apostilas/{alunoId}")]
+		//public ActionResult<List<ApostilaList>> GetApostilasByAluno(int alunoId)
+		//{
+		//	try
+		//	{
+		//		var response = _alunoService.GetApostilasByAluno(alunoId);
 
-				return Ok(response);
-			}
-			catch (Exception e)
-			{
-				// _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-				return StatusCode(500, e);
-			}
-		}
+		//		return Ok(response);
+		//	}
+		//	catch (Exception e)
+		//	{
+		//		// _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+		//		return StatusCode(500, e);
+		//	}
+		//}
+		
+		//[Authorize]
+		//[HttpPost("checklists/all")]
+		//public ActionResult<List<AlunoResponse>> GetAllAlunoChecklists(AlunoRequest request)
+		//{
+		//	try
+		//	{
+		//		var response = _alunoService.GetAlunoChecklistItemList(request);
 
-		[HttpPost("checklists/all")]
-		public ActionResult<List<AlunoResponse>> GetAllAlunoChecklists(AlunoRequest request)
-		{
-			try
-			{
-				var response = _alunoService.GetAlunoChecklistItemList(request);
-
-				return Ok(response);
-			}
-			catch (Exception e)
-			{
-				// _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-				return StatusCode(500, e);
-			}
-		}
+		//		return Ok(response);
+		//	}
+		//	catch (Exception e)
+		//	{
+		//		// _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+		//		return StatusCode(500, e);
+		//	}
+		//}
 	}
 }
