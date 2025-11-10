@@ -7,7 +7,7 @@ public class Config_Tests(IntegrationTestWebAppFactory factory) : BaseIntegratio
         int countPerfilCognitivos = _db.PerfilCognitivos.ToList().Count;
         Assert.Equal(11, countPerfilCognitivos);
 
-        int countProfessors = _db.Professors.ToList().Count;
+        int countProfessors = _db.Professor.ToList().Count;
         Assert.Equal(3, countProfessors);
 
         int countEventoTipos = _db.Evento_Tipos.ToList().Count;

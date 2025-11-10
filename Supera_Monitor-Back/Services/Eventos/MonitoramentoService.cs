@@ -57,7 +57,7 @@ public class MonitoramentoService : IMonitoramentoService
 			.Where(t => t.Deactivated == null);
 
 
-		var alunosQueryable = _db.AlunoLists
+		var alunosQueryable = _db.AlunoList
 			.Where(t => t.Deactivated == null);
 
 

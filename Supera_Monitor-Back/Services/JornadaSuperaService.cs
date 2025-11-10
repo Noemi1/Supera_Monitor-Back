@@ -43,7 +43,7 @@ public class JornadaSuperaService : IJornadaSuperaService
 		//
 		// Queryable
 		//
-		var alunosQueryable = _db.AlunoLists
+		var alunosQueryable = _db.AlunoList
 			.Where(x => x.Active == true)
 			.AsNoTracking();
 
@@ -213,7 +213,7 @@ public class JornadaSuperaService : IJornadaSuperaService
 		//
 		// Queryable
 		//
-		var alunosQueryable = _db.AlunoLists
+		var alunosQueryable = _db.AlunoList
 			.Where(x => x.Active == true)
 			.AsNoTracking();
 

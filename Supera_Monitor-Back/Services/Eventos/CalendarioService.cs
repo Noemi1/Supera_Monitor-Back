@@ -53,66 +53,140 @@ public class CalendarioService : ICalendarioService
 		}
 
 		var eventosQueryable = _db.CalendarioEventoLists
-			.Where(e => e.Data.Date >= request.IntervaloDe.Value.Date && e.Data.Date <= request.IntervaloAte.Value.Date)
-			.AsQueryable();
+			.Where(e => e.Data.Date >= request.IntervaloDe.Value.Date && e.Data.Date <= request.IntervaloAte.Value.Date);
 
-		var alunosQueryable = _db.AlunoLists
-			//.Where(x => x.Deactivated == null || (x.Deactivated.Value.Date < request.IntervaloDe.Value && x.Deactivated.Value.Date > request.IntervaloAte.Value.Date ))
-			.AsQueryable();
+		var alunosQueryable = _db.AlunoList;
 
 		var professoresQueryable = _db.ProfessorLists
-			.Where(x => x.Active == true)
-			.AsQueryable();
+			.Where(x => x.Active == true);
 
 		var turmasQueryable = _db.TurmaLists
-			.Where(x => x.Active == true)
-			.AsQueryable();
+			.Where(x => x.Active == true);
 
 
 		if (request.Perfil_Cognitivo_Id.HasValue)
 		{
 			// Eventos que contem o perfil cognitivo 
-			var eventosContemPerfilCognitivo = _db.Evento_Aula_PerfilCognitivo_Rels.Where(x => x.PerfilCognitivo_Id == request.Perfil_Cognitivo_Id);
-			var turmasContemPerfilCognitivo = _db.Turma_PerfilCognitivo_Rels.Where(x => x.PerfilCognitivo_Id == request.Perfil_Cognitivo_Id);
+			//var eventosContemPerfilCognitivo = _db.Evento_Aula_PerfilCognitivo_Rels
+			//	.Where(x => x.PerfilCognitivo_Id == request.Perfil_Cognitivo_Id);
 
-			eventosQueryable = eventosQueryable.Where(e => eventosContemPerfilCognitivo.Any(x => x.Evento_Aula_Id == e.Id));
-			turmasQueryable = turmasQueryable.Where(t => turmasContemPerfilCognitivo.Any(x => x.Turma_Id == t.Id));
+			//var turmasContemPerfilCognitivo = _db.Turma_PerfilCognitivo_Rels
+			//	.Where(x => x.PerfilCognitivo_Id == request.Perfil_Cognitivo_Id);
+
+			//eventosQueryable = eventosQueryable
+			//	.Where(e => eventosContemPerfilCognitivo.Any(x => x.Evento_Aula_Id == e.Id));
+
+			//turmasQueryable = turmasQueryable
+			//	.Where(t => turmasContemPerfilCognitivo.Any(x => x.Turma_Id == t.Id));
+
+
+			eventosQueryable =
+				from e in eventosQueryable
+				join ep in _db.Evento_Aula_PerfilCognitivo_Rel
+					on e.Id equals ep.Evento_Aula_Id
+				where ep.PerfilCognitivo_Id == request.Perfil_Cognitivo_Id
+				select e;
+
+			turmasQueryable =
+				from t in turmasQueryable
+				join tp in _db.Turma_PerfilCognitivo_Rels
+					on t.Id equals tp.Turma_Id
+				where tp.PerfilCognitivo_Id == request.Perfil_Cognitivo_Id
+				select t;
+
 		}
-
-
-		var e1 = eventosQueryable.ToList();
 
 		if (request.Turma_Id.HasValue)
 		{
-			eventosQueryable = eventosQueryable.Where(e => e.Turma_Id == request.Turma_Id);
-			turmasQueryable = turmasQueryable.Where(t => t.Id == request.Turma_Id);
+			//eventosQueryable = eventosQueryable
+			//	.Where(e => e.Turma_Id == request.Turma_Id);
+
+			//turmasQueryable = turmasQueryable
+			//	.Where(t => t.Id == request.Turma_Id);
+
+			eventosQueryable = 
+				from e in eventosQueryable
+				where e.Turma_Id == request.Turma_Id
+				select e;
+
+			turmasQueryable =
+				from t in turmasQueryable
+				where t.Id == request.Turma_Id
+				select t;
 		}
 
 		if (request.Professor_Id.HasValue)
 		{
 			// Busca o professor em evento.Professor_Id e evento.Evento_Participacao_Professor
-			var eventosContemProfessor = _db.Evento_Participacao_Professors.Where(x => x.Professor_Id == request.Professor_Id.Value);
-			eventosQueryable = eventosQueryable.Where(e => e.Professor_Id != null && (e.Professor_Id == request.Professor_Id || eventosContemProfessor.Any(x => x.Evento_Id == e.Id)));
-			turmasQueryable = turmasQueryable.Where(t => t.Professor_Id == request.Professor_Id);
-			professoresQueryable = professoresQueryable.Where(x => x.Id == request.Professor_Id.Value);
+			//var eventosContemProfessor = _db.Evento_Participacao_Professor
+			//	.Where(x => x.Professor_Id == request.Professor_Id.Value);
+
+			//eventosQueryable = eventosQueryable
+			//	.Where(e => e.Professor_Id != null && (e.Professor_Id == request.Professor_Id || eventosContemProfessor.Any(x => x.Evento_Id == e.Id)));
+
+			//turmasQueryable = turmasQueryable
+			//	.Where(t => t.Professor_Id == request.Professor_Id);
+
+			//professoresQueryable = professoresQueryable
+			//	.Where(x => x.Id == request.Professor_Id.Value);
+
+			eventosQueryable = 
+				from e in eventosQueryable
+				join p in _db.Evento_Participacao_Professor
+					on e.Id equals p.Evento_Id 
+				where p.Professor_Id == request.Professor_Id
+				select e;
+
+			turmasQueryable =
+				from t in turmasQueryable
+				join p in _db.Professor
+					on t.Professor_Id equals p.Id
+				where p.Id == request.Professor_Id
+				select t;
+
+			professoresQueryable = 
+				from p in professoresQueryable
+				where p.Id == request.Professor_Id
+				select p;
 		}
 
 		if (request.Aluno_Id.HasValue)
 		{
-			var aluno = _db.Alunos.FirstOrDefault(a => a.Id == request.Aluno_Id);
+			//var aluno = _db.Alunos
+			//	.FirstOrDefault(a => a.Id == request.Aluno_Id);
 
-			if (aluno is not null)
-			{
-				turmasQueryable = turmasQueryable.Where(t => t.Id == aluno.Turma_Id);
-				// Busca o aluno em evento.Evento_Participacao_Aluno fora do where de eventos, para fazer menos filtros
-				var eventosContemAlunos = _db.Evento_Participacao_Alunos.Where(x => x.Aluno_Id == request.Aluno_Id.Value);
-				eventosQueryable = eventosQueryable.Where(e => eventosContemAlunos.Any(p => p.Evento_Id == e.Id));
-				
-			}
+			//if (aluno is not null)
+			//{
+			//	turmasQueryable = turmasQueryable.Where(t => t.Id == aluno.Turma_Id);
+			//	// Busca o aluno em evento.Evento_Participacao_Aluno fora do where de eventos, para fazer menos filtros
+			//	var eventosContemAlunos = _db.Evento_Participacao_Aluno.Where(x => x.Aluno_Id == request.Aluno_Id.Value);
+			//	eventosQueryable = eventosQueryable.Where(e => eventosContemAlunos.Any(p => p.Evento_Id == e.Id));
+
+			//}
+
+
+			eventosQueryable =
+				from e in eventosQueryable
+				join a in _db.Evento_Participacao_Aluno
+					on e.Id equals a.Evento_Id
+				where a.Aluno_Id == request.Aluno_Id
+				select e;
+
+			turmasQueryable =
+				from t in turmasQueryable
+				join a in _db.Alunos
+					on t.Id equals a.Turma_Id
+				where a.Id == request.Aluno_Id
+				select t;
 		}
 
-		var turmasIds = turmasQueryable.AsNoTracking().Select(x => x.Id);
-		var alunosIds = alunosQueryable.AsNoTracking().Select(x => x.Id);
+		var turmasIds = turmasQueryable
+			.AsNoTracking()
+			.Select(x => x.Id);
+
+		var alunosIds = alunosQueryable
+			.AsNoTracking()
+			.Select(x => x.Id);
 
 		var eventos = eventosQueryable
 			.AsNoTracking()
@@ -141,6 +215,8 @@ public class CalendarioService : ICalendarioService
 			.AsNoTracking()
 			.ToList();
 
+
+		#region roteiro e feriados
 		var anoDe = request.IntervaloDe.Value.Year;
 		var anoAte = request.IntervaloAte.Value.Year;
 
@@ -167,7 +243,8 @@ public class CalendarioService : ICalendarioService
 			.GroupBy(x => (x.Id, x.DataInicio, x.DataFim))
 			.Select(x => x.First())
 			.ToList();
-		
+
+		#endregion roteiro e feriados
 
 		var calendarioResponse = eventos;
 
@@ -176,6 +253,9 @@ public class CalendarioService : ICalendarioService
 		DateTime data = request.IntervaloDe.Value.Date;
 
 		string formatDateDict = "ddMMyyyyHHmm";
+
+		var alunosPorId = alunos
+			.ToDictionary(x => x.Id, x => x);
 
 		var turmasPorDiaSemana = turmas
 			.GroupBy(x => x.DiaSemana)
@@ -337,7 +417,7 @@ public class CalendarioService : ICalendarioService
 						.ToHashSet();
 
 					var alunosTurma = alunos
-						.Where(x => alunosDoDiaId.Contains(x.Id))
+						.Select(x => alunosPorId[x.Id])
 						.ToList();
 
 					int alunosAtivosInTurma = vigenciasDaTurma.Count;
@@ -486,7 +566,7 @@ public class CalendarioService : ICalendarioService
 
 		//// Fazendo o possível pra otimizar, mas CalendarioAlunoList é uma view, então não lida muito bem com chaves
 		//var query = from a in _db.CalendarioAlunoLists
-		//			// join p in _db.Evento_Participacao_Alunos on a.Id equals p.Id
+		//			// join p in _db.Evento_Participacao_Aluno on a.Id equals p.Id
 		//			where eventoIds.Contains(a.Evento_Id)
 		//			orderby a.Aluno
 		//			select a;
@@ -501,7 +581,7 @@ public class CalendarioService : ICalendarioService
 			.Where(p => eventoIds.Contains(p.Evento_Id))
 			.ToList();
 
-		List<Evento_Aula_PerfilCognitivo_Rel> allRels = _db.Evento_Aula_PerfilCognitivo_Rels
+		List<Evento_Aula_PerfilCognitivo_Rel> allRels = _db.Evento_Aula_PerfilCognitivo_Rel
 		   .AsNoTracking()
 		   .Where(r => eventoAulaIds.Contains(r.Evento_Aula_Id))
 		   .Include(r => r.PerfilCognitivo)

@@ -234,11 +234,11 @@ public class EventoServiceTests : BaseIntegrationTest {
         Assert.NotNull(response);
         Assert.True(response.Success, response.Message);
 
-        var presenteResult = _db.Evento_Participacao_Alunos.Find(participacaoPresente.Id);
+        var presenteResult = _db.Evento_Participacao_Aluno.Find(participacaoPresente.Id);
         Assert.NotNull(presenteResult);
         Assert.True(presenteResult.Presente);
 
-        var faltanteResult = _db.Evento_Participacao_Alunos.Find(participacaoFaltante.Id);
+        var faltanteResult = _db.Evento_Participacao_Aluno.Find(participacaoFaltante.Id);
         Assert.NotNull(faltanteResult);
         Assert.False(faltanteResult.Presente);
     }
@@ -305,7 +305,7 @@ public class EventoServiceTests : BaseIntegrationTest {
         Assert.NotNull(response);
         Assert.True(response.Success);
 
-        var participacao = _db.Evento_Participacao_Alunos.FirstOrDefault(p => p.Evento_Id == evento.Id);
+        var participacao = _db.Evento_Participacao_Aluno.FirstOrDefault(p => p.Evento_Id == evento.Id);
 
         Assert.NotNull(participacao);
         Assert.Equal(evento.Id, participacao.Evento_Id);
@@ -479,7 +479,7 @@ public class EventoServiceTests : BaseIntegrationTest {
         Assert.NotNull(response);
         Assert.True(response.Success);
 
-        Evento_Participacao_Aluno? updatedParticipacao = _db.Evento_Participacao_Alunos.Find(participacao.Id);
+        Evento_Participacao_Aluno? updatedParticipacao = _db.Evento_Participacao_Aluno.Find(participacao.Id);
         Assert.NotNull(updatedParticipacao);
         Assert.Equal("Test Update Participacao", updatedParticipacao.ContatoObservacao);
     }
@@ -515,7 +515,7 @@ public class EventoServiceTests : BaseIntegrationTest {
         Assert.NotNull(response);
         Assert.True(response.Success);
 
-        var participacaoCancelada = _db.Evento_Participacao_Alunos.FirstOrDefault(p => p.Id == participacao.Id);
+        var participacaoCancelada = _db.Evento_Participacao_Aluno.FirstOrDefault(p => p.Id == participacao.Id);
         Assert.NotNull(participacaoCancelada);
 
         // Cancelar participação insere Deactivated e Presente = False
@@ -621,7 +621,7 @@ public class EventoServiceTests : BaseIntegrationTest {
         Assert.NotNull(response);
         Assert.True(response.Success, response.Message);
 
-        var participacaoResult = _db.Evento_Participacao_Alunos.Find(participacaoPresente.Id);
+        var participacaoResult = _db.Evento_Participacao_Aluno.Find(participacaoPresente.Id);
         Assert.NotNull(participacaoResult);
         Assert.True(participacaoResult.Presente);
         Assert.Equal(5, participacaoResult.NumeroPaginaAbaco);

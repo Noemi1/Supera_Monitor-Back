@@ -11,34 +11,21 @@ namespace Supera_Monitor_Back.Services;
 
 public interface IAlunoService
 {
-	
-	AlunoListWithChecklist Get(int alunoId);
-	
+
 	List<AlunoList> GetAll();
-	
+	AlunoResponse Get(int alunoId);
 	List<AlunoHistoricoList> GetHistoricoById(int alunoId);
-	
 	List<AlunoVigenciaList> GetVigenciaById(int alunoId);
-	
-	List<AlunoListWithChecklist> GetAllWithChecklist(AlunoRequest request);
-	
+	List<AlunoResponse> GetAllWithChecklist(AlunoRequest request);
 	List<AlunoChecklistItemList> GetAlunoChecklistItemList(AlunoRequest request);
-	
 	ResponseModel GetProfileImage(int alunoId);
-	
 	ResponseModel GetSummaryByAluno(int alunoId);
-	
 	List<ApostilaList> GetApostilasByAluno(int alunoId);
-	
 	ResponseModel Insert(CreateAlunoRequest model);
-	
-	ResponseModel PrimeiraAula(PrimeiraAulaRequest model);
-	
-	ResponseModel Reposicao(ReposicaoRequest model);
-	
 	ResponseModel Update(UpdateAlunoRequest model);
-	
 	ResponseModel ToggleDeactivate(int alunoId);
+	ResponseModel PrimeiraAula(PrimeiraAulaRequest model);
+	ResponseModel Reposicao(ReposicaoRequest model);
 }
 
 public class AlunoService : IAlunoService
@@ -65,38 +52,42 @@ public class AlunoService : IAlunoService
 		_account = (Account?)httpContextAccessor?.HttpContext?.Items["Account"];
 	}
 
-	public AlunoListWithChecklist Get(int alunoId)
+	public List<AlunoList> GetAll()
 	{
-		AlunoList? aluno = _db.AlunoLists.AsNoTracking().SingleOrDefault(a => a.Id == alunoId);
+		List<AlunoList> alunos = _db.AlunoList
+			.OrderBy(a => a.Nome)
+			.ToList();
+
+		return alunos;
+	}
+
+	public AlunoResponse Get(int alunoId)
+	{
+		AlunoList? aluno = _db.AlunoList
+			.AsNoTracking()
+			.FirstOrDefault(a => a.Id == alunoId);
 
 		if (aluno is null)
 		{
 			throw new Exception("Aluno não encontrado");
 		}
 
-		AlunoListWithChecklist alunoListWithChecklist = _mapper.Map<AlunoListWithChecklist>(aluno);
+		AlunoResponse model = _mapper.Map<AlunoResponse>(aluno);
 
-		alunoListWithChecklist.AlunoChecklist = _db.AlunoChecklistViews
-			.Where(a => a.Aluno_Id == alunoListWithChecklist.Id)
+		model.AlunoChecklist = _db.AlunoChecklistViews
+			.Where(a => a.Aluno_Id == model.Id)
 			.ToList();
 
-		alunoListWithChecklist.Restricoes = _db.AlunoRestricaoLists
+		model.Restricoes = _db.AlunoRestricaoLists
 			.Where(ar => ar.Aluno_Id == aluno.Id)
 			.ToList();
 
-		return alunoListWithChecklist;
+		return model;
 	}
 
-	public List<AlunoList> GetAll()
+	public List<AlunoResponse> GetAllWithChecklist(AlunoRequest request)
 	{
-		List<AlunoList> alunos = _db.AlunoLists.OrderBy(a => a.Nome).ToList();
-
-		return alunos;
-	}
-
-	public List<AlunoListWithChecklist> GetAllWithChecklist(AlunoRequest request)
-	{
-		IQueryable<AlunoList> alunosQueryable = _db.AlunoLists
+		IQueryable<AlunoList> alunosQueryable = _db.AlunoList
 		  .Where(a => a.Deactivated == null)
 		  .AsQueryable();
 
@@ -120,7 +111,7 @@ public class AlunoService : IAlunoService
 		List<AlunoList> alunos = alunosQueryable.OrderBy(a => a.Nome).ToList();
 		List<int> alunosIds = alunos.Select(x => x.Id).ToList();
 
-		List<AlunoListWithChecklist> alunosWithChecklist = _mapper.Map<List<AlunoListWithChecklist>>(alunos);
+		List<AlunoResponse> alunosWithChecklist = _mapper.Map<List<AlunoResponse>>(alunos);
 
 
 		List<AlunoChecklistView> listAlunoChecklistView = _db.AlunoChecklistViews
@@ -255,7 +246,7 @@ public class AlunoService : IAlunoService
 			_db.SaveChanges();
 
 			response.Message = "Aluno cadastrado com sucesso";
-			response.Object = _db.AlunoLists.AsNoTracking().FirstOrDefault(a => a.Id == aluno.Id);
+			response.Object = _db.AlunoList.AsNoTracking().FirstOrDefault(a => a.Id == aluno.Id);
 			response.Success = true;
 		}
 		catch (Exception ex)
@@ -287,7 +278,7 @@ public class AlunoService : IAlunoService
 				return new ResponseModel { Message = "Aluno não encontrado" };
 			}
 
-			AlunoList? oldObject = _db.AlunoLists.AsNoTracking().FirstOrDefault(a => a.Id == model.Id);
+			AlunoList? oldObject = _db.AlunoList.AsNoTracking().FirstOrDefault(a => a.Id == model.Id);
 
 			if (oldObject is null)
 			{
@@ -456,7 +447,7 @@ public class AlunoService : IAlunoService
 				// Para cada aula da turma original, remover os registros do aluno sendo trocado, se existirem
 				foreach (Evento evento in eventosTurmaOriginal)
 				{
-					Evento_Participacao_Aluno? participacaoAluno = _db.Evento_Participacao_Alunos
+					Evento_Participacao_Aluno? participacaoAluno = _db.Evento_Participacao_Aluno
 						.FirstOrDefault(p =>
 							p.Evento_Id == evento.Id &&
 							p.Aluno_Id == aluno.Id);
@@ -466,7 +457,7 @@ public class AlunoService : IAlunoService
 						continue;
 					}
 
-					_db.Evento_Participacao_Alunos.Remove(participacaoAluno);
+					_db.Evento_Participacao_Aluno.Remove(participacaoAluno);
 				}
 
 				List<Evento> eventosTurmaDestino = _db.Eventos
@@ -496,7 +487,7 @@ public class AlunoService : IAlunoService
 						continue;
 					}
 
-					_db.Evento_Participacao_Alunos.Add(newParticipacao);
+					_db.Evento_Participacao_Aluno.Add(newParticipacao);
 				}
 
 				_db.Aluno_Historicos.Add(new Aluno_Historico
@@ -533,7 +524,7 @@ public class AlunoService : IAlunoService
 
 			response.Message = "Aluno atualizado com sucesso";
 			response.OldObject = oldObject;
-			response.Object = _db.AlunoLists.AsNoTracking().FirstOrDefault(aluno => aluno.Id == model.Id);
+			response.Object = _db.AlunoList.AsNoTracking().FirstOrDefault(aluno => aluno.Id == model.Id);
 			response.Success = true;
 
 		}
@@ -604,7 +595,7 @@ public class AlunoService : IAlunoService
 
 			response.Success = true;
 			response.Message = $"Aluno foi {toggleResult} com sucesso";
-			response.Object = _db.AlunoLists.AsNoTracking().FirstOrDefault(a => a.Id == aluno.Id);
+			response.Object = _db.AlunoList.AsNoTracking().FirstOrDefault(a => a.Id == aluno.Id);
 		}
 		catch (Exception ex)
 		{
@@ -735,7 +726,7 @@ public class AlunoService : IAlunoService
 			}
 
 			// A aula destino e o aluno devem compartilhar pelo menos um perfil cognitivo
-			bool perfilCognitivoMatches = _db.Evento_Aula_PerfilCognitivo_Rels
+			bool perfilCognitivoMatches = _db.Evento_Aula_PerfilCognitivo_Rel
 				.Any(ep =>
 					ep.Evento_Aula_Id == eventoDest.Id &&
 					ep.PerfilCognitivo_Id == aluno.PerfilCognitivo_Id);
@@ -801,8 +792,8 @@ public class AlunoService : IAlunoService
 			registroSource.Deactivated = TimeFunctions.HoraAtualBR();
 			registroSource.StatusContato_Id = (int)StatusContato.REPOSICAO_AGENDADA;
 
-			_db.Evento_Participacao_Alunos.Update(registroSource);
-			_db.Evento_Participacao_Alunos.Add(registroDest);
+			_db.Evento_Participacao_Aluno.Update(registroSource);
+			_db.Evento_Participacao_Aluno.Add(registroDest);
 
 			_db.Aluno_Historicos.Add(new Aluno_Historico
 			{
@@ -842,7 +833,7 @@ public class AlunoService : IAlunoService
 		return apostilas;
 	}
 
-	public ResponseModel GetSummaryByAluno(int alunoId)
+	public ResponseModel	 GetSummaryByAluno(int alunoId)
 	{
 		ResponseModel response = new() { Success = false };
 
@@ -989,7 +980,7 @@ public class AlunoService : IAlunoService
 			}
 
 			// O aluno deve se encaixar em um dos perfis cognitivos do evento
-			bool perfilCognitivoMatches = _db.Evento_Aula_PerfilCognitivo_Rels
+			bool perfilCognitivoMatches = _db.Evento_Aula_PerfilCognitivo_Rel
 				.Any(ep =>
 					ep.Evento_Aula_Id == evento.Id &&
 					ep.PerfilCognitivo_Id == aluno.PerfilCognitivo_Id);
@@ -1023,7 +1014,7 @@ public class AlunoService : IAlunoService
 					NumeroPaginaAH = aluno.NumeroPaginaAH,
 				};
 
-				_db.Evento_Participacao_Alunos.Add(participacao);
+				_db.Evento_Participacao_Aluno.Add(participacao);
 			}
 
 			Aluno_Historico historico = new()

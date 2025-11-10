@@ -89,7 +89,7 @@ public class AccountService : IAccountService {
         _db.Update(account);
         _db.SaveChanges();
 
-        var relatedProfessor = _db.Professors.FirstOrDefault(p => p.Account_Id == account.Id);
+        var relatedProfessor = _db.Professor.FirstOrDefault(p => p.Account_Id == account.Id);
 
         AuthenticateResponse response = _mapper.Map<AuthenticateResponse>(account);
         response.Role = account.Role.Role;
@@ -105,7 +105,7 @@ public class AccountService : IAccountService {
         try {
             var (refreshToken, account) = GetRefreshToken(token);
 
-            var relatedProfessor = _db.Professors.FirstOrDefault(p => p.Account_Id == account.Id);
+            var relatedProfessor = _db.Professor.FirstOrDefault(p => p.Account_Id == account.Id);
 
             // Renew refresh and JWT tokens
             var newRefreshToken = GenerateRefreshToken(ipAddress);

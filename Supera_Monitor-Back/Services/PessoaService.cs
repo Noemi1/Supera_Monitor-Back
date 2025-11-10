@@ -76,7 +76,7 @@ public class PessoaService : IPessoaService {
             _db.SaveChanges();
 
             response.Message = "Pessoa atualizada com sucesso";
-            response.Object = _db.AlunoLists.AsNoTracking().FirstOrDefault(a => a.Pessoa_Id == model.Pessoa_Id);
+            response.Object = _db.AlunoList.AsNoTracking().FirstOrDefault(a => a.Pessoa_Id == model.Pessoa_Id);
             response.Success = true;
         }
         catch (Exception ex) {

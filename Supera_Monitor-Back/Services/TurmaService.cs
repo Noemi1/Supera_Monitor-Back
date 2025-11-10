@@ -81,7 +81,7 @@ public class TurmaService : ITurmaService {
 
         try {
             // Não devo poder criar turma com um professor que não existe
-            Professor? professor = _db.Professors
+            Professor? professor = _db.Professor
                 .Include(p => p.Account)
                 .FirstOrDefault(p => p.Id == model.Professor_Id);
 
@@ -195,7 +195,7 @@ public class TurmaService : ITurmaService {
             }
 
             // Não devo poder atualizar turma com um professor que não existe
-            Professor? professor = _db.Professors
+            Professor? professor = _db.Professor
                 .Include(p => p.Account)
                 .FirstOrDefault(p => p.Id == model.Professor_Id);
 
@@ -358,7 +358,7 @@ public class TurmaService : ITurmaService {
     }
 
     public List<AlunoList> GetAlunosByTurma(int turmaId) {
-        List<AlunoList> alunos = _db.AlunoLists.Where(a => a.Turma_Id == turmaId).ToList();
+        List<AlunoList> alunos = _db.AlunoList.Where(a => a.Turma_Id == turmaId).ToList();
 
         return alunos;
     }

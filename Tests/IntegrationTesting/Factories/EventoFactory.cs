@@ -39,7 +39,7 @@ static class EventoFactory {
             Deactivated = null,
         };
 
-        db.Evento_Participacao_Alunos.Add(participacaoAluno);
+        db.Evento_Participacao_Aluno.Add(participacaoAluno);
         db.SaveChanges();
 
         return participacaoAluno;

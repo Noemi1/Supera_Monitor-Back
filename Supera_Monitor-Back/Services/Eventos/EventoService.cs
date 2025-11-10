@@ -100,7 +100,7 @@ public class EventoService : IEventoService
 				return new ResponseModel { Message = "Aluno(s) não encontrado(s)" };
 			}
 
-			IQueryable<Professor> professoresInRequest = _db.Professors.Include(p => p.Account).Where(p => p.Account.Deactivated == null && request.Professores.Contains(p.Id));
+			IQueryable<Professor> professoresInRequest = _db.Professor.Include(p => p.Account).Where(p => p.Account.Deactivated == null && request.Professores.Contains(p.Id));
 
 			if (professoresInRequest.Count() != request.Professores.Count)
 			{
@@ -193,7 +193,7 @@ public class EventoService : IEventoService
 
 			foreach (var participacao in participacoesAlunos)
 			{
-				_db.Evento_Participacao_Alunos.Add(participacao);
+				_db.Evento_Participacao_Aluno.Add(participacao);
 
 				_db.Aluno_Historicos.Add(new Aluno_Historico
 				{
@@ -212,7 +212,7 @@ public class EventoService : IEventoService
 
 			if (participacoesProfessores.Any())
 			{
-				_db.Evento_Participacao_Professors.AddRange(participacoesProfessores);
+				_db.Evento_Participacao_Professor.AddRange(participacoesProfessores);
 			}
 
 			foreach (var professor in professoresInRequest)
@@ -274,7 +274,7 @@ public class EventoService : IEventoService
 				return new ResponseModel { Message = "Evento não encontrado" };
 			}
 
-			IQueryable<Professor> professoresInRequest = _db.Professors.Include(p => p.Account).Where(p => p.Account.Deactivated == null && request.Professores.Contains(p.Id));
+			IQueryable<Professor> professoresInRequest = _db.Professor.Include(p => p.Account).Where(p => p.Account.Deactivated == null && request.Professores.Contains(p.Id));
 
 			if (professoresInRequest.Count() != request.Professores.Count)
 			{
@@ -299,7 +299,7 @@ public class EventoService : IEventoService
 					return new ResponseModel { Message = $"Professor: '{professor.Account.Name}' possui uma turma nesse mesmo horário" };
 				}
 
-				Evento_Participacao_Professor? participacaoProfessor = _db.Evento_Participacao_Professors.FirstOrDefault(p => p.Evento_Id == evento.Id);
+				Evento_Participacao_Professor? participacaoProfessor = _db.Evento_Participacao_Professor.FirstOrDefault(p => p.Evento_Id == evento.Id);
 
 				bool hasParticipacaoConflict = _professorService.HasEventoParticipacaoConflict(
 					professorId: professor.Id,
@@ -345,10 +345,10 @@ public class EventoService : IEventoService
 			_db.SaveChanges();
 
 			// IDS que preciso desativar
-			List<Evento_Participacao_Professor> participacoesToDeactivate = _db.Evento_Participacao_Professors.Where(p => !request.Professores.Contains(p.Professor_Id) && p.Evento_Id == evento.Id).ToList();
+			List<Evento_Participacao_Professor> participacoesToDeactivate = _db.Evento_Participacao_Professor.Where(p => !request.Professores.Contains(p.Professor_Id) && p.Evento_Id == evento.Id).ToList();
 
 			// IDS que existem
-			var idsExistentes = _db.Evento_Participacao_Professors.Where(p => p.Evento_Id == evento.Id).Select(p => p.Professor_Id).ToList();
+			var idsExistentes = _db.Evento_Participacao_Professor.Where(p => p.Evento_Id == evento.Id).Select(p => p.Professor_Id).ToList();
 
 			// IDS que preciso adicionar
 			List<int> participacoesToAdd = request.Professores.Where(id => !idsExistentes.Contains(id)).ToList();
@@ -356,7 +356,7 @@ public class EventoService : IEventoService
 			foreach (var participacao in participacoesToDeactivate)
 			{
 				participacao.Deactivated = TimeFunctions.HoraAtualBR();
-				_db.Evento_Participacao_Professors.Update(participacao);
+				_db.Evento_Participacao_Professor.Update(participacao);
 			}
 
 			foreach (int professorId in participacoesToAdd)
@@ -367,7 +367,7 @@ public class EventoService : IEventoService
 					Professor_Id = professorId
 				};
 
-				_db.Evento_Participacao_Professors.Add(participacao);
+				_db.Evento_Participacao_Professor.Add(participacao);
 			}
 
 			_db.SaveChanges();
@@ -443,7 +443,7 @@ public class EventoService : IEventoService
 
 				case (int)EventoTipo.AulaZero:
 					// Se o aluno sendo inscrito já participou de uma aula zero, não deve permitir a inscrição
-					bool alunoAlreadyParticipated = _db.Evento_Participacao_Alunos
+					bool alunoAlreadyParticipated = _db.Evento_Participacao_Aluno
 						.Include(p => p.Evento)
 						.Any(p =>
 							p.Aluno_Id == aluno.Id
@@ -491,7 +491,7 @@ public class EventoService : IEventoService
 				Data = TimeFunctions.HoraAtualBR(),
 			});
 
-			_db.Evento_Participacao_Alunos.Add(newParticipacao);
+			_db.Evento_Participacao_Aluno.Add(newParticipacao);
 			_db.SaveChanges();
 
 			response.Message = $"Aluno foi inscrito no evento com sucesso";
@@ -512,7 +512,7 @@ public class EventoService : IEventoService
 
 		try
 		{
-			Evento_Participacao_Aluno? participacao = _db.Evento_Participacao_Alunos.Find(request.Participacao_Id);
+			Evento_Participacao_Aluno? participacao = _db.Evento_Participacao_Aluno.Find(request.Participacao_Id);
 
 			if (participacao is null)
 			{
@@ -547,7 +547,7 @@ public class EventoService : IEventoService
 			participacao.ContatoObservacao = request.ContatoObservacao;
 			participacao.StatusContato_Id = request.StatusContato_Id;
 
-			_db.Evento_Participacao_Alunos.Update(participacao);
+			_db.Evento_Participacao_Aluno.Update(participacao);
 			_db.SaveChanges();
 
 			response.Message = "Participação do aluno foi atualizada com sucesso.";
@@ -567,7 +567,7 @@ public class EventoService : IEventoService
 
 		try
 		{
-			Evento_Participacao_Aluno? participacao = _db.Evento_Participacao_Alunos.Include(e => e.Aluno).FirstOrDefault(p => p.Id == participacaoId);
+			Evento_Participacao_Aluno? participacao = _db.Evento_Participacao_Aluno.Include(e => e.Aluno).FirstOrDefault(p => p.Id == participacaoId);
 
 			if (participacao is null)
 			{
@@ -591,7 +591,7 @@ public class EventoService : IEventoService
 				participacao.Aluno.AulaZero_Id = null;
 			}
 
-			_db.Evento_Participacao_Alunos.Remove(participacao);
+			_db.Evento_Participacao_Aluno.Remove(participacao);
 			_db.SaveChanges();
 
 			response.Message = "Participação do aluno removida com sucesso";
@@ -611,7 +611,7 @@ public class EventoService : IEventoService
 
 		try
 		{
-			Evento_Participacao_Aluno? participacao = _db.Evento_Participacao_Alunos.Include(e => e.Aluno).FirstOrDefault(p => p.Id == request.Participacao_Id);
+			Evento_Participacao_Aluno? participacao = _db.Evento_Participacao_Aluno.Include(e => e.Aluno).FirstOrDefault(p => p.Id == request.Participacao_Id);
 
 			if (participacao is null)
 			{
@@ -648,7 +648,7 @@ public class EventoService : IEventoService
 				participacao.StatusContato_Id = (int)StatusContato.REPOSICAO_DESMARCADA;
 			}
 
-			_db.Evento_Participacao_Alunos.Update(participacao);
+			_db.Evento_Participacao_Aluno.Update(participacao);
 			_db.SaveChanges();
 
 			response.Message = "A participação do aluno foi cancelada";
@@ -682,7 +682,7 @@ public class EventoService : IEventoService
 			}
 
 			// Validations passed
-			List<Evento_Participacao_Aluno> participacoes = _db.Evento_Participacao_Alunos
+			List<Evento_Participacao_Aluno> participacoes = _db.Evento_Participacao_Aluno
 				.Include(p => p.Aluno)
 				.Where(p => p.Evento_Id == evento.Id)
 				.ToList();
@@ -949,7 +949,7 @@ public class EventoService : IEventoService
 				participacao.Observacao = partProfessor.Observacao;
 				participacao.Presente = partProfessor.Presente;
 
-				_db.Evento_Participacao_Professors.Update(participacao);
+				_db.Evento_Participacao_Professor.Update(participacao);
 			}
 
 			_db.SaveChanges();
@@ -1000,7 +1000,7 @@ public class EventoService : IEventoService
 		evento.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).ToList();
 		evento.Professores = _db.CalendarioProfessorLists.Where(e => e.Evento_Id == evento.Id).ToList();
 
-		var PerfisCognitivos = _db.Evento_Aula_PerfilCognitivo_Rels
+		var PerfisCognitivos = _db.Evento_Aula_PerfilCognitivo_Rel
 			.Where(p => p.Evento_Aula_Id == evento.Id)
 			.Include(p => p.PerfilCognitivo)
 			.Select(p => p.PerfilCognitivo)
@@ -1074,7 +1074,7 @@ public class EventoService : IEventoService
 
 			var alunosVigentes = vigenciasTurma.Select(x => x.Aluno_Id);
 
-			var alunos = _db.AlunoLists
+			var alunos = _db.AlunoList
 				.Where(x => alunosVigentes.Contains(x.Id))
 				.OrderBy(x => x.Nome)
 				.ToList();
@@ -1221,7 +1221,7 @@ public class EventoService : IEventoService
 				throw new Exception("Aluno(s) não encontrado(s)");
 			}
 
-			IQueryable<Professor> professoresInRequest = _db.Professors
+			IQueryable<Professor> professoresInRequest = _db.Professor
 				.Include(p => p.Account)
 				.Where(p => dto.Professores.Contains(p.Id) && p.Account.Deactivated == null);
 
@@ -1706,7 +1706,7 @@ public class EventoService : IEventoService
 				}
 
 				_db.Aluno_Historicos.Add(historico);
-				_db.Evento_Participacao_Alunos.Update(participacao);
+				_db.Evento_Participacao_Aluno.Update(participacao);
 			}
 
 			evento.Observacao = request.Observacao;

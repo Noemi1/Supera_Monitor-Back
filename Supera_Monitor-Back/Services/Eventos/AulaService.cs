@@ -64,7 +64,7 @@ public class AulaService : IAulaService
 
 		if (eventoAula is not null)
 		{
-			var aulaPerfisCognitivos = _db.Evento_Aula_PerfilCognitivo_Rels
+			var aulaPerfisCognitivos = _db.Evento_Aula_PerfilCognitivo_Rel
 				.Include(p => p.PerfilCognitivo)
 				.Where(e => e.Evento_Aula_Id == aulaId)
 				.Select(e => e.PerfilCognitivo)
@@ -104,7 +104,7 @@ public class AulaService : IAulaService
 			}
 
 			// Não devo poder registrar uma aula com um professor que não existe
-			Professor? professor = _db.Professors
+			Professor? professor = _db.Professor
 				.Include(p => p.Account)
 				.FirstOrDefault(p => p.Id == request.Professor_Id);
 
@@ -225,7 +225,7 @@ public class AulaService : IAulaService
 													.ToList();
 
 			var alunosVigentesId = vigenciasTurma.Select(x => x.Aluno_Id);
-			var alunos = _db.AlunoLists
+			var alunos = _db.AlunoList
 				.Where(x => alunosVigentesId.Contains(x.Id))
 				.ToList();
 
@@ -270,7 +270,7 @@ public class AulaService : IAulaService
 		try
 		{
 			// Não devo poder registrar uma aula com um professor que não existe
-			Professor? professor = _db.Professors
+			Professor? professor = _db.Professor
 				.Include(p => p.Account)
 				.FirstOrDefault(p => p.Id == request.Professor_Id);
 
@@ -383,7 +383,7 @@ public class AulaService : IAulaService
 				Professor_Id = professor.Id,
 			};
 
-			_db.Evento_Participacao_Professors.Add(participacaoProfessor);
+			_db.Evento_Participacao_Professor.Add(participacaoProfessor);
 
 			// Inserir os registros dos alunos passados na requisição
 			IEnumerable<Evento_Participacao_Aluno> registros = alunosInRequest
@@ -404,7 +404,7 @@ public class AulaService : IAulaService
 					NumeroPaginaAH = aluno.NumeroPaginaAH,
 				});
 
-			_db.Evento_Participacao_Alunos.AddRange(registros);
+			_db.Evento_Participacao_Aluno.AddRange(registros);
 
 			// Pegar os perfis cognitivos passados na requisição e criar as entidades de Aula_PerfilCognitivo
 			IEnumerable<Evento_Aula_PerfilCognitivo_Rel> eventoAulaPerfisCognitivos =
@@ -414,7 +414,7 @@ public class AulaService : IAulaService
 					PerfilCognitivo_Id = perfilId
 				});
 
-			_db.Evento_Aula_PerfilCognitivo_Rels.AddRange(eventoAulaPerfisCognitivos);
+			_db.Evento_Aula_PerfilCognitivo_Rel.AddRange(eventoAulaPerfisCognitivos);
 			_db.SaveChanges();
 
 			var responseObject = _db.CalendarioEventoLists.First(e => e.Id == evento.Id);
@@ -452,7 +452,7 @@ public class AulaService : IAulaService
 			}
 
 			// Não devo poder registrar uma aula com um professor que não existe
-			Professor? professor = _db.Professors
+			Professor? professor = _db.Professor
 				.Include(p => p.Account)
 				.FirstOrDefault(p => p.Id == request.Professor_Id);
 
@@ -628,8 +628,8 @@ public class AulaService : IAulaService
 				Professor_Id = professor.Id,
 			};
 
-			_db.Evento_Participacao_Professors.Add(participacaoProfessor);
-			_db.Evento_Participacao_Alunos.AddRange(participacoesAlunos);
+			_db.Evento_Participacao_Professor.Add(participacaoProfessor);
+			_db.Evento_Participacao_Aluno.AddRange(participacoesAlunos);
 			_db.Aluno_Historicos.AddRange(historicos);
 
 			_db.SaveChanges();
@@ -672,7 +672,7 @@ public class AulaService : IAulaService
 				return new ResponseModel { Message = "Aula não encontrada" };
 			}
 
-			Professor? professor = _db.Professors
+			Professor? professor = _db.Professor
 				.Include(p => p.Account)
 				.FirstOrDefault(p => p.Id == request.Professor_Id);
 
@@ -720,7 +720,7 @@ public class AulaService : IAulaService
 					return new ResponseModel { Message = $"Professor: '{professor.Account.Name}' possui uma turma nesse mesmo horário" };
 				}
 
-				Evento_Participacao_Professor? participacaoProfessor = _db.Evento_Participacao_Professors.FirstOrDefault(p => p.Evento_Id == evento.Id);
+				Evento_Participacao_Professor? participacaoProfessor = _db.Evento_Participacao_Professor.FirstOrDefault(p => p.Evento_Id == evento.Id);
 
 				bool hasParticipacaoConflict = _professorService.HasEventoParticipacaoConflict(
 					professorId: professor.Id,
@@ -783,7 +783,7 @@ public class AulaService : IAulaService
 			_db.SaveChanges();
 
 			// Por simplicidade, remover os perfis cognitivos anteriores
-			List<Evento_Aula_PerfilCognitivo_Rel> perfisToRemove = _db.Evento_Aula_PerfilCognitivo_Rels
+			List<Evento_Aula_PerfilCognitivo_Rel> perfisToRemove = _db.Evento_Aula_PerfilCognitivo_Rel
 				.Where(p => p.Evento_Aula_Id == evento.Id)
 				.ToList();
 
@@ -800,11 +800,11 @@ public class AulaService : IAulaService
 			_db.AddRange(eventoAulaPerfisCognitivos);
 			_db.SaveChanges();
 
-			Evento_Participacao_Professor? participacaoToRemove = _db.Evento_Participacao_Professors.FirstOrDefault(p => p.Evento_Id == evento.Id && p.Professor_Id == professor.Id);
+			Evento_Participacao_Professor? participacaoToRemove = _db.Evento_Participacao_Professor.FirstOrDefault(p => p.Evento_Id == evento.Id && p.Professor_Id == professor.Id);
 
 			if (participacaoToRemove is not null)
 			{
-				_db.Evento_Participacao_Professors.Remove(participacaoToRemove);
+				_db.Evento_Participacao_Professor.Remove(participacaoToRemove);
 			}
 
 			// Remover participação antiga e inserir nova participação do professor
@@ -814,7 +814,7 @@ public class AulaService : IAulaService
 				Professor_Id = professor.Id,
 			};
 
-			_db.Evento_Participacao_Professors.Add(newParticipacaoProfessor);
+			_db.Evento_Participacao_Professor.Add(newParticipacaoProfessor);
 
 			_db.SaveChanges();
 

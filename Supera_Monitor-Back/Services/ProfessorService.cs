@@ -143,7 +143,7 @@ namespace Supera_Monitor_Back.Services {
                     return new ResponseModel { Message = "Ocorreu algum erro ao criar o professor" };
                 }
 
-                _db.Professors.Add(professor);
+                _db.Professor.Add(professor);
                 _db.SaveChanges();
 
                 response.Message = "Professor cadastrado com sucesso";
@@ -161,7 +161,7 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Professor? professor = _db.Professors.Find(model.Id);
+                Professor? professor = _db.Professor.Find(model.Id);
 
                 if (professor == null) {
                     return new ResponseModel { Message = "Professor não encontrado" };
@@ -200,7 +200,7 @@ namespace Supera_Monitor_Back.Services {
                 professor.ExpedienteInicio = model.ExpedienteInicio;
                 professor.ExpedienteFim = model.ExpedienteFim;
 
-                _db.Professors.Update(professor);
+                _db.Professor.Update(professor);
                 _db.SaveChanges();
 
                 response.Message = "Professor atualizado com sucesso";
@@ -218,7 +218,7 @@ namespace Supera_Monitor_Back.Services {
             ResponseModel response = new() { Success = false };
 
             try {
-                Professor? professor = _db.Professors.Find(professorId);
+                Professor? professor = _db.Professor.Find(professorId);
 
                 if (professor == null) {
                     return new ResponseModel { Message = "Professor não encontrado" };
@@ -228,7 +228,7 @@ namespace Supera_Monitor_Back.Services {
 
                 response.Object = _db.ProfessorLists.FirstOrDefault(p => p.Id == professorId);
 
-                _db.Professors.Remove(professor);
+                _db.Professor.Remove(professor);
                 _db.SaveChanges();
 
                 response.Message = "Turma excluída com sucesso";
@@ -271,7 +271,7 @@ namespace Supera_Monitor_Back.Services {
 
         public bool HasTurmaTimeConflict(int professorId, int DiaSemana, TimeSpan Horario, int? IgnoredTurmaId = null) {
             try {
-                Professor professor = _db.Professors.Find(professorId) ?? throw new Exception("IsProfessorAvailable : Professor não pode ser nulo");
+                Professor professor = _db.Professor.Find(professorId) ?? throw new Exception("IsProfessorAvailable : Professor não pode ser nulo");
 
                 TimeSpan hourInterval = TimeSpan.FromHours(1);
 
@@ -298,14 +298,14 @@ namespace Supera_Monitor_Back.Services {
 
         public bool HasEventoParticipacaoConflict(int professorId, DateTime Data, int DuracaoMinutos, int? IgnoredEventoId) {
             try {
-                Professor professor = _db.Professors.Find(professorId) ?? throw new Exception("IsProfessorAvailable : Professor não pode ser nulo");
+                Professor professor = _db.Professor.Find(professorId) ?? throw new Exception("IsProfessorAvailable : Professor não pode ser nulo");
 
                 // Definir intervalo do novo evento
                 DateTime novoEventoInicio = Data;
                 DateTime novoEventoFim = Data.AddMinutes(DuracaoMinutos);
 
                 // Verifica se há conflito de participação
-                bool hasParticipacaoConflict = _db.Evento_Participacao_Professors
+                bool hasParticipacaoConflict = _db.Evento_Participacao_Professor
                     .Where(e =>
                         e.Evento_Id != IgnoredEventoId &&
                         e.Evento.Deactivated == null &&

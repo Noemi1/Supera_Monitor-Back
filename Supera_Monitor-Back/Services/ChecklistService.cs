@@ -261,7 +261,7 @@ public class ChecklistService : IChecklistService {
     }
 
     public List<ChecklistsFromAlunoModel> GetAllAlunoChecklistsByEventoId(int eventoId) {
-        var registros = _db.Evento_Participacao_Alunos
+        var registros = _db.Evento_Participacao_Aluno
             .Where(p => p.Evento_Id == eventoId && p.Deactivated == null)
             .ToList();
 

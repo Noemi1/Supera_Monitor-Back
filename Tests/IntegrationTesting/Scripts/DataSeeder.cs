@@ -256,7 +256,7 @@ public class DataSeeder(DataContext db) {
             new() { Account_Id = 4, CorLegenda = "#0000ff", DataInicio = TimeFunctions.HoraAtualBR() },
         };
 
-        _db.Professors.AddRange(professors);
+        _db.Professor.AddRange(professors);
         await _db.SaveChangesAsync();
 
         _db.Database.ExecuteSqlRaw("SET IDENTITY_INSERT [Account] OFF");

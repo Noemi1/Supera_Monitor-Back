@@ -27,7 +27,7 @@ public partial class DataContext : DbContext
 
 	public virtual DbSet<AlunoChecklistView> AlunoChecklistViews { get; set; }
 
-	public virtual DbSet<AlunoList> AlunoLists { get; set; }
+	public virtual DbSet<AlunoList> AlunoList { get; set; }
 
 	public virtual DbSet<AlunoRestricaoList> AlunoRestricaoLists { get; set; }
 
@@ -65,13 +65,13 @@ public partial class DataContext : DbContext
 
 	public virtual DbSet<Evento_Aula> Evento_Aulas { get; set; }
 
-	public virtual DbSet<Evento_Aula_PerfilCognitivo_Rel> Evento_Aula_PerfilCognitivo_Rels { get; set; }
+	public virtual DbSet<Evento_Aula_PerfilCognitivo_Rel> Evento_Aula_PerfilCognitivo_Rel { get; set; }
 
-	public virtual DbSet<Evento_Participacao_Aluno> Evento_Participacao_Alunos { get; set; }
+	public virtual DbSet<Evento_Participacao_Aluno> Evento_Participacao_Aluno { get; set; }
 
 	public virtual DbSet<Evento_Participacao_Aluno_StatusContato> Evento_Participacao_Aluno_StatusContato { get; set; }
 
-	public virtual DbSet<Evento_Participacao_Professor> Evento_Participacao_Professors { get; set; }
+	public virtual DbSet<Evento_Participacao_Professor> Evento_Participacao_Professor { get; set; }
 
 	public virtual DbSet<Evento_Tipo> Evento_Tipos { get; set; }
 
@@ -101,7 +101,7 @@ public partial class DataContext : DbContext
 
 	public virtual DbSet<Pessoa_Status> Pessoa_Statuses { get; set; }
 
-	public virtual DbSet<Professor> Professors { get; set; }
+	public virtual DbSet<Professor> Professor { get; set; }
 
 	public virtual DbSet<ProfessorList> ProfessorLists { get; set; }
 
