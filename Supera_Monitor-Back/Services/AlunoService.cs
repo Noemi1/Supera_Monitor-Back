@@ -191,12 +191,7 @@ public class AlunoService : IAlunoService
 				Pessoa_Geracao_Id = pessoaCRM.Pessoa_Geracao_Id,
 			};
 
-			_db.Pessoas.Add(pessoa);
-			_db.SaveChanges();
-
-			string randomRM = Utils.GenerateRM(_db);
-
-			Aluno aluno = new()
+			Aluno aluno = new Aluno()
 			{
 				Pessoa_Id = pessoa.Id,
 				AspNetUsers_Created_Id = model.AspNetUsers_Created_Id,
@@ -204,8 +199,8 @@ public class AlunoService : IAlunoService
 				LastUpdated = null,
 				Deactivated = null,
 
-				RM = randomRM,
-				LoginApp = pessoa.Email ?? $"{randomRM}@supera",
+				RM = Utils.GenerateRM(_db),
+				LoginApp = pessoa.Email,
 				SenhaApp = "Supera@123",
 
 				Turma_Id = null,
@@ -222,7 +217,17 @@ public class AlunoService : IAlunoService
 				NumeroPaginaAH = null,
 			};
 
-			_db.Alunos.Add(aluno);
+			aluno.Aluno_Historicos.Add(new Aluno_Historico
+			{
+				Aluno_Id = aluno.Id,
+				Descricao = "Aluno cadastrado",
+				AspNetUser_Id = model.AspNetUsers_Created_Id,
+				Account_Id = _account?.Id,
+				Data = TimeFunctions.HoraAtualBR(),
+			});
+			pessoa.Alunos = new List<Aluno>() { aluno };
+
+			_db.Add(pessoa);
 			_db.SaveChanges();
 
 			ResponseModel populateChecklistResponse = _checklistService.PopulateAlunoChecklist(aluno.Id);
@@ -231,17 +236,6 @@ public class AlunoService : IAlunoService
 			{
 				return populateChecklistResponse;
 			}
-
-			_db.Aluno_Historicos.Add(new Aluno_Historico
-			{
-				Aluno_Id = aluno.Id,
-				Descricao = "Aluno cadastrado",
-				AspNetUser_Id = model.AspNetUsers_Created_Id,
-				Account_Id = _account?.Id,
-				Data = TimeFunctions.HoraAtualBR(),
-			});
-
-			_db.SaveChanges();
 
 			response.Message = "Aluno cadastrado com sucesso";
 			response.Object = _db.AlunoList.AsNoTracking().FirstOrDefault(a => a.Id == aluno.Id);
