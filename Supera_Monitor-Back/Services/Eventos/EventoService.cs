@@ -301,28 +301,25 @@ public class EventoService : IEventoService
 					return new ResponseModel { Message = "Internal Server Error : 'Tipo de evento inválido'" };
 			}
 
-			var alunosInRequestQueryable =
-				from aluno in _db.AlunoList
-				join alunoId in request.Alunos
-					on aluno.Id equals alunoId
-				where aluno.Deactivated == null
-				select aluno;
+			var alunosInRequestId = request.Alunos
+				.ToHashSet();
 
-			if (alunosInRequestQueryable.Count() != request.Alunos.Count)
+			var alunos = _db.Aluno
+				.Where(x => alunosInRequestId.Contains(x.Id) && x.Deactivated == null)
+				.ToList();
+
+			if (alunos.Count != request.Alunos.Count)
 				return new ResponseModel { Message = "Aluno(s) não encontrado(s)" };
 
-			var professoresInRequestQueryable =
-				from professor in _db.ProfessorList
-				join professorId in request.Professores
-					on professor.Id equals professorId
-				where professor.Deactivated == null
-				select professor;
+			var professoresInRequestId = request.Professores
+				.ToHashSet();
 
-			if (professoresInRequestQueryable.Count() != request.Professores.Count)
-				return new ResponseModel { Message = "Professor(es) não encontrado(s)" };
-
-			var professores = professoresInRequestQueryable
+			var professores = _db.ProfessorList
+				.Where(x => professoresInRequestId.Contains(x.Id) && x.Deactivated == null)
 				.ToList();
+
+			if (professores.Count != request.Professores.Count)
+				return new ResponseModel { Message = "Professor(es) não encontrado(s)" };
 
 			foreach (var professor in professores)
 			{
@@ -396,34 +393,31 @@ public class EventoService : IEventoService
 			// 
 			// Insere Alunos
 			//
-			var alunos = alunosInRequestQueryable
-				.ToList();
 
-			var alunosChecklistsQueryable =
-				from item in _db.Aluno_Checklist_Item
-				join aluno in alunos
-					on item.Aluno_Id equals aluno.Id
-				where item.DataFinalizacao == null
-					&& (item.Checklist_Item_Id == (int)ChecklistItemId.Agendamento1Oficina
-					|| item.Checklist_Item_Id == (int)ChecklistItemId.Agendamento2Oficina
-					|| item.Checklist_Item_Id == (int)ChecklistItemId.Agendamento1Superacao)
-				select item;
-
-			var alunosChecklists = alunosChecklistsQueryable
+			var alunosChecklists = _db.Aluno_Checklist_Item
+				.Where(x => alunosInRequestId.Contains(x.Aluno_Id)
+					&& x.DataFinalizacao == null
+					&& (x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento1Oficina
+					 || x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento2Oficina
+					 || x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento1Superacao
+					 || x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento2Superacao))
 				.ToList();
 
 			var alunosChecklistsOficina = alunosChecklists
 				.Where(x => x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento1Oficina
 					|| x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento2Oficina)
-				.ToLookup(x => x.Aluno_Id);
+				.ToList();
 
 			var alunosChecklistsSuperacao = alunosChecklists
-				.Where(x => x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento1Superacao)
-				.ToLookup(x => x.Aluno_Id);
+				.Where(x => x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento1Superacao
+					|| x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento2Superacao)
+				.ToList();
 
 			var alunosChecklistAtualizar = new List<Aluno_Checklist_Item>() { };
 			var historicoInserir = new List<Aluno_Historico>() { };
+			var hoje = TimeFunctions.HoraAtualBR();
 
+			// Insere alunos
 			foreach (var aluno in alunos)
 			{
 				evento.Evento_Participacao_Aluno.Add(new Evento_Participacao_Aluno
@@ -435,7 +429,6 @@ public class EventoService : IEventoService
 					Apostila_AH_Id = aluno.Apostila_AH_Id,
 				});
 				
-				var hoje = TimeFunctions.HoraAtualBR();
 
 				historicoInserir.Add(new Aluno_Historico
 				{
@@ -445,34 +438,44 @@ public class EventoService : IEventoService
 					Descricao = $"Aluno se inscreveu na {eventoTipo} do dia {evento.Data:G}"
 				});
 
-				if (evento.Evento_Tipo_Id == (int)EventoTipo.Superacao)
-				{
-					var item = alunosChecklistsSuperacao[aluno.Id].FirstOrDefault();
-					if (item is not null)
-					{
-						item.DataFinalizacao = hoje;
-						item.Account_Finalizacao_Id = _account?.Id ?? 1;
-						item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno agendou na superação do dia ${request.Data.ToString("dd/MM/yyyy HH:mm")}.";
-						alunosChecklistAtualizar.Add(item);
-					}
-				}
-				else if (evento.Evento_Tipo_Id == (int)EventoTipo.Oficina)
-				{
-					var item = alunosChecklistsOficina[aluno.Id].FirstOrDefault();
-					if (item is not null)
-					{
-						item.DataFinalizacao = hoje;
-						item.Account_Finalizacao_Id = _account?.Id ?? 1;
-						item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno se inscreveu na oficina do dia ${request.Data.ToString("dd/MM/yyyy HH:mm")}.";
-						alunosChecklistAtualizar.Add(item);
-					}
-				}
 			}
 
 			_db.Add(evento);
 			_db.SaveChanges();
 
-			alunosChecklistAtualizar.ForEach(item => item.Evento_Id = evento.Id);
+
+			if (evento.Evento_Tipo_Id == (int)EventoTipo.Superacao)
+			{
+				var items = alunosChecklistsSuperacao
+					.Where(x => x.DataFinalizacao == null)
+					.ToList();
+
+				items.ForEach(item =>
+				{
+					item.Evento_Id = evento.Id;
+					item.DataFinalizacao = hoje;
+					item.Account_Finalizacao_Id = _account?.Id ?? 1;
+					item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno agendou na superação do dia ${request.Data.ToString("dd/MM/yyyy HH:mm")}.";
+				});
+
+				alunosChecklistAtualizar.AddRange(items);
+			}
+			else if (evento.Evento_Tipo_Id == (int)EventoTipo.Oficina)
+			{
+				var items = alunosChecklistsOficina
+					.Where(x => x.DataFinalizacao == null)
+					.ToList();
+
+				items.ForEach(item =>
+				{
+					item.Evento_Id = evento.Id;
+					item.DataFinalizacao = hoje;
+					item.Account_Finalizacao_Id = _account?.Id ?? 1;
+					item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno se inscreveu na oficina do dia ${request.Data.ToString("dd/MM/yyyy HH:mm")}.";
+				});
+
+				alunosChecklistAtualizar.AddRange(items);
+			}
 
 			_db.Aluno_Historico.AddRange(historicoInserir);
 			_db.Aluno_Checklist_Item.UpdateRange(alunosChecklistAtualizar);
@@ -1034,8 +1037,8 @@ public class EventoService : IEventoService
 				join professor in _db.ProfessorList
 					on participacao.Professor_Id equals professor.Id
 				select professor;
-		
-			var professores = professoresQueryable
+
+			var professores = _db.ProfessorList
 				.ToList();
 
 			var participacaoPorProfessorId = evento.Evento_Participacao_Professor
@@ -1254,10 +1257,11 @@ public class EventoService : IEventoService
 		try
 		{
 			var evento = _db.Evento
+				.Include(e => e.Evento_Tipo)
+				.Include(e => e.Evento_Participacao_Professor)
 				.Include(e => e.Evento_Participacao_Aluno)
 				.ThenInclude(e => e.Aluno)
 				.ThenInclude(e => e.Aluno_Checklist_Items)
-				.Include(e => e.Evento_Participacao_Professor)
 				.FirstOrDefault(e => e.Id == request.Evento_Id);
 
 			if (evento is null)
@@ -1313,33 +1317,26 @@ public class EventoService : IEventoService
 			var participacaoProfessorPorId = evento.Evento_Participacao_Professor
 				.ToDictionary(x => x.Id, x => x);
 
-			var checklistOficinaPorAlunoId = evento.Evento_Participacao_Aluno
+			var checklistComparecimentoPorAlunoId = evento.Evento_Participacao_Aluno
 				.SelectMany(x => x.Aluno.Aluno_Checklist_Items)
-				.Where(x => (x.Checklist_Item_Id == (int)ChecklistItemId.Comparecimento1Oficina
-								|| x.Checklist_Item_Id == (int)ChecklistItemId.Comparecimento2Oficina)
-								&& x.DataFinalizacao == null
-								&& x.Evento_Id == null)
+				.Where(x => x.Checklist_Item_Id == (int)ChecklistItemId.Comparecimento1Oficina
+							|| x.Checklist_Item_Id == (int)ChecklistItemId.Comparecimento2Oficina
+							|| x.Checklist_Item_Id == (int)ChecklistItemId.Comparecimento1Superacao
+							|| x.Checklist_Item_Id == (int)ChecklistItemId.Comparecimento2Superacao
+							|| x.Checklist_Item_Id == (int)ChecklistItemId.ComparecimentoAulaZero
+							|| x.Checklist_Item_Id == (int)ChecklistItemId.ComparecimentoPrimeiraAula
+				)
 				.ToLookup(x => x.Aluno_Id);
 
-			var checklistSuperacaoPorAlunoId = evento.Evento_Participacao_Aluno
+			var checklistsAgendamentoPorAlunoId = evento.Evento_Participacao_Aluno
 				.SelectMany(x => x.Aluno.Aluno_Checklist_Items)
-				.Where(x => x.Checklist_Item_Id == (int)ChecklistItemId.Comparecimento1Superacao 
-								&& x.DataFinalizacao == null
-								&& x.Evento_Id == null)
-				.ToLookup(x => x.Aluno_Id);
-
-			var checklistAulaZeroPorAlunoId = evento.Evento_Participacao_Aluno
-				.SelectMany(x => x.Aluno.Aluno_Checklist_Items)
-				.Where(x => x.Checklist_Item_Id == (int)ChecklistItemId.ComparecimentoAulaZero
-								&& x.DataFinalizacao == null
-								&& x.Evento_Id == null)
-				.ToLookup(x => x.Aluno_Id);
-
-			var checklistPrimeiraAulaPorAlunoId = evento.Evento_Participacao_Aluno
-				.SelectMany(x => x.Aluno.Aluno_Checklist_Items)
-				.Where(x => x.Checklist_Item_Id == (int)ChecklistItemId.ComparecimentoPrimeiraAula
-								&& x.DataFinalizacao == null
-								&& x.Evento_Id == null)
+				.Where(x =>  x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento1Oficina
+							|| x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento2Oficina
+							|| x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento1Superacao
+							|| x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento2Superacao
+							|| x.Checklist_Item_Id == (int)ChecklistItemId.AgendamentoAulaZero
+							|| x.Checklist_Item_Id == (int)ChecklistItemId.AgendamentoPrimeiraAula
+				)
 				.ToLookup(x => x.Aluno_Id);
 
 			var historicosInserir = new List<Aluno_Historico>() { };
@@ -1355,10 +1352,6 @@ public class EventoService : IEventoService
 
 				if (participacao is null)
 					return new ResponseModel { Message = $"Participação de aluno no evento ID: '{evento.Id}' Participacao_Id: '{participacaoModel.Participacao_Id}' não foi encontrada" };
-
-				var validateParticipacao = ValidateParticipacao(participacaoModel, evento, existingApostilas);
-				if (!validateParticipacao.Success)
-					return validateParticipacao;
 
 				participacao.Observacao = participacaoModel.Observacao;
 				participacao.Presente = participacaoModel.Presente;
@@ -1385,55 +1378,78 @@ public class EventoService : IEventoService
 					//
 					// Atualiza checklist se for oficina ou superação
 					//
+
+					var checklistAgendamento = checklistsAgendamentoPorAlunoId[participacao.Aluno_Id];
+
+					var checklistComparecimento = checklistComparecimentoPorAlunoId[participacao.Aluno_Id];
+
+					Aluno_Checklist_Item? itemAgendamento = null;
+
+					Aluno_Checklist_Item? itemComparecimento = null;
+
 					if (evento.Evento_Tipo_Id == (int)EventoTipo.Superacao)
 					{
-						var item = checklistSuperacaoPorAlunoId[participacao.Aluno_Id].FirstOrDefault();
-						if (item is not null)
+
+						itemAgendamento = checklistAgendamento
+							.FirstOrDefault(x => x.Evento_Id == evento.Id
+													&& x.DataFinalizacao != null
+													&& (x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento1Superacao
+													|| x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento2Superacao));
+						
+						if (itemAgendamento is not null && itemAgendamento.Checklist_Item_Id == (int)ChecklistItemId.Agendamento1Superacao)
 						{
-							item.Evento_Id = evento.Id;
-							item.Account_Finalizacao_Id = _account?.Id ?? 1;
-							item.DataFinalizacao = hoje;
-							item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno compareceu na superacao do dia ${evento?.Data.ToString("dd/MM/yyyy HH:mm")}.";
-							checklistAtualizar.Add(item);
+							itemComparecimento = checklistComparecimento
+								.FirstOrDefault(x => x.Checklist_Item_Id == (int)ChecklistItemId.Comparecimento1Superacao);
 						}
-					}
-					else if (evento.Evento_Tipo_Id == (int)EventoTipo.Oficina)
-					{
-						var item = checklistOficinaPorAlunoId[participacao.Aluno_Id].FirstOrDefault();
-						if (item is not null)
+						else if (itemAgendamento is not null && itemAgendamento.Checklist_Item_Id == (int)ChecklistItemId.Agendamento2Superacao)
 						{
-							item.Evento_Id = evento.Id;
-							item.Account_Finalizacao_Id = _account?.Id ?? 1;
-							item.DataFinalizacao = hoje;
-							item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno compareceu na oficina do dia ${evento?.Data.ToString("dd/MM/yyyy HH:mm")}.";
-							checklistAtualizar.Add(item);
+							itemComparecimento = checklistComparecimento
+								.FirstOrDefault(x => x.Checklist_Item_Id == (int)ChecklistItemId.Comparecimento2Superacao);
 						}
 
 					}
+					else if (evento.Evento_Tipo_Id == (int)EventoTipo.Oficina)
+					{
+
+
+						itemAgendamento = checklistAgendamento
+							.FirstOrDefault(x => x.Evento_Id == evento.Id
+													&& x.DataFinalizacao != null
+													&& (x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento1Oficina
+													|| x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento2Oficina));
+
+						if (itemAgendamento is not null && itemAgendamento.Checklist_Item_Id == (int)ChecklistItemId.Agendamento1Oficina)
+						{
+							itemComparecimento = checklistComparecimento
+								.FirstOrDefault(x => x.Checklist_Item_Id == (int)ChecklistItemId.Comparecimento1Oficina);
+						}
+						else if (itemAgendamento is not null && itemAgendamento.Checklist_Item_Id == (int)ChecklistItemId.Agendamento2Oficina)
+						{
+							itemComparecimento = checklistComparecimento
+								.FirstOrDefault(x => x.Checklist_Item_Id == (int)ChecklistItemId.Comparecimento2Oficina);
+						}
+					}
 					else if (evento.Evento_Tipo_Id == (int)EventoTipo.AulaZero)
 					{
-						var item = checklistOficinaPorAlunoId[participacao.Aluno_Id].FirstOrDefault();
-						if (item is not null)
-						{
-							item.Evento_Id = evento.Id;
-							item.Account_Finalizacao_Id = _account?.Id ?? 1;
-							item.DataFinalizacao = hoje;
-							item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno compareceu na aulazero do dia ${evento?.Data.ToString("dd/MM/yyyy HH:mm")}.";
-							checklistAtualizar.Add(item);
-						}
+						itemComparecimento = checklistComparecimento
+							.FirstOrDefault(x => x.Checklist_Item_Id == (int)ChecklistItemId.ComparecimentoAulaZero);
 
 					}
 					else if (evento.Id == participacao.Aluno.PrimeiraAula_Id)
 					{
-						var item = checklistPrimeiraAulaPorAlunoId[participacao.Aluno_Id].FirstOrDefault();
-						if (item is not null)
-						{
-							item.Evento_Id = evento.Id;
-							item.Account_Finalizacao_Id = _account?.Id ?? 1;
-							item.DataFinalizacao = hoje;
-							item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno compareceu na aulazero do dia ${evento?.Data.ToString("dd/MM/yyyy HH:mm")}.";
-							checklistAtualizar.Add(item);
-						}
+						itemComparecimento = checklistComparecimento
+							.FirstOrDefault(x => x.Checklist_Item_Id == (int)ChecklistItemId.ComparecimentoPrimeiraAula);
+					}
+
+
+					if (itemComparecimento is not null)
+					{
+						var item = itemComparecimento;
+						item.Evento_Id = request.Evento_Id;
+						item.Account_Finalizacao_Id = _account?.Id ?? 1;
+						item.DataFinalizacao = hoje;
+						item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno compareceu na {evento.Evento_Tipo?.Nome ?? "Oficina"} do dia ${evento?.Data.ToString("dd/MM/yyyy HH:mm")}.";
+						checklistAtualizar.Add(item);
 					}
 				}
 
