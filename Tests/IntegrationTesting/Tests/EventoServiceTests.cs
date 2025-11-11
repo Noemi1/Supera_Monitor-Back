@@ -95,7 +95,7 @@ public class EventoServiceTests : BaseIntegrationTest {
         Assert.NotNull(eventoResult);
         Assert.True(eventoResult.Finalizado);
 
-        var eventoAulaResult = _db.Evento_Aulas.Find(evento.Id);
+        var eventoAulaResult = _db.Evento_Aula.Find(evento.Id);
         Assert.NotNull(eventoAulaResult);
         Assert.Equal(turma.Id, eventoAulaResult.Turma_Id);
     }

@@ -16,4 +16,14 @@ public enum ChecklistItemId
 {
 	AgendamentoAulaZero = 31,
 	ComparecimentoAulaZero = 33,
+	
+	Agendamento1Oficina,
+	Comparecimento1Oficina = 34,
+	
+	Agendamento2Oficina,
+	Comparecimento2Oficina = 36,
+
+	Agendamento1Superacao,
+	Comparecimento1Superacao = 35,
+	
 }

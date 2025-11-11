@@ -63,7 +63,7 @@ public partial class DataContext : DbContext
 
 	public virtual DbSet<Evento> Evento { get; set; }
 
-	public virtual DbSet<Evento_Aula> Evento_Aulas { get; set; }
+	public virtual DbSet<Evento_Aula> Evento_Aula { get; set; }
 
 	public virtual DbSet<Evento_Aula_PerfilCognitivo_Rel> Evento_Aula_PerfilCognitivo_Rel { get; set; }
 

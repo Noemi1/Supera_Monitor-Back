@@ -831,15 +831,14 @@ public class EventoService : IEventoService
 			Evento? evento = _db.Evento
 				.Include(e => e.Evento_Participacao_Aluno)
 				.ThenInclude(e => e.Aluno)
+				.ThenInclude(e => e.Aluno_Checklist_Items)
 				.Include(e => e.Evento_Participacao_Professor)
 				.FirstOrDefault(e => e.Id == request.Evento_Id);
 
 			var eventValidation = ValidateEvent(evento);
 
 			if (!eventValidation.Success)
-			{
 				return eventValidation;
-			}
 
 			var reposicaoIds = request.Alunos
 				.Select(a => a.ReposicaoDe_Evento_Id)
@@ -855,9 +854,7 @@ public class EventoService : IEventoService
 			var idsSemEvento = reposicaoIds.Except(eventosExistentes);
 
 			if (idsSemEvento.Any())
-			{
 				return new ResponseModel { Message = $"Uma ou mais reposições estão sem Evento associado: {string.Join(", ", idsSemEvento)}" };
-			}
 
 			var existingApostilas = _db.Apostila.ToList();
 
@@ -875,50 +872,48 @@ public class EventoService : IEventoService
 			var validateApostilasAbaco = ValidateApostilas(apostilasAbacoIds, existingApostilas, "Abaco");
 
 			if (!validateApostilasAh.Success)
-			{
 				return validateApostilasAh;
-			}
 
 			if (!validateApostilasAbaco.Success)
-			{
 				return validateApostilasAbaco;
-			}
 
 			// Validations passed
 
-			evento!.Observacao = request.Observacao;
-			evento.Finalizado = true;
-			evento.LastUpdated = TimeFunctions.HoraAtualBR();
+			var participacaoAlunoPorId = evento.Evento_Participacao_Aluno
+				.ToDictionary(x => x.Evento_Id, x => x);
 
-			_db.Evento.Update(evento);
+			var participacaoProfessorPorId = evento.Evento_Participacao_Professor
+				.ToDictionary(x => x.Evento_Id, x => x);
 
+			var checklistOficinaPorAlunoId = evento.Evento_Participacao_Aluno
+				.SelectMany(x => x.Aluno.Aluno_Checklist_Items)
+				.Where(x => (x.Checklist_Item_Id == (int)ChecklistItemId.Comparecimento1Oficina
+								|| x.Checklist_Item_Id == (int)ChecklistItemId.Comparecimento2Oficina)
+								&& x.DataFinalizacao == null)
+				.ToLookup(x => x.Aluno_Id);
+
+			var checklistSuperacaoPorAlunoId = evento.Evento_Participacao_Aluno
+				.SelectMany(x => x.Aluno.Aluno_Checklist_Items)
+				.Where(x => x.Checklist_Item_Id == (int)ChecklistItemId.Comparecimento1Superacao 
+								&& x.DataFinalizacao == null)
+				.ToLookup(x => x.Aluno_Id);
+
+			var historicosInserir = new List<Aluno_Historico>() { };
+			var checklistAtualizar = new List<Aluno_Checklist_Item>() { };
+			var alunosAtualizar = new List<Aluno>() { };
+			// 
+			// Atualiza alunos
+			//
 			foreach (ParticipacaoAlunoModel participacaoModel in request.Alunos)
 			{
-				Evento_Participacao_Aluno? participacao = evento.Evento_Participacao_Aluno
-					.FirstOrDefault(p => p.Id == participacaoModel.Participacao_Id);
-
-				var validateParticipacao = ValidateParticipacao(participacaoModel, evento, existingApostilas);
-
-				if (!validateParticipacao.Success)
-				{
-					return validateParticipacao;
-				}
+				participacaoAlunoPorId.TryGetValue(participacaoModel.Participacao_Id, out var participacao);
 
 				if (participacao is null)
-				{
 					return new ResponseModel { Message = $"Participação de aluno no evento ID: '{evento.Id}' Participacao_Id: '{participacaoModel.Participacao_Id}' não foi encontrada" };
-				}
 
-				// Atualizar tanto a participação quanto o aluno
-				participacao.Apostila_Abaco_Id = participacaoModel.Apostila_Abaco_Id;
-				participacao.NumeroPaginaAbaco = participacaoModel.NumeroPaginaAbaco;
-				participacao.Aluno.Apostila_Abaco_Id = participacaoModel.Apostila_Abaco_Id;
-				participacao.Aluno.NumeroPaginaAbaco = participacaoModel.NumeroPaginaAbaco;
-
-				participacao.Apostila_AH_Id = participacaoModel.Apostila_Ah_Id;
-				participacao.NumeroPaginaAH = participacaoModel.NumeroPaginaAh;
-				participacao.Aluno.Apostila_AH_Id = participacaoModel.Apostila_Ah_Id;
-				participacao.Aluno.NumeroPaginaAH = participacaoModel.NumeroPaginaAh;
+				var validateParticipacao = ValidateParticipacao(participacaoModel, evento, existingApostilas);
+				if (!validateParticipacao.Success)
+					return validateParticipacao;
 
 				participacao.Observacao = participacaoModel.Observacao;
 				participacao.Presente = participacaoModel.Presente;
@@ -926,9 +921,55 @@ public class EventoService : IEventoService
 				participacao.ReposicaoDe_Evento_Id = participacaoModel.ReposicaoDe_Evento_Id;
 				participacao.StatusContato_Id = CalcularStatusContato(participacaoModel.Presente, participacaoModel.ReposicaoDe_Evento_Id);
 
-				if (!participacaoModel.Presente)
+				if (participacaoModel.Presente)
 				{
-					_db.Aluno_Historico.Add(new Aluno_Historico
+					//
+					// Atualizar participação e aluno
+					//
+					participacao.Apostila_Abaco_Id = participacaoModel.Apostila_Abaco_Id;
+					participacao.NumeroPaginaAbaco = participacaoModel.NumeroPaginaAbaco;
+					participacao.Apostila_AH_Id = participacaoModel.Apostila_Ah_Id;
+					participacao.NumeroPaginaAH = participacaoModel.NumeroPaginaAh;
+					
+					
+					participacao.Aluno.Apostila_Abaco_Id = participacaoModel.Apostila_Abaco_Id;
+					participacao.Aluno.NumeroPaginaAbaco = participacaoModel.NumeroPaginaAbaco;
+					participacao.Aluno.Apostila_AH_Id = participacaoModel.Apostila_Ah_Id;
+					participacao.Aluno.NumeroPaginaAH = participacaoModel.NumeroPaginaAh;
+
+
+					alunosAtualizar.Add(participacao.Aluno);
+
+					//
+					// Atualiza checklist se for oficina ou superação
+					//
+					if (evento.Evento_Tipo_Id == (int)EventoTipo.Superacao)
+					{
+						var item = checklistSuperacaoPorAlunoId[participacao.Aluno_Id].FirstOrDefault();
+						if (item is not null)
+						{
+							item.Account_Finalizacao_Id = _account?.Id ?? 1;
+							item.DataFinalizacao = TimeFunctions.HoraAtualBR();
+							item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno compareceu na superacao do dia ${evento?.Data.ToString("dd/MM/yyyy HH:mm")}.";
+							checklistAtualizar.Add(item);
+						}
+					}
+					else if (evento.Evento_Tipo_Id == (int)EventoTipo.Oficina)
+					{
+						var item = checklistOficinaPorAlunoId[participacao.Aluno_Id].FirstOrDefault();
+						if (item is not null)
+						{
+							item.Account_Finalizacao_Id = _account?.Id ?? 1;
+							item.DataFinalizacao = TimeFunctions.HoraAtualBR();
+							item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno compareceu na oficina do dia ${evento?.Data.ToString("dd/MM/yyyy HH:mm")}.";
+							checklistAtualizar.Add(item);
+						}
+
+					}
+				}
+				else
+				{
+					historicosInserir.Add(new Aluno_Historico
 					{
 						Account_Id = _account!.Id,
 						Aluno_Id = participacao.Aluno_Id,
@@ -936,31 +977,49 @@ public class EventoService : IEventoService
 						Descricao = $"Aluno faltou no evento '{evento.Descricao}' no dia {evento.Data:G}"
 					});
 				}
-
-				_db.Update(participacao);
 			}
 
-			foreach (ParticipacaoProfessorModel partProfessor in request.Professores)
+			// 
+			// Atualiza professores
+			//
+			foreach (ParticipacaoProfessorModel participacaoModel in request.Professores)
 			{
-				Evento_Participacao_Professor? participacao = evento.Evento_Participacao_Professor.FirstOrDefault(p => p.Id == partProfessor.Participacao_Id);
+				participacaoProfessorPorId.TryGetValue(participacaoModel.Participacao_Id, out var participacao);
 
 				if (participacao is null)
 				{
-					return new ResponseModel { Message = $"Participação de professor no evento ID: '{evento.Id}' Participacao_Id: '{partProfessor.Participacao_Id}' não foi encontrada" };
+					return new ResponseModel { Message = $"Participação de professor no evento ID: '{evento.Id}' Participacao_Id: '{participacaoModel.Participacao_Id}' não foi encontrada" };
 				}
 
-				participacao.Observacao = partProfessor.Observacao;
-				participacao.Presente = partProfessor.Presente;
+				participacao.Observacao = participacaoModel.Observacao;
+				participacao.Presente = participacaoModel.Presente;
 
-				_db.Evento_Participacao_Professor.Update(participacao);
 			}
 
+			//
+			// Atualiza evento
+			//
+			evento!.Observacao = request.Observacao;
+			evento.Finalizado = true;
+			evento.LastUpdated = TimeFunctions.HoraAtualBR();
+
+			_db.Aluno_Historico.AddRange(historicosInserir);
+			_db.Aluno_Checklist_Item.UpdateRange(checklistAtualizar);
+			_db.Aluno.UpdateRange(alunosAtualizar);
+
+			_db.Evento_Participacao_Aluno.UpdateRange(evento.Evento_Participacao_Aluno);
+			_db.Evento_Participacao_Professor.UpdateRange(evento.Evento_Participacao_Professor);
+
+			_db.Evento.Update(evento);
+
+			if (evento.Evento_Aula is not null)
+			{
+				_db.Evento_Aula.Update(evento.Evento_Aula);
+			}
 			_db.SaveChanges();
 
-			var responseObject = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == evento.Id);
-
 			response.Message = $"Evento foi finalizado com sucesso.";
-			response.Object = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == evento.Id);
+			response.Object = this.GetEventoById(evento.Id);
 			response.Success = true;
 		}
 		catch (Exception ex)
