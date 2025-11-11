@@ -75,6 +75,7 @@ public class ParticipacaoService : IParticipacaoService
 					.Include(x => x.AulaZero)
 					.ThenInclude(x => x.Evento_Participacao_Aluno)
 				.FirstOrDefault(x => x.Id == request.Aluno_Id);
+
 			if (aluno is null)
 				return new ResponseModel { Message = "Aluno não encontrado" };
 
@@ -108,22 +109,21 @@ public class ParticipacaoService : IParticipacaoService
 					{
 						aluno.AulaZero_Id = evento.Id;
 						_db.Aluno.Update(aluno);
-
-						var item = _db.Aluno_Checklist_Item
-							.FirstOrDefault(x => x.Aluno_Id == request.Aluno_Id
-												&& x.Checklist_Item_Id == (int)ChecklistItemId.AgendamentoAulaZero
-												&& x.DataFinalizacao == null);
-						
-						if (item is not null)
-						{
-							item.DataFinalizacao = hoje;
-							item.Account_Finalizacao_Id = _account?.Id ?? 1;
-							item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno agendou na aula zero do dia ${evento.Data.ToString("dd/MM/yyyy HH:mm")}.";
-
-							item.Evento_Id = evento.Id;
-							_db.Aluno_Checklist_Item.Update(item);
-						}
 					}
+				}
+				var item = _db.Aluno_Checklist_Item
+					.FirstOrDefault(x => x.Aluno_Id == request.Aluno_Id
+										&& x.Checklist_Item_Id == (int)ChecklistItemId.AgendamentoAulaZero
+										&& x.DataFinalizacao == null);
+
+				if (item is not null)
+				{
+					item.DataFinalizacao = hoje;
+					item.Account_Finalizacao_Id = _account?.Id ?? 1;
+					item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno agendou na aula zero do dia ${evento.Data.ToString("dd/MM/yyyy HH:mm")}.";
+
+					item.Evento_Id = evento.Id;
+					_db.Aluno_Checklist_Item.Update(item);
 				}
 			}
 			else if (evento.Evento_Tipo_Id == (int)EventoTipo.Superacao)
@@ -171,7 +171,7 @@ public class ParticipacaoService : IParticipacaoService
 				Aluno_Id = aluno.Id,
 				Descricao = $"Aluno foi inscrito no evento '{evento.Descricao}' do dia {evento.Data:G} - Evento é do tipo '{evento.Evento_Tipo.Nome}'",
 				Account_Id = _account!.Id,
-				Data = TimeFunctions.HoraAtualBR(),
+				Data = hoje,
 			});
 
 			_db.Evento_Participacao_Aluno.Add(new Evento_Participacao_Aluno()
