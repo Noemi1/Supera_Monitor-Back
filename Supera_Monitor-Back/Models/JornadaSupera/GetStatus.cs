@@ -10,7 +10,7 @@ namespace Supera_Monitor_Back.Models.JornadaSupera
 		{
 			DateTime hoje = TimeFunctions.HoraAtualBR().Date;
 
-			DateTime dataInicioPrazo = Prazo.AddDays(-6).Date;
+			DateTime dataInicioPrazo = Prazo.AddDays(-7).Date;
 
 			if (DataFinalizacao.HasValue && DataFinalizacao.Value.Date > Prazo.Date )
 			{
@@ -27,7 +27,7 @@ namespace Supera_Monitor_Back.Models.JornadaSupera
 				return StatusChecklistItem.Atrasado;
 			}
 
-			else if (dataInicioPrazo >= hoje && hoje <= Prazo.Date)
+			else if (dataInicioPrazo <= hoje && hoje <= Prazo.Date)
 			{
 				return StatusChecklistItem.EmAndamento;
 			}

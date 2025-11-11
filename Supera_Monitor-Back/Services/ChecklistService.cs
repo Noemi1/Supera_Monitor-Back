@@ -231,14 +231,14 @@ public class ChecklistService : IChecklistService
 					// Obtém a data de início do aluno
 					DateTime dataInicio = aluno.Created;
 
-					// Calcula quantos dias faltam para o próximo domingo após a data de início
-					int diasAteDomingo = ((int)DayOfWeek.Sunday - (int)dataInicio.DayOfWeek + 7) % 7;
+					//// Calcula quantos dias faltam para o próximo domingo após a data de início
+					//int diasAteDomingo = ((int)DayOfWeek.Sunday - (int)dataInicio.DayOfWeek + 7) % 7;
 
-					// Determina a primeira segunda a partir da data de início
-					DateTime primeiraSegunda = dataInicio.AddDays(diasAteDomingo + 1);
+					//// Determina a primeira segunda a partir da data de início
+					//DateTime primeiraSegunda = dataInicio.AddDays(diasAteDomingo + 1);
 
 					// Calcula o prazo final da tarefa (segunda da semana correspondente)
-					DateTime prazo = primeiraSegunda.AddDays(7 * semana);
+					DateTime prazo = dataInicio.AddDays(7 * (semana + 1));
 
 					// Adiciona o item à checklist do aluno
 					alunoChecklist.Add(new Aluno_Checklist_Item()
