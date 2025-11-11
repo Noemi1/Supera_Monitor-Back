@@ -52,12 +52,12 @@ public class CalendarioService : ICalendarioService
 			throw new Exception("Final do intervalo não pode ser antes do seu próprio início");
 		}
 
-		var eventosQueryable = _db.CalendarioEventoLists
+		var eventosQueryable = _db.CalendarioEventoList
 			.Where(e => e.Data.Date >= request.IntervaloDe.Value.Date && e.Data.Date <= request.IntervaloAte.Value.Date);
 
 		var alunosQueryable = _db.AlunoList;
 
-		var professoresQueryable = _db.ProfessorLists
+		var professoresQueryable = _db.ProfessorList
 			.Where(x => x.Active == true);
 
 		var turmasQueryable = _db.TurmaLists
@@ -573,7 +573,7 @@ public class CalendarioService : ICalendarioService
 
 		//var allAlunos = query.ToList();
 
-		var allAlunos = _db.CalendarioAlunoLists
+		var allAlunos = _db.CalendarioAlunoList
 			.Where(x => eventoAulaIds.Contains(x.Evento_Id))
 			.ToList();
 

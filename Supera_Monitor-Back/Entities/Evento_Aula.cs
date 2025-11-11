@@ -18,6 +18,6 @@ public partial class Evento_Aula {
    
 	public virtual Turma? Turma { get; set; }
 	
-	public virtual ICollection<Evento_Aula_PerfilCognitivo_Rel> Evento_Aula_PerfilCognitivo_Rels { get; set; } = new List<Evento_Aula_PerfilCognitivo_Rel>();
+	public virtual ICollection<Evento_Aula_PerfilCognitivo_Rel> Evento_Aula_PerfilCognitivo_Rel { get; set; } = new List<Evento_Aula_PerfilCognitivo_Rel>();
    
 }

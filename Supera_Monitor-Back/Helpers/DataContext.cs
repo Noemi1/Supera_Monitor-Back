@@ -51,9 +51,9 @@ public partial class DataContext : DbContext
 
 	public virtual DbSet<AulaEsperaList> AulaEsperaLists { get; set; }
 
-	public virtual DbSet<CalendarioAlunoList> CalendarioAlunoLists { get; set; }
+	public virtual DbSet<CalendarioAlunoList> CalendarioAlunoList { get; set; }
 
-	public virtual DbSet<CalendarioEventoList> CalendarioEventoLists { get; set; }
+	public virtual DbSet<CalendarioEventoList> CalendarioEventoList { get; set; }
 
 	public virtual DbSet<CalendarioProfessorList> CalendarioProfessorLists { get; set; }
 
@@ -103,7 +103,7 @@ public partial class DataContext : DbContext
 
 	public virtual DbSet<Professor> Professor { get; set; }
 
-	public virtual DbSet<ProfessorList> ProfessorLists { get; set; }
+	public virtual DbSet<ProfessorList> ProfessorList { get; set; }
 
 	public virtual DbSet<Professor_NivelCertificacao> Professor_NivelCertificacaos { get; set; }
 
@@ -432,6 +432,7 @@ public partial class DataContext : DbContext
 			entity.Property(e => e.DataFinalizacao).HasColumnType("datetime");
 			entity.Property(e => e.Observacoes).IsUnicode(false);
 			entity.Property(e => e.Prazo).HasColumnType("date");
+			entity.Property(e => e.Evento_Id).HasColumnType("int");
 
 			entity.HasOne(d => d.Account_Finalizacao).WithMany(p => p.Aluno_Checklist_Items)
 				.HasForeignKey(d => d.Account_Finalizacao_Id)
@@ -446,6 +447,11 @@ public partial class DataContext : DbContext
 				.HasForeignKey(d => d.Checklist_Item_Id)
 				.OnDelete(DeleteBehavior.ClientSetNull)
 				.HasConstraintName("FK_Aluno_Checklist_Item_Checklist_Item");
+
+			entity.HasOne(d => d.Evento)
+				.WithMany(p => p.Aluno_Checklist_Item)
+				.HasForeignKey(d => d.Evento_Id)
+				.IsRequired(false);
 		});
 
 
@@ -775,7 +781,7 @@ public partial class DataContext : DbContext
 		{
 			entity.ToTable("Evento_Aula_PerfilCognitivo_Rel");
 
-			entity.HasOne(d => d.Evento_Aula).WithMany(p => p.Evento_Aula_PerfilCognitivo_Rels)
+			entity.HasOne(d => d.Evento_Aula).WithMany(p => p.Evento_Aula_PerfilCognitivo_Rel)
 				.HasForeignKey(d => d.Evento_Aula_Id)
 				.OnDelete(DeleteBehavior.ClientSetNull)
 				.HasConstraintName("FK_Evento_Aula_PerfilCognitivo_Rel_Evento_Aula");

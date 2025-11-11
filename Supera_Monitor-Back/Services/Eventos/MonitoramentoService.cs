@@ -46,11 +46,11 @@ public class MonitoramentoService : IMonitoramentoService
 
 		var response = new Monitoramento_Response();
 
-		var eventosQueryable = _db.CalendarioEventoLists
+		var eventosQueryable = _db.CalendarioEventoList
 				.Where(x => x.Data.Date >= intervaloDe.Date && x.Data.Date <= intervaloAte.Date
 							&& (x.Evento_Tipo_Id == (int)EventoTipo.Aula || x.Evento_Tipo_Id == (int)EventoTipo.AulaExtra));
 
-		var participacoesQueryable = _db.CalendarioAlunoLists
+		var participacoesQueryable = _db.CalendarioAlunoList
 			.AsQueryable();
 
 		var turmasQueryable = _db.TurmaLists

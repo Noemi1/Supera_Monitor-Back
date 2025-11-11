@@ -19,19 +19,19 @@ namespace Supera_Monitor_Back.Controllers;
 public class EventosController : _BaseController
 {
     private readonly IEventoService _eventoService;
-    private readonly IAulaService _aulaService;
+    private readonly IParticipacaoService _participacaoService;
     private readonly ILogService _logger;
     private readonly ICalendarioService _calendarioService;
 
 	public EventosController(
 		IEventoService eventoService, 
-		IAulaService aulaService, 
+		IParticipacaoService participacaoService, 
 		ICalendarioService calendarioService,
 		ILogService logger
 	)
     {
         _eventoService = eventoService;
-        _aulaService = aulaService;
+		_participacaoService = participacaoService;
         _calendarioService = calendarioService;
         _logger = logger;
     }
@@ -67,22 +67,6 @@ public class EventosController : _BaseController
         }
     }
 
-    [HttpGet("aulas/all")]
-    public ActionResult<List<EventoAulaModel>> GetAll()
-    {
-        try
-        {
-            var response = _aulaService.GetAll();
-
-            return Ok(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-            return StatusCode(500, e);
-        }
-    }
-
     [HttpPost("calendario")]
     public async Task<ActionResult<List<CalendarioEventoList>>> GetCalendario(CalendarioRequest request)
     {
@@ -99,34 +83,14 @@ public class EventosController : _BaseController
         }
     }
 
-    [HttpGet("aulas/{aulaId}")]
-    public ActionResult<CalendarioEventoList> GetById(int aulaId)
-    {
-        try
-        {
-            var response = _eventoService.GetEventoById(aulaId);
-            if (response is null)
-            {
-                return NotFound("Aula não encontrada");
-            }
-
-            return Ok(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-            return StatusCode(500, e);
-        }
-    }
-
     [HttpPost("aulas/turma")]
-    public ActionResult<ResponseModel> InsertAulaForTurma(CreateAulaTurmaRequest request)
+    public async Task<ActionResult<ResponseModel>> InsertAulaForTurma(CreateAulaTurmaRequest request)
     {
         try
         {
-            var response = _aulaService.InsertAulaForTurma(request);
+            var response = await _eventoService.InsertAulaForTurma(request);
 
-            if (response.Success == false)
+            if (!response.Success)
             {
                 return BadRequest(response);
             }
@@ -141,13 +105,13 @@ public class EventosController : _BaseController
     }
 
     [HttpPost("aulas/extra")]
-    public ActionResult<ResponseModel> InsertAulaExtra(CreateAulaExtraRequest request)
+    public async Task<ActionResult<ResponseModel>> InsertAulaExtra(CreateAulaExtraRequest request)
     {
         try
         {
-            var response = _aulaService.InsertAulaExtra(request);
+            var response = await _eventoService.InsertAulaExtra(request);
 
-            if (response.Success == false)
+            if (!response.Success)
             {
                 return BadRequest(response);
             }
@@ -162,13 +126,13 @@ public class EventosController : _BaseController
     }
 
     [HttpPost("aulas/zero")]
-    public ActionResult<ResponseModel> InsertAulaZero(CreateAulaZeroRequest request)
+    public async Task<ActionResult<ResponseModel>> InsertAulaZero(CreateAulaZeroRequest request)
     {
         try
         {
-            var response = _aulaService.InsertAulaZero(request);
+            var response = await _eventoService.InsertAulaZero(request);
 
-            if (response.Success == false)
+            if (!response.Success)
             {
                 return BadRequest(response);
             }
@@ -182,34 +146,77 @@ public class EventosController : _BaseController
         }
     }
 
-    [HttpPut("aulas")]
-    public ActionResult<ResponseModel> Update(UpdateAulaRequest request)
+	[HttpPost("oficinas")]
+	public async Task<ActionResult<ResponseModel>> InsertOficina(CreateEventoRequest request)
+	{
+		try
+		{
+			var response = await _eventoService.Insert(request, (int)EventoTipo.Oficina);
+			if (!response.Success)
+			{
+				return BadRequest(response);
+			}
+
+			return Ok(response);
+		}
+		catch (Exception e)
+		{
+			_logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+			return StatusCode(500, e);
+		}
+	}
+
+	[HttpPost("reunioes")]
+	public async Task<ActionResult<ResponseModel>> InsertReuniao(CreateEventoRequest request)
+
+	{
+		try
+		{
+			var response = await _eventoService.Insert(request, (int)EventoTipo.Reuniao);
+
+			if (!response.Success)
+			{
+				return BadRequest(response);
+			}
+
+			return Ok(response);
+		}
+		catch (Exception e)
+		{
+			_logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+			return StatusCode(500, e);
+		}
+	}
+	
+	[HttpPost("superacao")]
+	public async Task<ActionResult<ResponseModel>> InsertSuperacao(CreateEventoRequest request)
+	{
+		try
+		{
+			var response = await _eventoService.Insert(request, (int)EventoTipo.Superacao);
+
+			if (!response.Success)
+			{
+				return BadRequest(response);
+			}
+
+			return Ok(response);
+		}
+		catch (Exception e)
+		{
+			_logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+			return StatusCode(500, e);
+		}
+	}
+
+	[HttpPut("aulas")]
+    public async Task<ActionResult<ResponseModel>> Update(UpdateEventoRequest request)
     {
         try
         {
-            var response = _aulaService.Update(request);
+            var response = await _eventoService.Update(request);
 
-            if (response.Success == false)
-            {
-                return BadRequest(response);
-            }
-
-            return Ok(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-            return StatusCode(500, e);
-        }
-    }
-
-    [HttpPost("oficinas")]
-    public async Task<ActionResult<ResponseModel>> InsertOficina(CreateEventoRequest request)
-    {
-        try
-        {
-            var response = await _eventoService.Insert(request, (int)EventoTipo.Oficina);
-            if (response.Success == false)
+            if (!response.Success)
             {
                 return BadRequest(response);
             }
@@ -224,35 +231,13 @@ public class EventosController : _BaseController
     }
 
     [HttpPut("oficinas")]
-    public ActionResult<ResponseModel> UpdateOficina(UpdateEventoRequest request)
+    public async Task<ActionResult<ResponseModel>> UpdateOficina(UpdateEventoRequest request)
     {
         try
         {
-            var response = _eventoService.Update(request);
+            var response = await _eventoService.Update(request);
 
-            if (response.Success == false)
-            {
-                return BadRequest(response);
-            }
-
-            return Ok(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-            return StatusCode(500, e);
-        }
-    }
-
-    [HttpPost("reunioes")]
-    public async Task<ActionResult<ResponseModel>> InsertReuniao(CreateEventoRequest request)
-
-	{
-		try
-        {
-            var response = await _eventoService.Insert(request, (int)EventoTipo.Reuniao);
-
-            if (response.Success == false)
+            if (!response.Success)
             {
                 return BadRequest(response);
             }
@@ -267,13 +252,13 @@ public class EventosController : _BaseController
     }
 
     [HttpPut("reunioes")]
-    public ActionResult<ResponseModel> UpdateReuniao(UpdateEventoRequest request)
+    public async Task<ActionResult<ResponseModel>> UpdateReuniao(UpdateEventoRequest request)
     {
         try
         {
-            var response = _eventoService.Update(request);
+            var response = await _eventoService.Update(request);
 
-            if (response.Success == false)
+            if (!response.Success)
             {
                 return BadRequest(response);
             }
@@ -286,120 +271,15 @@ public class EventosController : _BaseController
             return StatusCode(500, e);
         }
     }
-
-    [HttpPost("superacao")]
-    public async Task<ActionResult<ResponseModel>> InsertSuperacao(CreateEventoRequest request)
-    {
-        try
-        {
-            var response = await _eventoService.Insert(request, (int)EventoTipo.Superacao);
-
-            if (response.Success == false)
-            {
-                return BadRequest(response);
-            }
-
-            return Ok(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-            return StatusCode(500, e);
-        }
-    }
-
+    
     [HttpPut("superacao")]
-    public ActionResult<ResponseModel> UpdateSuperacao(UpdateEventoRequest request)
+    public async Task<ActionResult<ResponseModel>> UpdateSuperacao(UpdateEventoRequest request)
     {
         try
         {
-            var response = _eventoService.Update(request);
+            var response = await _eventoService.Update(request);
 
-            if (response.Success == false)
-            {
-                return BadRequest(response);
-            }
-
-            return Ok(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-            return StatusCode(500, e);
-        }
-    }
-
-    [HttpPost("participacao/inscrever")]
-    public ActionResult<ResponseModel> InsertParticipacao(InsertParticipacaoRequest request)
-    {
-        try
-        {
-            var response = _eventoService.InsertParticipacao(request);
-
-            if (response.Success == false)
-            {
-                return BadRequest(response);
-            }
-
-            return Ok(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-            return StatusCode(500, e);
-        }
-    }
-
-    [HttpPut("participacao/atualizar")]
-    public ActionResult<ResponseModel> UpdateParticipacao(UpdateParticipacaoRequest request)
-    {
-        try
-        {
-            var response = _eventoService.UpdateParticipacao(request);
-
-            if (response.Success == false)
-            {
-                return BadRequest(response);
-            }
-
-            return Ok(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-            return StatusCode(500, e);
-        }
-    }
-
-    [HttpDelete("participacao/remover/{participacaoId}")]
-    public ActionResult<ResponseModel> RemoveParticipacao(int participacaoId)
-    {
-        try
-        {
-            var response = _eventoService.RemoveParticipacao(participacaoId);
-
-            if (response.Success == false)
-            {
-                return BadRequest(response);
-            }
-
-            return Ok(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-            return StatusCode(500, e);
-        }
-    }
-
-    [HttpPatch("participacao/cancelar")]
-    public ActionResult<ResponseModel> CancelarParticipacao(CancelarParticipacaoRequest request)
-    {
-        try
-        {
-            var response = _eventoService.CancelarParticipacao(request);
-
-            if (response.Success == false)
+            if (!response.Success)
             {
                 return BadRequest(response);
             }
@@ -414,11 +294,11 @@ public class EventosController : _BaseController
     }
 
     [HttpPost("cancelar")]
-    public ActionResult<ResponseModel> Cancelar(CancelarEventoRequest request)
+    public async Task<ActionResult<ResponseModel>> Cancelar(CancelarEventoRequest request)
     {
         try
         {
-            ResponseModel response = _eventoService.Cancelar(request);
+            ResponseModel response = await _eventoService.Cancelar(request);
 
             if (response.Success)
             {
@@ -435,11 +315,11 @@ public class EventosController : _BaseController
     }
 
     [HttpPost("finalizar")]
-    public ActionResult<ResponseModel> Finalizar(FinalizarEventoRequest request)
+    public async Task<ActionResult<ResponseModel>> Finalizar(FinalizarEventoRequest request)
     {
         try
         {
-            ResponseModel response = _eventoService.Finalizar(request);
+            ResponseModel response = await _eventoService.Finalizar(request);
 
             if (response.Success)
             {
@@ -455,13 +335,33 @@ public class EventosController : _BaseController
         }
     }
 
-	[Authorize]
-	[HttpPost("reposicao")]
-	public ActionResult<ResponseModel> Reposicao(ReposicaoRequest model)
+	[HttpPost("aula-zero/finalizar")]
+	public async Task<ActionResult<ResponseModel>> FinalizarAulaZero(FinalizarAulaZeroRequest request)
 	{
 		try
 		{
-			ResponseModel response = _eventoService.AgendarReposicao(model);
+			ResponseModel response = await _eventoService.FinalizarAulaZero(request);
+
+			if (response.Success)
+			{
+				return Ok(response);
+			}
+
+			return BadRequest(response);
+		}
+		catch (Exception e)
+		{
+			_logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+			return StatusCode(500, e);
+		}
+	}
+
+	[HttpPost("reposicao")]
+	public async Task<ActionResult<ResponseModel>> Reposicao(ReposicaoRequest model)
+	{
+		try
+		{
+			ResponseModel response = await _eventoService.AgendarReposicao(model);
 
 			if (response.Success)
 			{
@@ -478,13 +378,12 @@ public class EventosController : _BaseController
 		}
 	}
 
-	[Authorize]
 	[HttpPost("primeira-aula")]
-	public ActionResult<ResponseModel> PrimeiraAula(PrimeiraAulaRequest model)
+	public async Task<ActionResult<ResponseModel>> PrimeiraAula(PrimeiraAulaRequest model)
 	{
 		try
 		{
-			ResponseModel response = _eventoService.AgendarPrimeiraAula(model);
+			ResponseModel response = await _eventoService.AgendarPrimeiraAula(model);
 
 			if (response.Success)
 			{
@@ -502,25 +401,64 @@ public class EventosController : _BaseController
 	}
 	
 
-	[HttpPost("aula-zero/finalizar")]
-    public ActionResult<ResponseModel> FinalizarAulaZero(FinalizarAulaZeroRequest request)
-    {
-        try
-        {
-            ResponseModel response = _eventoService.FinalizarAulaZero(request);
+	//
+	// Participacao
+	//
+	[HttpPost("participacao/inscrever")]
+	public async Task<ActionResult<ResponseModel>> InsertParticipacao(InsertParticipacaoRequest request)
+	{
+		try
+		{
+			var response = await _participacaoService.InsertParticipacao(request);
 
-            if (response.Success)
-            {
-                return Ok(response);
-            }
+			if (!response.Success)
+				return BadRequest(response);
 
-            return BadRequest(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-            return StatusCode(500, e);
-        }
-    }
+			return Ok(response);
+		}
+		catch (Exception e)
+		{
+			_logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+			return StatusCode(500, e);
+		}
+	}
+
+	[HttpPut("participacao/atualizar")]
+	public async Task<ActionResult<ResponseModel>> UpdateParticipacao(UpdateParticipacaoRequest request)
+	{
+		try
+		{
+			var response = await _participacaoService.UpdateParticipacao(request);
+
+			if (!response.Success)
+				return BadRequest(response);
+
+			return Ok(response);
+		}
+		catch (Exception e)
+		{
+			_logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+			return StatusCode(500, e);
+		}
+	}
+
+	[HttpPatch("participacao/cancelar")]
+	public async Task<ActionResult<ResponseModel>> CancelarParticipacao(CancelarParticipacaoRequest request)
+	{
+		try
+		{
+			var response = await _participacaoService.CancelarParticipacao(request);
+
+			if (!response.Success)
+				return BadRequest(response);
+
+			return Ok(response);
+		}
+		catch (Exception e)
+		{
+			_logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+			return StatusCode(500, e);
+		}
+	}
 
 }

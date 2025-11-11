@@ -74,7 +74,7 @@ public class AulaServiceTests : BaseIntegrationTest {
         Assert.NotNull(response);
         Assert.True(response.Success, response.Message);
 
-        var eventos = _db.CalendarioEventoLists.ToList();
+        var eventos = _db.CalendarioEventoList.ToList();
         Assert.Single(eventos);
 
         var eventoAula = _db.Evento_Aula.ToList();

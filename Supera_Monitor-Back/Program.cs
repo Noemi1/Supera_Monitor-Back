@@ -55,9 +55,9 @@ builder.Services.AddScoped<ISalaService, SalaService>();
 builder.Services.AddScoped<ITurmaService, TurmaService>();
 
 builder.Services.AddScoped<ICalendarioService, CalendarioService>();
-builder.Services.AddScoped<IAulaService, AulaService>();
 builder.Services.AddScoped<IEventoService, EventoService>();
 builder.Services.AddScoped<IMonitoramentoService, MonitoramentoService>();
+builder.Services.AddScoped<IParticipacaoService, ParticipacaoService>();
 
 #endregion
 

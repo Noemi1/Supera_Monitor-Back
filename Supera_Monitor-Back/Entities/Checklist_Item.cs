@@ -17,13 +17,19 @@ public enum ChecklistItemId
 	AgendamentoAulaZero = 31,
 	ComparecimentoAulaZero = 33,
 	
-	Agendamento1Oficina,
+	AgendamentoPrimeiraAula = 38,
+	ComparecimentoPrimeiraAula = 3,
+
+	Agendamento1Oficina = 12,
 	Comparecimento1Oficina = 34,
 	
-	Agendamento2Oficina,
+	Agendamento2Oficina = 23,
 	Comparecimento2Oficina = 36,
 
-	Agendamento1Superacao,
+	Agendamento1Superacao = 22,
 	Comparecimento1Superacao = 35,
-	
+
+	Agendamento2Superacao = 29,
+	Comparecimento2Superacao = 40,
+
 }

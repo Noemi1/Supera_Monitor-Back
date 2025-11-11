@@ -36,7 +36,7 @@ namespace Supera_Monitor_Back.Services {
         }
 
         public ProfessorList Get(int professorId) {
-            ProfessorList? professor = _db.ProfessorLists.FirstOrDefault(p => p.Id == professorId);
+            ProfessorList? professor = _db.ProfessorList.FirstOrDefault(p => p.Id == professorId);
 
             if (professor == null) {
                 throw new Exception("Professor não encontrado.");
@@ -46,7 +46,7 @@ namespace Supera_Monitor_Back.Services {
         }
 
         public List<ProfessorList> GetAll() {
-            List<ProfessorList> professores = _db.ProfessorLists.OrderBy(p => p.Nome).ToList();
+            List<ProfessorList> professores = _db.ProfessorList.OrderBy(p => p.Nome).ToList();
 
             return professores;
         }
@@ -84,7 +84,7 @@ namespace Supera_Monitor_Back.Services {
                         return new ResponseModel { Message = "Conta não encontrada" };
                     }
 
-                    bool userIsAlreadyAssigned = _db.ProfessorLists.Any(p => p.Account_Id == model.Account_Id);
+                    bool userIsAlreadyAssigned = _db.ProfessorList.Any(p => p.Account_Id == model.Account_Id);
 
                     if (userIsAlreadyAssigned == true) {
                         return new ResponseModel { Message = "Usuário já está associado a um professor" };
@@ -147,7 +147,7 @@ namespace Supera_Monitor_Back.Services {
                 _db.SaveChanges();
 
                 response.Message = "Professor cadastrado com sucesso";
-                response.Object = _db.ProfessorLists.FirstOrDefault(p => p.Id == professor.Id);
+                response.Object = _db.ProfessorList.FirstOrDefault(p => p.Id == professor.Id);
                 response.Success = true;
             }
             catch (Exception ex) {
@@ -180,7 +180,7 @@ namespace Supera_Monitor_Back.Services {
                     }
                 }
 
-                response.OldObject = _db.ProfessorLists.SingleOrDefault(p => p.Id == professor.Id);
+                response.OldObject = _db.ProfessorList.SingleOrDefault(p => p.Id == professor.Id);
 
                 // Só atribuir o nivel de certificacao passado na requisição se este existir, caso contrário, nulo
                 bool nivelCertificacaoExists = _db.Professor_NivelCertificacaos.Any(n => n.Id == model.Professor_NivelCertificacao_Id);
@@ -204,7 +204,7 @@ namespace Supera_Monitor_Back.Services {
                 _db.SaveChanges();
 
                 response.Message = "Professor atualizado com sucesso";
-                response.Object = _db.ProfessorLists.FirstOrDefault(p => p.Id == professor.Id);
+                response.Object = _db.ProfessorList.FirstOrDefault(p => p.Id == professor.Id);
                 response.Success = true;
             }
             catch (Exception ex) {
@@ -226,7 +226,7 @@ namespace Supera_Monitor_Back.Services {
 
                 // Validations passed
 
-                response.Object = _db.ProfessorLists.FirstOrDefault(p => p.Id == professorId);
+                response.Object = _db.ProfessorList.FirstOrDefault(p => p.Id == professorId);
 
                 _db.Professor.Remove(professor);
                 _db.SaveChanges();

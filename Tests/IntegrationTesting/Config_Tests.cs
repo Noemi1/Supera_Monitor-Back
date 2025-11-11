@@ -19,7 +19,7 @@ public class Config_Tests(IntegrationTestWebAppFactory factory) : BaseIntegratio
 
     [Fact]
     public void Views_Worked() {
-        var professorsList = _db.ProfessorLists.ToList();
+        var professorsList = _db.ProfessorList.ToList();
         Assert.Equal(3, professorsList.Count);
     }
 }

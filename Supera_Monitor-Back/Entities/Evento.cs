@@ -31,11 +31,17 @@ public partial class Evento
 	
 	public int? CapacidadeMaximaAlunos { get; set; }
 	
+	public virtual Evento_Aula? Evento_Aula { get; set; }
+	
+	public virtual Evento_Tipo Evento_Tipo { get; set; } = null!;
+	
+	public virtual Evento? ReagendamentoDe_Evento { get; set; }
+	
+	public virtual Sala Sala { get; set; } = null!;
+	
 	public virtual ICollection<Aluno> AlunoAulasZero { get; set; } = new List<Aluno>();
 	
 	public virtual ICollection<Aluno> AlunoPrimeirasAulas { get; set; } = new List<Aluno>();
-	
-	public virtual Evento_Aula? Evento_Aula { get; set; }
 	
 	public virtual ICollection<Evento_Participacao_Aluno> Evento_Participacao_Aluno { get; set; } = new List<Evento_Participacao_Aluno>();
 	
@@ -43,11 +49,7 @@ public partial class Evento
 	
 	public virtual ICollection<Evento_Participacao_Professor> Evento_Participacao_Professor { get; set; } = new List<Evento_Participacao_Professor>();
 	
-	public virtual Evento_Tipo Evento_Tipo { get; set; } = null!;
-	
 	public virtual ICollection<Evento> InverseReagendamentoDe_Evento { get; set; } = new List<Evento>();
 	
-	public virtual Evento? ReagendamentoDe_Evento { get; set; }
-	
-	public virtual Sala Sala { get; set; } = null!;
+	public virtual ICollection<Aluno_Checklist_Item> Aluno_Checklist_Item { get; set; } = new List<Aluno_Checklist_Item>();
 }
