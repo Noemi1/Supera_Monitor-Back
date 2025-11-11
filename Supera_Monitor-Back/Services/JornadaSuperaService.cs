@@ -175,7 +175,8 @@ public class JornadaSuperaService : IJornadaSuperaService
 							DataFinalizacao = alunoItem.DataFinalizacao,
 							Account = account?.Name,
 							Account_Id = account?.Id,
-							Observacoes = alunoItem.Observacoes
+							Observacoes = alunoItem.Observacoes,
+							Evento_Id = alunoItem.Evento_Id,
 						};
 
 						if (request.PendentesSemana == true && jornadaAluno.Status == StatusChecklistItem.EmAndamento)
@@ -310,6 +311,7 @@ public class JornadaSuperaService : IJornadaSuperaService
 						Account = item.Account_Finalizacao?.Name,
 						Account_Id = item.Account_Finalizacao_Id,
 						Observacoes = item.Observacoes,
+						Evento_Id = item.Evento_Id,
 					}).ToList();
 					jornadaChecklist.Items = jornadaChecklistItemAlunos;
 				}

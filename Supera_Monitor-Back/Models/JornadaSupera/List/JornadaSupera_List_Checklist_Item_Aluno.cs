@@ -24,6 +24,8 @@
 
 		public bool Finalizado => DataFinalizacao != null;
 
+		public int? Evento_Id { get; set; }
+
 		public StatusChecklistItem Status => JornadaSuperaStatus.getStatus(NumeroSemana, Prazo, DataFinalizacao);
 
 	}
