@@ -80,7 +80,7 @@ public class AulaService : IAulaService
 
 	public List<EventoAulaModel> GetAll()
 	{
-		List<EventoAulaModel> aulas = _db.Eventos
+		List<EventoAulaModel> aulas = _db.Evento
 			.Where(e => e.Evento_Tipo_Id == (int)EventoTipo.Aula)
 			.ProjectTo<EventoAulaModel>(_mapper.ConfigurationProvider)
 			.AsNoTracking()
@@ -330,7 +330,7 @@ public class AulaService : IAulaService
 
 			List<int> alunoIds = request.Alunos.Select(a => a.Aluno_Id).ToList();
 
-			IQueryable<Aluno> alunosInRequest = _db.Alunos.Where(a => a.Deactivated == null && alunoIds.Contains(a.Id));
+			IQueryable<Aluno> alunosInRequest = _db.Aluno.Where(a => a.Deactivated == null && alunoIds.Contains(a.Id));
 
 			if (alunosInRequest.Count() != request.Alunos.Count)
 			{
@@ -444,7 +444,7 @@ public class AulaService : IAulaService
 
 		try
 		{
-			IQueryable<Aluno> alunosInRequest = _db.Alunos.Where(a => a.Deactivated == null && request.Alunos.Contains(a.Id));
+			IQueryable<Aluno> alunosInRequest = _db.Aluno.Where(a => a.Deactivated == null && request.Alunos.Contains(a.Id));
 
 			if (alunosInRequest.Count() != request.Alunos.Count)
 			{
@@ -618,7 +618,7 @@ public class AulaService : IAulaService
 				});
 
 				aluno.AulaZero_Id = evento.Id;
-				_db.Alunos.Update(aluno);
+				_db.Aluno.Update(aluno);
 			}
 
 			// Inserir participação do professor
@@ -630,7 +630,7 @@ public class AulaService : IAulaService
 
 			_db.Evento_Participacao_Professor.Add(participacaoProfessor);
 			_db.Evento_Participacao_Aluno.AddRange(participacoesAlunos);
-			_db.Aluno_Historicos.AddRange(historicos);
+			_db.Aluno_Historico.AddRange(historicos);
 
 			_db.SaveChanges();
 
@@ -656,7 +656,7 @@ public class AulaService : IAulaService
 
 		try
 		{
-			Evento? evento = _db.Eventos
+			Evento? evento = _db.Evento
 				.Include(e => e.Evento_Aula)
 				.Include(e => e.Evento_Participacao_Alunos)
 				.FirstOrDefault(e => e.Id == request.Id);

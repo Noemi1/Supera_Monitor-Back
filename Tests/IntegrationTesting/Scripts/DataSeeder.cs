@@ -85,7 +85,7 @@ public class DataSeeder(DataContext db) {
             new() { Id = 8, Nome = "TESTE AH 2", NumeroTotalPaginas = 30, Ordem = 2, Apostila_Tipo_Id = (int)ApostilaTipo.AH },
         };
 
-        _db.Apostilas.AddRange(apostilas);
+        _db.Apostila.AddRange(apostilas);
         await _db.SaveChangesAsync();
 
         _db.Database.ExecuteSqlRaw("SET IDENTITY_INSERT [Apostila] OFF");
@@ -104,7 +104,7 @@ public class DataSeeder(DataContext db) {
             new() { Id = 2, Nome = "KIT B", CodigoBarras = null },
         };
 
-        _db.Apostila_Kits.AddRange(apostilaKits);
+        _db.Apostila_Kit.AddRange(apostilaKits);
         await _db.SaveChangesAsync();
 
         _db.Database.ExecuteSqlRaw("SET IDENTITY_INSERT [Apostila_Kit] OFF");
@@ -130,7 +130,7 @@ public class DataSeeder(DataContext db) {
             new() { Id = 8, Apostila_Id = 8, Apostila_Kit_Id = 2 },
         };
 
-        _db.Apostila_Kit_Rels.AddRange(apostilaKitRels);
+        _db.Apostila_Kit_Rel.AddRange(apostilaKitRels);
         await _db.SaveChangesAsync();
 
         _db.Database.ExecuteSqlRaw("SET IDENTITY_INSERT [Apostila_Kit_Rel] OFF");

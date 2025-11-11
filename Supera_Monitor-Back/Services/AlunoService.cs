@@ -19,13 +19,10 @@ public interface IAlunoService
 	List<AlunoResponse> GetAllWithChecklist(AlunoRequest request);
 	List<AlunoChecklistItemList> GetAlunoChecklistItemList(AlunoRequest request);
 	ResponseModel GetProfileImage(int alunoId);
-	ResponseModel GetSummaryByAluno(int alunoId);
 	List<ApostilaList> GetApostilasByAluno(int alunoId);
 	ResponseModel Insert(CreateAlunoRequest model);
 	ResponseModel Update(UpdateAlunoRequest model);
 	ResponseModel ToggleDeactivate(int alunoId);
-	ResponseModel PrimeiraAula(PrimeiraAulaRequest model);
-	ResponseModel Reposicao(ReposicaoRequest model);
 }
 
 public class AlunoService : IAlunoService
@@ -269,7 +266,7 @@ public class AlunoService : IAlunoService
 
 		try
 		{
-			Aluno? aluno = _db.Alunos
+			Aluno? aluno = _db.Aluno
 				.Include(a => a.Pessoa)
 				.Include(a => a.Aluno_Turma_Vigencia)
 				.FirstOrDefault(a => a.Id == model.Id);
@@ -315,7 +312,7 @@ public class AlunoService : IAlunoService
 			{
 				var currentPerfilCognitivo = _db.PerfilCognitivos.Find(aluno.PerfilCognitivo_Id);
 
-				_db.Aluno_Historicos.Add(new Aluno_Historico
+				_db.Aluno_Historico.Add(new Aluno_Historico
 				{
 					Aluno_Id = aluno.Id,
 					Descricao = $"Perfil cognitivo do aluno foi atualizado de '{currentPerfilCognitivo?.Descricao}' para '{updatedPerfilCognitivo?.Descricao}'.",
@@ -326,7 +323,7 @@ public class AlunoService : IAlunoService
 
 			if (turmaDestino is not null && aluno.Turma_Id != turmaDestino.Id)
 			{
-				int countAlunosInTurma = _db.Alunos.Count(a => a.Turma_Id == turmaDestino.Id && a.Deactivated == null);
+				int countAlunosInTurma = _db.Aluno.Count(a => a.Turma_Id == turmaDestino.Id && a.Deactivated == null);
 
 				if (countAlunosInTurma >= turmaDestino.CapacidadeMaximaAlunos)
 				{
@@ -337,7 +334,7 @@ public class AlunoService : IAlunoService
 			// O aluno só pode receber um kit que esteja cadastrado ou nulo
 			if (model.Apostila_Kit_Id is not null && model.Apostila_Kit_Id.HasValue)
 			{
-				bool apostilaKitExists = _db.Apostila_Kits.Any(k => k.Id == model.Apostila_Kit_Id);
+				bool apostilaKitExists = _db.Apostila_Kit.Any(k => k.Id == model.Apostila_Kit_Id);
 
 				if (!apostilaKitExists)
 				{
@@ -356,7 +353,7 @@ public class AlunoService : IAlunoService
 			}
 
 			// Garantir que RM é unico pra cada aluno
-			bool rmIsAlreadyTaken = _db.Alunos.Any(a => a.RM == model.RM && a.Id != model.Id);
+			bool rmIsAlreadyTaken = _db.Aluno.Any(a => a.RM == model.RM && a.Id != model.Id);
 
 			if (rmIsAlreadyTaken)
 			{
@@ -380,7 +377,6 @@ public class AlunoService : IAlunoService
 			aluno.Aluno_Foto = model.Aluno_Foto;
 			aluno.Apostila_Kit_Id = model.Apostila_Kit_Id;
 			aluno.RestricaoMobilidade = model.RestricaoMobilidade;
-			aluno.UltimaTrocaTurma = trocandoDeTurma ? TimeFunctions.HoraAtualBR() : aluno.UltimaTrocaTurma;
 
 			// Atualizando dados de Pessoa
 			aluno.Pessoa.Nome = model.Nome ?? aluno.Pessoa.Nome;
@@ -395,7 +391,7 @@ public class AlunoService : IAlunoService
 			aluno.LastUpdated = TimeFunctions.HoraAtualBR();
 
 
-			_db.Aluno_Historicos.Add(new Aluno_Historico
+			_db.Aluno_Historico.Add(new Aluno_Historico
 			{
 				Aluno_Id = aluno.Id,
 				Descricao = $"Dados do aluno foram atualizados.",
@@ -435,7 +431,7 @@ public class AlunoService : IAlunoService
 					DataInicioVigencia = data,
 				});
 
-				List<Evento> eventosTurmaOriginal = _db.Eventos
+				List<Evento> eventosTurmaOriginal = _db.Evento
 					.Include(e => e.Evento_Aula)
 					.Where(e =>
 						e.Evento_Aula != null
@@ -459,7 +455,7 @@ public class AlunoService : IAlunoService
 					_db.Evento_Participacao_Aluno.Remove(participacaoAluno);
 				}
 
-				List<Evento> eventosTurmaDestino = _db.Eventos
+				List<Evento> eventosTurmaDestino = _db.Evento
 					.Include(e => e.Evento_Aula)
 					.Include(e => e.Evento_Participacao_Alunos)
 					.Where(e =>
@@ -489,7 +485,7 @@ public class AlunoService : IAlunoService
 					_db.Evento_Participacao_Aluno.Add(newParticipacao);
 				}
 
-				_db.Aluno_Historicos.Add(new Aluno_Historico
+				_db.Aluno_Historico.Add(new Aluno_Historico
 				{
 					Aluno_Id = aluno.Id,
 					Descricao = $"Aluno foi transferido da turma: '{oldObject?.Turma}' para a turma : '{aluno.Turma.Nome}'",
@@ -510,7 +506,7 @@ public class AlunoService : IAlunoService
 					_db.Aluno_Turma_Vigencia.Update(ultimaVigencia);
 				}
 
-				_db.Aluno_Historicos.Add(new Aluno_Historico
+				_db.Aluno_Historico.Add(new Aluno_Historico
 				{
 					Aluno_Id = aluno.Id,
 					Descricao = $"Aluno foi removido da turma: '{oldObject?.Turma}'.",
@@ -541,7 +537,7 @@ public class AlunoService : IAlunoService
 
 		try
 		{
-			Aluno? aluno = _db.Alunos.Find(alunoId);
+			Aluno? aluno = _db.Aluno.Find(alunoId);
 
 			if (aluno == null)
 			{
@@ -578,9 +574,9 @@ public class AlunoService : IAlunoService
 			}
 
 
-			_db.Alunos.Update(aluno);
+			_db.Aluno.Update(aluno);
 
-			_db.Aluno_Historicos.Add(new Aluno_Historico
+			_db.Aluno_Historico.Add(new Aluno_Historico
 			{
 				Aluno_Id = aluno.Id,
 				Descricao = $"Aluno {(aluno.Deactivated.HasValue ? "Reativado" : "Desativado")}",
@@ -610,7 +606,7 @@ public class AlunoService : IAlunoService
 
 		try
 		{
-			Aluno? aluno = _db.Alunos.Find(alunoId);
+			Aluno? aluno = _db.Aluno.Find(alunoId);
 
 			if (aluno is null)
 			{
@@ -629,196 +625,9 @@ public class AlunoService : IAlunoService
 		return response;
 	}
 
-	public ResponseModel Reposicao(ReposicaoRequest model)
-	{
-		ResponseModel response = new() { Success = false };
-
-		try
-		{
-			Aluno? aluno = _db.Alunos
-				.Include(a => a.Pessoa)
-				.FirstOrDefault(a => a.Id == model.Aluno_Id);
-
-			if (aluno is null)
-			{
-				return new ResponseModel { Message = "Aluno não encontrado" };
-			}
-
-			if (aluno.Pessoa is null)
-			{
-				return new ResponseModel { Message = "Pessoa não encontrada" };
-			}
-
-			if (aluno.Active == false)
-			{
-				return new ResponseModel { Message = "O aluno está desativado" };
-			}
-
-			Evento? eventoSource = _db.Eventos
-				.Include(e => e.Evento_Aula)
-				.Include(e => e.Evento_Participacao_Alunos)
-				.FirstOrDefault(e => e.Id == model.Source_Aula_Id);
-
-			if (eventoSource is null)
-			{
-				return new ResponseModel { Message = "Evento original não encontrado" };
-			}
-
-			if (eventoSource.Evento_Aula is null)
-			{
-				return new ResponseModel { Message = "Aula original não encontrada" };
-			}
-
-			Evento? eventoDest = _db.Eventos
-				.Include(e => e.Evento_Participacao_Alunos)
-				.Include(e => e.Evento_Aula!)
-				.ThenInclude(e => e.Turma)
-				.FirstOrDefault(e => e.Evento_Aula != null && e.Id == model.Dest_Aula_Id);
-
-			if (eventoDest is null)
-			{
-				return new ResponseModel { Message = "Evento destino não encontrada" };
-			}
-
-			if (eventoDest.Evento_Aula is null)
-			{
-				return new ResponseModel { Message = "Aula destino não encontrada" };
-			}
-
-			if (model.Source_Aula_Id == model.Dest_Aula_Id)
-			{
-				return new ResponseModel { Message = "Aula original e aula destino não podem ser iguais" };
-			}
-
-			if (eventoDest.Evento_Aula.Turma_Id.HasValue)
-			{
-				if (eventoSource.Evento_Aula.Turma_Id == eventoDest.Evento_Aula.Turma_Id)
-				{
-					return new ResponseModel { Message = "Aluno não pode repor aula na própria turma" };
-				}
-			}
-
-			if (eventoDest.Finalizado)
-			{
-				return new ResponseModel { Message = "Não é possível marcar reposição para uma aula finalizada" };
-			}
-
-			//if (eventoDest.Data < TimeFunctions.HoraAtualBR()) {
-			//    return new ResponseModel { Message = "Não é possível marcar reposição para uma aula no passado" };
-			//}
-
-			if (eventoDest.Deactivated != null)
-			{
-				return new ResponseModel { Message = "Não é possível marcar reposição em uma aula desativada" };
-			}
-
-			if (Math.Abs((eventoDest.Data - eventoSource.Data).TotalDays) > 30)
-			{
-				return new ResponseModel { Message = "A data da aula destino não pode ultrapassar 30 dias de diferença da aula original" };
-			}
-
-			bool registroAlreadyExists = eventoDest.Evento_Participacao_Alunos.Any(p => p.Aluno_Id == aluno.Id);
-
-			if (registroAlreadyExists)
-			{
-				return new ResponseModel { Message = "Aluno já está cadastrado no evento destino" };
-			}
-
-			// A aula destino e o aluno devem compartilhar pelo menos um perfil cognitivo
-			bool perfilCognitivoMatches = _db.Evento_Aula_PerfilCognitivo_Rel
-				.Any(ep =>
-					ep.Evento_Aula_Id == eventoDest.Id &&
-					ep.PerfilCognitivo_Id == aluno.PerfilCognitivo_Id);
-
-			if (perfilCognitivoMatches == false)
-			{
-				return new ResponseModel { Message = "O perfil cognitivo da aula não é adequado para este aluno" };
-			}
-
-			int registrosAtivos = eventoDest.Evento_Participacao_Alunos.Count(p => p.Deactivated == null);
-
-			// O evento deve ter espaço para comportar o aluno
-			if (registrosAtivos >= eventoDest.CapacidadeMaximaAlunos)
-			{
-				return new ResponseModel { Message = "Esse evento de aula já está em sua capacidade máxima" };
-			}
-
-			Evento_Participacao_Aluno? registroSource = eventoSource.Evento_Participacao_Alunos.FirstOrDefault(p =>
-				p.Deactivated == null
-				&& p.Aluno_Id == aluno.Id
-				&& p.Evento_Id == eventoSource.Id);
-
-			if (registroSource is null)
-			{
-				return new ResponseModel { Message = "Registro do aluno não foi encontrado na aula original" };
-			}
-
-			if (registroSource.Presente == true)
-			{
-				return new ResponseModel { Message = "Não é possível de marcar uma reposição de aula se o aluno estava presente na aula original" };
-			}
-
-			// Validations passed
-
-			// Se for a primeira aula do aluno, atualizar a data de primeira aula para a data da aula destino
-			if (eventoSource.Id == aluno.PrimeiraAula_Id)
-			{
-				aluno.PrimeiraAula_Id = eventoDest.Id;
-			}
-
-			_db.Alunos.Update(aluno);
-
-			// Amarrar o novo registro à aula sendo reposta
-			Evento_Participacao_Aluno registroDest = new()
-			{
-				Aluno_Id = aluno.Id,
-				Evento_Id = eventoDest.Id,
-				ReposicaoDe_Evento_Id = eventoSource.Id,
-				Observacao = model.Observacao,
-				Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
-				NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
-				Apostila_AH_Id = aluno.Apostila_AH_Id,
-				NumeroPaginaAH = aluno.NumeroPaginaAH,
-			};
-
-			// Se a reposição for feita após o horário da aula, ocasiona falta
-			if (TimeFunctions.HoraAtualBR() > eventoSource.Data)
-			{
-				registroSource.Presente = false;
-			}
-
-			// Desativar o registro da aula
-			registroSource.Deactivated = TimeFunctions.HoraAtualBR();
-			registroSource.StatusContato_Id = (int)StatusContato.REPOSICAO_AGENDADA;
-
-			_db.Evento_Participacao_Aluno.Update(registroSource);
-			_db.Evento_Participacao_Aluno.Add(registroDest);
-
-			_db.Aluno_Historicos.Add(new Aluno_Historico
-			{
-				Aluno_Id = aluno.Id,
-				Descricao = $"O aluno agendou reposição do dia '{eventoSource.Data:G}' para o dia '{eventoDest.Data:G}' com a turma {eventoDest.Evento_Aula?.Turma_Id.ToString() ?? "Extra"}",
-				Account_Id = _account!.Id,
-				Data = TimeFunctions.HoraAtualBR(),
-			});
-
-			_db.SaveChanges();
-
-			response.Success = true;
-			response.Object = _db.CalendarioAlunoLists.FirstOrDefault(r => r.Id == registroDest.Id);
-			response.Message = "Reposição agendada com sucesso";
-		}
-		catch (Exception ex)
-		{
-			response.Message = $"Falha ao inserir reposição de aula do aluno: {ex}";
-		}
-
-		return response;
-	}
-
 	public List<ApostilaList> GetApostilasByAluno(int alunoId)
 	{
-		Aluno? aluno = _db.Alunos.Find(alunoId);
+		Aluno? aluno = _db.Aluno.Find(alunoId);
 
 		if (aluno is null)
 		{
@@ -830,64 +639,6 @@ public class AlunoService : IAlunoService
 			.ToList();
 
 		return apostilas;
-	}
-
-	public ResponseModel	 GetSummaryByAluno(int alunoId)
-	{
-		ResponseModel response = new() { Success = false };
-
-		try
-		{
-			Aluno? aluno = _db.Alunos.AsNoTracking().FirstOrDefault(a => a.Id == alunoId);
-
-			if (aluno is null)
-			{
-				return new ResponseModel { Message = "Aluno não encontrado" };
-			}
-
-			List<CalendarioAlunoList> faltas = _db.CalendarioAlunoLists
-				.Where(r => r.Aluno_Id == aluno.Id && r.Presente == false)
-				.ToList();
-
-			List<CalendarioAlunoList> presencas = _db.CalendarioAlunoLists
-				.Where(r => r.Aluno_Id == aluno.Id && r.Presente == true)
-				.ToList();
-
-			List<CalendarioAlunoList> reposicoes = _db.CalendarioAlunoLists
-				.Where(r => r.Aluno_Id == aluno.Id && r.ReposicaoDe_Evento_Id != null)
-				.ToList();
-
-			List<CalendarioAlunoList> aulasFuturas = _db.CalendarioAlunoLists
-				.Where(r => r.Aluno_Id == aluno.Id && r.Presente == null)
-				.ToList();
-
-			response.Success = true;
-			response.Object = new SummaryModel
-			{
-				Aluno_Id = aluno.Id,
-				Turma_Id = aluno.Turma_Id,
-
-				Faltas = faltas,
-				Faltas_Count = faltas.Count,
-
-				Presencas = presencas,
-				Presencas_Count = presencas.Count,
-
-				Reposicoes = reposicoes,
-				Reposicoes_Count = reposicoes.Count,
-
-				Aulas_Futuras = aulasFuturas,
-				Aulas_Futuras_Count = aulasFuturas.Count,
-			};
-			response.Message = "Sumário foi retornado com sucesso";
-
-		}
-		catch (Exception ex)
-		{
-			response.Message = $"Falha ao buscar sumário do aluno: {ex}";
-		}
-
-		return response;
 	}
 
 	public List<AlunoHistoricoList> GetHistoricoById(int alunoId)
@@ -934,112 +685,4 @@ public class AlunoService : IAlunoService
 		return listQueryable.ToList();
 	}
 
-	public ResponseModel PrimeiraAula(PrimeiraAulaRequest model)
-	{
-		ResponseModel response = new() { Success = false };
-
-		try
-		{
-			Aluno? aluno = _db.Alunos
-				.Include(a => a.PrimeiraAula)
-				.FirstOrDefault(a => a.Id == model.Aluno_Id);
-
-			if (aluno is null)
-			{
-				return new ResponseModel { Message = "Aluno não encontrado" };
-			}
-
-			if (aluno.Deactivated != null)
-			{
-				return new ResponseModel { Message = "O aluno está desativado" };
-			}
-
-			Evento? evento = _db.Eventos
-				.Include(e => e.Evento_Participacao_Alunos)
-				.FirstOrDefault(e => e.Id == model.Evento_Id);
-
-			if (evento is null)
-			{
-				return new ResponseModel { Message = "Evento não encontrado" };
-			}
-
-			if (evento.Finalizado == true)
-			{
-				return new ResponseModel { Message = "Não foi possível continuar. Este evento já está finalizado." };
-			}
-
-			if (evento.Deactivated != null)
-			{
-				return new ResponseModel { Message = "Não foi possível continuar. Este evento se encontra desativado." };
-			}
-
-			if (aluno.PrimeiraAula != null)
-			{
-				return new ResponseModel { Message = $"Aluno já possui uma primeira aula marcada dia: {aluno.PrimeiraAula.Data}" };
-			}
-
-			// O aluno deve se encaixar em um dos perfis cognitivos do evento
-			bool perfilCognitivoMatches = _db.Evento_Aula_PerfilCognitivo_Rel
-				.Any(ep =>
-					ep.Evento_Aula_Id == evento.Id &&
-					ep.PerfilCognitivo_Id == aluno.PerfilCognitivo_Id);
-
-			if (perfilCognitivoMatches == false)
-			{
-				return new ResponseModel { Message = "O perfil cognitivo da aula não é adequado para este aluno" };
-			}
-
-			int registrosAtivos = evento.Evento_Participacao_Alunos.Count(p => p.Deactivated == null);
-
-			// O evento deve ter espaço para comportar o aluno
-			if (registrosAtivos >= evento.CapacidadeMaximaAlunos)
-			{
-				return new ResponseModel { Message = "Esse evento já está em sua capacidade máxima" };
-			}
-
-			// Se o aluno já estiver no evento, precisa apenas marcar como primeira aula
-			bool alunoIsAlreadyInEvent = evento.Evento_Participacao_Alunos.Any(a => a.Aluno_Id == aluno.Id);
-
-			// Validations passed
-			if (!alunoIsAlreadyInEvent)
-			{
-				Evento_Participacao_Aluno participacao = new()
-				{
-					Aluno_Id = aluno.Id,
-					Evento_Id = evento.Id,
-					Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
-					NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
-					Apostila_AH_Id = aluno.Apostila_AH_Id,
-					NumeroPaginaAH = aluno.NumeroPaginaAH,
-				};
-
-				_db.Evento_Participacao_Aluno.Add(participacao);
-			}
-
-			Aluno_Historico historico = new()
-			{
-				Aluno_Id = aluno.Id,
-				Descricao = $"O aluno teve primeira aula agendada para o dia '{evento.Data:G}'",
-				Account_Id = _account!.Id,
-				Data = TimeFunctions.HoraAtualBR(),
-			};
-
-			_db.Aluno_Historicos.Add(historico);
-
-			aluno.PrimeiraAula_Id = evento.Id;
-			_db.Alunos.Update(aluno);
-
-			_db.SaveChanges();
-
-			response.Success = true;
-			response.Object = _db.CalendarioAlunoLists.FirstOrDefault(r => r.Id == aluno.Id);
-			response.Message = "Primeira aula agendada com sucesso";
-		}
-		catch (Exception ex)
-		{
-			response.Message = $"Falha ao inserir primeira aula do aluno: {ex}";
-		}
-
-		return response;
-	}
 }

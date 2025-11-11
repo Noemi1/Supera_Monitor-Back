@@ -35,7 +35,7 @@ public static class Utils
 		{
 			randomRM = RNG.Next(0, 100000).ToString("D5");
 		}
-		while (db.Alunos.Any(x => x.RM == randomRM));
+		while (db.Aluno.Any(x => x.RM == randomRM));
 
 		return randomRM;
 	}

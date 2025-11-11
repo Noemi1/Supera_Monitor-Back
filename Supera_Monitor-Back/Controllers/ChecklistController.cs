@@ -143,9 +143,9 @@ namespace Supera_Monitor_Back.Controllers {
         }
 
         [HttpPatch("toggle-item")]
-        public ActionResult<ResponseModel> ToggleAlunoChecklistItem(ToggleAlunoChecklistRequest model) {
+        public ActionResult<ResponseModel> ToggleAlunoChecklistItem(FinalizaChecklistRequest model) {
             try {
-                var response = _checklistService.ToggleAlunoChecklistItem(model);
+                var response = _checklistService.FinalizaChecklist(model);
 
                 if (response.Success) {
                     _logger.Log("ToggleAlunoChecklistItem", "Aluno_Checklist_Item", response, Account?.Id);

@@ -153,7 +153,7 @@ public class SalaService : ISalaService {
 
 
 
-		Evento? evento = _db.Eventos.FirstOrDefault(e =>
+		Evento? evento = _db.Evento.FirstOrDefault(e =>
 			e.Id != ignoredEventoId
 			&& e.Deactivated == null
 			&& e.Sala_Id == Sala_Id

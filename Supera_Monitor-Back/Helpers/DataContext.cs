@@ -17,7 +17,7 @@ public partial class DataContext : DbContext
 
 	public virtual DbSet<AccountRole> AccountRoles { get; set; }
 
-	public virtual DbSet<Aluno> Alunos { get; set; }
+	public virtual DbSet<Aluno> Aluno { get; set; }
 
 	public virtual DbSet<Aluno_Turma_Vigencia> Aluno_Turma_Vigencia { get; set; }
 
@@ -31,19 +31,19 @@ public partial class DataContext : DbContext
 
 	public virtual DbSet<AlunoRestricaoList> AlunoRestricaoLists { get; set; }
 
-	public virtual DbSet<Aluno_Checklist_Item> Aluno_Checklist_Items { get; set; }
+	public virtual DbSet<Aluno_Checklist_Item> Aluno_Checklist_Item { get; set; }
 
-	public virtual DbSet<Aluno_Historico> Aluno_Historicos { get; set; }
+	public virtual DbSet<Aluno_Historico> Aluno_Historico { get; set; }
 
 	public virtual DbSet<Aluno_Restricao> Aluno_Restricaos { get; set; }
 
-	public virtual DbSet<Apostila> Apostilas { get; set; }
+	public virtual DbSet<Apostila> Apostila { get; set; }
 
 	public virtual DbSet<ApostilaList> ApostilaLists { get; set; }
 
-	public virtual DbSet<Apostila_Kit> Apostila_Kits { get; set; }
+	public virtual DbSet<Apostila_Kit> Apostila_Kit { get; set; }
 
-	public virtual DbSet<Apostila_Kit_Rel> Apostila_Kit_Rels { get; set; }
+	public virtual DbSet<Apostila_Kit_Rel> Apostila_Kit_Rel { get; set; }
 
 	public virtual DbSet<Apostila_Tipo> Apostila_Tipos { get; set; }
 
@@ -61,7 +61,7 @@ public partial class DataContext : DbContext
 
 	public virtual DbSet<Checklist_Item> Checklist_Items { get; set; }
 
-	public virtual DbSet<Evento> Eventos { get; set; }
+	public virtual DbSet<Evento> Evento { get; set; }
 
 	public virtual DbSet<Evento_Aula> Evento_Aulas { get; set; }
 
@@ -536,7 +536,7 @@ public partial class DataContext : DbContext
 				.OnDelete(DeleteBehavior.ClientSetNull)
 				.HasConstraintName("FK_Apostila_Kit_Rel_Apostila");
 
-			entity.HasOne(d => d.Apostila_Kit).WithMany(p => p.Apostila_Kit_Rels)
+			entity.HasOne(d => d.Apostila_Kit).WithMany(p => p.Apostila_Kit_Rel)
 				.HasForeignKey(d => d.Apostila_Kit_Id)
 				.OnDelete(DeleteBehavior.ClientSetNull)
 				.HasConstraintName("FK_Apostila_Kit_Rel_Apostila_Kit");

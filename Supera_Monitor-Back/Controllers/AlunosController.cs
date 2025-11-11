@@ -15,7 +15,7 @@ namespace Supera_Monitor_Back.Controllers
 		private readonly ILogService _logger;
 
 		public AlunosController(
-			IAlunoService alunoService, 
+			IAlunoService alunoService,
 			ILogService logService
 		)
 		{
@@ -39,7 +39,7 @@ namespace Supera_Monitor_Back.Controllers
 				return StatusCode(500, e);
 			}
 		}
-		
+
 		[Authorize]
 		[HttpGet("{alunoId}")]
 		public ActionResult<AlunoResponse> Get(int alunoId)
@@ -80,6 +80,23 @@ namespace Supera_Monitor_Back.Controllers
 			try
 			{
 				List<AlunoVigenciaList> response = _alunoService.GetVigenciaById(alunoId);
+
+				return Ok(response);
+			}
+			catch (Exception e)
+			{
+				// _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+				return StatusCode(500, e);
+			}
+		}
+
+		[Authorize]
+		[HttpGet("image/{alunoId}")]
+		public ActionResult<ResponseModel> GetProfileImage(int alunoId)
+		{
+			try
+			{
+				ResponseModel response = _alunoService.GetProfileImage(alunoId);
 
 				return Ok(response);
 			}
@@ -161,101 +178,5 @@ namespace Supera_Monitor_Back.Controllers
 			}
 		}
 
-		[Authorize]
-		[HttpGet("image/{alunoId}")]
-		public ActionResult<ResponseModel> GetProfileImage(int alunoId)
-		{
-			try
-			{
-				ResponseModel response = _alunoService.GetProfileImage(alunoId);
-
-				return Ok(response);
-			}
-			catch (Exception e)
-			{
-				// _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-				return StatusCode(500, e);
-			}
-		}
-
-		[Authorize]
-		[HttpPost("reposicao")]
-		public ActionResult<ResponseModel> Reposicao(ReposicaoRequest model)
-		{
-			try
-			{
-				ResponseModel response = _alunoService.Reposicao(model);
-
-				if (response.Success)
-				{
-					// _logger.Log("Reposicao", "Aluno", response, Account?.Id);
-					return Ok(response);
-				}
-
-				return BadRequest(response);
-			}
-			catch (Exception e)
-			{
-				// _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-				return StatusCode(500, e);
-			}
-		}
-
-		[Authorize]
-		[HttpPost("primeira-aula")]
-		public ActionResult<ResponseModel> PrimeiraAula(PrimeiraAulaRequest model)
-		{
-			try
-			{
-				ResponseModel response = _alunoService.PrimeiraAula(model);
-
-				if (response.Success)
-				{
-					// _logger.Log("Primeira Aula", "Aluno", response, Account?.Id);
-					return Ok(response);
-				}
-
-				return BadRequest(response);
-			}
-			catch (Exception e)
-			{
-				// _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-				return StatusCode(500, e);
-			}
-		}
-
-		//[Authorize]
-		//[HttpGet("apostilas/{alunoId}")]
-		//public ActionResult<List<ApostilaList>> GetApostilasByAluno(int alunoId)
-		//{
-		//	try
-		//	{
-		//		var response = _alunoService.GetApostilasByAluno(alunoId);
-
-		//		return Ok(response);
-		//	}
-		//	catch (Exception e)
-		//	{
-		//		// _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-		//		return StatusCode(500, e);
-		//	}
-		//}
-		
-		//[Authorize]
-		//[HttpPost("checklists/all")]
-		//public ActionResult<List<AlunoResponse>> GetAllAlunoChecklists(AlunoRequest request)
-		//{
-		//	try
-		//	{
-		//		var response = _alunoService.GetAlunoChecklistItemList(request);
-
-		//		return Ok(response);
-		//	}
-		//	catch (Exception e)
-		//	{
-		//		// _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-		//		return StatusCode(500, e);
-		//	}
-		//}
 	}
 }

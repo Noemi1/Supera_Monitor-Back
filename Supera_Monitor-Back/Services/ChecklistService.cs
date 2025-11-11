@@ -18,7 +18,7 @@ public interface IChecklistService
 	ResponseModel PopulateAlunoChecklist(int alunoId);
 	ResponseModel Update(UpdateChecklistItemRequest model);
 	ResponseModel ToggleDeactivate(int checklistItemId);
-	ResponseModel ToggleAlunoChecklistItem(ToggleAlunoChecklistRequest model);
+	ResponseModel FinalizaChecklist(FinalizaChecklistRequest model);
 }
 
 public class ChecklistService : IChecklistService
@@ -190,7 +190,7 @@ public class ChecklistService : IChecklistService
 
 		try
 		{
-			Aluno? aluno = _db.Alunos
+			Aluno? aluno = _db.Aluno
 				.Include(x => x.Aluno_Checklist_Items)
 				.FirstOrDefault(x => x.Id == alunoId);
 
@@ -252,7 +252,7 @@ public class ChecklistService : IChecklistService
 				}
 			}
 
-			_db.Aluno_Checklist_Items.AddRange(alunoChecklist);
+			_db.Aluno_Checklist_Item.AddRange(alunoChecklist);
 			_db.SaveChanges();
 
 			response.Success = true;
@@ -266,28 +266,25 @@ public class ChecklistService : IChecklistService
 		return response;
 	}
 
-	public ResponseModel ToggleAlunoChecklistItem(ToggleAlunoChecklistRequest model)
+	public ResponseModel FinalizaChecklist(FinalizaChecklistRequest model)
 	{
 		ResponseModel response = new() { Success = false };
 
 		try
 		{
-			Aluno_Checklist_Item? item = _db.Aluno_Checklist_Items.Find(model.Aluno_Checklist_Item_Id);
+			Aluno_Checklist_Item? item = _db.Aluno_Checklist_Item.Find(model.Aluno_Checklist_Item_Id);
 
 			if (item is null)
 			{
 				return new ResponseModel { Message = "Item da checklist do aluno não encontrado" };
 			}
 
-			if (item.DataFinalizacao is null)
-			{
-				item.Account_Finalizacao_Id = _account?.Id;
-				item.DataFinalizacao = TimeFunctions.HoraAtualBR();
-			}
+			item.Account_Finalizacao_Id = _account?.Id;
+			item.DataFinalizacao = TimeFunctions.HoraAtualBR();
 
 			item.Observacoes = model.Observacoes ?? item.Observacoes;
 
-			_db.Aluno_Checklist_Items.Update(item);
+			_db.Aluno_Checklist_Item.Update(item);
 			_db.SaveChanges();
 
 			response.Success = true;

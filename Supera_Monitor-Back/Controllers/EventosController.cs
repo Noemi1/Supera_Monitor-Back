@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
+using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
+using Supera_Monitor_Back.Models.Aluno;
 using Supera_Monitor_Back.Models.Eventos;
 using Supera_Monitor_Back.Models.Eventos.Aula;
 using Supera_Monitor_Back.Models.Eventos.Participacao;
@@ -454,7 +456,55 @@ public class EventosController : _BaseController
         }
     }
 
-    [HttpPost("aula-zero/finalizar")]
+
+	[Authorize]
+	[HttpPost("reposicao")]
+	public ActionResult<ResponseModel> Reposicao(ReposicaoRequest model)
+	{
+		try
+		{
+			ResponseModel response = _eventoService.Reposicao(model);
+
+			if (response.Success)
+			{
+				// _logger.Log("Reposicao", "Aluno", response, Account?.Id);
+				return Ok(response);
+			}
+
+			return BadRequest(response);
+		}
+		catch (Exception e)
+		{
+			// _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+			return StatusCode(500, e);
+		}
+	}
+
+	[Authorize]
+	[HttpPost("primeira-aula")]
+	public ActionResult<ResponseModel> PrimeiraAula(PrimeiraAulaRequest model)
+	{
+		try
+		{
+			ResponseModel response = _eventoService.PrimeiraAula(model);
+
+			if (response.Success)
+			{
+				// _logger.Log("Primeira Aula", "Aluno", response, Account?.Id);
+				return Ok(response);
+			}
+
+			return BadRequest(response);
+		}
+		catch (Exception e)
+		{
+			// _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+			return StatusCode(500, e);
+		}
+	}
+	
+
+	[HttpPost("aula-zero/finalizar")]
     public ActionResult<ResponseModel> FinalizarAulaZero(FinalizarAulaZeroRequest request)
     {
         try
@@ -474,22 +524,5 @@ public class EventosController : _BaseController
             return StatusCode(500, e);
         }
     }
-
-
-    //[HttpPost("cancelar-eventos-feriado/{ano}")]
-    //public async Task<ActionResult<ResponseModel>> CancelaEventos(int ano)
-    //{
-    //    try
-    //    {
-    //        ano = Math.Clamp(ano, 2000, DateTime.Now.Year + 100);
-    //        var response = await _eventoService.CancelaEventosFeriado(ano);
-    //        return Ok(response);
-    //    }
-    //    catch (Exception e)
-    //    {
-    //        _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-    //        return StatusCode(500, e);
-    //    }
-    //}
 
 }

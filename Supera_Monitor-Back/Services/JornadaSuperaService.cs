@@ -47,7 +47,7 @@ public class JornadaSuperaService : IJornadaSuperaService
 			.Where(x => x.Active == true)
 			.AsNoTracking();
 
-		var alunosChecklistItemsQueryable = _db.Aluno_Checklist_Items
+		var alunosChecklistItemsQueryable = _db.Aluno_Checklist_Item
 			.Where(x => x.DataFinalizacao == null)
 			.AsQueryable()
 			.AsNoTracking();
@@ -217,7 +217,7 @@ public class JornadaSuperaService : IJornadaSuperaService
 			.Where(x => x.Active == true)
 			.AsNoTracking();
 
-		var alunosChecklistItemsQueryable = _db.Aluno_Checklist_Items
+		var alunosChecklistItemsQueryable = _db.Aluno_Checklist_Item
 			.OrderByDescending(x => x.Prazo)
 			.AsNoTracking();
 

@@ -174,7 +174,7 @@ public class CalendarioService : ICalendarioService
 
 			turmasQueryable =
 				from t in turmasQueryable
-				join a in _db.Alunos
+				join a in _db.Aluno
 					on t.Id equals a.Turma_Id
 				where a.Id == request.Aluno_Id
 				select t;

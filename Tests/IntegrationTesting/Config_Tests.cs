@@ -13,7 +13,7 @@ public class Config_Tests(IntegrationTestWebAppFactory factory) : BaseIntegratio
         int countEventoTipos = _db.Evento_Tipos.ToList().Count;
         Assert.Equal(6, countEventoTipos);
 
-        int countApostilaKitRels = _db.Apostila_Kit_Rels.ToList().Count;
+        int countApostilaKitRels = _db.Apostila_Kit_Rel.ToList().Count;
         Assert.Equal(8, countApostilaKitRels);
     }
 

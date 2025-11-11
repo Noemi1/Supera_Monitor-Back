@@ -91,7 +91,7 @@ public class EventoServiceTests : BaseIntegrationTest {
         Assert.NotNull(response);
         Assert.True(response.Success, response.Message);
 
-        var eventoResult = _db.Eventos.Find(evento.Id);
+        var eventoResult = _db.Evento.Find(evento.Id);
         Assert.NotNull(eventoResult);
         Assert.True(eventoResult.Finalizado);
 
@@ -163,11 +163,11 @@ public class EventoServiceTests : BaseIntegrationTest {
         Assert.NotNull(response);
         Assert.True(response.Success, response.Message);
 
-        var eventoResult = _db.Eventos.Find(evento.Id);
+        var eventoResult = _db.Evento.Find(evento.Id);
         Assert.NotNull(eventoResult);
         Assert.True(eventoResult.Finalizado);
 
-        var alunoResult = _db.Alunos.Find(aluno.Id);
+        var alunoResult = _db.Aluno.Find(aluno.Id);
         Assert.NotNull(alunoResult);
 
         Assert.Equal(turma.Id, alunoResult.Turma_Id);
@@ -368,7 +368,7 @@ public class EventoServiceTests : BaseIntegrationTest {
         Assert.NotNull(response);
         Assert.True(response.Success, response.Message);
 
-        Aluno? alunoResult = _db.Alunos.Find(aluno.Id);
+        Aluno? alunoResult = _db.Aluno.Find(aluno.Id);
         Assert.NotNull(alunoResult);
 
         Assert.Equal(1, aluno.PerfilCognitivo_Id);
@@ -575,7 +575,7 @@ public class EventoServiceTests : BaseIntegrationTest {
         Assert.NotNull(response);
         Assert.True(response.Success);
 
-        Evento? eventoCancelado = _db.Eventos.SingleOrDefault(e => e.Id == evento.Id);
+        Evento? eventoCancelado = _db.Evento.SingleOrDefault(e => e.Id == evento.Id);
         Assert.NotNull(eventoCancelado);
         Assert.NotNull(eventoCancelado.Deactivated);
     }
@@ -627,7 +627,7 @@ public class EventoServiceTests : BaseIntegrationTest {
         Assert.Equal(5, participacaoResult.NumeroPaginaAbaco);
         Assert.Equal(5, participacaoResult.NumeroPaginaAH);
 
-        var alunoResult = _db.Alunos.Find(alunoPresente.Id);
+        var alunoResult = _db.Aluno.Find(alunoPresente.Id);
         Assert.NotNull(alunoResult);
         Assert.Equal(5, alunoResult.NumeroPaginaAbaco);
         Assert.Equal(5, alunoResult.NumeroPaginaAH);

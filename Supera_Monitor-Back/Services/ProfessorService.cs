@@ -248,7 +248,7 @@ namespace Supera_Monitor_Back.Services {
         }
 
         public List<KitResponse> GetAllKits() {
-            List<Apostila_Kit> listApostilaKits = _db.Apostila_Kits.ToList();
+            List<Apostila_Kit> listApostilaKits = _db.Apostila_Kit.ToList();
 
             List<KitResponse> listKitResponse = _mapper.Map<List<KitResponse>>(listApostilaKits);
 

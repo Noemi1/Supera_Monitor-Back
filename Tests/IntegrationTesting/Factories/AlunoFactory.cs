@@ -31,7 +31,7 @@ static class AlunoFactory {
 
         var mockAluno = mockAlunoGenerator.Generate();
 
-        db.Alunos.Add(mockAluno);
+        db.Aluno.Add(mockAluno);
         db.SaveChanges();
 
         return mockAluno;

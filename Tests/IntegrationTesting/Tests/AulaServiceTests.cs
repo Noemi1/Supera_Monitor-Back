@@ -102,7 +102,7 @@ public class AulaServiceTests : BaseIntegrationTest {
         Assert.NotNull(response);
         Assert.True(response.Success, response.Message);
 
-        Aluno? aluno = _db.Alunos.Find(alunoInAulaZero.Id);
+        Aluno? aluno = _db.Aluno.Find(alunoInAulaZero.Id);
         Assert.NotNull(aluno);
 
         Assert.Equal(response.Object!.Id, aluno.AulaZero_Id);

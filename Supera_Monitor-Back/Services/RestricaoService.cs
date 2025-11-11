@@ -47,7 +47,7 @@ public class RestricaoService : IRestricaoService {
         ResponseModel response = new() { Success = false };
 
         try {
-            Aluno? aluno = _db.Alunos
+            Aluno? aluno = _db.Aluno
                 .Include(a => a.Pessoa)
                 .FirstOrDefault(a => a.Id == model.Aluno_Id);
 
@@ -69,7 +69,7 @@ public class RestricaoService : IRestricaoService {
                 Account_Created_Id = _account!.Id,
             };
 
-            _db.Aluno_Historicos.Add(new Aluno_Historico
+            _db.Aluno_Historico.Add(new Aluno_Historico
             {
                 Aluno_Id = model.Aluno_Id,
                 Account_Id = _account.Id,
@@ -109,7 +109,7 @@ public class RestricaoService : IRestricaoService {
 
             restricao.Descricao = model.Descricao;
 
-            _db.Aluno_Historicos.Add(new Aluno_Historico
+            _db.Aluno_Historico.Add(new Aluno_Historico
             {
                 Aluno_Id = model.Aluno_Id,
                 Account_Id = _account?.Id,
@@ -145,7 +145,7 @@ public class RestricaoService : IRestricaoService {
             var restricaoToString = restricao.Deactivated.HasValue ? "reativada" : "desativada";
             restricao.Deactivated = restricao.Deactivated.HasValue ? null : TimeFunctions.HoraAtualBR();
 
-            _db.Aluno_Historicos.Add(new Aluno_Historico
+            _db.Aluno_Historico.Add(new Aluno_Historico
             {
                 Aluno_Id = restricao.Aluno_Id,
                 Account_Id = _account?.Id,

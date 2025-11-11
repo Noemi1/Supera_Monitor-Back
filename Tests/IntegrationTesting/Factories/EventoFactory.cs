@@ -20,7 +20,7 @@ static class EventoFactory {
 
         var mockEvento = mockEventoGenerator.Generate();
 
-        db.Eventos.Add(mockEvento);
+        db.Evento.Add(mockEvento);
         db.SaveChanges();
 
         return mockEvento;

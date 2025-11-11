@@ -42,9 +42,6 @@ public partial class Aluno
 
 	public int? PrimeiraAula_Id { get; set; }
 
-	public DateTime? UltimaTrocaTurma { get; set; }
-
-
 	public virtual Apostila? Apostila_AH { get; set; }
 
 	public virtual Apostila? Apostila_Abaco { get; set; }
