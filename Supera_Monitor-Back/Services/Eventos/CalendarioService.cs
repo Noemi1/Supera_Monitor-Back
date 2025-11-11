@@ -412,15 +412,15 @@ public class CalendarioService : ICalendarioService
 								&& (!x.DataFimVigencia.HasValue || x.DataFimVigencia.Value >= data))
 						.ToList();
 
-					var alunosDoDiaId = vigenciasDaTurma
-						.Select(x => x.Aluno_Id)
-						.ToHashSet();
+					var alunosDoDia =
+						from a in alunos
+						join v in vigenciasDaTurma
+							on a.Id equals v.Aluno_Id
+						select a;
 
-					var alunosTurma = alunos
-						.Select(x => alunosPorId[x.Id])
-						.ToList();
+					var alunosTurma = alunosDoDia.ToList();
 
-					int alunosAtivosInTurma = vigenciasDaTurma.Count;
+					int alunosAtivosInTurma = alunosTurma.Count;
 
 					var pseudoAula = new CalendarioEventoList()
 					{
