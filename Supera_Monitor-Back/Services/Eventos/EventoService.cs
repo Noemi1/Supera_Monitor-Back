@@ -833,11 +833,17 @@ public class EventoService : IEventoService
 			if (hasParticipacaoConflict)
 				return new ResponseModel { Message = $"Professor: {professor.Nome} possui participação em outro evento nesse mesmo horário" };
 
+			var participacaoOutraAulaZeroQueryable =
+				from e in _db.Evento
+				join p in _db.Evento_Participacao_Aluno
+					on e.Id equals p.Evento_Id
+				where e.Evento_Tipo_Id == (int)EventoTipo.AulaZero
+					&& request.Alunos.Contains(p.Aluno_Id)
+				select p;
 
-			var participacaoOutraAulaZero = _db.Evento_Participacao_Aluno
-						.Where(x => request.Alunos.Contains(x.Aluno_Id))
-						.Include(x => x.Evento)
-						.ToList();
+
+			var participacaoOutraAulaZero = participacaoOutraAulaZeroQueryable
+				.ToList();
 
 			var participacaoFinalizada = participacaoOutraAulaZero
 				.FirstOrDefault(x => x.Presente == true && x.Evento.Finalizado == true);
@@ -1456,15 +1462,18 @@ public class EventoService : IEventoService
 
 		try
 		{
-			var alunosQueryable =
+			var participacoesQueryable = _db.Evento_Participacao_Aluno
+					.Where(x => x.Evento_Id == request.Evento_Id);
+
+			var alunosQueryable = 
 					from aluno in _db.Aluno
-					join participacao in request.Alunos
+					join participacao in participacoesQueryable
 						on aluno.Id equals participacao.Aluno_Id
 					select aluno;
 
 			var alunosChecklistItemQueryable =
 					from checklist in _db.Aluno_Checklist_Item
-					join participacao in request.Alunos
+					join participacao in participacoesQueryable
 					on checklist.Aluno_Id equals participacao.Aluno_Id
 					where checklist.Checklist_Item_Id == (int)ChecklistItemId.ComparecimentoAulaZero
 						&& checklist.DataFinalizacao == null
@@ -1472,13 +1481,14 @@ public class EventoService : IEventoService
 
 			var vigenciasQueryable =
 				from vigencia in _db.Aluno_Turma_Vigencia
-				join participacao in request.Alunos
+				join participacao in participacoesQueryable
 					on vigencia.Aluno_Id equals participacao.Aluno_Id
 				select vigencia;
 
 			// Materialização
 
 			var evento = _db.Evento
+				.Include(x => x.Evento_Participacao_Aluno)
 				.FirstOrDefault(x => x.Id == request.Evento_Id);
 
 			if (evento is null)
@@ -1501,6 +1511,9 @@ public class EventoService : IEventoService
 			var vigencias = vigenciasQueryable
 				.ToList();
 
+			var participacoes = participacoesQueryable
+				.ToList();
+
 			// Dicionarios
 
 			var kitApostilaPorId = kitApostila
@@ -1517,9 +1530,13 @@ public class EventoService : IEventoService
 
 			var historicoInserir = new List<Aluno_Historico>() { };
 
-			foreach (var participacao in request.Alunos)
+			var participacaoPorId = evento
+				.Evento_Participacao_Aluno
+				.ToDictionary(x => x.Id, x => x);
+
+			foreach (var participacaoRequest in request.Alunos)
 			{
-				if (alunosPorId.TryGetValue(participacao.Aluno_Id, out var aluno))
+				if (alunosPorId.TryGetValue(participacaoRequest.Aluno_Id, out var aluno))
 				{
 					DateTime hoje = TimeFunctions.HoraAtualBR();
 
@@ -1531,8 +1548,8 @@ public class EventoService : IEventoService
 					historicoInserir.Add(new Aluno_Historico
 					{
 						Account_Id = _account?.Id ?? 1,
-						Aluno_Id = participacao.Aluno_Id,
-						Descricao = participacao.Presente ?
+						Aluno_Id = participacaoRequest.Aluno_Id,
+						Descricao = participacaoRequest.Presente ?
 								$"Aluno compareceu na aula zero agendada no dia ${evento.Data.ToString("dd/MM/yyyy HH:mm")}" :
 								$"Aluno NÃO compareceu na aula zero agendada no dia ${evento.Data.ToString("dd/MM/yyyy HH:mm")}",
 						Data = hoje,
@@ -1540,14 +1557,14 @@ public class EventoService : IEventoService
 
 					#endregion
 
-					if (participacao.Presente == true)
+					if (participacaoRequest.Presente == true)
 					{
 						//
 						// Salva os dados no aluno
 						//
 						#region salva aluno
 						Apostila_Kit? kit;
-						kitApostilaPorId.TryGetValue(participacao.Apostila_Kit_Id, out kit);
+						kitApostilaPorId.TryGetValue(participacaoRequest.Apostila_Kit_Id, out kit);
 
 						if (kit is null)
 							throw new Exception($"Kit de apostila não encontrada para o aluno: ${aluno.Id}");
@@ -1564,13 +1581,14 @@ public class EventoService : IEventoService
 							.OrderBy(x => x.Ordem)
 							.FirstOrDefault();
 
-						aluno.PerfilCognitivo_Id = participacao.PerfilCognitivo_Id;
-						aluno.Apostila_Kit_Id = participacao.Apostila_Kit_Id;
-						aluno.Turma_Id = participacao.Turma_Id;
+						aluno.PerfilCognitivo_Id = participacaoRequest.PerfilCognitivo_Id;
+						aluno.Apostila_Kit_Id = participacaoRequest.Apostila_Kit_Id;
+						aluno.Turma_Id = participacaoRequest.Turma_Id;
 						aluno.Apostila_Abaco_Id = apostilaAbaco?.Id;
 						aluno.Apostila_AH_Id = apostilaAH?.Id;
 						aluno.NumeroPaginaAbaco = 0;
 						aluno.NumeroPaginaAH = 0;
+						_db.Aluno.Update(aluno);
 
 						#endregion
 
@@ -1612,19 +1630,28 @@ public class EventoService : IEventoService
 						_db.Aluno_Turma_Vigencia.Add(new Aluno_Turma_Vigencia
 						{
 							Account_Id = _account?.Id ?? 1,
-							Aluno_Id = participacao.Aluno_Id,
-							Turma_Id = participacao.Turma_Id,
+							Aluno_Id = participacaoRequest.Aluno_Id,
+							Turma_Id = participacaoRequest.Turma_Id,
 							DataInicioVigencia = hoje,
 						});
 
 						#endregion
+					
 					}
 					else
 					{
 						aluno.AulaZero_Id = null;
+						_db.Aluno.Update(aluno);
 					}
 
-					_db.Aluno.Update(aluno);
+					//
+					// Salva participacao
+					//
+					if (participacaoPorId.TryGetValue(participacaoRequest.Participacao_Id, out var participacao))
+						{
+							participacao.Presente = participacaoRequest.Presente;
+						}
+					
 				}
 			}
 
