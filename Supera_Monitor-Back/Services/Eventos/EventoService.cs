@@ -880,14 +880,8 @@ public class EventoService : IEventoService
 				Account_Created_Id = _account!.Id,
 			};
 
-			var alunosQueryable =
-				from a in _db.Aluno
-				join req in request.Alunos
-					on a.Id equals req
-				where a.Deactivated == null
-				select a;
-
-			var alunos = alunosQueryable
+	
+			var alunos = _db.Aluno.Where(x => request.Alunos.Contains(x.Id))
 				.ToList();
 
 			var alunosPorId = alunos
@@ -898,7 +892,6 @@ public class EventoService : IEventoService
 				.ToList();
 
 			var historicoInserir = new List<Aluno_Historico>() { };
-			var alunosAtualizar = new List<Aluno>() { };
 
 			//
 			// Insere alunos
@@ -917,10 +910,6 @@ public class EventoService : IEventoService
 						NumeroPaginaAH = aluno.NumeroPaginaAH,
 					});
 
-					// Atualiza aluno
-					aluno.AulaZero_Id = evento.Id;
-					alunosAtualizar.Add(aluno);
-
 					//
 					// Insere histórico
 					//
@@ -929,7 +918,7 @@ public class EventoService : IEventoService
 						Account_Id = _account?.Id ?? 1,
 						Aluno_Id = aluno.Id,
 						Data = hoje,
-						Descricao = $"Aluno foi inscrito em um evento 'Aula Zero' no dia {evento.Data:G}"
+						Descricao = $"Aluno foi inscrito em um evento 'Aula Zero' no dia {request.Data:G}"
 					});
 				}
 			}
@@ -940,7 +929,6 @@ public class EventoService : IEventoService
 			evento.Evento_Participacao_Professor.Add(new Evento_Participacao_Professor
 			{
 				Professor_Id = professor.Id,
-				Evento_Id = evento.Id,
 			});
 
 
@@ -957,22 +945,23 @@ public class EventoService : IEventoService
 				participacao.ReposicaoDe_Evento_Id = null;
 				participacao.Deactivated = hoje;
 
-				if (participacao.Evento.Evento_Participacao_Aluno.Count == 0)
+				if (participacao.Evento.Evento_Participacao_Aluno.Count == 1)
 				{
 					participacao.Evento.Deactivated = hoje;
 					participacao.Evento.Observacao = $"Cancelamento automático. <br> Uma nova aula zero foi agendada para o dia {request.Data.ToString("dd/MM/yyyy HH:mm")}";
 				}
 			}
+			_db.Add(evento);
+			_db.SaveChanges();
+
+			alunos.ForEach(aluno => { aluno.AulaZero_Id = evento.Id; });
 
 			_db.Aluno_Historico.AddRange(historicoInserir);
-			_db.Aluno.UpdateRange(alunosAtualizar);
+			_db.Aluno.UpdateRange(alunos);
 
 			_db.Evento_Participacao_Aluno.UpdateRange(participacaoCancelar);
 			_db.Evento.UpdateRange(participacaoCancelar.Select(x => x.Evento));
 			
-			_db.Add(evento);
-			_db.SaveChanges();
-
 			//
 			// Finaliza checklists "agendamento aula zero"
 			//
