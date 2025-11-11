@@ -461,7 +461,7 @@ public class EventosController : _BaseController
 	{
 		try
 		{
-			ResponseModel response = _eventoService.Reposicao(model);
+			ResponseModel response = _eventoService.AgendarReposicao(model);
 
 			if (response.Success)
 			{
@@ -484,7 +484,7 @@ public class EventosController : _BaseController
 	{
 		try
 		{
-			ResponseModel response = _eventoService.PrimeiraAula(model);
+			ResponseModel response = _eventoService.AgendarPrimeiraAula(model);
 
 			if (response.Success)
 			{

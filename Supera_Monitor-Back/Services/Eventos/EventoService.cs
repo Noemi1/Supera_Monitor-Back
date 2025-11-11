@@ -26,8 +26,8 @@ public interface IEventoService
 	public ResponseModel Cancelar(CancelarEventoRequest request);
 	public ResponseModel Finalizar(FinalizarEventoRequest request);
 	public ResponseModel FinalizarAulaZero(FinalizarAulaZeroRequest request);
-	public ResponseModel PrimeiraAula(PrimeiraAulaRequest model);
-	public ResponseModel Reposicao(ReposicaoRequest model);
+	public ResponseModel AgendarPrimeiraAula(PrimeiraAulaRequest model);
+	public ResponseModel AgendarReposicao(ReposicaoRequest model);
 
 	public ResponseModel InsertParticipacao(InsertParticipacaoRequest request);
 	public ResponseModel UpdateParticipacao(UpdateParticipacaoRequest request);
@@ -270,39 +270,46 @@ public class EventoService : IEventoService
 			Evento? evento = _db.Evento
 				.Include(e => e.Evento_Tipo)
 				.Include(e => e.Evento_Participacao_Aluno)
+				.Include(e => e.Evento_Participacao_Professor)
+					.ThenInclude(e => e.Professor)
 				.FirstOrDefault(e => e.Id == request.Id);
 
 			if (evento is null)
+				return new ResponseModel { Message = $"Evento não encontrada" };
+
+			if (evento.Finalizado)
+				return new ResponseModel { Message = $"Não é possivel editar {evento.Evento_Tipo.Nome.ToLower()} que foi finalizada." };
+
+			var professores = evento.Evento_Participacao_Professor
+				.Select(x => x.Professor)
+				.ToList();
+
+			var participacaoPorProfessorId = evento.Evento_Participacao_Professor
+				.ToDictionary(x => x.Professor_Id, x => x);
+
+			var professoresPorId = professores
+				.ToDictionary(x => x.Id, x => x);
+
+			var professoresRequestIds = request.Professores
+				.ToDictionary(x => x, x => x);
+
+			#region validacao
+			foreach (var professorId in request.Professores)
 			{
-				return new ResponseModel { Message = "Evento não encontrado" };
-			}
+				professoresPorId.TryGetValue(professorId, out var professor);
+				if (professor == null)
+					return new ResponseModel { Message = $"Professor: '{professorId}' não encontrado" };
 
-			IQueryable<Professor> professoresInRequest = _db.Professor.Include(p => p.Account).Where(p => p.Account.Deactivated == null && request.Professores.Contains(p.Id));
-
-			if (professoresInRequest.Count() != request.Professores.Count)
-			{
-				return new ResponseModel { Message = "Professor(es) não encontrado(s)" };
-			}
-
-			//if (request.Data < TimeFunctions.HoraAtualBR()) {
-			//    return new ResponseModel { Message = "Data do evento não pode ser no passado" };
-			//}
-
-			foreach (var professor in professoresInRequest)
-			{
 				bool hasTurmaConflict = _professorService.HasTurmaTimeConflict(
 					professorId: professor.Id,
 					DiaSemana: (int)evento.Data.DayOfWeek,
 					Horario: evento.Data.TimeOfDay,
 					IgnoredTurmaId: null
 				);
-
 				if (hasTurmaConflict)
-				{
 					return new ResponseModel { Message = $"Professor: '{professor.Account.Name}' possui uma turma nesse mesmo horário" };
-				}
 
-				Evento_Participacao_Professor? participacaoProfessor = _db.Evento_Participacao_Professor.FirstOrDefault(p => p.Evento_Id == evento.Id);
+				participacaoPorProfessorId.TryGetValue(professor.Id, out var participacaoProfessor);
 
 				bool hasParticipacaoConflict = _professorService.HasEventoParticipacaoConflict(
 					professorId: professor.Id,
@@ -312,76 +319,70 @@ public class EventoService : IEventoService
 				);
 
 				if (hasParticipacaoConflict)
-				{
 					return new ResponseModel { Message = $"Professor: {professor.Account.Name} possui participação em outro evento nesse mesmo horário" };
-				}
 			}
 
 			// Não devo poder registrar um evento em uma sala que não existe
 			bool salaExists = _db.Salas.Any(s => s.Id == request.Sala_Id);
-
 			if (!salaExists)
-			{
 				return new ResponseModel { Message = "Sala não encontrada" };
-			}
 
 			// Sala deve estar livre no horário do evento
 			bool isSalaOccupied = _salaService.IsSalaOccupied(request.Sala_Id, evento.Data, request.DuracaoMinutos, evento.Id);
-
 			if (isSalaOccupied)
-			{
 				return new ResponseModel { Message = "Esta sala se encontra ocupada neste horário" };
-			}
 
+			#endregion
+			
 			// Validations passed
 
-			var oldObject = _db.CalendarioEventoLists.First(e => e.Id == evento.Id);
+			var oldObject = this.GetEventoById(request.Id);
 
-			evento.Observacao = request.Observacao ?? request.Observacao;
-			evento.Descricao = request.Descricao ?? evento.Descricao;
+			evento.Observacao = request.Observacao;
+			evento.Descricao = request.Descricao;
 			evento.Sala_Id = request.Sala_Id;
 			evento.DuracaoMinutos = request.DuracaoMinutos;
 			evento.CapacidadeMaximaAlunos = request.CapacidadeMaximaAlunos;
 			evento.LastUpdated = TimeFunctions.HoraAtualBR();
 
-			_db.Evento.Update(evento);
-			_db.SaveChanges();
 
-			// IDS que preciso desativar
-			List<Evento_Participacao_Professor> participacoesToDeactivate = _db.Evento_Participacao_Professor.Where(p => !request.Professores.Contains(p.Professor_Id) && p.Evento_Id == evento.Id).ToList();
-
-			// IDS que existem
-			var idsExistentes = _db.Evento_Participacao_Professor.Where(p => p.Evento_Id == evento.Id).Select(p => p.Professor_Id).ToList();
-
-			// IDS que preciso adicionar
-			List<int> participacoesToAdd = request.Professores.Where(id => !idsExistentes.Contains(id)).ToList();
+			//
+			// Inativa professores removidos
+			//
+			var participacoesToDeactivate = evento.Evento_Participacao_Professor
+				.Where(p => !professoresRequestIds.TryGetValue(p.Professor_Id, out var participacao) )
+				.ToList();
 
 			foreach (var participacao in participacoesToDeactivate)
 			{
 				participacao.Deactivated = TimeFunctions.HoraAtualBR();
-				_db.Evento_Participacao_Professor.Update(participacao);
 			}
+
+			//
+			// Insere professores adicionados no evento
+			//
+			var participacoesToAdd = professoresRequestIds
+				.Where(p => !participacaoPorProfessorId.TryGetValue(p, out var participacao))
+				.ToList();
 
 			foreach (int professorId in participacoesToAdd)
 			{
-				var participacao = new Evento_Participacao_Professor
+				evento.Evento_Participacao_Professor.Add(new Evento_Participacao_Professor
 				{
 					Evento_Id = evento.Id,
 					Professor_Id = professorId
-				};
-
-				_db.Evento_Participacao_Professor.Add(participacao);
+				});
 			}
 
+			_db.Evento_Participacao_Professor.UpdateRange(evento.Evento_Participacao_Professor);
+
+			_db.Update(evento);
 			_db.SaveChanges();
 
-			var responseObject = _db.CalendarioEventoLists.First(e => e.Id == evento.Id);
-			responseObject.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).ToList();
-			responseObject.Professores = _db.CalendarioProfessorLists.Where(p => p.Evento_Id == evento.Id).ToList();
 
-			response.Message = $"Evento de '{evento.Evento_Tipo.Nome}' atualizado com sucesso";
+			response.Object = this.GetEventoById(evento.Id);
+			response.Message = $"{evento.Evento_Tipo.Nome} atualizada com sucesso";
 			response.OldObject = oldObject;
-			response.Object = responseObject;
 			response.Success = true;
 		}
 		catch (Exception ex)
@@ -730,98 +731,6 @@ public class EventoService : IEventoService
 		return response;
 	}
 
-	private static ResponseModel ValidateEvent(Evento? evento)
-	{
-		if (evento is null)
-		{
-			return new ResponseModel { Message = "Evento não encontrado." };
-		}
-
-		if (evento.Deactivated.HasValue)
-		{
-			return new ResponseModel { Message = $"Este evento foi cancelado às {evento.Deactivated.Value:g}" };
-		}
-
-		if (evento.Finalizado)
-		{
-			return new ResponseModel { Message = "Evento já está finalizado" };
-		}
-
-		return new ResponseModel { Success = true, Message = "Evento válido" };
-	}
-
-	private ResponseModel ValidateApostilas(List<int> apostilaIds, List<Apostila> existingApostilas, string? type)
-	{
-		foreach (int apostilaId in apostilaIds)
-		{
-			var matchingApostila = existingApostilas.FirstOrDefault(a => a.Id == apostilaId);
-
-			if (matchingApostila is null)
-			{
-				return new ResponseModel { Message = $"Apostila {type} ID: '{apostilaId}' não existe" };
-			}
-		}
-
-		return new ResponseModel { Success = true };
-	}
-
-	private ResponseModel ValidateParticipacao(ParticipacaoAlunoModel participacaoAluno, Evento evento, List<Apostila> existingApostilas)
-	{
-		Evento_Participacao_Aluno? participacao = evento.Evento_Participacao_Aluno
-						.FirstOrDefault(p => p.Id == participacaoAluno.Participacao_Id);
-
-		if (participacao is null)
-		{
-			return new ResponseModel { Message = $"Participação de aluno no evento ID: '{evento.Id}' Participacao_Id: '{participacaoAluno.Participacao_Id}' não foi encontrada" };
-		}
-
-		//if (participacao.Deactivated.HasValue) {
-		//    return new ResponseModel { Message = $"Participação de aluno no evento ID: '{evento.Id}' Participacao_Id: '{participacaoAluno.Participacao_Id}' está desativada" };
-		//}
-
-		// Alunos devem possuir as apostilas em que estão tentando marcar progresso
-
-		//var alunoApostilaKitId = participacao.Aluno.Apostila_Kit_Id;
-
-		//if (alunoApostilaKitId == null)
-		//{
-		//	return new ResponseModel { Message = $"Aluno ID: '{participacao.Aluno.Pessoa.Nome}' não possui kit de apostilas" };
-		//}
-
-		//var alunoApostilaKitRels = _db.Apostila_Kit_Rels.Where(a => a.Apostila_Kit_Id == alunoApostilaKitId).ToList();
-
-		//bool alunoHasApostilaAbaco = alunoApostilaKitRels.Any(a => a.Apostila_Id == participacaoAluno.Apostila_Abaco_Id);
-		//bool alunoHasApostilaAh = alunoApostilaKitRels.Any(a => a.Apostila_Id == participacaoAluno.Apostila_Ah_Id);
-
-		//// Para poder atualizar, o kit de apostilas do aluno deve possuir a apostila Abaco e a apostila AH passadas na requisição
-
-		//if (!alunoHasApostilaAbaco)
-		//{
-		//	return new ResponseModel { Message = $"Aluno ID: '{participacao.Aluno_Id}' não possui a apostila Abaco ID: '{participacaoAluno.Apostila_Abaco_Id}'" };
-		//}
-
-		//if (!alunoHasApostilaAh)
-		//{
-		//	return new ResponseModel { Message = $"Aluno ID: '{participacao.Aluno_Id}' não possui a apostila AH ID: '{participacaoAluno.Apostila_Ah_Id}'" };
-		//}
-
-		// Não deve ser possível atualizar além do tamanho máximo da apostila
-		int totalPaginasAbaco = existingApostilas.Find(a => a.Id == participacaoAluno.Apostila_Abaco_Id)!.NumeroTotalPaginas;
-		int totalPaginasAh = existingApostilas.Find(a => a.Id == participacaoAluno.Apostila_Ah_Id)!.NumeroTotalPaginas;
-
-		if (participacaoAluno.NumeroPaginaAbaco > totalPaginasAbaco)
-		{
-			return new ResponseModel { Message = $"Número de páginas da apostila Abaco não pode ser maior que o total de páginas: Participacao ID {participacaoAluno.Participacao_Id}" };
-		}
-
-		if (participacaoAluno.NumeroPaginaAh > totalPaginasAh)
-		{
-			return new ResponseModel { Message = $"Número de páginas da apostila AH não pode ser maior que o total de páginas: Participacao ID {participacaoAluno.Participacao_Id}" };
-		}
-
-		return new ResponseModel { Success = true };
-	}
-
 	public ResponseModel Finalizar(FinalizarEventoRequest request)
 	{
 		ResponseModel response = new() { Success = false };
@@ -1030,22 +939,206 @@ public class EventoService : IEventoService
 		return response;
 	}
 
-	private static int? CalcularStatusContato(bool Presente, int? ReposicaoDe_Evento_Id)
+	public ResponseModel FinalizarAulaZero(FinalizarAulaZeroRequest request)
 	{
-		switch (Presente, ReposicaoDe_Evento_Id.HasValue)
+		ResponseModel response = new ResponseModel { Success = false };
+
+		try
 		{
-			case (true, true):
-				return (int)StatusContato.REPOSICAO_REALIZADA;
 
-			case (true, false):
-				return null;
+			var alunosQueryable =
+					from aluno in _db.Aluno
+					join participacao in request.Alunos
+						on aluno.Id equals participacao.Aluno_Id
+					select aluno;
 
-			case (false, true):
-				return (int)StatusContato.REPOSICAO_NAO_COMPARECEU;
+			var alunosChecklistItemQueryable =
+					from checklist in _db.Aluno_Checklist_Item
+					join participacao in request.Alunos
+					on checklist.Aluno_Id equals participacao.Aluno_Id
+					where checklist.Checklist_Item_Id == (int)ChecklistItemId.ComparecimentoAulaZero
+						&& checklist.DataFinalizacao == null
+					select checklist;
 
-			case (false, false):
-				return (int)StatusContato.NAO_COMPARECEU;
+			var vigenciasQueryable =
+				from vigencia in _db.Aluno_Turma_Vigencia
+				join participacao in request.Alunos
+					on vigencia.Aluno_Id equals participacao.Aluno_Id
+				select vigencia;
+
+			// Materialização
+
+			var evento = _db.Evento.FirstOrDefault(x => x.Id == request.Evento_Id);
+
+			if (evento is null)
+			{
+				throw new Exception("Evento não encontrado");
+			}
+
+			var alunos = alunosQueryable
+				.ToList();
+
+			var kitsIds = request.Alunos
+				.Where(x => x.Presente)
+				.Select(x => x.Apostila_Kit_Id)
+				.ToHashSet();
+
+			var kitApostila = _db.Apostila_Kit
+				.Where(x => kitsIds.Contains(x.Id))
+				.Include(x => x.Apostila_Kit_Rel)
+				.ThenInclude(x => x.Apostila)
+				.ToList();
+
+			var vigencias = vigenciasQueryable
+				.ToList();
+
+			// Dicionarios
+
+			var kitApostilaPorId = kitApostila
+				.ToDictionary(x => x.Id, x => x);
+
+			var alunosPorId = alunos
+				.ToDictionary(x => x.Id, x => x);
+
+			var checklistPorAluno = alunosChecklistItemQueryable
+				.ToLookup(x => x.Aluno_Id);
+
+			var vigenciasPorAluno = vigencias
+				.ToLookup(x => x.Aluno_Id);
+
+			foreach (var participacao in request.Alunos)
+			{
+				if (alunosPorId.TryGetValue(participacao.Aluno_Id, out var aluno))
+				{
+					DateTime hoje = TimeFunctions.HoraAtualBR();
+
+					//
+					// Insere Histórico
+					//
+					#region historico
+
+					_db.Aluno_Historico.Add(new Aluno_Historico
+					{
+						Account_Id = _account?.Id ?? 1,
+						Aluno_Id = participacao.Aluno_Id,
+						Descricao = participacao.Presente ?
+								$"Aluno compareceu na aula zero agendada no dia ${evento.Data.ToString("dd/MM/yyyy HH:mm")}" :
+								$"Aluno NÃO compareceu na aula zero agendada no dia ${evento.Data.ToString("dd/MM/yyyy HH:mm")}",
+						Data = hoje,
+					});
+
+					#endregion
+
+					if (participacao.Presente == true)
+					{
+						//
+						// Salva os dados no aluno
+						//
+						#region salva aluno
+						Apostila_Kit? kit;
+						kitApostilaPorId.TryGetValue(participacao.Apostila_Kit_Id, out kit);
+
+						if (kit is null)
+							throw new Exception($"Kit de apostila não encontrada para o aluno: ${aluno.Id}");
+
+						var apostilaAbaco = kit.Apostila_Kit_Rel
+							.Select(x => x.Apostila)
+							.Where(x => x.Apostila_Tipo_Id == (int)ApostilaTipo.Abaco)
+							.OrderBy(x => x.Ordem)
+							.FirstOrDefault();
+
+						var apostilaAH = kit.Apostila_Kit_Rel
+							.Select(x => x.Apostila)
+							.Where(x => x.Apostila_Tipo_Id == (int)ApostilaTipo.AH)
+							.OrderBy(x => x.Ordem)
+							.FirstOrDefault();
+
+						aluno.PerfilCognitivo_Id = participacao.PerfilCognitivo_Id;
+						aluno.Apostila_Kit_Id = participacao.Apostila_Kit_Id;
+						aluno.Turma_Id = participacao.Turma_Id;
+						aluno.Apostila_Abaco_Id = apostilaAbaco?.Id;
+						aluno.Apostila_AH_Id = apostilaAH?.Id;
+						aluno.NumeroPaginaAbaco = 0;
+						aluno.NumeroPaginaAH = 0;
+
+
+						#endregion
+
+						//
+						// Atualiza checklist "comparecimento aula zero"
+						//
+						#region checklist
+
+						var item = checklistPorAluno[aluno.Id].FirstOrDefault();
+						if (item is not null)
+						{
+							item.Account_Finalizacao_Id = _account?.Id ?? 1;
+							item.DataFinalizacao = TimeFunctions.HoraAtualBR();
+							item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno compareceu na aula zero do dia ${evento?.Data.ToString("dd/MM/yyyy HH:mm")}.";
+							_db.Aluno_Checklist_Item.Update(item);
+						}
+
+						#endregion
+
+						//
+						// Insere vigencia
+						//
+						#region insere vigencia
+
+						var vigenciasDoAluno = vigenciasPorAluno[aluno.Id];
+
+						var vigenciasAnteriores = vigenciasDoAluno
+							.Where(x => x.DataFimVigencia == null)
+							.ToList();
+
+						vigenciasAnteriores.ForEach(vigencia =>
+						{
+							vigencia.DataFimVigencia = hoje;
+						});
+						_db.Aluno_Turma_Vigencia.UpdateRange(vigenciasAnteriores);
+
+
+						_db.Aluno_Turma_Vigencia.Add(new Aluno_Turma_Vigencia
+						{
+							Account_Id = _account?.Id ?? 1,
+							Aluno_Id = participacao.Aluno_Id,
+							Turma_Id = participacao.Turma_Id,
+							DataInicioVigencia = hoje,
+						});
+
+						#endregion
+					}
+					else
+					{
+						aluno.AulaZero_Id = null;
+					}
+
+					_db.Aluno.Update(aluno);
+				}
+			}
+
+
+			//
+			// Finaliza Aula Zero
+			//
+			evento.Observacao = request.Observacao;
+			evento.Finalizado = true;
+
+			_db.Evento.Update(evento);
+
+			_db.SaveChanges();
+
+			response.Success = true;
+			response.Message = "Aula zero finalizada com sucesso.";
+
 		}
+		catch (Exception e)
+		{
+			response.Message = "Não foi possível finalizar aula zero: " + e.Message;
+			response.Success = false;
+		}
+
+		return response;
 	}
 
 	public async Task<CalendarioEventoList> GetEventoById(int eventoId)
@@ -1217,146 +1310,7 @@ public class EventoService : IEventoService
 			return pseudoAula;
 		}
 	}
-
-	public ResponseModel CreateEventValidation(CreateEventDto dto)
-	{
-		ResponseModel response = new();
-
-		try
-		{
-			bool eventoTipoExists = _db.Evento_Tipos.Any(e => e.Id == dto.Evento_Tipo_Id);
-
-			if (!eventoTipoExists)
-			{
-				throw new Exception("Tipo de evento não encontrado");
-			}
-
-			if (dto.CapacidadeMaximaAlunos < 0)
-			{
-				throw new Exception("Capacidade máxima de alunos não pode ser menor que 0");
-			}
-
-			bool salaExists = _db.Salas.Any(s => s.Id == dto.Sala_Id);
-
-			if (!salaExists)
-			{
-				throw new Exception("Sala não encontrada");
-			}
-
-			bool isSalaOccupied = _salaService.IsSalaOccupied(dto.Sala_Id, dto.Data, dto.DuracaoMinutos, null);
-
-			if (isSalaOccupied)
-			{
-				throw new Exception("Esta sala se encontra ocupada neste horário");
-			}
-
-			if (dto.DuracaoMinutos <= 0)
-			{
-				throw new Exception("Duração inválida: Valor deve ser maior que zero");
-			}
-
-			if (dto.Turma_Id.HasValue)
-			{
-				bool turmaExists = _db.Turmas.Any(t => t.Id == dto.Turma_Id);
-
-				if (!turmaExists)
-				{
-					throw new Exception("Turma não encontrada");
-				}
-			}
-
-			if (dto.Roteiro_Id != -1 && dto.Roteiro_Id.HasValue)
-			{
-				bool roteiroExists = _db.Roteiro.Any(r => r.Id == dto.Roteiro_Id);
-
-				if (!roteiroExists)
-				{
-					throw new Exception("Roteiro não encontrado");
-				}
-			}
-
-			IQueryable<Aluno> alunosInRequest = _db.Aluno
-				.Where(a => dto.Alunos.Contains(a.Id) && a.Deactivated == null);
-
-			if (alunosInRequest.Count() != dto.Alunos.Count)
-			{
-				throw new Exception("Aluno(s) não encontrado(s)");
-			}
-
-			IQueryable<Professor> professoresInRequest = _db.Professor
-				.Include(p => p.Account)
-				.Where(p => dto.Professores.Contains(p.Id) && p.Account.Deactivated == null);
-
-			if (professoresInRequest.Count() != dto.Professores.Count)
-			{
-				throw new Exception("Professor(es) não encontrado(s)");
-			}
-
-			if (dto.PerfilCognitivo is not null)
-			{
-				IQueryable<PerfilCognitivo> perfisCognitivosInRequest = _db.PerfilCognitivos
-					.Where(p => dto.PerfilCognitivo.Contains(p.Id));
-
-				if (perfisCognitivosInRequest.Count() != dto.PerfilCognitivo.Count)
-				{
-					throw new Exception("Pelo menos um perfil cognitivo na requisição não foi encontrado");
-				}
-
-				HashSet<int> alunoPerfisSet = alunosInRequest
-					.Where(a => a.PerfilCognitivo_Id.HasValue)
-					.Select(a => a.PerfilCognitivo_Id!.Value).ToHashSet();
-
-				HashSet<int> perfisCognitivosSet = perfisCognitivosInRequest
-					.Select(p => p.Id)
-					.ToHashSet();
-
-				bool perfisCognitivosMatch = alunoPerfisSet.IsSubsetOf(perfisCognitivosSet);
-
-				if (!perfisCognitivosMatch)
-				{
-					throw new Exception("Algum aluno ou perfil cognitivo não é compatível");
-				}
-			}
-
-			foreach (var professor in professoresInRequest)
-			{
-				bool hasTurmaConflict = _professorService.HasTurmaTimeConflict(
-					professorId: professor.Id,
-					DiaSemana: (int)dto.Data.DayOfWeek,
-					Horario: dto.Data.TimeOfDay,
-					IgnoredTurmaId: dto.Turma_Id ?? null
-				);
-
-				if (hasTurmaConflict)
-				{
-					throw new Exception($"Professor: '{professor.Account.Name}' possui uma turma nesse mesmo horário");
-				}
-
-				bool hasParticipacaoConflict = _professorService.HasEventoParticipacaoConflict(
-					professorId: professor.Id,
-					Data: dto.Data,
-					DuracaoMinutos: dto.DuracaoMinutos,
-					IgnoredEventoId: null
-				);
-
-				if (hasParticipacaoConflict)
-				{
-					throw new Exception($"Professor: {professor.Account.Name} possui participação em outro evento nesse mesmo horário");
-				}
-			}
-
-			response.Success = true;
-			response.Message = "Validação foi realizada com sucesso";
-		}
-		catch (Exception ex)
-		{
-			response.Success = false;
-			response.Message = $"Não foi possível validar os dados da requisição: {ex.Message}";
-		}
-
-		return response;
-	}
-
+	
 	public async Task<List<FeriadoResponse>> GetFeriados(int ano)
 	{
 		List<FeriadoResponse> feriados = new List<FeriadoResponse>() { };
@@ -1382,395 +1336,8 @@ public class EventoService : IEventoService
 			return feriados;
 		}
 	}
-
-	public ResponseModel FinalizarAulaZero(FinalizarAulaZeroRequest request)
-	{
-		ResponseModel response = new ResponseModel { Success = false };
-
-		try
-		{
-
-			var alunosQueryable =
-					from aluno in _db.Aluno
-					join participacao in request.Alunos
-						on aluno.Id equals participacao.Aluno_Id
-					select aluno;
-
-			var alunosChecklistItemQueryable =
-					from checklist in _db.Aluno_Checklist_Item
-					join participacao in request.Alunos
-					on checklist.Aluno_Id equals participacao.Aluno_Id
-					where checklist.Checklist_Item_Id == (int)ChecklistItemId.ComparecimentoAulaZero
-						&& checklist.DataFinalizacao == null
-					select checklist;
-
-			var vigenciasQueryable =
-				from vigencia in _db.Aluno_Turma_Vigencia
-				join participacao in request.Alunos
-					on vigencia.Aluno_Id equals participacao.Aluno_Id
-				select vigencia;
-
-			// Materialização
-			
-			var evento = _db.Evento.FirstOrDefault(x => x.Id == request.Evento_Id);
-
-			if (evento is null)
-			{
-				throw new Exception("Evento não encontrado");
-			}
-
-			var alunos = alunosQueryable
-				.ToList();
-
-			var kitsIds = request.Alunos
-				.Where(x => x.Presente)
-				.Select(x => x.Apostila_Kit_Id)
-				.ToHashSet();
-
-			var kitApostila = _db.Apostila_Kit
-				.Where(x => kitsIds.Contains(x.Id))
-				.Include(x => x.Apostila_Kit_Rel)
-				.ThenInclude(x => x.Apostila)
-				.ToList();
-
-			var vigencias = vigenciasQueryable
-				.ToList();
-
-			// Dicionarios
-
-			var kitApostilaPorId = kitApostila
-				.ToDictionary(x => x.Id, x => x);
-
-			var alunosPorId = alunos
-				.ToDictionary(x => x.Id, x => x);
-
-			var checklistPorAluno = alunosChecklistItemQueryable
-				.ToLookup(x => x.Aluno_Id);
-
-			var vigenciasPorAluno = vigencias
-				.ToLookup(x => x.Aluno_Id);
-
-			foreach (var participacao in request.Alunos)
-			{
-				if (alunosPorId.TryGetValue(participacao.Aluno_Id, out var aluno))
-				{
-					DateTime hoje = TimeFunctions.HoraAtualBR();
-
-					//
-					// Insere Histórico
-					//
-					#region historico
-
-					_db.Aluno_Historico.Add(new Aluno_Historico
-					{
-						Account_Id = _account?.Id ?? 1,
-						Aluno_Id = participacao.Aluno_Id,
-						Descricao = participacao.Presente ?
-								$"Aluno compareceu na aula zero agendada no dia ${evento.Data.ToString("dd/MM/yyyy HH:mm")}" :
-								$"Aluno NÃO compareceu na aula zero agendada no dia ${evento.Data.ToString("dd/MM/yyyy HH:mm")}",
-						Data = hoje,
-					});
-
-					#endregion
-
-					if (participacao.Presente == true)
-					{
-						//
-						// Salva os dados no aluno
-						//
-						#region salva aluno
-						Apostila_Kit? kit;
-						kitApostilaPorId.TryGetValue(participacao.Apostila_Kit_Id, out kit);
-
-						if (kit is null)
-							throw new Exception($"Kit de apostila não encontrada para o aluno: ${aluno.Id}");
-
-						var apostilaAbaco = kit.Apostila_Kit_Rel
-							.Select(x => x.Apostila)
-							.Where(x => x.Apostila_Tipo_Id == (int)ApostilaTipo.Abaco)
-							.OrderBy(x => x.Ordem)
-							.FirstOrDefault();
-
-						var apostilaAH = kit.Apostila_Kit_Rel
-							.Select(x => x.Apostila)
-							.Where(x => x.Apostila_Tipo_Id == (int)ApostilaTipo.AH)
-							.OrderBy(x => x.Ordem)
-							.FirstOrDefault();
-
-						aluno.PerfilCognitivo_Id = participacao.PerfilCognitivo_Id;
-						aluno.Apostila_Kit_Id = participacao.Apostila_Kit_Id;
-						aluno.Turma_Id = participacao.Turma_Id;
-						aluno.Apostila_Abaco_Id = apostilaAbaco?.Id;
-						aluno.Apostila_AH_Id = apostilaAH?.Id;
-						aluno.NumeroPaginaAbaco = 0;
-						aluno.NumeroPaginaAH = 0;
-
-
-						#endregion
-
-						//
-						// Atualiza checklist "comparecimento aula zero"
-						//
-						#region checklist
-						
-						var item = checklistPorAluno[aluno.Id].FirstOrDefault();
-						if (item is not null)
-						{
-							item.Account_Finalizacao_Id = _account?.Id ?? 1;
-							item.DataFinalizacao = TimeFunctions.HoraAtualBR();
-							item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno compareceu na aula zero do dia ${evento?.Data.ToString("dd/MM/yyyy HH:mm")}.";
-							_db.Aluno_Checklist_Item.Update(item);
-						}
-						
-						#endregion
-						
-						//
-						// Insere vigencia
-						//
-						#region insere vigencia
-
-						var vigenciasDoAluno = vigenciasPorAluno[aluno.Id];
-
-						var vigenciasAnteriores = vigenciasDoAluno
-							.Where(x => x.DataFimVigencia == null)
-							.ToList();
-
-						vigenciasAnteriores.ForEach(vigencia =>
-						{
-							vigencia.DataFimVigencia = hoje;
-						});
-						_db.Aluno_Turma_Vigencia.UpdateRange(vigenciasAnteriores);
-
-
-						_db.Aluno_Turma_Vigencia.Add(new Aluno_Turma_Vigencia
-						{
-							Account_Id = _account?.Id ?? 1,
-							Aluno_Id = participacao.Aluno_Id,
-							Turma_Id = participacao.Turma_Id,
-							DataInicioVigencia = hoje,
-						});
-
-						#endregion
-					}
-					else
-					{
-						aluno.AulaZero_Id = null;
-					}
-					
-					_db.Aluno.Update(aluno);
-				}
-			}
-
-
-			//
-			// Finaliza Aula Zero
-			//
-			evento.Observacao = request.Observacao;
-			evento.Finalizado = true;
-
-			_db.Evento.Update(evento);
-			
-			_db.SaveChanges();
-
-			response.Success = true;
-			response.Message = "Aula zero finalizada com sucesso.";
-
-		}
-		catch (Exception e)
-		{
-			response.Message = "Não foi possível finalizar aula zero: " + e.Message;
-			response.Success = false;
-		}
-
-		//try
-		//{
-		//	var evento = _db.Evento
-		//		.Include(e => e.Evento_Participacao_Alunos)
-		//		.ThenInclude(e => e.Aluno)
-		//		.FirstOrDefault(e => e.Id == request.Evento_Id) ?? throw new Exception("Evento não encontrado.");
-
-		//	var alunosPresentes = request.Alunos
-		//		.Where(model => model.Presente)
-		//		.ToList();
-
-		//	var alunosPresentesPorTurma = alunosPresentes
-		//		.GroupBy(a => a.Turma_Id)
-		//		.ToDictionary(g => g.Key, g => g.Where(a => a.Turma_Id == g.Key).ToList());
-
-		//	var turmaIds = request.Alunos.Select(a => a.Turma_Id).Distinct();
-		//	var turmas = _db.TurmaLists.Where(t => turmaIds.Contains(t.Id));
-
-		//	// Valida turmas
-		//	foreach (var turmaId in alunosPresentesPorTurma.Keys)
-		//	{
-		//		var turma = turmas.FirstOrDefault(t => t.Id == turmaId) ?? throw new Exception($"Turma ID: '{turmaId}' não encontrada.");
-		//		alunosPresentesPorTurma.TryGetValue(turmaId, out var alunos);
-
-		//		alunos ??= []; // Caso alunos seja nulo, calcular vagas com uma lista vazia (não é pra acontecer)
-		//		int alunosJaCadastradosNessaTurma = alunos.Count(a => a.Turma_Id == turmaId);
-		//		int vagasNecessarias = (alunos.Count - alunosJaCadastradosNessaTurma);
-
-		//		if (turma.VagasDisponiveis < (vagasNecessarias - alunosJaCadastradosNessaTurma))
-		//		{
-		//			throw new Exception($"Turma {turma.Nome} não possui capacidade para acomodar mais {vagasNecessarias} alunos.");
-		//		}
-		//	}
-
-		//	// Valida perfis cognitivos
-		//	var perfisCognitivosInEvento = alunosPresentes
-		//		.Select(p => p.PerfilCognitivo_Id)
-		//		.ToList();
-
-		//	foreach (var perfilCognitivoId in perfisCognitivosInEvento)
-		//	{
-		//		bool perfilCognitivoExists = _db.PerfilCognitivos
-		//			.Any(p => p.Id == perfilCognitivoId);
-
-		//		if (!perfilCognitivoExists)
-		//		{
-		//			throw new Exception("Perfil cognitivo não encontrado");
-		//		}
-		//	}
-
-		//	// Valida kits e prepara um dicionário de lookup pra facilitar depois
-		//	var kitsInEvento = alunosPresentes
-		//		.Select(p => p.Apostila_Kit_Id)
-		//		.ToList();
-
-
-		//	var kitsDictionary = new Dictionary<int, List<int>>();
-
-		//	foreach (var kitId in kitsInEvento)
-		//	{
-		//		var apostilas = _db.Apostila_Kit_Rels
-		//			.Include(k => k.Apostila)
-		//			.Where(rel => rel.Apostila_Kit_Id == kitId && rel.Apostila.Ordem == 1)
-		//			.Select(rel => rel.Apostila)
-		//			.ToList();
-
-		//		var apostilaAbaco = apostilas.Find(a => a.Apostila_Tipo_Id == (int)ApostilaTipo.Abaco) ?? throw new Exception("Apostila(s) não encontrada(s)");
-		//		var apostilaAh = apostilas.Find(a => a.Apostila_Tipo_Id == (int)ApostilaTipo.AH) ?? throw new Exception("Apostila(s) não encontrada(s)");
-
-		//		kitsDictionary.Add(kitId, [apostilaAbaco.Id, apostilaAh.Id]);
-		//	}
-
-		//	// Validations passed
-
-		//	//var alunosInEvento = evento.Evento_Participacao_Alunos
-		//	//	.Select(x => x.Aluno);
-
-		//	var alunosPorId = evento.Evento_Participacao_Alunos
-		//		.Select(x => x.Aluno)
-		//		.ToDictionary(x => x.Id, x => x);
-
-		//	foreach (var model in alunosPresentes)
-		//	{
-		//		if (alunosPorId.TryGetValue(model.Aluno_Id, out var aluno))
-		//		{
-		//			if (aluno.Turma_Id != null)
-		//			{
-		//				bool trocandoDeTurma = aluno.Turma_Id != model.Turma_Id;
-
-		//				if (trocandoDeTurma)
-		//				{
-
-		//					DateTime data = TimeFunctions.HoraAtualBR();
-		//					var ultimaVigencia = _db.Aluno_Turma_Vigencia.FirstOrDefault(x => x.Turma_Id == aluno.Turma_Id
-		//																						&& x.Aluno_Id == model.Aluno_Id
-		//																						&& !x.DataFimVigencia.HasValue);
-		//					if (ultimaVigencia is not null)
-		//					{
-		//						ultimaVigencia.DataFimVigencia = data;
-		//						_db.Aluno_Turma_Vigencia.Update(ultimaVigencia);
-		//					}
-
-
-		//					_db.Aluno_Turma_Vigencia.Add(new Aluno_Turma_Vigencia
-		//					{
-		//						Account_Id = _account.Id,
-		//						Aluno_Id = aluno.Id,
-		//						Turma_Id = aluno.Turma_Id.Value,
-		//						DataInicioVigencia = data,
-		//					});
-
-
-		//					_db.Aluno_Historicos.Add(new Aluno_Historico
-		//					{
-		//						Aluno_Id = aluno.Id,
-		//						Descricao = $"Aluno foi transferido da turma: '{aluno.Turma_Id}' para a turma : '{model.Turma_Id}' como resultado de um evento de aula zero.",
-		//						Account_Id = _account!.Id,
-		//						Data = TimeFunctions.HoraAtualBR(),
-		//					});
-		//				}
-		//			}
-
-		//			kitsDictionary.TryGetValue(model.Apostila_Kit_Id, out var apostilas);
-
-		//			int? apostilaAbacoId = apostilas?.FirstOrDefault();
-		//			int? apostilaAHId = apostilas?.LastOrDefault();
-
-		//			aluno.PerfilCognitivo_Id = model.PerfilCognitivo_Id;
-		//			aluno.Apostila_Kit_Id = model.Apostila_Kit_Id;
-		//			aluno.Turma_Id = model.Turma_Id;
-		//			aluno.Apostila_Abaco_Id = apostilaAbacoId;
-		//			aluno.NumeroPaginaAbaco = apostilaAbacoId.HasValue ? 1 : null;
-		//			aluno.Apostila_AH_Id = apostilaAHId;
-		//			aluno.NumeroPaginaAH = apostilaAHId.HasValue ? 1 : null;
-
-		//			_db.Alunos.Update(aluno);
-		//		}
-
-		//	}
-
-		//	string mensagemPresente = $"Aluno completou evento de aula zero '{evento.Descricao}' no dia {evento.Data:G}.";
-		//	string mensagemAusente = $"Aluno faltou no evento de aula zero '{evento.Descricao}' no dia {evento.Data:G}";
-
-		//	foreach (var model in request.Alunos)
-		//	{
-		//		Evento_Participacao_Aluno participacao = evento.Evento_Participacao_Alunos
-		//			.FirstOrDefault(p => p.Id == model.Participacao_Id) ?? throw new Exception("Participação não encontrada.");
-
-		//		string mensagem = model.Presente ? mensagemPresente : mensagemAusente;
-
-		//		participacao.Presente = model.Presente;
-
-		//		var historico = new Aluno_Historico
-		//		{
-		//			Account_Id = _account!.Id,
-		//			Aluno_Id = participacao.Aluno_Id,
-		//			Descricao = mensagem,
-		//			Data = evento.Data,
-		//		};
-
-		//		if (!model.Presente)
-		//		{
-		//			Aluno aluno = alunosInEvento.FirstOrDefault(a => a.Id == model.Aluno_Id) ?? throw new Exception("Aluno não encontrado.");
-		//			aluno.AulaZero_Id = null;
-		//			_db.Alunos.Update(aluno);
-		//		}
-
-		//		_db.Aluno_Historicos.Add(historico);
-		//		_db.Evento_Participacao_Aluno.Update(participacao);
-		//	}
-
-		//	evento.Observacao = request.Observacao;
-		//	evento.Finalizado = true;
-		//	_db.Evento.Update(evento);
-
-		//	_db.SaveChanges();
-
-		//	response.Success = true;
-		//	response.Message = "Evento de aula zero finalizado com sucesso.";
-		//}
-		//catch (Exception ex)
-		//{
-		//	response.Message = $"Falha ao finalizar evento de aula zero: {ex.Message}";
-		//}
-
-		return response;
-	}
-
-	public ResponseModel Reposicao(ReposicaoRequest model)
+	
+	public ResponseModel AgendarReposicao(ReposicaoRequest model)
 	{
 		ResponseModel response = new() { Success = false };
 
@@ -1957,7 +1524,7 @@ public class EventoService : IEventoService
 		return response;
 	}
 
-	public ResponseModel PrimeiraAula(PrimeiraAulaRequest model)
+	public ResponseModel AgendarPrimeiraAula(PrimeiraAulaRequest model)
 	{
 		ResponseModel response = new() { Success = false };
 
@@ -2066,5 +1633,255 @@ public class EventoService : IEventoService
 		return response;
 	}
 
+	// Metodos de validacao/suporte
+
+	private static ResponseModel ValidateEvent(Evento? evento)
+	{
+		if (evento is null)
+		{
+			return new ResponseModel { Message = "Evento não encontrado." };
+		}
+
+		if (evento.Deactivated.HasValue)
+		{
+			return new ResponseModel { Message = $"Este evento foi cancelado às {evento.Deactivated.Value:g}" };
+		}
+
+		if (evento.Finalizado)
+		{
+			return new ResponseModel { Message = "Evento já está finalizado" };
+		}
+
+		return new ResponseModel { Success = true, Message = "Evento válido" };
+	}
+
+	private ResponseModel ValidateApostilas(List<int> apostilaIds, List<Apostila> existingApostilas, string? type)
+	{
+		foreach (int apostilaId in apostilaIds)
+		{
+			var matchingApostila = existingApostilas.FirstOrDefault(a => a.Id == apostilaId);
+
+			if (matchingApostila is null)
+			{
+				return new ResponseModel { Message = $"Apostila {type} ID: '{apostilaId}' não existe" };
+			}
+		}
+
+		return new ResponseModel { Success = true };
+	}
+
+	private ResponseModel ValidateParticipacao(ParticipacaoAlunoModel participacaoAluno, Evento evento, List<Apostila> existingApostilas)
+	{
+		Evento_Participacao_Aluno? participacao = evento.Evento_Participacao_Aluno
+						.FirstOrDefault(p => p.Id == participacaoAluno.Participacao_Id);
+
+		if (participacao is null)
+		{
+			return new ResponseModel { Message = $"Participação de aluno no evento ID: '{evento.Id}' Participacao_Id: '{participacaoAluno.Participacao_Id}' não foi encontrada" };
+		}
+
+		//if (participacao.Deactivated.HasValue) {
+		//    return new ResponseModel { Message = $"Participação de aluno no evento ID: '{evento.Id}' Participacao_Id: '{participacaoAluno.Participacao_Id}' está desativada" };
+		//}
+
+		// Alunos devem possuir as apostilas em que estão tentando marcar progresso
+
+		//var alunoApostilaKitId = participacao.Aluno.Apostila_Kit_Id;
+
+		//if (alunoApostilaKitId == null)
+		//{
+		//	return new ResponseModel { Message = $"Aluno ID: '{participacao.Aluno.Pessoa.Nome}' não possui kit de apostilas" };
+		//}
+
+		//var alunoApostilaKitRels = _db.Apostila_Kit_Rels.Where(a => a.Apostila_Kit_Id == alunoApostilaKitId).ToList();
+
+		//bool alunoHasApostilaAbaco = alunoApostilaKitRels.Any(a => a.Apostila_Id == participacaoAluno.Apostila_Abaco_Id);
+		//bool alunoHasApostilaAh = alunoApostilaKitRels.Any(a => a.Apostila_Id == participacaoAluno.Apostila_Ah_Id);
+
+		//// Para poder atualizar, o kit de apostilas do aluno deve possuir a apostila Abaco e a apostila AH passadas na requisição
+
+		//if (!alunoHasApostilaAbaco)
+		//{
+		//	return new ResponseModel { Message = $"Aluno ID: '{participacao.Aluno_Id}' não possui a apostila Abaco ID: '{participacaoAluno.Apostila_Abaco_Id}'" };
+		//}
+
+		//if (!alunoHasApostilaAh)
+		//{
+		//	return new ResponseModel { Message = $"Aluno ID: '{participacao.Aluno_Id}' não possui a apostila AH ID: '{participacaoAluno.Apostila_Ah_Id}'" };
+		//}
+
+		// Não deve ser possível atualizar além do tamanho máximo da apostila
+		int totalPaginasAbaco = existingApostilas.Find(a => a.Id == participacaoAluno.Apostila_Abaco_Id)!.NumeroTotalPaginas;
+		int totalPaginasAh = existingApostilas.Find(a => a.Id == participacaoAluno.Apostila_Ah_Id)!.NumeroTotalPaginas;
+
+		if (participacaoAluno.NumeroPaginaAbaco > totalPaginasAbaco)
+		{
+			return new ResponseModel { Message = $"Número de páginas da apostila Abaco não pode ser maior que o total de páginas: Participacao ID {participacaoAluno.Participacao_Id}" };
+		}
+
+		if (participacaoAluno.NumeroPaginaAh > totalPaginasAh)
+		{
+			return new ResponseModel { Message = $"Número de páginas da apostila AH não pode ser maior que o total de páginas: Participacao ID {participacaoAluno.Participacao_Id}" };
+		}
+
+		return new ResponseModel { Success = true };
+	}
+
+	private static int? CalcularStatusContato(bool Presente, int? ReposicaoDe_Evento_Id)
+	{
+		switch (Presente, ReposicaoDe_Evento_Id.HasValue)
+		{
+			case (true, true):
+				return (int)StatusContato.REPOSICAO_REALIZADA;
+
+			case (true, false):
+				return null;
+
+			case (false, true):
+				return (int)StatusContato.REPOSICAO_NAO_COMPARECEU;
+
+			case (false, false):
+				return (int)StatusContato.NAO_COMPARECEU;
+		}
+	}
+	
+	public ResponseModel CreateEventValidation(CreateEventDto dto)
+	{
+		ResponseModel response = new();
+
+		try
+		{
+			bool eventoTipoExists = _db.Evento_Tipos.Any(e => e.Id == dto.Evento_Tipo_Id);
+
+			if (!eventoTipoExists)
+			{
+				throw new Exception("Tipo de evento não encontrado");
+			}
+
+			if (dto.CapacidadeMaximaAlunos < 0)
+			{
+				throw new Exception("Capacidade máxima de alunos não pode ser menor que 0");
+			}
+
+			bool salaExists = _db.Salas.Any(s => s.Id == dto.Sala_Id);
+
+			if (!salaExists)
+			{
+				throw new Exception("Sala não encontrada");
+			}
+
+			bool isSalaOccupied = _salaService.IsSalaOccupied(dto.Sala_Id, dto.Data, dto.DuracaoMinutos, null);
+
+			if (isSalaOccupied)
+			{
+				throw new Exception("Esta sala se encontra ocupada neste horário");
+			}
+
+			if (dto.DuracaoMinutos <= 0)
+			{
+				throw new Exception("Duração inválida: Valor deve ser maior que zero");
+			}
+
+			if (dto.Turma_Id.HasValue)
+			{
+				bool turmaExists = _db.Turmas.Any(t => t.Id == dto.Turma_Id);
+
+				if (!turmaExists)
+				{
+					throw new Exception("Turma não encontrada");
+				}
+			}
+
+			if (dto.Roteiro_Id != -1 && dto.Roteiro_Id.HasValue)
+			{
+				bool roteiroExists = _db.Roteiro.Any(r => r.Id == dto.Roteiro_Id);
+
+				if (!roteiroExists)
+				{
+					throw new Exception("Roteiro não encontrado");
+				}
+			}
+
+			IQueryable<Aluno> alunosInRequest = _db.Aluno
+				.Where(a => dto.Alunos.Contains(a.Id) && a.Deactivated == null);
+
+			if (alunosInRequest.Count() != dto.Alunos.Count)
+			{
+				throw new Exception("Aluno(s) não encontrado(s)");
+			}
+
+			IQueryable<Professor> professoresInRequest = _db.Professor
+				.Include(p => p.Account)
+				.Where(p => dto.Professores.Contains(p.Id) && p.Account.Deactivated == null);
+
+			if (professoresInRequest.Count() != dto.Professores.Count)
+			{
+				throw new Exception("Professor(es) não encontrado(s)");
+			}
+
+			if (dto.PerfilCognitivo is not null)
+			{
+				IQueryable<PerfilCognitivo> perfisCognitivosInRequest = _db.PerfilCognitivos
+					.Where(p => dto.PerfilCognitivo.Contains(p.Id));
+
+				if (perfisCognitivosInRequest.Count() != dto.PerfilCognitivo.Count)
+				{
+					throw new Exception("Pelo menos um perfil cognitivo na requisição não foi encontrado");
+				}
+
+				HashSet<int> alunoPerfisSet = alunosInRequest
+					.Where(a => a.PerfilCognitivo_Id.HasValue)
+					.Select(a => a.PerfilCognitivo_Id!.Value).ToHashSet();
+
+				HashSet<int> perfisCognitivosSet = perfisCognitivosInRequest
+					.Select(p => p.Id)
+					.ToHashSet();
+
+				bool perfisCognitivosMatch = alunoPerfisSet.IsSubsetOf(perfisCognitivosSet);
+
+				if (!perfisCognitivosMatch)
+				{
+					throw new Exception("Algum aluno ou perfil cognitivo não é compatível");
+				}
+			}
+
+			foreach (var professor in professoresInRequest)
+			{
+				bool hasTurmaConflict = _professorService.HasTurmaTimeConflict(
+					professorId: professor.Id,
+					DiaSemana: (int)dto.Data.DayOfWeek,
+					Horario: dto.Data.TimeOfDay,
+					IgnoredTurmaId: dto.Turma_Id ?? null
+				);
+
+				if (hasTurmaConflict)
+				{
+					throw new Exception($"Professor: '{professor.Account.Name}' possui uma turma nesse mesmo horário");
+				}
+
+				bool hasParticipacaoConflict = _professorService.HasEventoParticipacaoConflict(
+					professorId: professor.Id,
+					Data: dto.Data,
+					DuracaoMinutos: dto.DuracaoMinutos,
+					IgnoredEventoId: null
+				);
+
+				if (hasParticipacaoConflict)
+				{
+					throw new Exception($"Professor: {professor.Account.Name} possui participação em outro evento nesse mesmo horário");
+				}
+			}
+
+			response.Success = true;
+			response.Message = "Validação foi realizada com sucesso";
+		}
+		catch (Exception ex)
+		{
+			response.Success = false;
+			response.Message = $"Não foi possível validar os dados da requisição: {ex.Message}";
+		}
+
+		return response;
+	}
 
 }
