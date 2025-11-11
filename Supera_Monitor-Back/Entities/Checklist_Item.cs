@@ -14,5 +14,6 @@ public partial class Checklist_Item
 
 public enum ChecklistItemId
 {
-	ComparecimentoAulaZero = 33
+	AgendamentoAulaZero = 31,
+	ComparecimentoAulaZero = 33,
 }

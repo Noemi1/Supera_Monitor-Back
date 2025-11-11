@@ -281,7 +281,6 @@ public class ChecklistService : IChecklistService
 
 			item.Account_Finalizacao_Id = _account?.Id;
 			item.DataFinalizacao = TimeFunctions.HoraAtualBR();
-
 			item.Observacoes = model.Observacoes ?? item.Observacoes;
 
 			_db.Aluno_Checklist_Item.Update(item);

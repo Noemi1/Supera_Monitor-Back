@@ -5,18 +5,12 @@ using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models;
-using Supera_Monitor_Back.Models.Eventos;
 using Supera_Monitor_Back.Models.Eventos.Aula;
-using Supera_Monitor_Back.Models.Eventos.Participacao;
-using Supera_Monitor_Back.Models.Roteiro;
 
 namespace Supera_Monitor_Back.Services.Eventos;
 
 public interface IAulaService
 {
-	
-	public CalendarioEventoList? GetById(int aulaId);
-	
 	public List<EventoAulaModel> GetAll();
 	
 	public ResponseModel InsertAulaZero(CreateAulaZeroRequest request);
@@ -58,26 +52,7 @@ public class AulaService : IAulaService
 		_account = (Account?)httpContextAccessor.HttpContext?.Items["Account"];
 	}
 
-	public CalendarioEventoList? GetById(int aulaId)
-	{
-		var eventoAula = _db.CalendarioEventoLists.FirstOrDefault(e => e.Id == aulaId);
-
-		if (eventoAula is not null)
-		{
-			var aulaPerfisCognitivos = _db.Evento_Aula_PerfilCognitivo_Rel
-				.Include(p => p.PerfilCognitivo)
-				.Where(e => e.Evento_Aula_Id == aulaId)
-				.Select(e => e.PerfilCognitivo)
-				.ToList();
-
-			eventoAula.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(aulaPerfisCognitivos);
-			eventoAula.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == aulaId).ToList();
-			eventoAula.Professores = _db.CalendarioProfessorLists.Where(p => p.Evento_Id == aulaId).ToList();
-		}
-
-		return eventoAula;
-	}
-
+	
 	public List<EventoAulaModel> GetAll()
 	{
 		List<EventoAulaModel> aulas = _db.Evento
@@ -213,7 +188,7 @@ public class AulaService : IAulaService
 				Evento_Id = evento.Id,
 				Professor_Id = professor.Id,
 			};
-			evento.Evento_Participacao_Professors = new List<Evento_Participacao_Professor>() { participacaoProfessor };
+			evento.Evento_Participacao_Professor = new List<Evento_Participacao_Professor>() { participacaoProfessor };
 
 
 			// 
@@ -241,7 +216,7 @@ public class AulaService : IAulaService
 				Apostila_AH_Id = aluno.Apostila_AH_Id,
 				NumeroPaginaAH = aluno.NumeroPaginaAH,
 			});
-			evento.Evento_Participacao_Alunos = participacoesAluno.ToList();
+			evento.Evento_Participacao_Aluno = participacoesAluno.ToList();
 
 
 
@@ -249,10 +224,8 @@ public class AulaService : IAulaService
 			_db.Add(evento);
 			_db.SaveChanges();
 
-			CalendarioEventoList? responseObject = this.GetById(evento.Id);
-
 			response.Message = $"Evento de aula para a turma '{turma.Nome}' registrado com sucesso";
-			response.Object = responseObject;
+			response.Object = _eventoService.GetEventoById(evento.Id);
 			response.Success = true;
 		}
 		catch (Exception ex)
@@ -417,17 +390,9 @@ public class AulaService : IAulaService
 			_db.Evento_Aula_PerfilCognitivo_Rel.AddRange(eventoAulaPerfisCognitivos);
 			_db.SaveChanges();
 
-			var responseObject = _db.CalendarioEventoLists.First(e => e.Id == evento.Id);
-
-			responseObject.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).ToList();
-			responseObject.Professores = _db.CalendarioProfessorLists.Where(p => p.Evento_Id == evento.Id).ToList();
-			responseObject.PerfilCognitivo = _db.PerfilCognitivos
-				.Where(p => eventoAulaPerfisCognitivos.Select(e => e.PerfilCognitivo_Id).Contains(p.Id))
-				.ProjectTo<PerfilCognitivoModel>(_mapper.ConfigurationProvider)
-				.ToList();
-
+			
 			response.Message = "Aula extra criada com sucesso";
-			response.Object = responseObject;
+			response.Object = _eventoService.GetEventoById(evento.Id);
 			response.Success = true;
 		}
 		catch (Exception ex)
@@ -444,76 +409,34 @@ public class AulaService : IAulaService
 
 		try
 		{
-			IQueryable<Aluno> alunosInRequest = _db.Aluno.Where(a => a.Deactivated == null && request.Alunos.Contains(a.Id));
 
-			if (alunosInRequest.Count() != request.Alunos.Count)
-			{
-				return new ResponseModel { Message = "Aluno(s) não encontrado(s)" };
-			}
-
-			// Não devo poder registrar uma aula com um professor que não existe
-			Professor? professor = _db.Professor
+			var professor = _db.Professor
 				.Include(p => p.Account)
-				.FirstOrDefault(p => p.Id == request.Professor_Id);
+				.FirstOrDefault(p => p.Id == request.Professor_Id && p.Account.Deactivated == null);
 
 			if (professor is null)
-			{
-				return new ResponseModel { Message = "Professor não encontrado" };
-			}
-
-			// Não devo poder registrar uma aula com um professor que está desativado
-			if (professor.Account.Deactivated is not null)
-			{
-				return new ResponseModel { Message = "Este professor está desativado" };
-			}
-
-			// Não devo poder registrar uma aula em uma sala que não existe
-			bool salaExists = _db.Salas.Any(s => s.Id == request.Sala_Id);
-
-			if (!salaExists)
-			{
-				return new ResponseModel { Message = "Sala não encontrada" };
-			}
-
-			// Se o aluno já tiver participado de uma aula zero -> participacao.presente = true e aulazero.finalizado = true
-			foreach (var aluno in alunosInRequest)
-			{
-				if (aluno.AulaZero_Id != null)
-				{
-					CalendarioEventoList? aulaZero = _db.CalendarioEventoLists.FirstOrDefault(x => x.Id == aluno.AulaZero_Id);
-					CalendarioAlunoList? participacao = _db.CalendarioAlunoLists.FirstOrDefault(x => x.Aluno_Id == aluno.Id && x.Evento_Id == aluno.AulaZero_Id);
-
-					if (aulaZero is not null && participacao is not null)
-					{
-						if (aulaZero.Finalizado == true && participacao.Presente == true)
-						{
-							return new ResponseModel { Message = $"Aluno: '{participacao.Aluno}' já participou de aula zero no dia {aulaZero.Data.ToString("dd/MM/yyyy HH:mm")}." };
-						}
-					}
-				}
-			}
+				return new ResponseModel { Message = "Educador não encontrado" };
 
 			// Sala deve estar livre no horário do evento
-			bool isSalaOccupied = _salaService.IsSalaOccupied(request.Sala_Id, request.Data, request.DuracaoMinutos, null);
+			bool isSalaOccupied = _salaService.IsSalaOccupied(
+				request.Sala_Id, 
+				request.Data, 
+				request.DuracaoMinutos, 
+				null);
 
 			if (isSalaOccupied)
-			{
 				return new ResponseModel { Message = "Esta sala se encontra ocupada neste horário" };
-			}
 
 			// O professor associado não pode possuir conflitos de horário
-
 			bool hasTurmaConflict = _professorService.HasTurmaTimeConflict(
 				professorId: professor.Id,
 				DiaSemana: (int)request.Data.DayOfWeek,
 				Horario: request.Data.TimeOfDay,
-				IgnoredTurmaId: null
-			);
+				IgnoredTurmaId: null);
 
 			if (hasTurmaConflict)
-			{
 				return new ResponseModel { Message = $"Professor: '{professor.Account.Name}' possui uma turma nesse mesmo horário" };
-			}
+
 
 			bool hasParticipacaoConflict = _professorService.HasEventoParticipacaoConflict(
 				professorId: professor.Id,
@@ -523,15 +446,31 @@ public class AulaService : IAulaService
 			);
 
 			if (hasParticipacaoConflict)
-			{
 				return new ResponseModel { Message = $"Professor: {professor.Account.Name} possui participação em outro evento nesse mesmo horário" };
+
+
+			var participacaoOutraAulaZero = _db.Evento_Participacao_Aluno
+						.Where(x => request.Alunos.Contains(x.Aluno_Id))
+						.Include(x => x.Evento)
+						.ToList();
+
+			var participacaoFinalizada = participacaoOutraAulaZero
+				.FirstOrDefault(x => x.Presente == true && x.Evento.Finalizado == true);
+
+			if (participacaoFinalizada is not null)
+			{
+				var e = participacaoFinalizada.Evento;
+				return new ResponseModel { Message = $"Aluno: '{participacaoFinalizada.Aluno}' já participou de aula zero no dia {e.Data.ToString("dd/MM/yyyy HH:mm")}." };
 			}
 
+			//
 			// Validations passed
+			//
+			var hoje = TimeFunctions.HoraAtualBR();
 
-			Roteiro? roteiro = _db.Roteiro.FirstOrDefault(r => request.Data.Date >= r.DataInicio.Date && request.Data.Date <= r.DataFim.Date);
+			var roteiro = _db.Roteiro.FirstOrDefault(r => request.Data.Date >= r.DataInicio.Date && request.Data.Date <= r.DataFim.Date);
 
-			Evento evento = new()
+			var evento = new Evento()
 			{
 				Data = request.Data,
 				Descricao = request.Descricao ?? "Aula Zero",
@@ -540,7 +479,7 @@ public class AulaService : IAulaService
 				DuracaoMinutos = request.DuracaoMinutos,
 
 				Evento_Tipo_Id = (int)EventoTipo.AulaZero,
-				CapacidadeMaximaAlunos = alunosInRequest.Count(),
+				CapacidadeMaximaAlunos = 12,
 				Evento_Aula = new Evento_Aula
 				{
 					Turma_Id = null,
@@ -548,7 +487,7 @@ public class AulaService : IAulaService
 					Professor_Id = request.Professor_Id,
 				},
 
-				Created = TimeFunctions.HoraAtualBR(),
+				Created = hoje,
 				LastUpdated = null,
 				Deactivated = null,
 				Finalizado = false,
@@ -556,90 +495,114 @@ public class AulaService : IAulaService
 				Account_Created_Id = _account!.Id,
 			};
 
+			var alunosQueryable =
+				from a in _db.Aluno
+				join req in request.Alunos
+					on a.Id equals req
+				where a.Deactivated == null
+				select a;
+
+			var alunos = alunosQueryable
+				.ToList();
+
+			var alunosPorId = alunos
+				.ToDictionary(x => x.Id, x => x);
+
+			//var participacaoOutraAulaZeroPorAlunoId = participacaoOutraAulaZero
+			//	.Where(x => (x.Presente == false || x.Presente == null) && x.Evento.Finalizado == false)
+			//	.ToLookup(x => x.Aluno_Id);
+
+			var participacaoCancelar = participacaoOutraAulaZero
+				.Where(x => (x.Presente == false || x.Presente == null) && x.Evento.Finalizado == false)
+				.ToList();
+
+			var alunoChecklists =
+				from a in alunos
+				join rel in _db.Aluno_Checklist_Item
+					on a.Id equals rel.Aluno_Id
+				where rel.Checklist_Item_Id == (int)ChecklistItemId.AgendamentoAulaZero
+				select rel;
+
+			//
+			// Insere alunos
+			//
+			foreach (var alunoId in request.Alunos)
+			{
+				if (alunosPorId.TryGetValue(alunoId, out var aluno))
+				{
+					evento.Evento_Participacao_Aluno.Add(new Evento_Participacao_Aluno
+					{
+						Aluno_Id = aluno.Id,
+						Evento_Id = evento.Id,
+						Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
+						NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
+						Apostila_AH_Id = aluno.Apostila_AH_Id,
+						NumeroPaginaAH = aluno.NumeroPaginaAH,
+					});
+
+					// Atualiza aluno
+					aluno.AulaZero_Id = evento.Id;
+					_db.Aluno.Update(aluno);
+
+
+					// Insere histórico
+					_db.Aluno_Historico.Add(new Aluno_Historico
+					{
+						Account_Id = _account?.Id ?? 1,
+						Aluno_Id = aluno.Id,
+						Data = hoje,
+						Descricao = $"Aluno foi inscrito em um evento 'Aula Zero' no dia {evento.Data:G}"
+					});
+				}
+			}
+
+			//
+			// Insere professores 
+			//
+			evento.Evento_Participacao_Professor.Add(new Evento_Participacao_Professor
+			{
+				Professor_Id = professor.Id,
+				Evento_Id = evento.Id,
+			});
+
+			//
+			// Finaliza checklists "agendamento aula zero"
+			//
+			foreach(var checklistItem in alunoChecklists)
+			{
+				checklistItem.Account_Finalizacao_Id = _account?.Id ?? 1;
+				checklistItem.DataFinalizacao = hoje;
+				checklistItem.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno compareceu na aula zero do dia ${request.Data.ToString("dd/MM/yyyy HH:mm")}.";
+			}
+			_db.Aluno_Checklist_Item.UpdateRange(alunoChecklists);
+
+			// 
+			// Cancela outras participacoes não finalizadas
+			//
+			foreach (var participacao in participacaoCancelar)
+			{
+				participacao.Presente = false;
+				participacao.Observacao = $"Cancelamento automático. <br> Uma nova aula zero foi agendada para o dia {request.Data.ToString("dd/MM/yyyy HH:mm")}";
+				participacao.StatusContato_Id = 9;
+				participacao.AlunoContactado = null;
+				participacao.ContatoObservacao = null;
+				participacao.ReposicaoDe_Evento_Id = null;
+				participacao.Deactivated = hoje;
+
+				if (participacao.Evento.Evento_Participacao_Aluno.Count == 0)
+				{
+					participacao.Evento.Deactivated = hoje;
+					participacao.Evento.Observacao = $"Cancelamento automático. <br> Uma nova aula zero foi agendada para o dia {request.Data.ToString("dd/MM/yyyy HH:mm")}";
+				}
+			}
+
+			_db.Evento_Participacao_Aluno.UpdateRange(participacaoCancelar);
+			_db.Evento.UpdateRange(participacaoCancelar.Select(x => x.Evento));
 			_db.Add(evento);
 			_db.SaveChanges();
 
-			List<Evento_Participacao_Aluno> participacoesAlunos = [];
-			List<Aluno_Historico> historicos = [];
-
-			// Inserir progressos dos alunos no evento, associar evento à aula zero e gerar entidade de log
-			foreach (var aluno in alunosInRequest)
-			{
-
-				// Novo:
-				// Se o aluno jjá tiver uma aula zero agendada, cancela a participacao e se necessário a aula zero também
-				if (aluno.AulaZero_Id != null)
-				{
-					CalendarioEventoList? aulaZero = _db.CalendarioEventoLists.FirstOrDefault(x => x.Id == aluno.AulaZero_Id);
-					List<CalendarioAlunoList> participacoes = _db.CalendarioAlunoLists.Where(x => x.Evento_Id == aluno.AulaZero_Id).ToList();
-					CalendarioAlunoList? participacao = participacoes.FirstOrDefault(x => x.Aluno_Id == aluno.Id);
-
-					// Cancela aula zero	
-					if (aulaZero is not null && participacoes.Count == 1)
-					{
-						_eventoService.Cancelar(new CancelarEventoRequest()
-						{
-							Id = aulaZero.Id,
-							Observacao = $"Cancelamento automático. <br> Uma nova aula zero foi agendada para o dia {request.Data.ToString("dd/MM/yyyy HH:mm")}"
-						});
-					}
-					// Cancela participacao
-					if (participacao is not null)
-					{
-						_eventoService.CancelarParticipacao(new CancelarParticipacaoRequest()
-						{
-							Participacao_Id = participacao.Id,
-							Observacao = $"Cancelamento automático. <br> Uma nova aula zero foi agendada para o dia {request.Data.ToString("dd/MM/yyyy HH:mm")}",
-							ContatoObservacao = null,
-							AlunoContactado = null,
-							StatusContato_Id = 9,
-							ReposicaoDe_Evento_Id = null
-						});
-
-					}
-				}
-
-				participacoesAlunos.Add(new Evento_Participacao_Aluno
-				{
-					Aluno_Id = aluno.Id,
-					Evento_Id = evento.Id,
-					Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
-					NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
-					Apostila_AH_Id = aluno.Apostila_AH_Id,
-					NumeroPaginaAH = aluno.NumeroPaginaAH,
-				});
-
-				historicos.Add(new Aluno_Historico
-				{
-					Account_Id = _account.Id,
-					Aluno_Id = aluno.Id,
-					Data = evento.Data,
-					Descricao = $"Aluno foi inscrito em um evento 'Aula Zero' no dia {evento.Data:G}"
-				});
-
-				aluno.AulaZero_Id = evento.Id;
-				_db.Aluno.Update(aluno);
-			}
-
-			// Inserir participação do professor
-			Evento_Participacao_Professor participacaoProfessor = new()
-			{
-				Evento_Id = evento.Id,
-				Professor_Id = professor.Id,
-			};
-
-			_db.Evento_Participacao_Professor.Add(participacaoProfessor);
-			_db.Evento_Participacao_Aluno.AddRange(participacoesAlunos);
-			_db.Aluno_Historico.AddRange(historicos);
-
-			_db.SaveChanges();
-
-			var responseObject = _db.CalendarioEventoLists.First(e => e.Id == evento.Id);
-			responseObject.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).ToList();
-			responseObject.Professores = _db.CalendarioProfessorLists.Where(p => p.Evento_Id == evento.Id).ToList();
-
 			response.Message = "Aula zero criada com sucesso";
-			response.Object = responseObject;
+			response.Object = _eventoService.GetEventoById(evento.Id);
 			response.Success = true;
 		}
 		catch (Exception ex)
@@ -658,7 +621,7 @@ public class AulaService : IAulaService
 		{
 			Evento? evento = _db.Evento
 				.Include(e => e.Evento_Aula)
-				.Include(e => e.Evento_Participacao_Alunos)
+				.Include(e => e.Evento_Participacao_Aluno)
 				.FirstOrDefault(e => e.Id == request.Id);
 
 			// Não devo poder atualizar uma aula que não existe
@@ -738,7 +701,7 @@ public class AulaService : IAulaService
 			// Alguns tipos de evento não precisam validar quantidade de alunos
 			if (evento.Evento_Tipo_Id != (int)EventoTipo.AulaZero && evento.Evento_Tipo_Id != (int)EventoTipo.Superacao)
 			{
-				int alunosInEvento = evento.Evento_Participacao_Alunos.Count(e => e.Deactivated == null);
+				int alunosInEvento = evento.Evento_Participacao_Aluno.Count(e => e.Deactivated == null);
 
 				if (request.CapacidadeMaximaAlunos < alunosInEvento)
 				{
@@ -746,25 +709,12 @@ public class AulaService : IAulaService
 				}
 			}
 
-			Roteiro? roteiro;
-			if (request.Roteiro_Id.HasValue && request.Roteiro_Id.Value != -1)
-			{
-				roteiro = _db.Roteiro.Find(request.Roteiro_Id);
-
-				// Não devo poder criar aula de turma com um roteiro que não existe
-				if (roteiro is null)
-				{
-					return new ResponseModel { Message = "Roteiro não encontrado" };
-				}
-			}
-			else
-			{
-				roteiro = _db.Roteiro.FirstOrDefault(r => request.Data.Date >= r.DataInicio.Date && request.Data.Date <= r.DataFim.Date);
-			}
-
-
-
 			// Validations passed
+
+			var roteiros = _roteiroService.GetAll(request.Data.Year);
+			var roteiro = roteiros.FirstOrDefault(x => request.Data.Date >= x.DataInicio.Date
+															&& request.Data.Date <= x.DataFim.Date
+															&& x.Id != -1);
 
 			evento.Observacao = request.Observacao ?? request.Observacao;
 			evento.Descricao = request.Descricao ?? evento.Descricao;
@@ -818,18 +768,8 @@ public class AulaService : IAulaService
 
 			_db.SaveChanges();
 
-			var responseObject = _db.CalendarioEventoLists.First(e => e.Id == evento.Id);
-
-			responseObject.Alunos = _db.CalendarioAlunoLists.Where(a => a.Evento_Id == evento.Id).ToList();
-			responseObject.Professores = _db.CalendarioProfessorLists.Where(p => p.Evento_Id == evento.Id).ToList();
-
-			responseObject.PerfilCognitivo = _db.PerfilCognitivos
-				.Where(p => eventoAulaPerfisCognitivos.Select(e => e.PerfilCognitivo_Id).Contains(p.Id))
-				.ProjectTo<PerfilCognitivoModel>(_mapper.ConfigurationProvider)
-				.ToList();
-
 			response.Message = "Evento de aula atualizado com sucesso";
-			response.Object = responseObject;
+			response.Object = _eventoService.GetEventoById(evento.Id);
 			response.Success = true;
 		}
 		catch (Exception ex)

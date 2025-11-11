@@ -37,11 +37,11 @@ public partial class Evento
 	
 	public virtual Evento_Aula? Evento_Aula { get; set; }
 	
-	public virtual ICollection<Evento_Participacao_Aluno> Evento_Participacao_Alunos { get; set; } = new List<Evento_Participacao_Aluno>();
+	public virtual ICollection<Evento_Participacao_Aluno> Evento_Participacao_Aluno { get; set; } = new List<Evento_Participacao_Aluno>();
 	
 	public virtual ICollection<Evento_Participacao_Aluno> Evento_Participacao_AlunoReposicaoDe_Eventos { get; set; } = new List<Evento_Participacao_Aluno>();
 	
-	public virtual ICollection<Evento_Participacao_Professor> Evento_Participacao_Professors { get; set; } = new List<Evento_Participacao_Professor>();
+	public virtual ICollection<Evento_Participacao_Professor> Evento_Participacao_Professor { get; set; } = new List<Evento_Participacao_Professor>();
 	
 	public virtual Evento_Tipo Evento_Tipo { get; set; } = null!;
 	

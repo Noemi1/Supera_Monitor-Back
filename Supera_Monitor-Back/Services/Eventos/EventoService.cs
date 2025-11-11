@@ -269,7 +269,7 @@ public class EventoService : IEventoService
 		{
 			Evento? evento = _db.Evento
 				.Include(e => e.Evento_Tipo)
-				.Include(e => e.Evento_Participacao_Alunos)
+				.Include(e => e.Evento_Participacao_Aluno)
 				.FirstOrDefault(e => e.Id == request.Id);
 
 			if (evento is null)
@@ -400,7 +400,7 @@ public class EventoService : IEventoService
 		{
 			Evento? evento = _db.Evento
 				.Include(e => e.Evento_Aula)
-				.Include(e => e.Evento_Participacao_Alunos)
+				.Include(e => e.Evento_Participacao_Aluno)
 				.Include(e => e.Evento_Tipo)
 				.FirstOrDefault(e => e.Id == request.Evento_Id);
 
@@ -419,14 +419,14 @@ public class EventoService : IEventoService
 			}
 
 			// Se aluno já está inscrito, não deve poder ser inscrito novamente
-			bool alunoIsAlreadyEnrolled = evento!.Evento_Participacao_Alunos.Any(p => p.Aluno_Id == aluno.Id);
+			bool alunoIsAlreadyEnrolled = evento!.Evento_Participacao_Aluno.Any(p => p.Aluno_Id == aluno.Id);
 
 			if (alunoIsAlreadyEnrolled)
 			{
 				return new ResponseModel { Message = "Aluno já está inscrito neste evento" };
 			}
 
-			int amountOfAlunosEnrolled = evento.Evento_Participacao_Alunos.Count;
+			int amountOfAlunosEnrolled = evento.Evento_Participacao_Aluno.Count;
 
 			switch (evento.Evento_Tipo_Id)
 			{
@@ -767,7 +767,7 @@ public class EventoService : IEventoService
 
 	private ResponseModel ValidateParticipacao(ParticipacaoAlunoModel participacaoAluno, Evento evento, List<Apostila> existingApostilas)
 	{
-		Evento_Participacao_Aluno? participacao = evento.Evento_Participacao_Alunos
+		Evento_Participacao_Aluno? participacao = evento.Evento_Participacao_Aluno
 						.FirstOrDefault(p => p.Id == participacaoAluno.Participacao_Id);
 
 		if (participacao is null)
@@ -829,9 +829,9 @@ public class EventoService : IEventoService
 		try
 		{
 			Evento? evento = _db.Evento
-				.Include(e => e.Evento_Participacao_Alunos)
+				.Include(e => e.Evento_Participacao_Aluno)
 				.ThenInclude(e => e.Aluno)
-				.Include(e => e.Evento_Participacao_Professors)
+				.Include(e => e.Evento_Participacao_Professor)
 				.FirstOrDefault(e => e.Id == request.Evento_Id);
 
 			var eventValidation = ValidateEvent(evento);
@@ -894,7 +894,7 @@ public class EventoService : IEventoService
 
 			foreach (ParticipacaoAlunoModel participacaoModel in request.Alunos)
 			{
-				Evento_Participacao_Aluno? participacao = evento.Evento_Participacao_Alunos
+				Evento_Participacao_Aluno? participacao = evento.Evento_Participacao_Aluno
 					.FirstOrDefault(p => p.Id == participacaoModel.Participacao_Id);
 
 				var validateParticipacao = ValidateParticipacao(participacaoModel, evento, existingApostilas);
@@ -942,7 +942,7 @@ public class EventoService : IEventoService
 
 			foreach (ParticipacaoProfessorModel partProfessor in request.Professores)
 			{
-				Evento_Participacao_Professor? participacao = evento.Evento_Participacao_Professors.FirstOrDefault(p => p.Id == partProfessor.Participacao_Id);
+				Evento_Participacao_Professor? participacao = evento.Evento_Participacao_Professor.FirstOrDefault(p => p.Id == partProfessor.Participacao_Id);
 
 				if (participacao is null)
 				{
@@ -1738,7 +1738,7 @@ public class EventoService : IEventoService
 
 			Evento? eventoSource = _db.Evento
 				.Include(e => e.Evento_Aula)
-				.Include(e => e.Evento_Participacao_Alunos)
+				.Include(e => e.Evento_Participacao_Aluno)
 				.FirstOrDefault(e => e.Id == model.Source_Aula_Id);
 
 			if (eventoSource is null)
@@ -1752,7 +1752,7 @@ public class EventoService : IEventoService
 			}
 
 			Evento? eventoDest = _db.Evento
-				.Include(e => e.Evento_Participacao_Alunos)
+				.Include(e => e.Evento_Participacao_Aluno)
 				.Include(e => e.Evento_Aula!)
 				.ThenInclude(e => e.Turma)
 				.FirstOrDefault(e => e.Evento_Aula != null && e.Id == model.Dest_Aula_Id);
@@ -1799,7 +1799,7 @@ public class EventoService : IEventoService
 				return new ResponseModel { Message = "A data da aula destino não pode ultrapassar 30 dias de diferença da aula original" };
 			}
 
-			bool registroAlreadyExists = eventoDest.Evento_Participacao_Alunos.Any(p => p.Aluno_Id == aluno.Id);
+			bool registroAlreadyExists = eventoDest.Evento_Participacao_Aluno.Any(p => p.Aluno_Id == aluno.Id);
 
 			if (registroAlreadyExists)
 			{
@@ -1817,7 +1817,7 @@ public class EventoService : IEventoService
 				return new ResponseModel { Message = "O perfil cognitivo da aula não é adequado para este aluno" };
 			}
 
-			int registrosAtivos = eventoDest.Evento_Participacao_Alunos.Count(p => p.Deactivated == null);
+			int registrosAtivos = eventoDest.Evento_Participacao_Aluno.Count(p => p.Deactivated == null);
 
 			// O evento deve ter espaço para comportar o aluno
 			if (registrosAtivos >= eventoDest.CapacidadeMaximaAlunos)
@@ -1825,7 +1825,7 @@ public class EventoService : IEventoService
 				return new ResponseModel { Message = "Esse evento de aula já está em sua capacidade máxima" };
 			}
 
-			Evento_Participacao_Aluno? registroSource = eventoSource.Evento_Participacao_Alunos.FirstOrDefault(p =>
+			Evento_Participacao_Aluno? registroSource = eventoSource.Evento_Participacao_Aluno.FirstOrDefault(p =>
 				p.Deactivated == null
 				&& p.Aluno_Id == aluno.Id
 				&& p.Evento_Id == eventoSource.Id);
@@ -1919,7 +1919,7 @@ public class EventoService : IEventoService
 			}
 
 			Evento? evento = _db.Evento
-				.Include(e => e.Evento_Participacao_Alunos)
+				.Include(e => e.Evento_Participacao_Aluno)
 				.FirstOrDefault(e => e.Id == model.Evento_Id);
 
 			if (evento is null)
@@ -1953,7 +1953,7 @@ public class EventoService : IEventoService
 				return new ResponseModel { Message = "O perfil cognitivo da aula não é adequado para este aluno" };
 			}
 
-			int registrosAtivos = evento.Evento_Participacao_Alunos.Count(p => p.Deactivated == null);
+			int registrosAtivos = evento.Evento_Participacao_Aluno.Count(p => p.Deactivated == null);
 
 			// O evento deve ter espaço para comportar o aluno
 			if (registrosAtivos >= evento.CapacidadeMaximaAlunos)
@@ -1962,7 +1962,7 @@ public class EventoService : IEventoService
 			}
 
 			// Se o aluno já estiver no evento, precisa apenas marcar como primeira aula
-			bool alunoIsAlreadyInEvent = evento.Evento_Participacao_Alunos.Any(a => a.Aluno_Id == aluno.Id);
+			bool alunoIsAlreadyInEvent = evento.Evento_Participacao_Aluno.Any(a => a.Aluno_Id == aluno.Id);
 
 			// Validations passed
 			if (!alunoIsAlreadyInEvent)

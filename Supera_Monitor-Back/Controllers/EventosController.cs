@@ -104,8 +104,7 @@ public class EventosController : _BaseController
     {
         try
         {
-            var response = _aulaService.GetById(aulaId);
-
+            var response = _eventoService.GetEventoById(aulaId);
             if (response is null)
             {
                 return NotFound("Aula não encontrada");
@@ -455,7 +454,6 @@ public class EventosController : _BaseController
             return StatusCode(500, e);
         }
     }
-
 
 	[Authorize]
 	[HttpPost("reposicao")]

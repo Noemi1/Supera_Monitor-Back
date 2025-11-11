@@ -457,7 +457,7 @@ public class AlunoService : IAlunoService
 
 				List<Evento> eventosTurmaDestino = _db.Evento
 					.Include(e => e.Evento_Aula)
-					.Include(e => e.Evento_Participacao_Alunos)
+					.Include(e => e.Evento_Participacao_Aluno)
 					.Where(e =>
 						e.Evento_Aula != null
 						&& e.Data >= TimeFunctions.HoraAtualBR()
@@ -475,7 +475,7 @@ public class AlunoService : IAlunoService
 					};
 
 					// Aula não deve registrar aluno se estiver em sua capacidade máxima e nesse caso, -> considera os alunos de reposição <-
-					int amountOfAlunosInAula = evento.Evento_Participacao_Alunos.Count(p => p.Deactivated == null);
+					int amountOfAlunosInAula = evento.Evento_Participacao_Aluno.Count(p => p.Deactivated == null);
 
 					if (amountOfAlunosInAula >= evento.CapacidadeMaximaAlunos)
 					{

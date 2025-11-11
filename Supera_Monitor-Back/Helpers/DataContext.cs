@@ -808,7 +808,7 @@ public partial class DataContext : DbContext
 				.HasForeignKey(d => d.Apostila_Abaco_Id)
 				.HasConstraintName("FK_Evento_Participacao_Aluno_ApostilaAbaco");
 
-			entity.HasOne(d => d.Evento).WithMany(p => p.Evento_Participacao_Alunos)
+			entity.HasOne(d => d.Evento).WithMany(p => p.Evento_Participacao_Aluno)
 				.HasForeignKey(d => d.Evento_Id)
 				.OnDelete(DeleteBehavior.ClientSetNull)
 				.HasConstraintName("FK_Evento_Participacao_Aluno_Evento");
@@ -838,7 +838,7 @@ public partial class DataContext : DbContext
 			entity.Property(e => e.Deactivated).HasColumnType("datetime");
 			entity.Property(e => e.Observacao).IsUnicode(false);
 
-			entity.HasOne(d => d.Evento).WithMany(p => p.Evento_Participacao_Professors)
+			entity.HasOne(d => d.Evento).WithMany(p => p.Evento_Participacao_Professor)
 				.HasForeignKey(d => d.Evento_Id)
 				.OnDelete(DeleteBehavior.ClientSetNull)
 				.HasConstraintName("FK_Evento_Participacao_Professor_Evento");
