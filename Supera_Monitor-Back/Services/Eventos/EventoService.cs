@@ -426,7 +426,6 @@ public class EventoService : IEventoService
 					Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
 					Apostila_AH_Id = aluno.Apostila_AH_Id,
 				});
-				
 
 				historicoInserir.Add(new Aluno_Historico
 				{
@@ -435,7 +434,6 @@ public class EventoService : IEventoService
 					Data = hoje,
 					Descricao = $"Aluno se inscreveu na {eventoTipo} do dia {evento.Data:G}"
 				});
-
 			}
 
 			_db.Add(evento);
@@ -1405,8 +1403,6 @@ public class EventoService : IEventoService
 					}
 					else if (evento.Evento_Tipo_Id == (int)EventoTipo.Oficina)
 					{
-
-
 						itemAgendamento = checklistAgendamento
 							.FirstOrDefault(x => x.Evento_Id == evento.Id
 													&& x.DataFinalizacao != null
@@ -1726,14 +1722,14 @@ public class EventoService : IEventoService
 		return response;
 	}
 
-	public async Task<ResponseModel> AgendarReposicao(ReposicaoRequest model)
+	public async Task<ResponseModel> AgendarReposicao(ReposicaoRequest request)
 	{
 		ResponseModel response = new() { Success = false };
 
 		try
 		{
 			var aluno = _db.Aluno
-				.FirstOrDefault(a => a.Id == model.Aluno_Id);
+				.FirstOrDefault(a => a.Id == request.Aluno_Id);
 
 			if (aluno is null)
 				return new ResponseModel { Message = "Aluno não encontrado" };
@@ -1746,13 +1742,13 @@ public class EventoService : IEventoService
 				.Include(x => x.Evento_Participacao_Aluno)
 				.Include(x => x.Evento_Aula)
 				.ThenInclude(x => x.Evento_Aula_PerfilCognitivo_Rel)
-				.FirstOrDefault(e => e.Id == model.Source_Aula_Id);
+				.FirstOrDefault(e => e.Id == request.Source_Aula_Id);
 
 			var eventoDest = _db.Evento
 				.Include(x => x.Evento_Participacao_Aluno)
 				.Include(x => x.Evento_Aula)
 				.ThenInclude(x => x.Evento_Aula_PerfilCognitivo_Rel)
-				.FirstOrDefault(e => e.Id == model.Dest_Aula_Id);
+				.FirstOrDefault(e => e.Id == request.Dest_Aula_Id);
 
 			if (eventoSource is null || eventoSource.Evento_Aula is null)
 				return new ResponseModel { Message = "Aula não encontrada" };
@@ -1760,7 +1756,7 @@ public class EventoService : IEventoService
 			if (eventoDest is null || eventoDest.Evento_Aula is null)
 				return new ResponseModel { Message = "Aula não encontrada" };
 
-			if (model.Source_Aula_Id == model.Dest_Aula_Id)
+			if (request.Source_Aula_Id == request.Dest_Aula_Id)
 				return new ResponseModel { Message = "Aula original e aula destino não podem ser iguais" };
 			
 			if (eventoDest.Finalizado)
@@ -1814,21 +1810,68 @@ public class EventoService : IEventoService
 			// Validations passed
 			//
 
-			var alunoChecklistQueryable =
-				from item in _db.Aluno_Checklist_Item
-				join p in eventoSource.Evento_Participacao_Aluno
-					on item.Aluno_Id equals p.Aluno_Id
-				where p.Id == participacaoSource.Id
-					&& item.Evento_Id == eventoSource.Id
-					&& item.Checklist_Item_Id == (int)ChecklistItemId.AgendamentoPrimeiraAula
-				select item;
-
 			// Se for a primeira aula do aluno, atualizar a data de primeira aula para a data da aula destino
 			if (eventoSource.Id == aluno.PrimeiraAula_Id)
+			{
+				var hoje = TimeFunctions.HoraAtualBR();
+
 				aluno.PrimeiraAula_Id = eventoDest.Id;
 
-			var checklistsAtualizar = alunoChecklistQueryable.ToList();
-			checklistsAtualizar.ForEach(item => item.Evento_Id  = eventoDest.Id);
+				var checklistsAtualizar = _db.Aluno_Checklist_Item
+					.Where(x => x.Aluno_Id == request.Aluno_Id
+						&& x.Evento_Id == eventoSource.Id
+						&& (x.Checklist_Item_Id == (int)ChecklistItemId.AgendamentoPrimeiraAula 
+						|| x.Checklist_Item_Id == (int)ChecklistItemId.ComparecimentoPrimeiraAula))
+					.ToList();
+
+				var checklistAgendamento = checklistsAtualizar
+					.FirstOrDefault(x => x.Checklist_Item_Id == (int)ChecklistItemId.AgendamentoPrimeiraAula);
+
+				var checklistComparecimento = checklistsAtualizar
+					.FirstOrDefault(x => x.Checklist_Item_Id == (int)ChecklistItemId.ComparecimentoPrimeiraAula);
+
+				if (checklistAgendamento is not null)
+				{
+					var dataSource = eventoSource.Data.ToString("dd/MM/yyyy \'às\' HH:mm");
+					var dataDest = eventoDest.Data.ToString("dd/MM/yyyy \'às\' HH:mm");
+					
+					checklistAgendamento.Evento_Id = eventoDest.Id;
+					checklistAgendamento.DataFinalizacao = hoje;
+					checklistAgendamento.Account_Finalizacao_Id = _account?.Id ?? 1;
+					checklistAgendamento.Observacoes = $@"
+								Checklist finalizado automaticamente. 
+								<br> Aluno agendou reposicao da primeira aula do dia {dataSource} para o dia {dataDest}
+								<br>
+								<br> <b>Agendamento Inicial: </b>
+								<br> Data: {dataSource}
+								<br> Turma: {eventoSource.Descricao}
+								<br>
+								<br> <b>Agendamento Reposição: </b>
+								<br> Data: {dataDest}
+								<br> Turma: {eventoDest.Descricao}
+				";
+
+					_db.Aluno_Checklist_Item.Update(checklistAgendamento);
+				}
+
+				if (checklistComparecimento is not null)
+				{
+					var dataSource = eventoSource.Data.ToString("dd/MM/yyyy \'às\' HH:mm");
+					var dataDest = eventoDest.Data.ToString("dd/MM/yyyy \'às\' HH:mm");
+
+					checklistComparecimento.Evento_Id = eventoDest.Id;
+					checklistComparecimento.DataFinalizacao = null;
+					checklistComparecimento.Account_Finalizacao_Id = null;
+					checklistComparecimento.Observacoes = null;
+
+					_db.Aluno_Checklist_Item.Update(checklistComparecimento);
+				}
+
+
+
+			}
+
+
 
 			// Amarrar o novo registro à aula sendo reposta
 			var participacaoDest = new Evento_Participacao_Aluno()
@@ -1836,7 +1879,7 @@ public class EventoService : IEventoService
 				Aluno_Id = aluno.Id,
 				Evento_Id = eventoDest.Id,
 				ReposicaoDe_Evento_Id = eventoSource.Id,
-				Observacao = model.Observacao,
+				Observacao = request.Observacao,
 				Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
 				NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
 				Apostila_AH_Id = aluno.Apostila_AH_Id,
@@ -1855,7 +1898,6 @@ public class EventoService : IEventoService
 
 			_db.Evento_Participacao_Aluno.Update(participacaoSource);
 			_db.Evento_Participacao_Aluno.Add(participacaoDest);
-			_db.Aluno_Checklist_Item.UpdateRange(checklistsAtualizar);
 			_db.Aluno.Update(aluno);
 			_db.Aluno_Historico.Add(new Aluno_Historico
 			{
