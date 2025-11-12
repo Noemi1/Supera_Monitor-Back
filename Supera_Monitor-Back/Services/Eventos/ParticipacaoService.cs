@@ -120,7 +120,7 @@ public class ParticipacaoService : IParticipacaoService
 				{
 					item.DataFinalizacao = hoje;
 					item.Account_Finalizacao_Id = _account?.Id ?? 1;
-					item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno agendou na aula zero do dia ${evento.Data.ToString("dd/MM/yyyy HH:mm")}.";
+					item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno agendou na aula zero do dia {evento.Data.ToString("dd/MM/yyyy \'às\' HH:mm")}.";
 
 					item.Evento_Id = evento.Id;
 					_db.Aluno_Checklist_Item.Update(item);
@@ -137,7 +137,7 @@ public class ParticipacaoService : IParticipacaoService
 				{
 					item.DataFinalizacao = hoje;
 					item.Account_Finalizacao_Id = _account?.Id ?? 1;
-					item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno agendou superação do dia ${evento.Data.ToString("dd/MM/yyyy HH:mm")}.";
+					item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno agendou superação do dia {evento.Data.ToString("dd/MM/yyyy \'às\' HH:mm")}.";
 
 					item.Evento_Id = evento.Id;
 					_db.Aluno_Checklist_Item.Update(item);
@@ -154,7 +154,7 @@ public class ParticipacaoService : IParticipacaoService
 				{
 					item.DataFinalizacao = hoje;
 					item.Account_Finalizacao_Id = _account?.Id ?? 1;
-					item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno se inscreveu na oficina do dia ${evento.Data.ToString("dd/MM/yyyy HH:mm")}.";
+					item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno se inscreveu na oficina do dia {evento.Data.ToString("dd/MM/yyyy \'às\' HH:mm")}.";
 
 					item.Evento_Id = evento.Id;
 					_db.Aluno_Checklist_Item.Update(item);

@@ -444,35 +444,32 @@ public class EventoService : IEventoService
 
 			if (evento.Evento_Tipo_Id == (int)EventoTipo.Superacao)
 			{
-				var items = alunosChecklistsSuperacao
-					.Where(x => x.DataFinalizacao == null)
-					.ToList();
+				var item = alunosChecklistsSuperacao
+					.FirstOrDefault(x => x.DataFinalizacao == null);
 
-				items.ForEach(item =>
+				if (item is not null)
 				{
 					item.Evento_Id = evento.Id;
 					item.DataFinalizacao = hoje;
 					item.Account_Finalizacao_Id = _account?.Id ?? 1;
-					item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno agendou na superação do dia ${request.Data.ToString("dd/MM/yyyy HH:mm")}.";
-				});
-
-				alunosChecklistAtualizar.AddRange(items);
+					item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno agendou na superação do dia {request.Data.ToString("dd/MM/yyyy \'às\' HH:mm")}.";
+					alunosChecklistAtualizar.Add(item);
+				}
 			}
 			else if (evento.Evento_Tipo_Id == (int)EventoTipo.Oficina)
 			{
-				var items = alunosChecklistsOficina
-					.Where(x => x.DataFinalizacao == null)
-					.ToList();
+				var item = alunosChecklistsOficina
+					.FirstOrDefault(x => x.DataFinalizacao == null);
 
-				items.ForEach(item =>
+				if (item is not null)
 				{
 					item.Evento_Id = evento.Id;
 					item.DataFinalizacao = hoje;
 					item.Account_Finalizacao_Id = _account?.Id ?? 1;
-					item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno se inscreveu na oficina do dia ${request.Data.ToString("dd/MM/yyyy HH:mm")}.";
-				});
+					item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno se inscreveu na oficina do dia {request.Data.ToString("dd/MM/yyyy \'às\' HH:mm")}.";
+					alunosChecklistAtualizar.Add(item);
+				}
 
-				alunosChecklistAtualizar.AddRange(items);
 			}
 
 			_db.Aluno_Historico.AddRange(historicoInserir);
@@ -993,7 +990,7 @@ public class EventoService : IEventoService
 			{
 				checklistItem.Account_Finalizacao_Id = _account?.Id ?? 1;
 				checklistItem.DataFinalizacao = hoje;
-				checklistItem.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno agendou aula zero para o dia ${request.Data.ToString("dd/MM/yyyy HH:mm")}.";
+				checklistItem.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno agendou aula zero para o dia {request.Data.ToString("dd/MM/yyyy \'às\' HH:mm")}.";
 				checklistItem.Evento_Id = evento.Id;
 			}
 			_db.Aluno_Checklist_Item.UpdateRange(alunoChecklists);
@@ -1446,7 +1443,7 @@ public class EventoService : IEventoService
 						item.Evento_Id = request.Evento_Id;
 						item.Account_Finalizacao_Id = _account?.Id ?? 1;
 						item.DataFinalizacao = hoje;
-						item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno compareceu na {evento.Evento_Tipo?.Nome ?? "Oficina"} do dia ${evento?.Data.ToString("dd/MM/yyyy HH:mm")}.";
+						item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno compareceu na {evento.Evento_Tipo?.Nome ?? "Oficina"} do dia {evento.Data.ToString("dd/MM/yyyy \'às\' HH:mm")}.";
 						checklistAtualizar.Add(item);
 					}
 				}
@@ -1457,8 +1454,8 @@ public class EventoService : IEventoService
 					Aluno_Id = participacao.Aluno_Id,
 					Data = hoje,
 					Descricao = participacaoModel.Presente ?
-							$"Aluno compareceu na {evento.Evento_Tipo} agendada no dia ${evento.Data.ToString("dd/MM/yyyy HH:mm")}" :
-							$"Aluno NÃO compareceu na evento.Evento_Tipo}} agendada no dia ${evento.Data.ToString("dd/MM/yyyy HH:mm")}",
+							$"Aluno compareceu na {evento.Evento_Tipo.Nome.ToLower()} agendada no dia {evento.Data.ToString("dd/MM/yyyy \'às\' HH:mm")}" :
+							$"Aluno NÃO compareceu na {evento.Evento_Tipo.Nome.ToLower()} agendada no dia {evento.Data.ToString("dd/MM/yyyy \'às\' HH:mm")}",
 				});
 			}
 
@@ -1598,8 +1595,8 @@ public class EventoService : IEventoService
 						Account_Id = _account?.Id ?? 1,
 						Aluno_Id = participacaoRequest.Aluno_Id,
 						Descricao = participacaoRequest.Presente ?
-								$"Aluno compareceu na aula zero agendada no dia ${evento.Data.ToString("dd/MM/yyyy HH:mm")}" :
-								$"Aluno NÃO compareceu na aula zero agendada no dia ${evento.Data.ToString("dd/MM/yyyy HH:mm")}",
+								$"Aluno compareceu na aula zero agendada no dia {evento.Data.ToString("dd/MM/yyyy \'às\' HH:mm")}" :
+								$"Aluno NÃO compareceu na aula zero agendada no dia{evento.Data.ToString("dd/MM/yyyy \'às\' HH:mm")}",
 						Data = hoje,
 					});
 
@@ -1615,7 +1612,7 @@ public class EventoService : IEventoService
 						kitApostilaPorId.TryGetValue(participacaoRequest.Apostila_Kit_Id, out kit);
 
 						if (kit is null)
-							throw new Exception($"Kit de apostila não encontrada para o aluno: ${aluno.Id}");
+							throw new Exception($"Kit de apostila não encontrada para o aluno: {aluno.Id}");
 
 						var apostilaAbaco = kit.Apostila_Kit_Rel
 							.Select(x => x.Apostila)
@@ -1651,7 +1648,7 @@ public class EventoService : IEventoService
 							item.Evento_Id = evento.Id;
 							item.Account_Finalizacao_Id = _account?.Id ?? 1;
 							item.DataFinalizacao = TimeFunctions.HoraAtualBR();
-							item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno compareceu na aula zero do dia ${evento?.Data.ToString("dd/MM/yyyy HH:mm")}.";
+							item.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno compareceu na aula zero do dia {evento?.Data.ToString("dd/MM/yyyy \'às\' HH:mm")}.";
 							_db.Aluno_Checklist_Item.Update(item);
 						}
 
@@ -1985,7 +1982,7 @@ public class EventoService : IEventoService
 
 				checklistItem.Account_Finalizacao_Id = _account?.Id ?? 1;
 				checklistItem.DataFinalizacao = hoje;
-				checklistItem.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno agendou aula zero para o dia ${evento.Data.ToString("dd/MM/yyyy HH:mm")}.";
+				checklistItem.Observacoes = $"Checklist finalizado automaticamente. <br> Aluno agendou aula zero para o dia {evento.Data.ToString("dd/MM/yyyy \'às\' HH:mm")}.";
 				checklistItem.Evento_Id = evento.Id;
 				_db.Aluno_Checklist_Item.Update(checklistItem);
 			}

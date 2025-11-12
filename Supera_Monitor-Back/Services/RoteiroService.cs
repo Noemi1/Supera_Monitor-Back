@@ -165,7 +165,7 @@ public class RoteiroService : IRoteiroService
 
 			if (isDuringAnotherRoteiro != null)
 			{
-				return new ResponseModel { Message = $"A data do intervalo desse roteiro conflita com outro roteiro: Semana: ${isDuringAnotherRoteiro.Semana}, Tema: ${isDuringAnotherRoteiro.Tema}." };
+				return new ResponseModel { Message = $"A data do intervalo desse roteiro conflita com outro roteiro: Semana: {isDuringAnotherRoteiro.Semana}, Tema: {isDuringAnotherRoteiro.Tema}." };
 			}
 
 			// Validations passed
@@ -221,7 +221,7 @@ public class RoteiroService : IRoteiroService
 
 			if (isDuringAnotherRoteiro != null)
 			{
-				return new ResponseModel { Message = $"A data do intervalo desse roteiro conflita com outro roteiro: Semana: ${isDuringAnotherRoteiro.Semana}, Tema: ${isDuringAnotherRoteiro.Tema}." };
+				return new ResponseModel { Message = $"A data do intervalo desse roteiro conflita com outro roteiro: Semana: {isDuringAnotherRoteiro.Semana}, Tema: {isDuringAnotherRoteiro.Tema}." };
 			}
 
 			// Validations passed
