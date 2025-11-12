@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Supera_Monitor_Back.Entities;
-using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
 using Supera_Monitor_Back.Models.JornadaSupera;
 using Supera_Monitor_Back.Models.JornadaSupera.Card;
@@ -223,6 +222,7 @@ public class JornadaSuperaService : IJornadaSuperaService
 			.AsNoTracking();
 
 		var checklistQueryable = _db.Checklists
+			.Include(x => x.Checklist_Items)
 			.OrderBy(x => x.Ordem)
 			.AsNoTracking();
 
@@ -266,9 +266,10 @@ public class JornadaSuperaService : IJornadaSuperaService
 		// Dicionarios
 		//
 
-		var alunosPorChecklist = alunosChecklistItems
-			.GroupBy(x => (x.Aluno_Id, x.Checklist_Item.Checklist_Id))
-			.ToDictionary(x => (x.Key.Aluno_Id, x.Key.Checklist_Id), x => x.ToList());
+		var alunosPorChecklistItemId = alunosChecklistItems
+			.ToLookup(x => x.Checklist_Item_Id);
+			//.GroupBy(x => (x.Aluno_Id, x.Checklist_Item_Id))
+			//.ToDictionary(x => (x.Key.Aluno_Id, x.Key.Checklist_Item_Id), x => x.ToList());
 
 		// 
 		// Mapeia os alunos
@@ -295,26 +296,34 @@ public class JornadaSuperaService : IJornadaSuperaService
 					NumeroSemana = checklist.NumeroSemana,
 				};
 
+				var checklistItems = checklist.Checklist_Items
+					.OrderBy(x => x.Ordem)
+					.ToList();
 
-				if (alunosPorChecklist.TryGetValue((aluno.Id, checklist.Id), out var itemsDoChecklist))
+				foreach(Checklist_Item item in checklistItems)
 				{
+					var itemsDoChecklist = alunosPorChecklistItemId[item.Id];
+
 					// lista é List<Aluno_Checklist_Item>
-					var jornadaChecklistItemAlunos = itemsDoChecklist.Select(item => new JornadaSupera_List_Checklist_Item_Aluno()
-					{
-						Id = item.Id,
-						Checklist_Item_Id = item.Checklist_Item_Id,
-						Checklist_Item = item.Checklist_Item.Nome,
-						Aluno_Id = item.Aluno_Id,
-						NumeroSemana = checklist.NumeroSemana,
-						Prazo = item.Prazo,
-						DataFinalizacao = item.DataFinalizacao,
-						Account = item.Account_Finalizacao?.Name,
-						Account_Id = item.Account_Finalizacao_Id,
-						Observacoes = item.Observacoes,
-						Evento_Id = item.Evento_Id,
-					}).ToList();
-					jornadaChecklist.Items = jornadaChecklistItemAlunos;
+					var jornadaChecklistItemAlunos = itemsDoChecklist
+						.Select(item => new JornadaSupera_List_Checklist_Item_Aluno()
+						{
+							Id = item.Id,
+							Checklist_Item_Id = item.Checklist_Item_Id,
+							Checklist_Item = item.Checklist_Item.Nome,
+							Aluno_Id = item.Aluno_Id,
+							NumeroSemana = checklist.NumeroSemana,
+							Prazo = item.Prazo,
+							DataFinalizacao = item.DataFinalizacao,
+							Account = item.Account_Finalizacao?.Name,
+							Account_Id = item.Account_Finalizacao_Id,
+							Observacoes = item.Observacoes,
+							Evento_Id = item.Evento_Id,
+						}).ToList();
+
+					jornadaChecklist.Items.AddRange(jornadaChecklistItemAlunos);
 				}
+
 
 				jornadaAluno.Checklists.Add(jornadaChecklist);
 

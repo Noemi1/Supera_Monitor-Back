@@ -72,8 +72,6 @@ public class EventoService : IEventoService
 			throw new Exception("Evento não encontrado");
 		}
 
-
-
 		evento.Alunos = _db.CalendarioAlunoList.Where(a => a.Evento_Id == evento.Id).ToList();
 		evento.Professores = _db.CalendarioProfessorLists.Where(e => e.Evento_Id == evento.Id).ToList();
 
