@@ -1807,8 +1807,6 @@ public class EventoService : IEventoService
 			if (aluno is null)
 				return new ResponseModel { Message = "Aluno não encontrado" };
 
-			if (aluno.Deactivated != null)
-				return new ResponseModel { Message = "O aluno está inativo" };
 
 			var eventoSource = _db.Evento
 				.Include(x => x.Evento_Participacao_Aluno)
@@ -1959,13 +1957,8 @@ public class EventoService : IEventoService
 				NumeroPaginaAH = aluno.NumeroPaginaAH,
 			};
 
-			// Se a reposição for feita após o horário da aula, ocasiona falta
-			if (TimeFunctions.HoraAtualBR() > eventoSource.Data)
-			{
-				participacaoSource.Presente = false;
-			}
-
 			// Desativar o registro da aula
+			participacaoSource.Presente = false;
 			participacaoSource.Deactivated = TimeFunctions.HoraAtualBR();
 			participacaoSource.StatusContato_Id = (int)StatusContato.REPOSICAO_AGENDADA;
 
