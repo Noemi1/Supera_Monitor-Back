@@ -340,16 +340,19 @@ public class EventoService : IEventoService
 				if (hasParticipacaoConflict)
 					return new ResponseModel { Message = $"Professor: {professor.Nome} possui participação em outro evento nesse mesmo horário" };
 			}
+			
+			if (request.Sala_Id.HasValue)
+			{
+				// Não devo poder registrar um evento em uma sala que não existe
+				bool salaExists = _db.Salas.Any(s => s.Id == request.Sala_Id.Value);
+				if (!salaExists)
+					return new ResponseModel { Message = "Sala não encontrada" };
 
-			// Não devo poder registrar um evento em uma sala que não existe
-			bool salaExists = _db.Salas.Any(s => s.Id == request.Sala_Id);
-			if (!salaExists)
-				return new ResponseModel { Message = "Sala não encontrada" };
-
-			// Sala deve estar livre no horário do evento
-			bool isSalaOccupied = _salaService.IsSalaOccupied(request.Sala_Id, request.Data, request.DuracaoMinutos, null);
-			if (isSalaOccupied)
-				return new ResponseModel { Message = "Esta sala se encontra ocupada neste horário" };
+				// Sala deve estar livre no horário do evento
+				bool isSalaOccupied = _salaService.IsSalaOccupied(request.Sala_Id.Value, request.Data, request.DuracaoMinutos, null);
+				if (isSalaOccupied)
+					return new ResponseModel { Message = "Esta sala se encontra ocupada neste horário" };
+			}
 
 			if (request.CapacidadeMaximaAlunos < 0)
 				return new ResponseModel { Message = "Capacidade máxima de alunos inválida" };

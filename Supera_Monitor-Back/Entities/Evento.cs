@@ -9,7 +9,7 @@ public partial class Evento
 	
 	public DateTime Data { get; set; }
 	
-	public int Sala_Id { get; set; }
+	public int? Sala_Id { get; set; }
 	
 	public string Descricao { get; set; } = null!;
 	
