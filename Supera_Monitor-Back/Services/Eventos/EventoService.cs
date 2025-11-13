@@ -1164,7 +1164,7 @@ public class EventoService : IEventoService
 				return new ResponseModel { Message = "Evento não encontrado." };
 
 			if (evento.Deactivated.HasValue)
-				return new ResponseModel { Message = "Evento já foi cancelado" };
+				return new ResponseModel { Message = "Evento já está cancelado" };
 
 			//
 			// Validations passed
@@ -1173,27 +1173,27 @@ public class EventoService : IEventoService
 			var participacaoAlunos = evento.Evento_Participacao_Aluno
 				.ToList();
 
-			var alunosQueryable =
-				from a in _db.Aluno
-				join p in participacaoAlunos
-					on a.Id equals p.Aluno_Id
-				select a;
+			var alunosIds = participacaoAlunos
+				.Select(x => x.Aluno_Id)
+				.Distinct()
+				.ToHashSet();
 
-			var alunos = alunosQueryable
+			var alunos = _db.Aluno
+				.Where(x => alunosIds.Contains(x.Id))
 				.ToList();
 
-			var alunosChecklistItemsQueryable =
-				from item in _db.Aluno_Checklist_Item
-				join aluno in participacaoAlunos
-					on item.Aluno_Id equals aluno.Id
-				where item.DataFinalizacao == null
-					&& item.Evento_Id == evento.Id
-					&& ( item.Checklist_Item_Id == (int)ChecklistItemId.AgendamentoAulaZero
-					  || item.Checklist_Item_Id == (int)ChecklistItemId.Agendamento1Oficina
-					  || item.Checklist_Item_Id == (int)ChecklistItemId.Agendamento2Oficina
-					  || item.Checklist_Item_Id == (int)ChecklistItemId.Agendamento1Superacao
-					)
-				select item;
+			var checklistAtualizar = _db.Aluno_Checklist_Item
+				.Where(x => x.DataFinalizacao == null
+					&& x.Evento_Id == evento.Id
+					&& alunosIds.Contains(x.Aluno_Id)
+					&& (x.Checklist_Item_Id == (int)ChecklistItemId.AgendamentoPrimeiraAula
+					  || x.Checklist_Item_Id == (int)ChecklistItemId.AgendamentoAulaZero
+					  || x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento1Oficina
+					  || x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento2Oficina
+					  || x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento1Superacao
+					  || x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento2Superacao
+					))
+				.ToList();
 
 			var alunosAtualizar = alunos
 				.Where(x => x.PrimeiraAula_Id == evento.Id || x.AulaZero_Id == evento.Id)
@@ -1201,9 +1201,6 @@ public class EventoService : IEventoService
 
 			var alunosPorId = alunosAtualizar
 				.ToDictionary(x => x.Id, x => x);
-
-			var checklistAtualizar = alunosChecklistItemsQueryable
-				.ToList();
 
 			foreach(var item in checklistAtualizar)
 			{

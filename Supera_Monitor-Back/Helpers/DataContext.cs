@@ -733,19 +733,24 @@ public partial class DataContext : DbContext
 			entity.Property(e => e.Descricao)
 				.HasMaxLength(250)
 				.IsUnicode(false);
-			entity.Property(e => e.LastUpdated).HasColumnType("datetime");
-			entity.Property(e => e.Observacao).IsUnicode(false);
+			entity.Property(e => e.LastUpdated)
+			.HasColumnType("datetime");
+			entity.Property(e => e.Observacao)
+			.IsUnicode(false);
 
-			entity.HasOne(d => d.Evento_Tipo).WithMany(p => p.Eventos)
+			entity.HasOne(d => d.Evento_Tipo)
+				.WithMany(p => p.Eventos)
 				.HasForeignKey(d => d.Evento_Tipo_Id)
 				.OnDelete(DeleteBehavior.ClientSetNull)
 				.HasConstraintName("FK_Evento_Evento_Tipo");
 
-			entity.HasOne(d => d.ReagendamentoDe_Evento).WithMany(p => p.InverseReagendamentoDe_Evento)
+			entity.HasOne(d => d.ReagendamentoDe_Evento)
+			.WithMany(p => p.InverseReagendamentoDe_Evento)
 				.HasForeignKey(d => d.ReagendamentoDe_Evento_Id)
 				.HasConstraintName("FK_Evento_ReagendamentoDe_Evento");
 
-			entity.HasOne(d => d.Sala).WithMany(p => p.Eventos)
+			entity.HasOne(d => d.Sala)
+				.WithMany(p => p.Eventos)
 				.HasForeignKey(d => d.Sala_Id)
 				.OnDelete(DeleteBehavior.ClientSetNull)
 				.HasConstraintName("FK_Evento_Sala");
