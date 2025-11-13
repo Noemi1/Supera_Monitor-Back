@@ -11,7 +11,7 @@ namespace Supera_Monitor_Back.Services.Eventos;
 
 public interface ICalendarioService
 {
-	public Task<List<CalendarioEventoList>> GetCalendario(CalendarioRequest request);
+	public Task<CalendarioResponse> GetCalendario(CalendarioRequest request);
 }
 
 public class CalendarioService : ICalendarioService
@@ -39,7 +39,7 @@ public class CalendarioService : ICalendarioService
 		_eventoService = eventoService;
 	}
 
-	public async Task<List<CalendarioEventoList>> GetCalendario(CalendarioRequest request)
+	public async Task<CalendarioResponse> GetCalendario(CalendarioRequest request)
 	{
 
 		DateTime now = TimeFunctions.HoraAtualBR();
@@ -66,20 +66,6 @@ public class CalendarioService : ICalendarioService
 
 		if (request.Perfil_Cognitivo_Id.HasValue)
 		{
-			// Eventos que contem o perfil cognitivo 
-			//var eventosContemPerfilCognitivo = _db.Evento_Aula_PerfilCognitivo_Rels
-			//	.Where(x => x.PerfilCognitivo_Id == request.Perfil_Cognitivo_Id);
-
-			//var turmasContemPerfilCognitivo = _db.Turma_PerfilCognitivo_Rels
-			//	.Where(x => x.PerfilCognitivo_Id == request.Perfil_Cognitivo_Id);
-
-			//eventosQueryable = eventosQueryable
-			//	.Where(e => eventosContemPerfilCognitivo.Any(x => x.Evento_Aula_Id == e.Id));
-
-			//turmasQueryable = turmasQueryable
-			//	.Where(t => turmasContemPerfilCognitivo.Any(x => x.Turma_Id == t.Id));
-
-
 			eventosQueryable =
 				from e in eventosQueryable
 				join ep in _db.Evento_Aula_PerfilCognitivo_Rel
@@ -98,12 +84,6 @@ public class CalendarioService : ICalendarioService
 
 		if (request.Turma_Id.HasValue)
 		{
-			//eventosQueryable = eventosQueryable
-			//	.Where(e => e.Turma_Id == request.Turma_Id);
-
-			//turmasQueryable = turmasQueryable
-			//	.Where(t => t.Id == request.Turma_Id);
-
 			eventosQueryable = 
 				from e in eventosQueryable
 				where e.Turma_Id == request.Turma_Id
@@ -117,19 +97,6 @@ public class CalendarioService : ICalendarioService
 
 		if (request.Professor_Id.HasValue)
 		{
-			// Busca o professor em evento.Professor_Id e evento.Evento_Participacao_Professor
-			//var eventosContemProfessor = _db.Evento_Participacao_Professor
-			//	.Where(x => x.Professor_Id == request.Professor_Id.Value);
-
-			//eventosQueryable = eventosQueryable
-			//	.Where(e => e.Professor_Id != null && (e.Professor_Id == request.Professor_Id || eventosContemProfessor.Any(x => x.Evento_Id == e.Id)));
-
-			//turmasQueryable = turmasQueryable
-			//	.Where(t => t.Professor_Id == request.Professor_Id);
-
-			//professoresQueryable = professoresQueryable
-			//	.Where(x => x.Id == request.Professor_Id.Value);
-
 			eventosQueryable = 
 				from e in eventosQueryable
 				join p in _db.Evento_Participacao_Professor
@@ -152,19 +119,6 @@ public class CalendarioService : ICalendarioService
 
 		if (request.Aluno_Id.HasValue)
 		{
-			//var aluno = _db.Alunos
-			//	.FirstOrDefault(a => a.Id == request.Aluno_Id);
-
-			//if (aluno is not null)
-			//{
-			//	turmasQueryable = turmasQueryable.Where(t => t.Id == aluno.Turma_Id);
-			//	// Busca o aluno em evento.Evento_Participacao_Aluno fora do where de eventos, para fazer menos filtros
-			//	var eventosContemAlunos = _db.Evento_Participacao_Aluno.Where(x => x.Aluno_Id == request.Aluno_Id.Value);
-			//	eventosQueryable = eventosQueryable.Where(e => eventosContemAlunos.Any(p => p.Evento_Id == e.Id));
-
-			//}
-
-
 			eventosQueryable =
 				from e in eventosQueryable
 				join a in _db.Evento_Participacao_Aluno
@@ -246,9 +200,9 @@ public class CalendarioService : ICalendarioService
 
 		#endregion roteiro e feriados
 
-		var calendarioResponse = eventos;
+		var eventosResponse = eventos;
 
-		PopulateCalendarioEvents(calendarioResponse, feriados, roteiros);
+		PopulateCalendarioEvents(eventosResponse, feriados, roteiros);
 
 		DateTime data = request.IntervaloDe.Value.Date;
 
@@ -296,7 +250,7 @@ public class CalendarioService : ICalendarioService
 			
 			if (diaSemana == DayOfWeek.Monday)
 			{
-				CalendarioEventoList? eventoOficina = calendarioResponse
+				CalendarioEventoList? eventoOficina = eventosResponse
 					.FirstOrDefault(x => x.Data.Date == data.Date 
 											&& x.Evento_Tipo_Id == (int)EventoTipo.Oficina);
 
@@ -330,7 +284,7 @@ public class CalendarioService : ICalendarioService
 
 					};
 
-					calendarioResponse.Add(pseudoOficina);
+					eventosResponse.Add(pseudoOficina);
 				}
 			}
 			
@@ -344,7 +298,7 @@ public class CalendarioService : ICalendarioService
 			var diasReuniao = new DayOfWeek[] { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Friday };
 			if (diasReuniao.Contains(diaSemana)) 
 			{
-				CalendarioEventoList? eventoReuniao = calendarioResponse
+				CalendarioEventoList? eventoReuniao = eventosResponse
 														.FirstOrDefault(x => x.Data.Date == data.Date 
 																		&& x.Evento_Tipo_Id == (int)EventoTipo.Reuniao);
 
@@ -389,7 +343,7 @@ public class CalendarioService : ICalendarioService
 						}).ToList()
 					};
 
-					calendarioResponse.Add(pseudoReuniao);
+					eventosResponse.Add(pseudoReuniao);
 				}
 			}
 
@@ -402,8 +356,6 @@ public class CalendarioService : ICalendarioService
 			{
 				DateTime dataTurma = new DateTime(data.Year, data.Month, data.Day, turma.Horario!.Value.Hours, turma.Horario!.Value.Minutes, 0);
 
-
-				//var eventoAula = calendarioResponse.FirstOrDefault(x => x.Turma_Id == turma.Id && x.Data == dataTurma);
 
 				if (!eventosByTurmaData.TryGetValue((turma.Id, dataTurma.ToString(formatDateDict)), out var eventoAula))
 				{
@@ -533,7 +485,7 @@ public class CalendarioService : ICalendarioService
 
 					pseudoAula.Alunos = pseudoParticipacoes;
 
-					calendarioResponse.Add(pseudoAula);
+					eventosResponse.Add(pseudoAula);
 				}
 
 			}
@@ -541,7 +493,13 @@ public class CalendarioService : ICalendarioService
 			data = data.AddDays(1);
 		}
 
-		return calendarioResponse;
+		var response = new CalendarioResponse
+		{
+			Eventos = eventosResponse,
+			Feriados = feriados,
+		};
+
+		return response;
 	}
 
 	private static DateTime GetThisWeeksMonday(DateTime date)

@@ -83,7 +83,7 @@ public class EventosController : _BaseController
     }
 
     [HttpPost("calendario")]
-    public async Task<ActionResult<List<CalendarioEventoList>>> GetCalendario(CalendarioRequest request)
+    public async Task<ActionResult<CalendarioResponse>> GetCalendario(CalendarioRequest request)
     {
         try
         {
