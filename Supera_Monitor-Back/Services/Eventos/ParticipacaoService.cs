@@ -305,8 +305,8 @@ public class ParticipacaoService : IParticipacaoService
 			participacao.ContatoObservacao = request.ContatoObservacao;
 			participacao.Observacao = request.Observacao;
 
-			_db.Aluno_Checklist_Item.RemoveRange(checklist);
-			_db.Evento_Participacao_Aluno.Remove(participacao);
+			_db.Aluno_Checklist_Item.UpdateRange(checklist);
+			_db.Evento_Participacao_Aluno.Update(participacao);
 			_db.SaveChanges();
 
 			response.Message = "Aluno removido scom sucesso";
