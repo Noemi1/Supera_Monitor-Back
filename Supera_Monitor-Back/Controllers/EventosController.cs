@@ -36,23 +36,38 @@ public class EventosController : _BaseController
         _logger = logger;
     }
 
-    [HttpGet("{eventoId}")]
-    public async Task<ActionResult<List<EventoAulaModel>>> GetEventoById(int eventoId)
-    {
-        try
-        {
-            var response = await _eventoService.GetEventoById(eventoId);
+	[HttpGet("{eventoId}")]
+	public async Task<ActionResult<List<EventoAulaModel>>> GetEventoById(int eventoId)
+	{
+		try
+		{
+			var response = await _eventoService.GetEventoById(eventoId);
 
-            return Ok(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-            return StatusCode(500, e);
-        }
-    }
+			return Ok(response);
+		}
+		catch (Exception e)
+		{
+			_logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+			return StatusCode(500, e);
+		}
+	}
+	[HttpGet("feriados/{ano}")]
+	public async Task<ActionResult<List<FeriadoResponse>>> GetFeriados(int ano)
+	{
+		try
+		{
+			var response = await _eventoService.GetFeriados(ano);
 
-    [HttpPost("pseudo-aula")]
+			return Ok(response);
+		}
+		catch (Exception e)
+		{
+			_logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+			return StatusCode(500, e);
+		}
+	}
+
+	[HttpPost("pseudo-aula")]
     public async Task<ActionResult<CalendarioEventoList>> GetPseudoAula(PseudoEventoRequest request)
     {
         try
