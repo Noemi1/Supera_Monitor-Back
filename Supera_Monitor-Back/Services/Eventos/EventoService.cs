@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Diagnostics.Tracing;
+using System.Text.Json;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
@@ -696,31 +697,52 @@ public class EventoService : IEventoService
 			if (hasParticipacaoConflict)
 				return new ResponseModel { Message = $"Professor: {professor.Nome} possui participação em outro evento nesse mesmo horário" };
 
-			List<int> alunoIds = request.Alunos.Select(a => a.Aluno_Id).ToList();
+			var alunoIds = request.Alunos
+				.Select(a => a.Aluno_Id)
+				.ToHashSet();
 
-			var alunosInRequestQueryable =
-				from aluno in _db.AlunoList
-				join participacao in request.Alunos
-					on aluno.Id equals participacao.Aluno_Id
-				where aluno.Deactivated == null
-				select aluno;
+			var alunos = _db.AlunoList
+				.Where(x => alunoIds.Contains(x.Id)
+						&& x.Deactivated == null || x.Deactivated.Value.Date > request.Data.Date)
+				.ToList();
 
-			var alunosInRequest = alunosInRequestQueryable.ToList();
-
-			if (alunosInRequest.Count != request.Alunos.Count)
+			if (alunos.Count != request.Alunos.Count)
 				return new ResponseModel { Message = "Aluno(s) não encontrado(s)" };
 
-			if (alunosInRequest.Count > request.CapacidadeMaximaAlunos)
+			if (alunos.Count > request.CapacidadeMaximaAlunos)
 				return new ResponseModel { Message = "Número máximo de alunos excedido" };
 
 			var roteiros = _roteiroService.GetAll(request.Data.Year);
 			var roteiro = roteiros.FirstOrDefault(x => request.Data.Date >= x.DataInicio.Date
 															&& request.Data.Date <= x.DataFim.Date
 															&& x.Id != -1);
+
+			var checklistAgendamentos = _db.Aluno_Checklist_Item
+				.Where(x => alunoIds.Contains(x.Aluno_Id)
+					&& x.Checklist_Item_Id == (int)ChecklistItemId.AgendamentoPrimeiraAula)
+				.ToList();
+
+			var checklistAgendamentoPorAlunoId = checklistAgendamentos
+				.ToLookup(x => x.Aluno_Id);
+
+			var requestAlunosPorAlunoId = request.Alunos
+				.ToDictionary(x => x.Aluno_Id);
+
+			var eventosIds = request.Alunos
+				.Select(x => x.ReposicaoDe_Evento_Id)
+				.ToHashSet();
+
+			var eventos = _db.Evento
+				.Where(x => eventosIds.Contains(x.Id))
+				.ToList();
+
+			var eventosPorId = eventos
+				.ToDictionary(x => x.Id, x => x);
+
 			//
-			// Validations passed
+			// Evento
 			//
-			Evento evento = new()
+			Evento evento = new Evento
 			{
 				Data = request.Data,
 				Descricao = request.Descricao ?? "Turma extra",
@@ -730,12 +752,6 @@ public class EventoService : IEventoService
 				CapacidadeMaximaAlunos = request.CapacidadeMaximaAlunos,
 
 				Evento_Tipo_Id = (int)EventoTipo.AulaExtra,
-				Evento_Aula = new Evento_Aula
-				{
-					Turma_Id = null,
-					Roteiro_Id = roteiro?.Id,
-					Professor_Id = request.Professor_Id,
-				},
 
 				Created = TimeFunctions.HoraAtualBR(),
 				LastUpdated = null,
@@ -744,46 +760,100 @@ public class EventoService : IEventoService
 				Account_Created_Id = _account!.Id,
 			};
 
-			// Inserir participação do professor
-			evento.Evento_Participacao_Professor.Add(new Evento_Participacao_Professor()
+			evento.Evento_Aula = new Evento_Aula
 			{
-				Evento_Id = evento.Id,
-				Professor_Id = professor.Id,
-			});
+				Turma_Id = null,
+				Roteiro_Id = roteiro?.Id,
+				Professor_Id = request.Professor_Id,
+			};
 
-			// Inserir os registros dos alunos passados na requisição
-			var participacaoAlunos = alunosInRequest
-				.Select(aluno => new Evento_Participacao_Aluno
-				{
-					Aluno_Id = aluno.Id,
-					Evento_Id = evento.Id,
-					Presente = null,
-					ReposicaoDe_Evento_Id = request.Alunos
-						.Where(a => a.Aluno_Id == aluno.Id)
-						.Select(a => a.ReposicaoDe_Evento_Id)
-						.FirstOrDefault(),
-
-					Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
-					NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
-					Apostila_AH_Id = aluno.Apostila_AH_Id,
-					NumeroPaginaAH = aluno.NumeroPaginaAH,
-				})
-				.ToList();
-
-			evento.Evento_Participacao_Aluno = participacaoAlunos;
-
-
-			// Pegar os perfis cognitivos passados na requisição e criar as entidades de Aula_PerfilCognitivo
-			var perfilCognitivos = request.PerfilCognitivo
+			//
+			// Insere Perfil Cognitivo
+			//
+			evento.Evento_Aula.Evento_Aula_PerfilCognitivo_Rel = request.PerfilCognitivo
 				.Select(perfilId => new Evento_Aula_PerfilCognitivo_Rel
 				{
 					Evento_Aula_Id = evento.Id,
 					PerfilCognitivo_Id = perfilId
 				})
 				.ToList();
-			evento.Evento_Aula.Evento_Aula_PerfilCognitivo_Rel = perfilCognitivos;
+
+			//
+			// Inserir professores
+			//
+			evento.Evento_Participacao_Professor.Add(new Evento_Participacao_Professor()
+			{
+				Evento_Id = evento.Id,
+				Professor_Id = professor.Id,
+			});
+
+
 
 			_db.Add(evento);
+			_db.SaveChanges();
+
+			//
+			// Inserir alunos
+			//
+			var checklistsAtualizar = new List<Aluno_Checklist_Item>();
+			var hoje = TimeFunctions.HoraAtualBR();
+
+			foreach (var aluno in alunos)
+			{
+				if (requestAlunosPorAlunoId.TryGetValue(aluno.Id, out var reposicao))
+				{
+					var participacao = new Evento_Participacao_Aluno
+					{
+						Aluno_Id = aluno.Id,
+						Evento_Id = evento.Id,
+						Presente = null,
+						ReposicaoDe_Evento_Id = reposicao.ReposicaoDe_Evento_Id,
+						Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
+						NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
+						Apostila_AH_Id = aluno.Apostila_AH_Id,
+						NumeroPaginaAH = aluno.NumeroPaginaAH,
+					};
+					evento.Evento_Participacao_Aluno.Add(participacao);
+
+					if (aluno.PrimeiraAula_Id == reposicao.ReposicaoDe_Evento_Id)
+					{
+						var checklistAgendamento = checklistAgendamentoPorAlunoId[aluno.Id]
+											.FirstOrDefault();
+
+						eventosPorId.TryGetValue(reposicao.ReposicaoDe_Evento_Id, out var eventoSource);
+
+						if (checklistAgendamento is not null)
+						{
+							var dataSource = eventoSource.Data.ToString("dd/MM/yyyy \'às\' HH:mm");
+							var dataDest = evento.Data.ToString("dd/MM/yyyy \'às\' HH:mm");
+
+							checklistAgendamento.Evento_Id = evento.Id;
+							checklistAgendamento.DataFinalizacao = hoje;
+							checklistAgendamento.Account_Finalizacao_Id = _account?.Id ?? 1;
+							checklistAgendamento.Observacoes = $@"
+								Checklist finalizado automaticamente. 
+								<br> Aluno agendou reposicao da primeira aula do dia {dataSource} para o dia {dataDest}
+								<br>
+								<br> <b>Agendamento Inicial: </b>
+								<br> Data: {dataSource}
+								<br> Turma: {eventoSource.Descricao}
+								<br>
+								<br> <b>Agendamento Reposição: </b>
+								<br> Data: {dataDest}
+								<br> Turma: {evento.Descricao}
+				";
+
+							checklistsAtualizar.Add(checklistAgendamento);
+
+						}
+					}
+				}
+
+
+			}
+
+			_db.Aluno_Checklist_Item.UpdateRange(checklistsAtualizar);
+			_db.Update(evento);
 			_db.SaveChanges();
 
 
@@ -791,6 +861,7 @@ public class EventoService : IEventoService
 			response.Object = await this.GetEventoById(evento.Id);
 			response.Success = true;
 		}
+		
 		catch (Exception ex)
 		{
 			response.Message = $"Falha ao registrar aula extra: {ex}";
