@@ -300,6 +300,7 @@ public class ParticipacaoService : IParticipacaoService
 			if (request.ReposicaoDe_Evento_Id.HasValue)
 				participacao.StatusContato_Id = (int)StatusContato.REPOSICAO_DESMARCADA;
 
+			//participacao.Presente = false;
 			participacao.Deactivated = TimeFunctions.HoraAtualBR();
 			participacao.AlunoContactado = request.AlunoContactado;
 			participacao.ContatoObservacao = request.ContatoObservacao;

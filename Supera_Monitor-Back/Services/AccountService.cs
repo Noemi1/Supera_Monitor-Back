@@ -372,8 +372,9 @@ public class AccountService : IAccountService
 
 	private void RemoveOldRefreshTokens(Account account)
 	{
-		account.AccountRefreshTokens = account.AccountRefreshTokens.Where(token =>
-			token.IsActive && token.Created.AddDays(_appSettings.RefreshTokenTTL) > TimeFunctions.HoraAtualBR()).ToList();
+		account.AccountRefreshTokens = account.AccountRefreshTokens
+			.Where(token => token.IsActive && token.Created.AddDays(_appSettings.RefreshTokenTTL) > TimeFunctions.HoraAtualBR())
+			.ToList();
 	}
 
 	private string GenerateJwtToken(Account account)
