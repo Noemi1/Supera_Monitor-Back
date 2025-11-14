@@ -5,159 +5,79 @@ using Supera_Monitor_Back.Models;
 using Supera_Monitor_Back.Models.Checklist;
 using Supera_Monitor_Back.Services;
 
-namespace Supera_Monitor_Back.Controllers {
-    [Authorize(Entities.Role.Admin, Entities.Role.Teacher, Entities.Role.Assistant)]
-    [ApiController]
-    [Route("back/[controller]")]
-    public class ChecklistController : _BaseController {
-        private readonly IChecklistService _checklistService;
-        private readonly ILogService _logger;
+namespace Supera_Monitor_Back.Controllers
+{
+	[Authorize(Entities.Role.Admin, Entities.Role.Teacher, Entities.Role.Assistant)]
+	[ApiController]
+	[Route("back/[controller]")]
+	public class ChecklistController : _BaseController
+	{
+		private readonly IChecklistService _checklistService;
+		private readonly ILogService _logger;
 
-        public ChecklistController(IChecklistService checklistService, ILogService logger) {
-            _checklistService = checklistService;
-            _logger = logger;
-        }
+		public ChecklistController(
+			IChecklistService checklistService,
+			ILogService logger
+		)
+		{
+			_checklistService = checklistService;
+			_logger = logger;
+		}
 
-        [HttpGet("all")]
-        public ActionResult<List<ChecklistModel>> GetAll() {
-            try {
-                var response = _checklistService.GetAll();
+		[HttpGet("all")]
+		public ActionResult<List<ChecklistModel>> GetAll()
+		{
+			try
+			{
+				var response = _checklistService.GetAll();
 
-                return Ok(response);
-            }
-            catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-                return StatusCode(500, e);
-            }
-        }
+				return Ok(response);
+			}
+			catch (Exception e)
+			{
+				_logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+				return StatusCode(500, e);
+			}
+		}
 
-        [HttpGet("all/{checklistId}")]
-        public ActionResult<ResponseModel> GetAllByChecklistId(int checklistId) {
-            try {
-                var response = _checklistService.GetAllByChecklistId(checklistId);
+		[HttpPost("populate/{alunoId}")]
+		public ActionResult<ResponseModel> PopulateAlunoChecklist(int alunoId)
+		{
+			try
+			{
+				var response = _checklistService.PopulateAlunoChecklist(alunoId);
 
-                return Ok(response);
-            }
-            catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-                return StatusCode(500, e);
-            }
-        }
+				if (response.Success)
+				{
+					return Ok(response);
+				}
 
-        [HttpGet("all/aluno/{alunoId}")]
-        public ActionResult<List<AlunoChecklistView>> GetAllByAlunoId(int alunoId) {
-            try {
-                var response = _checklistService.GetAllByAlunoId(alunoId);
+				return BadRequest(response);
+			}
+			catch (Exception e)
+			{
+				_logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+				return StatusCode(500, e);
+			}
+		}
 
-                return Ok(response);
-            }
-            catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-                return StatusCode(500, e);
-            }
-        }
+		[HttpPatch("toggle-item")]
+		public ActionResult<ResponseModel> FinalizaChecklist(FinalizaChecklistRequest model)
+		{
+			try
+			{
+				var response = _checklistService.FinalizaChecklist(model);
 
-        [HttpGet("all/evento/{eventoId}")]
-        public ActionResult<List<ChecklistsFromAlunoModel>> GetAllAlunoChecklistsByEventoId(int eventoId) {
-            try {
-                var response = _checklistService.GetAllAlunoChecklistsByEventoId(eventoId);
+				if (response.Success)
+					return Ok(response);
 
-                return Ok(response);
-            }
-            catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-                return StatusCode(500, e);
-            }
-        }
-
-        [HttpPost()]
-        public ActionResult<ResponseModel> Insert(CreateChecklistItemRequest model) {
-            try {
-                var response = _checklistService.Insert(model);
-
-                if (response.Success) {
-                    _logger.Log("Insert", "Checklist_Item", response.Object, Account?.Id);
-                    return Ok(response);
-                }
-
-                return BadRequest(response);
-            }
-            catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-                return StatusCode(500, e);
-            }
-        }
-
-        [HttpPut()]
-        public ActionResult<ResponseModel> Update(UpdateChecklistItemRequest model) {
-            try {
-                var response = _checklistService.Update(model);
-
-                if (response.Success) {
-                    _logger.Log("Update", "Checklist_Item", response, Account?.Id);
-                    return Ok(response);
-                }
-
-                return BadRequest(response);
-            }
-            catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-                return StatusCode(500, e);
-            }
-        }
-
-        [HttpPatch("toggle-active/{checklistItemId}")]
-        public ActionResult<ResponseModel> ToggleDeactivate(int checklistItemId) {
-            try {
-                var response = _checklistService.ToggleDeactivate(checklistItemId);
-
-                if (response.Success) {
-                    _logger.Log("ToggleDeactivate", "Checklist_Item", response, Account?.Id);
-                    return Ok(response);
-                }
-
-                return BadRequest(response);
-            }
-            catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-                return StatusCode(500, e);
-            }
-        }
-
-        [HttpPost("populate/{alunoId}")]
-        public ActionResult<ResponseModel> PopulateAlunoChecklist(int alunoId) {
-            try {
-                var response = _checklistService.PopulateAlunoChecklist(alunoId);
-
-                if (response.Success) {
-                    _logger.Log("PopulateAlunoChecklist", "Aluno_Checklist_Item", response, Account?.Id);
-                    return Ok(response);
-                }
-
-                return BadRequest(response);
-            }
-            catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-                return StatusCode(500, e);
-            }
-        }
-
-        [HttpPatch("toggle-item")]
-        public ActionResult<ResponseModel> ToggleAlunoChecklistItem(FinalizaChecklistRequest model) {
-            try {
-                var response = _checklistService.FinalizaChecklist(model);
-
-                if (response.Success) {
-                    _logger.Log("ToggleAlunoChecklistItem", "Aluno_Checklist_Item", response, Account?.Id);
-                    return Ok(response);
-                }
-
-                return BadRequest(response);
-            }
-            catch (Exception e) {
-                _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-                return StatusCode(500, e);
-            }
-        }
-    }
+				return BadRequest(response);
+			}
+			catch (Exception e)
+			{
+				_logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+				return StatusCode(500, e);
+			}
+		}
+	}
 }

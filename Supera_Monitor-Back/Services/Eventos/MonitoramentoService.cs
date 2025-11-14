@@ -375,7 +375,7 @@ public class MonitoramentoService : IMonitoramentoService
 						monitoramentoAula.Deactivated = feriado.date;
 					}
 
-					monitoramentoAlunoItem.Id = monitoramentoAula.Id;
+					monitoramentoAlunoItem.Id = monitoramentoReposicaoPara is not null ? monitoramentoReposicaoPara.Aula.Id : monitoramentoAula.Id;
 					monitoramentoAlunoItem.Show = 
 							feriado is null
 							&& dataTurma.Year == request.Ano 
