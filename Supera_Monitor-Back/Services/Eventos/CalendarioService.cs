@@ -22,7 +22,6 @@ public class CalendarioService : ICalendarioService
 	private readonly IEventoService _eventoService;
 	private readonly ISalaService _salaService;
 
-	private readonly Account? _account;
 
 	public CalendarioService(
 		DataContext db,
