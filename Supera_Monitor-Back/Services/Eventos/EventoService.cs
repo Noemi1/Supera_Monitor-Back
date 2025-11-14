@@ -925,6 +925,7 @@ public class EventoService : IEventoService
 
 
 			var participacaoOutraAulaZero = participacaoOutraAulaZeroQueryable
+				.Include(x => x.Evento)
 				.ToList();
 
 			var participacaoFinalizada = participacaoOutraAulaZero
@@ -943,7 +944,8 @@ public class EventoService : IEventoService
 
 			var roteiro = _db.Roteiro.FirstOrDefault(r => request.Data.Date >= r.DataInicio.Date && request.Data.Date <= r.DataFim.Date);
 
-			var evento = new Evento()
+			var ab = roteiro?.Id;
+			var evento = new Evento
 			{
 				Data = request.Data,
 				Descricao = request.Descricao ?? "Aula Zero",
@@ -965,7 +967,7 @@ public class EventoService : IEventoService
 				Deactivated = null,
 				Finalizado = false,
 				ReagendamentoDe_Evento_Id = null,
-				Account_Created_Id = _account!.Id,
+				Account_Created_Id = _account?.Id ?? 1
 			};
 
 	
