@@ -2021,11 +2021,11 @@ public class EventoService : IEventoService
 			if (evento is null || evento.Evento_Aula is null)
 				return new ResponseModel { Message = "Evento não encontrado" };
 
-			if (evento.Finalizado == true)
-				return new ResponseModel { Message = "Não foi possível continuar. Esta aula já está finalizada." };
+			//if (evento.Finalizado == true)
+			//	return new ResponseModel { Message = "Não foi possível continuar. Esta aula já está finalizada." };
 
 			if (evento.Deactivated != null)
-				return new ResponseModel { Message = "Não foi possível continuar. Esta aula está inativa." };
+				return new ResponseModel { Message = "Não foi possível continuar. Esta aula foi cancelada." };
 			
 			if (aluno.PrimeiraAula_Id.HasValue && aluno.PrimeiraAula != null)
 			{
