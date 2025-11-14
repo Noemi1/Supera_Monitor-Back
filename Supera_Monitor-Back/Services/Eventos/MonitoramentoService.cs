@@ -195,8 +195,22 @@ public class MonitoramentoService : IMonitoramentoService
 						.ToList();
 
 					var vigenciaAlunoRoteiro = vigenciasAluno
-						.FirstOrDefault(x => x.DataInicioVigencia.Date >= roteiro.DataInicio.Date
-											&& ( x.DataFimVigencia.HasValue && x.DataFimVigencia.Value.Date >= roteiro.DataFim.Date) || !x.DataFimVigencia.HasValue);
+						.FirstOrDefault(x => (x.DataInicioVigencia.Date <= roteiro.DataInicio.Date)
+											&& (( x.DataFimVigencia.HasValue && x.DataFimVigencia.Value.Date >= roteiro.DataFim.Date) || !x.DataFimVigencia.HasValue));
+
+					//var vigencia1 = vigenciasAluno.First();
+					//var vigencia2 = vigenciasAluno.Last();
+
+
+					//var a1 = vigencia1.DataInicioVigencia.Date <= roteiro.DataInicio.Date;
+					//var a2 = vigencia1.DataFimVigencia.HasValue;
+					//var a3 = (a2 && vigencia1.DataFimVigencia.Value.Date >= roteiro.DataFim.Date) || !a2;
+					//var a4 = a1 && a3;
+
+					//var b1 = vigencia2.DataInicioVigencia.Date <= roteiro.DataInicio.Date;
+					//var b2 = vigencia2.DataFimVigencia.HasValue;
+					//var b3 = (b2 && vigencia2.DataFimVigencia.Value.Date >= roteiro.DataFim.Date) || !b2;
+					//var b4 = b1 && b3;
 
 
 
