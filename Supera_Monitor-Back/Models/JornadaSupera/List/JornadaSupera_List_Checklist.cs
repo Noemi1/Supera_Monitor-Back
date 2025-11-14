@@ -10,6 +10,8 @@ namespace Supera_Monitor_Back.Models.JornadaSupera.List
 		public int Ordem { get; set; }
 
 		public int? NumeroSemana { get; set; }
+			
+		public DateTime? Prazo => getPrazo();
 
 		public List<JornadaSupera_List_Checklist_Item_Aluno> Items { get; set; } = new List<JornadaSupera_List_Checklist_Item_Aluno>() { };
 
@@ -41,5 +43,12 @@ namespace Supera_Monitor_Back.Models.JornadaSupera.List
 			return StatusChecklistItem.ARealizar;
 
 		}
+	
+		public DateTime? getPrazo()
+		{
+			var first = this.Items.FirstOrDefault();
+			return first?.Prazo;
+		}
+	
 	}
 }
