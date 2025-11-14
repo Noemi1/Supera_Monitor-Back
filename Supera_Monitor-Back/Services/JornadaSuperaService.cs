@@ -13,25 +13,19 @@ public interface IJornadaSuperaService
 
 	List<JornadaSupera_Card_Checklist> GetCards(JornadaSupera_Request request);
 
-	IEnumerable<JornadaSupera_List_Aluno> GetList(JornadaSupera_Request request);
+	List<JornadaSupera_List_Aluno> GetList(JornadaSupera_Request request);
 
 }
 
 public class JornadaSuperaService : IJornadaSuperaService
 {
 	private readonly DataContext _db;
-	private readonly IMapper _mapper;
-	private readonly Account? _account;
 
 	public JornadaSuperaService(
-		DataContext db,
-		IMapper mapper,
-		IHttpContextAccessor httpContextAccessor
+		DataContext db
 	)
 	{
 		_db = db;
-		_mapper = mapper;
-		_account = (Account?)httpContextAccessor?.HttpContext?.Items["Account"];
 	}
 
 
@@ -206,7 +200,7 @@ public class JornadaSuperaService : IJornadaSuperaService
 		return response;
 	}
 
-	public IEnumerable<JornadaSupera_List_Aluno> GetList(JornadaSupera_Request request)
+	public List<JornadaSupera_List_Aluno> GetList(JornadaSupera_Request request)
 	{
 		var response = new List<JornadaSupera_List_Aluno>() { };
 
@@ -267,9 +261,8 @@ public class JornadaSuperaService : IJornadaSuperaService
 		//
 
 		var alunosPorChecklistItemId = alunosChecklistItems
-			.ToLookup(x => x.Checklist_Item_Id);
-			//.GroupBy(x => (x.Aluno_Id, x.Checklist_Item_Id))
-			//.ToDictionary(x => (x.Key.Aluno_Id, x.Key.Checklist_Item_Id), x => x.ToList());
+			.GroupBy(x => (x.Aluno_Id, x.Checklist_Item_Id))
+			.ToDictionary(x => (x.Key.Aluno_Id, x.Key.Checklist_Item_Id), x => x.ToList());
 
 		// 
 		// Mapeia os alunos
@@ -302,23 +295,27 @@ public class JornadaSuperaService : IJornadaSuperaService
 
 				foreach(Checklist_Item item in checklistItems)
 				{
-					var itemsDoChecklist = alunosPorChecklistItemId[item.Id];
+
+					alunosPorChecklistItemId.TryGetValue((aluno.Id, item.Id), out var itemsDoChecklist);
+
+					var a = 1;
+					//var itemsDoChecklist = alunosPorChecklistItemId[item.Id];
 
 					// lista é List<Aluno_Checklist_Item>
 					var jornadaChecklistItemAlunos = itemsDoChecklist
-						.Select(item => new JornadaSupera_List_Checklist_Item_Aluno()
+						.Select(alunoChecklistItem => new JornadaSupera_List_Checklist_Item_Aluno()
 						{
-							Id = item.Id,
-							Checklist_Item_Id = item.Checklist_Item_Id,
-							Checklist_Item = item.Checklist_Item.Nome,
-							Aluno_Id = item.Aluno_Id,
+							Id = alunoChecklistItem.Id,
+							Checklist_Item_Id = alunoChecklistItem.Checklist_Item_Id,
+							Checklist_Item = alunoChecklistItem.Checklist_Item.Nome,
+							Aluno_Id = alunoChecklistItem.Aluno_Id,
 							NumeroSemana = checklist.NumeroSemana,
-							Prazo = item.Prazo,
-							DataFinalizacao = item.DataFinalizacao,
-							Account = item.Account_Finalizacao?.Name,
-							Account_Id = item.Account_Finalizacao_Id,
-							Observacoes = item.Observacoes,
-							Evento_Id = item.Evento_Id,
+							Prazo = alunoChecklistItem.Prazo,
+							DataFinalizacao = alunoChecklistItem.DataFinalizacao,
+							Account = alunoChecklistItem.Account_Finalizacao is not null ? alunoChecklistItem.Account_Finalizacao?.Name : null,
+							Account_Id = alunoChecklistItem.Account_Finalizacao_Id,
+							Observacoes = alunoChecklistItem.Observacoes,
+							Evento_Id = alunoChecklistItem.Evento_Id,
 						}).ToList();
 
 					jornadaChecklist.Items.AddRange(jornadaChecklistItemAlunos);
@@ -326,8 +323,6 @@ public class JornadaSuperaService : IJornadaSuperaService
 
 
 				jornadaAluno.Checklists.Add(jornadaChecklist);
-
-				var a = jornadaChecklist.Status;
 			}
 
 			response.Add(jornadaAluno);

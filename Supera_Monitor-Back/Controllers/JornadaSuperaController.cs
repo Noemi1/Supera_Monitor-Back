@@ -44,7 +44,7 @@ public class JornadaSuperaController : _BaseController
 	}
 
 	[HttpPost("list")]
-	public ActionResult<IEnumerable<JornadaSupera_List_Aluno>> GetList(JornadaSupera_Request request)
+	public ActionResult<List<JornadaSupera_List_Aluno>> GetList(JornadaSupera_Request request)
 	{
 		try
 		{
