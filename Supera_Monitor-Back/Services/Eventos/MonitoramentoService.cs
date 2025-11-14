@@ -87,8 +87,8 @@ public class MonitoramentoService : IMonitoramentoService
 		var vigencias = _db.Aluno_Turma_Vigencia
 			.Where(x => alunosIds.Contains(x.Aluno_Id)
 						&& turmasIds.Contains(x.Turma_Id)
-						&& x.DataInicioVigencia.Date <= intervaloDe
-						&& (!x.DataFimVigencia.HasValue || x.DataFimVigencia.Value.Date >= intervaloAte))
+						&& x.DataInicioVigencia.Date >= intervaloDe
+						&& (!x.DataFimVigencia.HasValue || x.DataFimVigencia.Value.Date <= intervaloAte))
 			.AsNoTracking()
 			.ToList();
 
