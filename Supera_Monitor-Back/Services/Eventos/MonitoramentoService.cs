@@ -189,12 +189,16 @@ public class MonitoramentoService : IMonitoramentoService
 			{
 				if (alunosPorId.TryGetValue(monitoramentoAluno.Id, out var aluno))
 				{
-
-					var vigenciasAluno = vigenciaPorAluno.GetValueOrDefault(aluno.Id, new List<Aluno_Turma_Vigencia>() { });
+					var vigenciasAluno = vigenciaPorAluno
+						.GetValueOrDefault(aluno.Id, new List<Aluno_Turma_Vigencia>() { })
+						.OrderBy(x => x.Id)
+						.ToList();
 
 					var vigenciaAlunoRoteiro = vigenciasAluno
-						.FirstOrDefault(x => x.DataInicioVigencia.Date <= roteiro.DataInicio.Date
-											&& (!x.DataFimVigencia.HasValue || x.DataFimVigencia.Value.Date >= roteiro.DataFim.Date));
+						.FirstOrDefault(x => x.DataInicioVigencia.Date >= roteiro.DataInicio.Date
+											&& ( x.DataFimVigencia.HasValue && x.DataFimVigencia.Value.Date >= roteiro.DataFim.Date) || !x.DataFimVigencia.HasValue);
+
+
 
 					DateTime dataTurma = roteiro.DataInicio.Date;
 					var monitoramentoAlunoItem = new Monitoramento_Aluno_Item();
