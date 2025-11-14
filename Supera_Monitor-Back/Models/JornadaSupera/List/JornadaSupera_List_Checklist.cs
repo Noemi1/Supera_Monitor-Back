@@ -13,6 +13,8 @@ namespace Supera_Monitor_Back.Models.JornadaSupera.List
 			
 		public DateTime? Prazo => getPrazo();
 
+		public int Finalizados => countFinalizados();
+
 		public List<JornadaSupera_List_Checklist_Item_Aluno> Items { get; set; } = new List<JornadaSupera_List_Checklist_Item_Aluno>() { };
 
 		public StatusChecklistItem Status => getStatus();
@@ -48,6 +50,11 @@ namespace Supera_Monitor_Back.Models.JornadaSupera.List
 		{
 			var first = this.Items.FirstOrDefault();
 			return first?.Prazo;
+		}
+
+		public int countFinalizados()
+		{
+			return this.Items.Where(x => x.Finalizado == true).Count();
 		}
 	
 	}
