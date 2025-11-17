@@ -14,6 +14,7 @@ public interface IFeriadoService
 	FeriadoList Get(int id);
 	ResponseModel Insert(InsertFeriadoRequest request);
 	ResponseModel Update(UpdateFeriadoRequest request);
+	ResponseModel Delete(int id);
 	ResponseModel ToggleDeactivate(int id);
 }
 
@@ -113,6 +114,38 @@ public class FeriadoService : IFeriadoService
 
 		return response;
 	}
+
+	public ResponseModel Delete(int id)
+	{
+
+
+		ResponseModel response = new() { Success = false };
+
+		try
+		{
+			Feriado? feriado = _db.Feriado.FirstOrDefault(r => r.Id == id);
+
+			if (feriado == null)
+				return new ResponseModel { Message = "Feriado não encontrado." };
+
+			var oldObject = this.Get(id);
+
+			_db.Feriado.Remove(feriado);
+			_db.SaveChanges();
+
+			response.Success = true;
+			response.Message = "Feriado excluido com sucesso";
+			response.Object = oldObject;
+		}
+		catch (Exception ex)
+		{
+			response.Message = $"Falha ao desativar Feriado: {ex}";
+		}
+
+		return response;
+	}
+
+
 	public ResponseModel ToggleDeactivate(int id)
 	{
 

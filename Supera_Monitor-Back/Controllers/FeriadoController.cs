@@ -109,5 +109,24 @@ namespace Supera_Monitor_Back.Controllers
 				return StatusCode(500, e);
 			}
 		}
+
+		[HttpDelete("{id}")]
+		public ActionResult<ResponseModel> Delete(int id)
+		{
+			try
+			{
+				var response = _feriadoService.Delete(id);
+
+				if (response.Success)
+					return Ok(response);
+
+				return BadRequest(response);
+			}
+			catch (Exception e)
+			{
+				_logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+				return StatusCode(500, e);
+			}
+		}
 	}
 }
