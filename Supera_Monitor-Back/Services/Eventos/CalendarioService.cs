@@ -11,7 +11,7 @@ namespace Supera_Monitor_Back.Services.Eventos;
 
 public interface ICalendarioService
 {
-	public Task<CalendarioResponse> GetCalendario(CalendarioRequest request);
+	public CalendarioResponse GetCalendario(CalendarioRequest request);
 }
 
 public class CalendarioService : ICalendarioService
@@ -21,6 +21,7 @@ public class CalendarioService : ICalendarioService
 	private readonly IRoteiroService _roteiroService;
 	private readonly IEventoService _eventoService;
 	private readonly ISalaService _salaService;
+	private readonly IFeriadoService _feriadoService;
 
 
 	public CalendarioService(
@@ -28,7 +29,8 @@ public class CalendarioService : ICalendarioService
 		IMapper mapper,
 		IRoteiroService roteiroService,
 		IEventoService eventoService,
-		ISalaService salaService
+		ISalaService salaService,
+		IFeriadoService feriadoService
 	)
 	{
 		_db = db;
@@ -36,9 +38,10 @@ public class CalendarioService : ICalendarioService
 		_roteiroService = roteiroService;
 		_salaService = salaService;
 		_eventoService = eventoService;
+		_feriadoService = feriadoService;
 	}
 
-	public async Task<CalendarioResponse> GetCalendario(CalendarioRequest request)
+	public CalendarioResponse GetCalendario(CalendarioRequest request)
 	{
 
 		DateTime now = TimeFunctions.HoraAtualBR();
@@ -173,23 +176,13 @@ public class CalendarioService : ICalendarioService
 		var anoDe = request.IntervaloDe.Value.Year;
 		var anoAte = request.IntervaloAte.Value.Year;
 
-		var roteirosTask = _roteiroService.GetAllAsync(anoDe);
-		var feriadosTask = _eventoService.GetFeriados(anoDe);
-
-		await Task.WhenAll(roteirosTask, feriadosTask);
-
-		var roteiros = roteirosTask.Result;
-		var feriados = feriadosTask.Result;
+		var roteiros = _roteiroService.GetAll(anoDe);
+		var feriados = _feriadoService.GetList();
 		
 		if (anoDe != anoAte)
 		{
-			var roteirosTask2 = _roteiroService.GetAllAsync(anoAte);
-			var feriadosTask2 = _eventoService.GetFeriados(anoAte);
-
-			await Task.WhenAll(roteirosTask2, feriadosTask2);
-			
-			roteiros.AddRange(roteirosTask2.Result);
-			feriados.AddRange(feriadosTask2.Result);
+			var roteiros2 = _roteiroService.GetAll(anoAte);
+			roteiros.AddRange(roteiros2);
 		}
 
 		roteiros = roteiros
@@ -230,7 +223,7 @@ public class CalendarioService : ICalendarioService
 			.ToDictionary(x => x.Id, x => x);
 
 		var feriadosPorData = feriados
-			.ToDictionary(x => x.date.ToString(formatDateDict), x => x);
+			.ToDictionary(x => x.Data.ToString(formatDateDict), x => x);
 
 		var roteirosPorData = roteiros
 			.ToDictionary(x => x.DataInicio.ToString(formatDateDict), x => x);
@@ -278,8 +271,8 @@ public class CalendarioService : ICalendarioService
 						Sala = "Sala Indefinida",
 
 						Feriado = feriadoNoDia,
-						Deactivated = feriadoNoDia is null ? null : feriadoNoDia.date,
-						Observacao = feriadoNoDia is null ? null : "Cancelamento Automático. <br> Feriado: " + feriadoNoDia.name,
+						Deactivated = feriadoNoDia is null ? null : feriadoNoDia.Data,
+						Observacao = feriadoNoDia is null ? null : "Cancelamento Automático. <br> Feriado: " + feriadoNoDia.Descricao,
 
 					};
 
@@ -326,8 +319,8 @@ public class CalendarioService : ICalendarioService
 						RoteiroCorLegenda = roteiroDoDia?.CorLegenda,
 
 						Feriado = feriadoNoDia,
-						Deactivated = feriadoNoDia is null ? null : feriadoNoDia.date,
-						Observacao = feriadoNoDia is null ? null : "Cancelamento Automático. <br> Feriado: " + feriadoNoDia.name,
+						Deactivated = feriadoNoDia is null ? null : feriadoNoDia.Data,
+						Observacao = feriadoNoDia is null ? null : "Cancelamento Automático. <br> Feriado: " + feriadoNoDia.Descricao,
 
 						Professores = professores.Select(professor => new CalendarioProfessorList
 						{
@@ -411,11 +404,11 @@ public class CalendarioService : ICalendarioService
 						Andar = turma.Andar,
 
 						Feriado = feriadoNoDia,
-						Deactivated = feriadoNoDia is null ? null : feriadoNoDia.date,
-						Observacao = feriadoNoDia is null ? null : "Cancelamento Automático. <br> Feriado: " + feriadoNoDia.name,
+						Deactivated = feriadoNoDia is null ? null : feriadoNoDia.Data,
+						Observacao = feriadoNoDia is null ? null : "Cancelamento Automático. <br> Feriado: " + feriadoNoDia.Descricao,
 
 						Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos)
-												.OrderBy(a => a.Aluno)
+												.OrderBy(a => a.Aluno)	
 												.ToList(),
 					};
 
@@ -513,7 +506,7 @@ public class CalendarioService : ICalendarioService
 		return response.AddDays(6);
 	}
 
-	private List<CalendarioEventoList> PopulateCalendarioEvents(List<CalendarioEventoList> events, List<FeriadoResponse> feriados, List<RoteiroModel> roteiros)
+	private List<CalendarioEventoList> PopulateCalendarioEvents(List<CalendarioEventoList> events, List<FeriadoList> feriados, List<RoteiroModel> roteiros)
 	{
 		var eventoIds = events.Select(e => e.Id);
 
@@ -562,7 +555,7 @@ public class CalendarioService : ICalendarioService
 		string dateDictFormat = "ddMMyyyy";
 
 		var feriadosDictionary = feriados
-			.ToDictionary(x => x.date.ToString(dateDictFormat), x => x);
+			.ToDictionary(x => x.Data.ToString(dateDictFormat), x => x);
 
 		foreach (var calendarioEvent in events)
 		{
@@ -579,8 +572,8 @@ public class CalendarioService : ICalendarioService
 			calendarioEvent.Feriado = feriadoInEvent;
 			if (feriadoInEvent is not null && calendarioEvent.Active == true)
 			{
-				calendarioEvent.Deactivated = feriadoInEvent is null ? null : feriadoInEvent.date;
-				calendarioEvent.Observacao = feriadoInEvent is null ? null : "Cancelamento Automático. <br> Feriado: " + feriadoInEvent.name;
+				calendarioEvent.Deactivated = feriadoInEvent is null ? null : feriadoInEvent.Data;
+				calendarioEvent.Observacao = feriadoInEvent is null ? null : "Cancelamento Automático. <br> Feriado: " + feriadoInEvent.Descricao;
 			}
 
 			if (calendarioEvent.Roteiro_Id == null) 

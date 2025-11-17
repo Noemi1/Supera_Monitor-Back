@@ -18,9 +18,10 @@ public class AulaServiceTests : BaseIntegrationTest {
     private readonly IProfessorService _professorService;
     private readonly IEventoService _eventoService;
     private readonly IRoteiroService _roteiroService;
+	private readonly IFeriadoService _feriadoService;
 
 
-    public AulaServiceTests(IntegrationTestWebAppFactory factory) : base(factory) {
+	public AulaServiceTests(IntegrationTestWebAppFactory factory) : base(factory) {
         _salaService = new SalaService(_db, _mapper);
         var httpContext = new DefaultHttpContext();
         httpContext.Items["Account"] = new Account { Id = 3 };
@@ -35,8 +36,10 @@ public class AulaServiceTests : BaseIntegrationTest {
 		_professorService = new ProfessorService(_db, _mapper, _userService);
         
 		_roteiroService = new RoteiroService(_db, _mapper, httpContextAccessor);
+		
+		_feriadoService = new FeriadoService(_db, _mapper, httpContextAccessor);
 
-        _eventoService = new EventoService(_db, _mapper, _professorService, _salaService, _roteiroService, httpContextAccessor);
+		_eventoService = new EventoService(_db, _mapper, _professorService, _salaService, _roteiroService, _feriadoService, httpContextAccessor);
     }
 
     //[Fact]

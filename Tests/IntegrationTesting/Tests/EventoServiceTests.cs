@@ -18,8 +18,9 @@ public class EventoServiceTests : BaseIntegrationTest {
     private readonly IUserService _userService;
     private readonly IProfessorService _professorService;
     private readonly IRoteiroService _roteiroService;
+    private readonly IFeriadoService _feriadoService;
 
-    private readonly EventoService sut;
+	private readonly EventoService sut;
 
     public EventoServiceTests(IntegrationTestWebAppFactory factory) : base(factory) {
         _salaService = new SalaService(_db, _mapper);
@@ -37,7 +38,9 @@ public class EventoServiceTests : BaseIntegrationTest {
 		
 		_roteiroService = new RoteiroService(_db, _mapper, httpContextAccessor);
 
-		sut = new EventoService(_db, _mapper, _professorService, _salaService, _roteiroService, httpContextAccessor);
+		_feriadoService = new FeriadoService(_db, _mapper, httpContextAccessor);
+
+		sut = new EventoService(_db, _mapper, _professorService, _salaService, _roteiroService, _feriadoService, httpContextAccessor);
     }
 
     [Fact]
@@ -524,11 +527,11 @@ public class EventoServiceTests : BaseIntegrationTest {
     }
 
     [Fact]
-    public async Task Deve_SerPossivelCriarOficina() {
+    public void Deve_SerPossivelCriarOficina() {
         // Arrange (constructor)
 
         // Act
-        var response = await sut.Insert(new CreateEventoRequest
+        var response = sut.Insert(new CreateEventoRequest
         {
             Sala_Id = 1,
             CapacidadeMaximaAlunos = 12,

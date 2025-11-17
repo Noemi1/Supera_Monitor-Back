@@ -16,9 +16,9 @@ namespace Supera_Monitor_Back.Services.Eventos;
 
 public interface IParticipacaoService
 {
-	public Task<ResponseModel> InsertParticipacao(InsertParticipacaoRequest request);
-	public Task<ResponseModel> UpdateParticipacao(UpdateParticipacaoRequest request);
-	public Task<ResponseModel> CancelarParticipacao(CancelarParticipacaoRequest request);
+	ResponseModel InsertParticipacao(InsertParticipacaoRequest request);
+	ResponseModel UpdateParticipacao(UpdateParticipacaoRequest request);
+	ResponseModel CancelarParticipacao(CancelarParticipacaoRequest request);
 }
 
 public class ParticipacaoService : IParticipacaoService
@@ -43,7 +43,7 @@ public class ParticipacaoService : IParticipacaoService
 	}
 
 	
-	public async Task<ResponseModel> InsertParticipacao(InsertParticipacaoRequest request)
+	public ResponseModel InsertParticipacao(InsertParticipacaoRequest request)
 	{
 		ResponseModel response = new() { Success = false };
 
@@ -187,7 +187,7 @@ public class ParticipacaoService : IParticipacaoService
 			_db.SaveChanges();
 
 			response.Message = $"Aluno foi inscrito no evento com sucesso";
-			response.Object = await _eventoService.GetEventoById(request.Evento_Id);
+			response.Object = _eventoService.GetEventoById(request.Evento_Id);
 			response.Success = true;
 		}
 		catch (Exception ex)
@@ -198,7 +198,7 @@ public class ParticipacaoService : IParticipacaoService
 		return response;
 	}
 
-	public async Task<ResponseModel> UpdateParticipacao(UpdateParticipacaoRequest request)
+	public ResponseModel UpdateParticipacao(UpdateParticipacaoRequest request)
 	{
 		ResponseModel response = new() { Success = false };
 		try
@@ -235,7 +235,7 @@ public class ParticipacaoService : IParticipacaoService
 
 			response.Message = "Participação do aluno foi atualizada com sucesso.";
 			response.Success = true;
-			response.Object = await _eventoService.GetEventoById(participacao.Evento_Id);
+			response.Object = _eventoService.GetEventoById(participacao.Evento_Id);
 		}
 		catch (Exception ex)
 		{
@@ -245,7 +245,7 @@ public class ParticipacaoService : IParticipacaoService
 		return response;
 	}
 
-	public async Task<ResponseModel> CancelarParticipacao(CancelarParticipacaoRequest request)
+	public ResponseModel CancelarParticipacao(CancelarParticipacaoRequest request)
 	{
 		ResponseModel response = new() { Success = false };
 
@@ -311,7 +311,7 @@ public class ParticipacaoService : IParticipacaoService
 			_db.SaveChanges();
 
 			response.Message = "Aluno removido scom sucesso";
-			response.Object = await _eventoService.GetEventoById(participacao.Evento_Id);
+			response.Object = _eventoService.GetEventoById(participacao.Evento_Id);
 			response.Success = true;
 		}
 		catch (Exception ex)

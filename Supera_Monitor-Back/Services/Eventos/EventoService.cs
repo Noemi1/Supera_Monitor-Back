@@ -18,21 +18,21 @@ namespace Supera_Monitor_Back.Services.Eventos;
 public interface IEventoService
 {
 
-	public Task<CalendarioEventoList> GetPseudoAula(PseudoEventoRequest request);
-	public Task<CalendarioEventoList> GetEventoById(int eventoId);
-	public Task<List<FeriadoResponse>> GetFeriados(int ano);
+	CalendarioEventoList GetPseudoAula(PseudoEventoRequest request);
+	CalendarioEventoList GetEventoById(int eventoId);
+	//public Task<List<FeriadoResponse>> GetFeriados(int ano);
 
-	public Task<ResponseModel> Insert(CreateEventoRequest request, int eventoTipoId);
-	public Task<ResponseModel> InsertAulaZero(CreateAulaZeroRequest request);
-	public Task<ResponseModel> InsertAulaExtra(CreateAulaExtraRequest request);
-	public Task<ResponseModel> InsertAulaForTurma(CreateAulaTurmaRequest request);
+	ResponseModel Insert(CreateEventoRequest request, int eventoTipoId);
+	ResponseModel InsertAulaZero(CreateAulaZeroRequest request);
+	ResponseModel InsertAulaExtra(CreateAulaExtraRequest request);
+	ResponseModel InsertAulaForTurma(CreateAulaTurmaRequest request);
 
-	public Task<ResponseModel> Update(UpdateEventoRequest request);
-	public Task<ResponseModel> Cancelar(CancelarEventoRequest request);
-	public Task<ResponseModel> Finalizar(FinalizarEventoRequest request);
-	public Task<ResponseModel> FinalizarAulaZero(FinalizarAulaZeroRequest request);
-	public Task<ResponseModel> AgendarPrimeiraAula(PrimeiraAulaRequest model);
-	public Task<ResponseModel> AgendarReposicao(ReposicaoRequest model);
+	ResponseModel Update(UpdateEventoRequest request);
+	ResponseModel Cancelar(CancelarEventoRequest request);
+	ResponseModel Finalizar(FinalizarEventoRequest request);
+	ResponseModel FinalizarAulaZero(FinalizarAulaZeroRequest request);
+	ResponseModel AgendarPrimeiraAula(PrimeiraAulaRequest model);
+	ResponseModel AgendarReposicao(ReposicaoRequest model);
 }
 
 public class EventoService : IEventoService
@@ -42,6 +42,7 @@ public class EventoService : IEventoService
 	private readonly IProfessorService _professorService;
 	private readonly ISalaService _salaService;
 	private readonly IRoteiroService _roteiroService;
+	private readonly IFeriadoService _feriadoService;
 
 	private readonly Account? _account;
 
@@ -51,6 +52,7 @@ public class EventoService : IEventoService
 		IProfessorService professorService,
 		ISalaService salaService,
 		IRoteiroService roteiroService,
+		IFeriadoService feriadoService,
 		IHttpContextAccessor httpContextAccessor
 	)
 	{
@@ -59,11 +61,12 @@ public class EventoService : IEventoService
 		_professorService = professorService;
 		_salaService = salaService;
 		_roteiroService = roteiroService;
+		_feriadoService = feriadoService;
 		_account = (Account?)httpContextAccessor.HttpContext?.Items["Account"];
 	}
 
 
-	public async Task<CalendarioEventoList> GetEventoById(int eventoId)
+	public CalendarioEventoList GetEventoById(int eventoId)
 	{
 		CalendarioEventoList? evento = _db.CalendarioEventoList.FirstOrDefault(e => e.Id == eventoId);
 
@@ -83,8 +86,8 @@ public class EventoService : IEventoService
 
 		evento.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(PerfisCognitivos);
 
-		var feriados = await this.GetFeriados(evento.Data.Year);
-		var feriado = feriados.FirstOrDefault(x => x.date.Date == evento.Data.Date);
+		var feriados = _feriadoService.GetList();
+		var feriado = feriados.FirstOrDefault(x => x.Data.Date == evento.Data.Date);
 		evento.Feriado = feriado;
 
 		var roteiros = _roteiroService.GetAll(evento.Data.Year);
@@ -99,13 +102,13 @@ public class EventoService : IEventoService
 
 		if (feriado is not null && evento.Active == true)
 		{
-			evento.Observacao = "Cancelamento Automático. <br> Feriado: " + feriado.name;
-			evento.Deactivated = feriado.date;
+			evento.Observacao = "Cancelamento Automático. <br> Feriado: " + feriado.Descricao;
+			evento.Deactivated = feriado.Data;
 		}
 		return evento;
 	}
 
-	public async Task<CalendarioEventoList> GetPseudoAula(PseudoEventoRequest request)
+	public CalendarioEventoList GetPseudoAula(PseudoEventoRequest request)
 	{
 		CalendarioEventoList? eventoAula = _db.CalendarioEventoList.FirstOrDefault(x =>
 				  x.Data == request.DataHora
@@ -113,7 +116,7 @@ public class EventoService : IEventoService
 
 		if (eventoAula != null)
 		{
-			eventoAula = await this.GetEventoById(eventoAula.Id);
+			eventoAula = this.GetEventoById(eventoAula.Id);
 			return eventoAula;
 		}
 		else
@@ -137,18 +140,13 @@ public class EventoService : IEventoService
 				throw new Exception("Professor não encontrado!");
 			}
 
-			var roteirosTask = _roteiroService.GetAllAsync(request.DataHora.Year);
-			var feriadosTask = this.GetFeriados(request.DataHora.Year);
-
-			await Task.WhenAll(roteirosTask, feriadosTask);
-
-			var roteiros = roteirosTask.Result;
-			var feriados = feriadosTask.Result;
+			var roteiros = _roteiroService.GetAll(request.DataHora.Year);
+			var feriados = _feriadoService.GetList();
 
 			var data = request.DataHora.Date;
 
 			var roteiro = roteiros.FirstOrDefault(x => x.DataInicio.Date <= data && x.DataFim.Date >= data);
-			var feriado = feriados.FirstOrDefault(x => x.date.Date == data);
+			var feriado = feriados.FirstOrDefault(x => x.Data.Date == data);
 
 
 			var vigenciasTurma = _db.Aluno_Turma_Vigencia
@@ -203,13 +201,15 @@ public class EventoService : IEventoService
 				Sala_Id = turma.Sala_Id,
 				NumeroSala = turma.NumeroSala,
 				Andar = turma.Andar,
+
+				Feriado = feriado,
 			};
 
 			if (feriado is not null)
 			{
 				pseudoAula.Feriado = feriado;
-				pseudoAula.Deactivated = feriado.date;
-				pseudoAula.Observacao = "Cancelamento Automático. <br> Feriado: " + feriado.name;
+				pseudoAula.Deactivated = feriado.Data;
+				pseudoAula.Observacao = "Cancelamento Automático. <br> Feriado: " + feriado.Descricao;
 			}
 
 			pseudoAula.Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos).ToList();
@@ -241,34 +241,34 @@ public class EventoService : IEventoService
 		}
 	}
 
-	public async Task<List<FeriadoResponse>> GetFeriados(int ano)
-	{
-		List<FeriadoResponse> feriados = new List<FeriadoResponse>() { };
-		string token = "20487|fbPtn71wk6mjsGDWRdU8mGECDlNZhyM7";
-		string url = $"https://api.invertexto.com/v1/holidays/{ano}?token={token}&state=SP";
-		using (HttpClient client = new HttpClient())
-		{
-			try
-			{
-				HttpResponseMessage response = await client.GetAsync(url);
-				//response.EnsureSuccessStatusCode(); // Lança uma exceção para códigos de status de erro
-				string responseContent = await response.Content.ReadAsStringAsync();
-				feriados = JsonSerializer.Deserialize<List<FeriadoResponse>>(responseContent) ?? feriados;
-				feriados = feriados!.OrderBy(x => x.date).ToList();
+	//public async Task<List<FeriadoResponse>> GetFeriados(int ano)
+	//{
+	//	List<FeriadoResponse> feriados = new List<FeriadoResponse>() { };
+	//	string token = "20487|fbPtn71wk6mjsGDWRdU8mGECDlNZhyM7";
+	//	string url = $"https://api.invertexto.com/v1/holidays/{ano}?token={token}&state=SP";
+	//	using (HttpClient client = new HttpClient())
+	//	{
+	//		try
+	//		{
+	//			HttpResponseMessage response = await client.GetAsync(url);
+	//			//response.EnsureSuccessStatusCode(); // Lança uma exceção para códigos de status de erro
+	//			string responseContent = await response.Content.ReadAsStringAsync();
+	//			feriados = JsonSerializer.Deserialize<List<FeriadoResponse>>(responseContent) ?? feriados;
+	//			feriados = feriados!.OrderBy(x => x.date).ToList();
 
-			}
-			catch (Exception e)
-			{
-				Console.WriteLine("\nException Caught!");
-				Console.WriteLine("Message :{0} ", e.Message);
-			}
+	//		}
+	//		catch (Exception e)
+	//		{
+	//			Console.WriteLine("\nException Caught!");
+	//			Console.WriteLine("Message :{0} ", e.Message);
+	//		}
 
-			return feriados;
-		}
-	}
+	//		return feriados;
+	//	}
+	//}
 
 
-	public async Task<ResponseModel> Insert(CreateEventoRequest request, int eventoTipoId)
+	public ResponseModel Insert(CreateEventoRequest request, int eventoTipoId)
 	{
 		ResponseModel response = new() { Success = false };
 
@@ -341,7 +341,7 @@ public class EventoService : IEventoService
 				if (hasParticipacaoConflict)
 					return new ResponseModel { Message = $"Professor: {professor.Nome} possui participação em outro evento nesse mesmo horário" };
 			}
-			
+
 			if (request.Sala_Id.HasValue)
 			{
 				// Não devo poder registrar um evento em uma sala que não existe
@@ -383,7 +383,7 @@ public class EventoService : IEventoService
 			//
 			// Insere professores
 			//
-			foreach(var professor in professores)
+			foreach (var professor in professores)
 			{
 				evento.Evento_Participacao_Professor.Add(new Evento_Participacao_Professor
 				{
@@ -444,7 +444,7 @@ public class EventoService : IEventoService
 					.ToList();
 
 				var alunosChecklistAtualizar = new List<Aluno_Checklist_Item>() { };
-			
+
 				if (evento.Evento_Tipo_Id == (int)EventoTipo.Superacao)
 				{
 					var item = alunosChecklistsSuperacao
@@ -484,7 +484,7 @@ public class EventoService : IEventoService
 
 			response.Success = true;
 			response.Message = $"{eventoTipo} registrada com sucesso";
-			response.Object = await this.GetEventoById(evento.Id);
+			response.Object = this.GetEventoById(evento.Id);
 		}
 		catch (Exception ex)
 		{
@@ -494,7 +494,7 @@ public class EventoService : IEventoService
 		return response;
 	}
 
-	public async Task<ResponseModel> InsertAulaForTurma(CreateAulaTurmaRequest request)
+	public ResponseModel InsertAulaForTurma(CreateAulaTurmaRequest request)
 	{
 		ResponseModel response = new() { Success = false };
 
@@ -637,7 +637,7 @@ public class EventoService : IEventoService
 			_db.SaveChanges();
 
 			response.Message = $"Aula para a turma '{turma.Nome}' registrado com sucesso";
-			response.Object = await this.GetEventoById(evento.Id);
+			response.Object = this.GetEventoById(evento.Id);
 			response.Success = true;
 		}
 		catch (Exception ex)
@@ -648,7 +648,7 @@ public class EventoService : IEventoService
 		return response;
 	}
 
-	public async Task<ResponseModel> InsertAulaExtra(CreateAulaExtraRequest request)
+	public ResponseModel InsertAulaExtra(CreateAulaExtraRequest request)
 	{
 		ResponseModel response = new() { Success = false };
 
@@ -858,10 +858,10 @@ public class EventoService : IEventoService
 
 
 			response.Message = "Aula extra criada com sucesso";
-			response.Object = await this.GetEventoById(evento.Id);
+			response.Object = this.GetEventoById(evento.Id);
 			response.Success = true;
 		}
-		
+
 		catch (Exception ex)
 		{
 			response.Message = $"Falha ao registrar aula extra: {ex}";
@@ -870,7 +870,7 @@ public class EventoService : IEventoService
 		return response;
 	}
 
-	public async Task<ResponseModel> InsertAulaZero(CreateAulaZeroRequest request)
+	public ResponseModel InsertAulaZero(CreateAulaZeroRequest request)
 	{
 		ResponseModel response = new() { Success = false };
 
@@ -878,7 +878,7 @@ public class EventoService : IEventoService
 		{
 
 			var professor = _db.ProfessorList
-				.FirstOrDefault(p => p.Id == request.Professor_Id 
+				.FirstOrDefault(p => p.Id == request.Professor_Id
 										&& p.Active == true);
 
 			if (professor is null)
@@ -970,7 +970,7 @@ public class EventoService : IEventoService
 				Account_Created_Id = _account?.Id ?? 1
 			};
 
-	
+
 			var alunos = _db.Aluno.Where(x => request.Alunos.Contains(x.Id))
 				.ToList();
 
@@ -1051,7 +1051,7 @@ public class EventoService : IEventoService
 
 			_db.Evento_Participacao_Aluno.UpdateRange(participacaoCancelar);
 			_db.Evento.UpdateRange(participacaoCancelar.Select(x => x.Evento));
-			
+
 			//
 			// Finaliza checklists "agendamento aula zero"
 			//
@@ -1074,7 +1074,7 @@ public class EventoService : IEventoService
 
 
 			response.Message = "Aula zero criada com sucesso";
-			response.Object = await this.GetEventoById(evento.Id);
+			response.Object = this.GetEventoById(evento.Id);
 			response.Success = true;
 		}
 		catch (Exception ex)
@@ -1085,7 +1085,7 @@ public class EventoService : IEventoService
 		return response;
 	}
 
-	public async Task<ResponseModel> Update(UpdateEventoRequest request)
+	public ResponseModel Update(UpdateEventoRequest request)
 	{
 		ResponseModel response = new() { Success = false };
 		try
@@ -1161,13 +1161,13 @@ public class EventoService : IEventoService
 				return new ResponseModel { Message = "Esta sala se encontra ocupada neste horário" };
 
 			#endregion
-			
+
 			// Validations passed
 
-			var oldObject = await this.GetEventoById(request.Id);
+			var oldObject = this.GetEventoById(request.Id);
 
 			evento.Observacao = request.Observacao;
-			evento.Descricao = request.Descricao;
+			evento.Descricao = request.Descricao;	
 			evento.Sala_Id = request.Sala_Id;
 			evento.DuracaoMinutos = request.DuracaoMinutos;
 			evento.CapacidadeMaximaAlunos = request.CapacidadeMaximaAlunos;
@@ -1178,7 +1178,7 @@ public class EventoService : IEventoService
 			// Inativa professores removidos
 			//
 			var participacoesToDeactivate = evento.Evento_Participacao_Professor
-				.Where(p => !professoresRequestIds.TryGetValue(p.Professor_Id, out var participacao) )
+				.Where(p => !professoresRequestIds.TryGetValue(p.Professor_Id, out var participacao))
 				.ToList();
 
 			foreach (var participacao in participacoesToDeactivate)
@@ -1208,7 +1208,7 @@ public class EventoService : IEventoService
 			_db.SaveChanges();
 
 
-			response.Object = await this.GetEventoById(evento.Id);
+			response.Object = this.GetEventoById(evento.Id);
 			response.Message = $"{evento.Evento_Tipo.Nome} atualizada com sucesso";
 			response.OldObject = oldObject;
 			response.Success = true;
@@ -1221,7 +1221,7 @@ public class EventoService : IEventoService
 		return response;
 	}
 
-	public async Task<ResponseModel> Cancelar(CancelarEventoRequest request)
+	public ResponseModel Cancelar(CancelarEventoRequest request)
 	{
 		ResponseModel response = new() { Success = false };
 
@@ -1275,7 +1275,7 @@ public class EventoService : IEventoService
 			var alunosPorId = alunosAtualizar
 				.ToDictionary(x => x.Id, x => x);
 
-			foreach(var item in checklistAtualizar)
+			foreach (var item in checklistAtualizar)
 			{
 				item.DataFinalizacao = null;
 				item.Account_Finalizacao_Id = null;
@@ -1307,7 +1307,7 @@ public class EventoService : IEventoService
 			_db.SaveChanges();
 
 			response.Message = $"Evento foi cancelado com sucesso";
-			response.Object = await this.GetEventoById(evento.Id);
+			response.Object = this.GetEventoById(evento.Id);
 			response.Success = true;
 		}
 		catch (Exception ex)
@@ -1318,7 +1318,7 @@ public class EventoService : IEventoService
 		return response;
 	}
 
-	public async Task<ResponseModel> Finalizar(FinalizarEventoRequest request)
+	public ResponseModel Finalizar(FinalizarEventoRequest request)
 	{
 		ResponseModel response = new() { Success = false };
 
@@ -1398,7 +1398,7 @@ public class EventoService : IEventoService
 
 			var checklistsAgendamentoPorAlunoId = evento.Evento_Participacao_Aluno
 				.SelectMany(x => x.Aluno.Aluno_Checklist_Items)
-				.Where(x =>  x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento1Oficina
+				.Where(x => x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento1Oficina
 							|| x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento2Oficina
 							|| x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento1Superacao
 							|| x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento2Superacao
@@ -1435,7 +1435,7 @@ public class EventoService : IEventoService
 					participacao.NumeroPaginaAbaco = participacaoModel.NumeroPaginaAbaco;
 					participacao.Apostila_AH_Id = participacaoModel.Apostila_Ah_Id;
 					participacao.NumeroPaginaAH = participacaoModel.NumeroPaginaAh;
-					
+
 					participacao.Aluno.Apostila_Abaco_Id = participacaoModel.Apostila_Abaco_Id;
 					participacao.Aluno.NumeroPaginaAbaco = participacaoModel.NumeroPaginaAbaco;
 					participacao.Aluno.Apostila_AH_Id = participacaoModel.Apostila_Ah_Id;
@@ -1463,7 +1463,7 @@ public class EventoService : IEventoService
 													&& x.DataFinalizacao != null
 													&& (x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento1Superacao
 													|| x.Checklist_Item_Id == (int)ChecklistItemId.Agendamento2Superacao));
-						
+
 						if (itemAgendamento is not null && itemAgendamento.Checklist_Item_Id == (int)ChecklistItemId.Agendamento1Superacao)
 						{
 							itemComparecimento = checklistComparecimento
@@ -1561,7 +1561,7 @@ public class EventoService : IEventoService
 			_db.SaveChanges();
 
 			response.Message = $"Evento foi finalizado com sucesso.";
-			response.Object = await this.GetEventoById(evento.Id);
+			response.Object = this.GetEventoById(evento.Id);
 			response.Success = true;
 		}
 		catch (Exception ex)
@@ -1572,7 +1572,7 @@ public class EventoService : IEventoService
 		return response;
 	}
 
-	public async Task<ResponseModel> FinalizarAulaZero(FinalizarAulaZeroRequest request)
+	public ResponseModel FinalizarAulaZero(FinalizarAulaZeroRequest request)
 	{
 		ResponseModel response = new ResponseModel { Success = false };
 
@@ -1581,7 +1581,7 @@ public class EventoService : IEventoService
 			var participacoesQueryable = _db.Evento_Participacao_Aluno
 					.Where(x => x.Evento_Id == request.Evento_Id);
 
-			var alunosQueryable = 
+			var alunosQueryable =
 					from aluno in _db.Aluno
 					join participacao in participacoesQueryable
 						on aluno.Id equals participacao.Aluno_Id
@@ -1752,7 +1752,7 @@ public class EventoService : IEventoService
 						});
 
 						#endregion
-					
+
 					}
 					else
 					{
@@ -1764,10 +1764,10 @@ public class EventoService : IEventoService
 					// Salva participacao
 					//
 					if (participacaoPorId.TryGetValue(participacaoRequest.Participacao_Id, out var participacao))
-						{
-							participacao.Presente = participacaoRequest.Presente;
-						}
-					
+					{
+						participacao.Presente = participacaoRequest.Presente;
+					}
+
 				}
 			}
 
@@ -1785,7 +1785,7 @@ public class EventoService : IEventoService
 
 			response.Success = true;
 			response.Message = "Aula zero finalizada com sucesso.";
-			response.Object = await this.GetEventoById(evento.Id);
+			response.Object = this.GetEventoById(evento.Id);
 
 		}
 		catch (Exception e)
@@ -1797,7 +1797,7 @@ public class EventoService : IEventoService
 		return response;
 	}
 
-	public async Task<ResponseModel> AgendarReposicao(ReposicaoRequest request)
+	public ResponseModel AgendarReposicao(ReposicaoRequest request)
 	{
 		ResponseModel response = new() { Success = false };
 
@@ -1831,7 +1831,7 @@ public class EventoService : IEventoService
 
 			if (request.Source_Aula_Id == request.Dest_Aula_Id)
 				return new ResponseModel { Message = "Aula original e aula destino não podem ser iguais" };
-			
+
 			if (eventoDest.Finalizado)
 				return new ResponseModel { Message = "Não é possível marcar reposição para uma aula finalizada" };
 
@@ -1893,7 +1893,7 @@ public class EventoService : IEventoService
 				var checklistsAtualizar = _db.Aluno_Checklist_Item
 					.Where(x => x.Aluno_Id == request.Aluno_Id
 						&& x.Evento_Id == eventoSource.Id
-						&& (x.Checklist_Item_Id == (int)ChecklistItemId.AgendamentoPrimeiraAula 
+						&& (x.Checklist_Item_Id == (int)ChecklistItemId.AgendamentoPrimeiraAula
 						|| x.Checklist_Item_Id == (int)ChecklistItemId.ComparecimentoPrimeiraAula))
 					.ToList();
 
@@ -1907,7 +1907,7 @@ public class EventoService : IEventoService
 				{
 					var dataSource = eventoSource.Data.ToString("dd/MM/yyyy \'às\' HH:mm");
 					var dataDest = eventoDest.Data.ToString("dd/MM/yyyy \'às\' HH:mm");
-					
+
 					checklistAgendamento.Evento_Id = eventoDest.Id;
 					checklistAgendamento.DataFinalizacao = hoje;
 					checklistAgendamento.Account_Finalizacao_Id = _account?.Id ?? 1;
@@ -1980,8 +1980,8 @@ public class EventoService : IEventoService
 			response.Success = true;
 			response.Object = new
 			{
-				dest = await this.GetEventoById(eventoDest.Id),
-				source = await this.GetEventoById(eventoSource.Id),
+				dest = this.GetEventoById(eventoDest.Id),
+				source = this.GetEventoById(eventoSource.Id),
 			};
 			response.Message = "Reposição agendada com sucesso";
 		}
@@ -1993,7 +1993,7 @@ public class EventoService : IEventoService
 		return response;
 	}
 
-	public async Task<ResponseModel> AgendarPrimeiraAula(PrimeiraAulaRequest request)
+	public ResponseModel AgendarPrimeiraAula(PrimeiraAulaRequest request)
 	{
 		ResponseModel response = new() { Success = false };
 
@@ -2028,12 +2028,12 @@ public class EventoService : IEventoService
 
 			if (evento.Deactivated != null)
 				return new ResponseModel { Message = "Não foi possível continuar. Esta aula foi cancelada." };
-			
+
 			if (aluno.PrimeiraAula_Id.HasValue && aluno.PrimeiraAula != null)
 			{
 				var participacao = aluno.PrimeiraAula.Evento_Participacao_Aluno.FirstOrDefault(x => x.Evento_Id == aluno.PrimeiraAula_Id.Value);
 				var primeiraAula = aluno.PrimeiraAula;
-				
+
 				if (participacao?.Presente == true)
 					return new ResponseModel { Message = $"Aluno já participou da primeira aula no dia: {primeiraAula.Data.ToString("dd/MM/yyyy HH:mm")}" };
 			}
@@ -2089,7 +2089,7 @@ public class EventoService : IEventoService
 				.FirstOrDefault(x => x.DataFinalizacao == null
 									&& x.Aluno_Id == request.Aluno_Id
 									&& x.Checklist_Item_Id == (int)ChecklistItemId.AgendamentoPrimeiraAula);
-			
+
 			if (checklistItem is not null)
 			{
 
@@ -2105,7 +2105,7 @@ public class EventoService : IEventoService
 			_db.SaveChanges();
 
 			response.Success = true;
-			response.Object = await this.GetEventoById(evento.Id);
+			response.Object = this.GetEventoById(evento.Id);
 			response.Message = "Primeira aula agendada com sucesso";
 		}
 		catch (Exception ex)
@@ -2178,7 +2178,7 @@ public class EventoService : IEventoService
 				return (int)StatusContato.NAO_COMPARECEU;
 		}
 	}
-	
+
 	public ResponseModel CreateEventValidation(CreateEventDto dto)
 	{
 		ResponseModel response = new();

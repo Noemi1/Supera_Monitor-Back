@@ -58,6 +58,7 @@ builder.Services.AddScoped<ICalendarioService, CalendarioService>();
 builder.Services.AddScoped<IEventoService, EventoService>();
 builder.Services.AddScoped<IMonitoramentoService, MonitoramentoService>();
 builder.Services.AddScoped<IParticipacaoService, ParticipacaoService>();
+builder.Services.AddScoped<IFeriadoService, FeriadoService>();
 
 #endregion
 

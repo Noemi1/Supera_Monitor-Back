@@ -47,5 +47,5 @@ public partial class CalendarioEventoList {
     public virtual ICollection<CalendarioProfessorList> Professores { get; set; } = new List<CalendarioProfessorList>();
     public virtual ICollection<PerfilCognitivoModel> PerfilCognitivo { get; set; } = new List<PerfilCognitivoModel>();
 
-	public virtual FeriadoResponse? Feriado { get; set; }
+	public virtual FeriadoList? Feriado { get; set; }
 }

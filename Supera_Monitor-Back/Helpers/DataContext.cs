@@ -75,6 +75,10 @@ public partial class DataContext : DbContext
 
 	public virtual DbSet<Evento_Tipo> Evento_Tipos { get; set; }
 
+	public virtual DbSet<Feriado> Feriado { get; set; }
+	
+	public virtual DbSet<FeriadoList> FeriadoList { get; set; }
+
 	public virtual DbSet<Log> Logs { get; set; }
 
 	public virtual DbSet<LogError> LogErrors { get; set; }
@@ -161,6 +165,10 @@ public partial class DataContext : DbContext
 			entity.HasMany(d => d.Aluno_Turma_Vigencia)
 				.WithOne(p => p.Account)
 				.HasForeignKey(d => d.Account_Id);
+
+			entity.HasMany(d => d.Feriado)
+				.WithOne(p => p.Account_Created)
+				.HasForeignKey(d => d.Account_Created_Id);
 		});
 
 		modelBuilder.Entity<AccountList>(entity =>
@@ -375,35 +383,35 @@ public partial class DataContext : DbContext
 			entity.Property(e => e.Aluno)
 				.HasMaxLength(50)
 				.IsUnicode(false);
-			
+
 			entity.Property(e => e.Turma)
 				.HasMaxLength(50)
 				.IsUnicode(false);
-			
+
 			entity.Property(e => e.Professor)
 				.HasMaxLength(50)
 				.IsUnicode(false);
-			
+
 			entity.Property(e => e.Account)
 				.HasMaxLength(50)
 				.IsUnicode(false);
-			
+
 			entity.Property(e => e.Aluno_Id)
 				.HasMaxLength(128)
 				.IsUnicode(false);
-			
+
 			entity.Property(e => e.Turma_Id)
 				.HasMaxLength(128)
 				.IsUnicode(false);
-			
+
 			entity.Property(e => e.Professor_Id)
 				.HasMaxLength(128)
 				.IsUnicode(false);
-			
+
 			entity.Property(e => e.Account_Id)
 				.HasMaxLength(128)
 				.IsUnicode(false);
-			
+
 			entity.Property(e => e.DataInicioVigencia)
 				.HasColumnType("datetime");
 
@@ -639,10 +647,10 @@ public partial class DataContext : DbContext
 			entity.Property(x => x.NumeroPaginaAbaco);
 			entity.Property(x => x.NumeroPaginaAH);
 			entity.Property(x => x.Observacao);
-					
+
 			entity.Property(x => x.Deactivated)
 				.HasColumnType("datetime");
-				
+
 			entity.Property(x => x.AlunoContactado)
 				.HasColumnType("datetime");
 
@@ -684,8 +692,6 @@ public partial class DataContext : DbContext
 			entity.Ignore(x => x.Feriado);
 
 		});
-
-		modelBuilder.Entity<FeriadoResponse>().HasNoKey();
 
 		modelBuilder.Entity<CalendarioProfessorList>(entity =>
 		{
@@ -866,6 +872,18 @@ public partial class DataContext : DbContext
 
 			entity.Property(e => e.Nome)
 				.HasMaxLength(50)
+				.IsUnicode(false);
+		});
+
+
+		modelBuilder.Entity<FeriadoList>(entity =>
+		{
+			entity
+				.HasNoKey()
+				.ToView("FeriadoList");
+
+			entity.Property(e => e.Descricao)
+				.HasMaxLength(256)
 				.IsUnicode(false);
 		});
 

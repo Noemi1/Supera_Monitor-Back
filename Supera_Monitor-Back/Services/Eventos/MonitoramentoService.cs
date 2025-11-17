@@ -23,19 +23,21 @@ public class MonitoramentoService : IMonitoramentoService
 	private readonly IMapper _mapper;
 	private readonly IEventoService _eventoService;
 	private readonly IRoteiroService _roteiroService;
+	private readonly IFeriadoService _feriadoService;
 
 	public MonitoramentoService(
 		DataContext db,
 		IMapper mapper,
 		IRoteiroService roteiroService,
 		IEventoService eventoService,
-		ISalaService salaService
+		IFeriadoService feriadoService
 	)
 	{
 		_db = db;
 		_mapper = mapper;
 		_roteiroService = roteiroService;
 		_eventoService = eventoService;
+		_feriadoService = feriadoService;
 	}
 
 
@@ -98,13 +100,8 @@ public class MonitoramentoService : IMonitoramentoService
 		var alunosVigenciasIds = vigencias.Select(x => x.Aluno_Id);
 		alunos = alunos.Where(x => alunosVigenciasIds.Contains(x.Id)).ToList();
 
-		var roteirosTask = _roteiroService.GetAllAsync(request.Ano);
-		var feriadosTask = _eventoService.GetFeriados(request.Ano);
-
-		await Task.WhenAll(roteirosTask, feriadosTask);
-
-		var roteiros = roteirosTask.Result;
-		var feriados = feriadosTask.Result;
+		var roteiros = _roteiroService.GetAll(request.Ano);
+		var feriados = _feriadoService.GetList();
 
 		var eventosPorId = eventos
 			.ToDictionary(e => e.Id, e => e);
@@ -128,7 +125,7 @@ public class MonitoramentoService : IMonitoramentoService
 			.ToDictionary(x => x.Id, x => x);
 
 		var feriadosPorData = feriados
-			.ToDictionary(x => x.date.ToString(dateFormatDict), x => x);
+			.ToDictionary(x => x.Data.ToString(dateFormatDict), x => x);
 
 		var roteirosPorId = roteiros.Where(x => x.Id != -1)
 			.ToDictionary(r => r.Id, r => r);
@@ -200,37 +197,12 @@ public class MonitoramentoService : IMonitoramentoService
 							&& (vigencia.DataFimVigencia == null || roteiro.DataInicio.Date <= vigencia.DataFimVigencia.Value.Date)
 						);
 
-					//var vigencia1 = vigenciasAluno.First();
-					//var vigencia2 = vigenciasAluno.Last();
-
-
-					//var a1 = vigencia1.DataInicioVigencia.Date <= roteiro.DataInicio.Date;
-					//var a2 = vigencia1.DataFimVigencia.HasValue;
-					//var a3 = vigencia1.DataFimVigencia >= roteiro.DataInicio;
-					//var a4 = vigencia1.DataFimVigencia <= roteiro.DataFim;
-					//var a5 = !a2 || (a2 && (a2 || a4));
-
-
-					//var a1 = vigencia1.DataInicioVigencia.Date <= roteiro.DataInicio.Date;
-					//var a2 = vigencia1.DataFimVigencia.HasValue;
-					//var a3 = (a2 && vigencia1.DataFimVigencia.Value.Date <= roteiro.DataFim.Date) || !a2;
-					//var a4 = a1 && a3;
-
-					//var b1 = vigencia2.DataInicioVigencia.Date <= roteiro.DataInicio.Date;
-					//var b2 = vigencia2.DataFimVigencia.HasValue;
-					//var b3 = (b2 && vigencia2.DataFimVigencia.Value.Date <= roteiro.DataFim.Date) || !b2;
-					//var b4 = b1 && b3;
-
-
-
-
-
 					DateTime dataTurma = roteiro.DataInicio.Date;
 					var monitoramentoAlunoItem = new Monitoramento_Aluno_Item();
 					var monitoramentoAula = new Monitoramento_Aula();
 					var monitoramentoParticipacao = new Monitoramento_Participacao();
 
-					FeriadoResponse? feriado = null;
+					FeriadoList? feriado = null;
 					Monitoramento_Aula_Participacao_Rel? monitoramentoReposicaoPara = null;
 
 					if (vigenciaAlunoRoteiro is not null)
@@ -289,8 +261,8 @@ public class MonitoramentoService : IMonitoramentoService
 											{
 
 												monitoramentoReposicaoPara.Aula.Feriado = _mapper.Map<Monitoramento_Feriado>(feriadoReposicaoPara);
-												monitoramentoReposicaoPara.Aula.Observacao = "Cancelamento Automático. <br> Feriado: " + feriadoReposicaoPara.name;
-												monitoramentoReposicaoPara.Aula.Deactivated = feriadoReposicaoPara.date;
+												monitoramentoReposicaoPara.Aula.Observacao = "Cancelamento Automático. <br> Feriado: " + feriadoReposicaoPara.Descricao;
+												monitoramentoReposicaoPara.Aula.Deactivated = feriadoReposicaoPara.Data;
 											}
 										}
 
@@ -371,8 +343,8 @@ public class MonitoramentoService : IMonitoramentoService
 					if (feriado is not null && monitoramentoAula.Active)
 					{
 						monitoramentoAula.Feriado = _mapper.Map<Monitoramento_Feriado>(feriado);
-						monitoramentoAula.Observacao = "Cancelamento Automático. <br> Feriado: " + feriado.name;
-						monitoramentoAula.Deactivated = feriado.date;
+						monitoramentoAula.Observacao = "Cancelamento Automático. <br> Feriado: " + feriado.Descricao;
+						monitoramentoAula.Deactivated = feriado.Data;
 					}
 
 					monitoramentoAlunoItem.Id = monitoramentoReposicaoPara is not null ? monitoramentoReposicaoPara.Aula.Id : monitoramentoAula.Id;

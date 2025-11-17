@@ -6,6 +6,6 @@ namespace Supera_Monitor_Back.Models.Eventos;
 
 public class CalendarioResponse
 {
-	public List<FeriadoResponse> Feriados { get; set; }	= new List<FeriadoResponse>();
+	public List<FeriadoList> Feriados { get; set; }	= new List<FeriadoList>();
 	public List<CalendarioEventoList> Eventos { get; set; }	= new List<CalendarioEventoList>();
 }

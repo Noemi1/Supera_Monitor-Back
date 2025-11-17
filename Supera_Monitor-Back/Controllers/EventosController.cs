@@ -37,11 +37,11 @@ public class EventosController : _BaseController
     }
 
 	[HttpGet("{eventoId}")]
-	public async Task<ActionResult<List<EventoAulaModel>>> GetEventoById(int eventoId)
+	public ActionResult<List<EventoAulaModel>> GetEventoById(int eventoId)
 	{
 		try
 		{
-			var response = await _eventoService.GetEventoById(eventoId);
+			var response = _eventoService.GetEventoById(eventoId);
 
 			return Ok(response);
 		}
@@ -51,28 +51,29 @@ public class EventosController : _BaseController
 			return StatusCode(500, e);
 		}
 	}
-	[HttpGet("feriados/{ano}")]
-	public async Task<ActionResult<List<FeriadoResponse>>> GetFeriados(int ano)
-	{
-		try
-		{
-			var response = await _eventoService.GetFeriados(ano);
+	
+	//[HttpGet("feriados/{ano}")]
+	//public async Task<ActionResult<List<FeriadoResponse>>> GetFeriados(int ano)
+	//{
+	//	try
+	//	{
+	//		var response =  _eventoService.GetFeriados(ano);
 
-			return Ok(response);
-		}
-		catch (Exception e)
-		{
-			_logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
-			return StatusCode(500, e);
-		}
-	}
+	//		return Ok(response);
+	//	}
+	//	catch (Exception e)
+	//	{
+	//		_logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+	//		return StatusCode(500, e);
+	//	}
+	//}
 
 	[HttpPost("pseudo-aula")]
-    public async Task<ActionResult<CalendarioEventoList>> GetPseudoAula(PseudoEventoRequest request)
+    public ActionResult<CalendarioEventoList> GetPseudoAula(PseudoEventoRequest request)
     {
         try
         {
-            var response = await _eventoService.GetPseudoAula(request);
+            var response = _eventoService.GetPseudoAula(request);
             return Ok(response);
         }
         catch (Exception e)
@@ -83,11 +84,11 @@ public class EventosController : _BaseController
     }
 
     [HttpPost("calendario")]
-    public async Task<ActionResult<CalendarioResponse>> GetCalendario(CalendarioRequest request)
+    public ActionResult<CalendarioResponse> GetCalendario(CalendarioRequest request)
     {
         try
         {
-            var response =await _calendarioService.GetCalendario(request);
+            var response = _calendarioService.GetCalendario(request);
 
             return Ok(response);
         }
@@ -99,11 +100,11 @@ public class EventosController : _BaseController
     }
 
     [HttpPost("aulas/turma")]
-    public async Task<ActionResult<ResponseModel>> InsertAulaForTurma(CreateAulaTurmaRequest request)
+    public ActionResult<ResponseModel> InsertAulaForTurma(CreateAulaTurmaRequest request)
     {
         try
         {
-            var response = await _eventoService.InsertAulaForTurma(request);
+            var response = _eventoService.InsertAulaForTurma(request);
 
             if (!response.Success)
             {
@@ -120,11 +121,11 @@ public class EventosController : _BaseController
     }
 
     [HttpPost("aulas/extra")]
-    public async Task<ActionResult<ResponseModel>> InsertAulaExtra(CreateAulaExtraRequest request)
+    public ActionResult<ResponseModel> InsertAulaExtra(CreateAulaExtraRequest request)
     {
         try
         {
-            var response = await _eventoService.InsertAulaExtra(request);
+            var response =  _eventoService.InsertAulaExtra(request);
 
             if (!response.Success)
             {
@@ -141,11 +142,11 @@ public class EventosController : _BaseController
     }
 
     [HttpPost("aulas/zero")]
-    public async Task<ActionResult<ResponseModel>> InsertAulaZero(CreateAulaZeroRequest request)
+    public ActionResult<ResponseModel> InsertAulaZero(CreateAulaZeroRequest request)
     {
         try
         {
-            var response = await _eventoService.InsertAulaZero(request);
+            var response =  _eventoService.InsertAulaZero(request);
 
             if (!response.Success)
             {
@@ -162,11 +163,11 @@ public class EventosController : _BaseController
     }
 
 	[HttpPost("oficinas")]
-	public async Task<ActionResult<ResponseModel>> InsertOficina(CreateEventoRequest request)
+	public ActionResult<ResponseModel> InsertOficina(CreateEventoRequest request)
 	{
 		try
 		{
-			var response = await _eventoService.Insert(request, (int)EventoTipo.Oficina);
+			var response =  _eventoService.Insert(request, (int)EventoTipo.Oficina);
 			if (!response.Success)
 			{
 				return BadRequest(response);
@@ -182,12 +183,12 @@ public class EventosController : _BaseController
 	}
 
 	[HttpPost("reunioes")]
-	public async Task<ActionResult<ResponseModel>> InsertReuniao(CreateEventoRequest request)
+	public ActionResult<ResponseModel> InsertReuniao(CreateEventoRequest request)
 
 	{
 		try
 		{
-			var response = await _eventoService.Insert(request, (int)EventoTipo.Reuniao);
+			var response =  _eventoService.Insert(request, (int)EventoTipo.Reuniao);
 
 			if (!response.Success)
 			{
@@ -204,11 +205,11 @@ public class EventosController : _BaseController
 	}
 	
 	[HttpPost("superacao")]
-	public async Task<ActionResult<ResponseModel>> InsertSuperacao(CreateEventoRequest request)
+	public ActionResult<ResponseModel> InsertSuperacao(CreateEventoRequest request)
 	{
 		try
 		{
-			var response = await _eventoService.Insert(request, (int)EventoTipo.Superacao);
+			var response =  _eventoService.Insert(request, (int)EventoTipo.Superacao);
 
 			if (!response.Success)
 			{
@@ -225,11 +226,11 @@ public class EventosController : _BaseController
 	}
 
 	[HttpPut("aulas")]
-    public async Task<ActionResult<ResponseModel>> Update(UpdateEventoRequest request)
+    public ActionResult<ResponseModel> Update(UpdateEventoRequest request)
     {
         try
         {
-            var response = await _eventoService.Update(request);
+            var response =  _eventoService.Update(request);
 
             if (!response.Success)
             {
@@ -246,11 +247,11 @@ public class EventosController : _BaseController
     }
 
     [HttpPut("oficinas")]
-    public async Task<ActionResult<ResponseModel>> UpdateOficina(UpdateEventoRequest request)
+    public ActionResult<ResponseModel> UpdateOficina(UpdateEventoRequest request)
     {
         try
         {
-            var response = await _eventoService.Update(request);
+            var response =  _eventoService.Update(request);
 
             if (!response.Success)
             {
@@ -267,11 +268,11 @@ public class EventosController : _BaseController
     }
 
     [HttpPut("reunioes")]
-    public async Task<ActionResult<ResponseModel>> UpdateReuniao(UpdateEventoRequest request)
+    public ActionResult<ResponseModel> UpdateReuniao(UpdateEventoRequest request)
     {
         try
         {
-            var response = await _eventoService.Update(request);
+            var response =  _eventoService.Update(request);
 
             if (!response.Success)
             {
@@ -288,11 +289,11 @@ public class EventosController : _BaseController
     }
     
     [HttpPut("superacao")]
-    public async Task<ActionResult<ResponseModel>> UpdateSuperacao(UpdateEventoRequest request)
+    public ActionResult<ResponseModel> UpdateSuperacao(UpdateEventoRequest request)
     {
         try
         {
-            var response = await _eventoService.Update(request);
+            var response =  _eventoService.Update(request);
 
             if (!response.Success)
             {
@@ -309,11 +310,11 @@ public class EventosController : _BaseController
     }
 
     [HttpPost("cancelar")]
-    public async Task<ActionResult<ResponseModel>> Cancelar(CancelarEventoRequest request)
+    public ActionResult<ResponseModel> Cancelar(CancelarEventoRequest request)
     {
         try
         {
-            ResponseModel response = await _eventoService.Cancelar(request);
+            ResponseModel response =  _eventoService.Cancelar(request);
 
             if (response.Success)
             {
@@ -330,11 +331,11 @@ public class EventosController : _BaseController
     }
 
     [HttpPost("finalizar")]
-    public async Task<ActionResult<ResponseModel>> Finalizar(FinalizarEventoRequest request)
+    public ActionResult<ResponseModel> Finalizar(FinalizarEventoRequest request)
     {
         try
         {
-            ResponseModel response = await _eventoService.Finalizar(request);
+            ResponseModel response =  _eventoService.Finalizar(request);
 
             if (response.Success)
             {
@@ -351,11 +352,11 @@ public class EventosController : _BaseController
     }
 
 	[HttpPost("aula-zero/finalizar")]
-	public async Task<ActionResult<ResponseModel>> FinalizarAulaZero(FinalizarAulaZeroRequest request)
+	public ActionResult<ResponseModel> FinalizarAulaZero(FinalizarAulaZeroRequest request)
 	{
 		try
 		{
-			ResponseModel response = await _eventoService.FinalizarAulaZero(request);
+			ResponseModel response =  _eventoService.FinalizarAulaZero(request);
 
 			if (response.Success)
 			{
@@ -372,11 +373,11 @@ public class EventosController : _BaseController
 	}
 
 	[HttpPost("reposicao")]
-	public async Task<ActionResult<ResponseModel>> Reposicao(ReposicaoRequest model)
+	public ActionResult<ResponseModel> Reposicao(ReposicaoRequest model)
 	{
 		try
 		{
-			ResponseModel response = await _eventoService.AgendarReposicao(model);
+			ResponseModel response =  _eventoService.AgendarReposicao(model);
 
 			if (response.Success)
 			{
@@ -394,11 +395,11 @@ public class EventosController : _BaseController
 	}
 
 	[HttpPost("primeira-aula")]
-	public async Task<ActionResult<ResponseModel>> PrimeiraAula(PrimeiraAulaRequest model)
+	public ActionResult<ResponseModel> PrimeiraAula(PrimeiraAulaRequest model)
 	{
 		try
 		{
-			ResponseModel response = await _eventoService.AgendarPrimeiraAula(model);
+			ResponseModel response =  _eventoService.AgendarPrimeiraAula(model);
 
 			if (response.Success)
 			{
@@ -420,11 +421,11 @@ public class EventosController : _BaseController
 	// Participacao
 	//
 	[HttpPost("participacao/inscrever")]
-	public async Task<ActionResult<ResponseModel>> InsertParticipacao(InsertParticipacaoRequest request)
+	public ActionResult<ResponseModel> InsertParticipacao(InsertParticipacaoRequest request)
 	{
 		try
 		{
-			var response = await _participacaoService.InsertParticipacao(request);
+			var response =  _participacaoService.InsertParticipacao(request);
 
 			if (!response.Success)
 				return BadRequest(response);
@@ -439,11 +440,11 @@ public class EventosController : _BaseController
 	}
 
 	[HttpPut("participacao/atualizar")]
-	public async Task<ActionResult<ResponseModel>> UpdateParticipacao(UpdateParticipacaoRequest request)
+	public ActionResult<ResponseModel> UpdateParticipacao(UpdateParticipacaoRequest request)
 	{
 		try
 		{
-			var response = await _participacaoService.UpdateParticipacao(request);
+			var response =  _participacaoService.UpdateParticipacao(request);
 
 			if (!response.Success)
 				return BadRequest(response);
@@ -458,11 +459,11 @@ public class EventosController : _BaseController
 	}
 
 	[HttpPatch("participacao/cancelar")]
-	public async Task<ActionResult<ResponseModel>> CancelarParticipacao(CancelarParticipacaoRequest request)
+	public ActionResult<ResponseModel> CancelarParticipacao(CancelarParticipacaoRequest request)
 	{
 		try
 		{
-			var response = await _participacaoService.CancelarParticipacao(request);
+			var response =  _participacaoService.CancelarParticipacao(request);
 
 			if (!response.Success)
 				return BadRequest(response);
