@@ -119,7 +119,7 @@ public class MonitoramentoService : IMonitoramentoService
 			.GroupBy(x => new { x.Aluno_Id, x.Evento_Id })
 			.ToDictionary(g => (g.Key.Aluno_Id, g.Key.Evento_Id), g => g.First());
 
-		string dateFormatDict = "ddMMyyyyHHmm";
+		string dateFormatDict = "ddMMyyyy";
 
 		var alunosPorId = alunos
 			.ToDictionary(x => x.Id, x => x);
@@ -234,7 +234,7 @@ public class MonitoramentoService : IMonitoramentoService
 										if (eventosPorId.TryGetValue(participacao.ReposicaoPara_Evento_Id.Value, out var reposicaoPara))
 										{
 											participacaoPorAlunoEvento.TryGetValue((aluno.Id, participacao.ReposicaoPara_Evento_Id.Value), out var participacaoReposicaoPara);
-											feriadosPorData.TryGetValue(aula.Data.ToString(dateFormatDict), out var feriadoReposicaoPara);
+											feriadosPorData.TryGetValue(reposicaoPara.Data.ToString(dateFormatDict), out var feriadoReposicaoPara);
 
 											RoteiroModel? roteiroReposicaoPara;
 											if (reposicaoPara.Roteiro_Id.HasValue)

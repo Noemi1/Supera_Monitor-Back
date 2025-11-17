@@ -2,9 +2,13 @@
 {
 	public class Monitoramento_Feriado
 	{
-		public string type { get; set; } = null!;
-		public string name { get; set; } = null!;
-		public string level { get; set; } = null!;
-		public DateTime date { get; set; }
+		public int Id { get; set; }
+		public string Descricao { get; set; } = string.Empty;
+		public DateTime Data { get; set; }
+		public int Account_Created_Id { get; set; }
+		public string Account_Created { get; set; } = string.Empty;
+		public DateTime Created { get; set; }
+		public DateTime? Deactivated { get; set; }
+		public bool Active { get; set; }
 	}
 }

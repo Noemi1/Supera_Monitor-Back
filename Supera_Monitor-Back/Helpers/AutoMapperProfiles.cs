@@ -111,6 +111,7 @@ namespace Supera_Monitor_Back.Helpers
             CreateMap<AlunoList, Monitoramento_Aluno>();
             CreateMap<CalendarioEventoList, Monitoramento_Aula>();
             CreateMap<CalendarioAlunoList, Monitoramento_Participacao>();
+            CreateMap<FeriadoList, Monitoramento_Feriado>();
 
 
 
