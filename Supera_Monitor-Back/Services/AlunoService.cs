@@ -71,9 +71,9 @@ public class AlunoService : IAlunoService
 
 		AlunoResponse model = _mapper.Map<AlunoResponse>(aluno);
 
-		model.AlunoChecklist = _db.AlunoChecklistViews
-			.Where(a => a.Aluno_Id == model.Id)
-			.ToList();
+		//model.AlunoChecklist = _db.AlunoChecklistViews
+		//	.Where(a => a.Aluno_Id == model.Id)
+		//	.ToList();
 
 		model.Restricoes = _db.AlunoRestricaoLists
 			.Where(ar => ar.Aluno_Id == aluno.Id)
