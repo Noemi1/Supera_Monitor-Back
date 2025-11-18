@@ -16,6 +16,7 @@
 		public string? CorLegenda { get; set; }
 		public string? Turma { get; set; }
 		public int? Turma_Id { get; set; }
+		public int? Apostila_Kit_Id { get; set; }
 
 		public virtual List<Monitoramento_Aluno_Item> Items { get; set; } = new List<Monitoramento_Aluno_Item>();
 	}

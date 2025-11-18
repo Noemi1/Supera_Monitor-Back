@@ -359,11 +359,12 @@ public class MonitoramentoService : IMonitoramentoService
 						Aula = monitoramentoAula,
 						Participacao = monitoramentoParticipacao,
 					};
+
+
 					monitoramentoAluno.Items.Add(monitoramentoAlunoItem);
 
+					monitoramentoAluno.Apostila_Kit_Id = aluno.Apostila_Kit_Id;
 				}
-
-
 			}
 		}
 		response.Alunos = monitoramentosAlunos;
