@@ -15,7 +15,7 @@ namespace Supera_Monitor_Back.Models.Monitoramento
 		public DateTime? Deactivated { get; set; }
 		
 		public bool Active => !Deactivated.HasValue;
-		
+
 		public string Apostila_Abaco { get; set; } = String.Empty;
 		
 		public string Apostila_AH { get; set; } = String.Empty;
@@ -24,7 +24,10 @@ namespace Supera_Monitor_Back.Models.Monitoramento
 		
 		public int? NumeroPaginaAH { get; set; }
 
-		
+		public int? Apostila_Abaco_Id { get; set; }
+
+		public int? Apostila_AH_Id { get; set; }
+
 		public DateTime? AlunoContactado { get; set; }
 		
 		public StatusContato? StatusContato_Id { get; set; }

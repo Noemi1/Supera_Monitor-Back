@@ -300,6 +300,8 @@ public class MonitoramentoService : IMonitoramentoService
 									Apostila_AH = aluno.Apostila_AH ?? string.Empty,
 									NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
 									NumeroPaginaAH = aluno.NumeroPaginaAH,
+									Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
+									Apostila_AH_Id = aluno.Apostila_AH_Id,
 								};
 							}
 
