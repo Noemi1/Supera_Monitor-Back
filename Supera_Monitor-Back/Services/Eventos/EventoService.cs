@@ -20,7 +20,6 @@ public interface IEventoService
 
 	CalendarioEventoList GetPseudoAula(PseudoEventoRequest request);
 	CalendarioEventoList GetEventoById(int eventoId);
-	//public Task<List<FeriadoResponse>> GetFeriados(int ano);
 
 	ResponseModel Insert(CreateEventoRequest request, int eventoTipoId);
 	ResponseModel InsertAulaZero(CreateAulaZeroRequest request);
