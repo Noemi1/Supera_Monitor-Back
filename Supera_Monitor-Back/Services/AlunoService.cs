@@ -62,15 +62,8 @@ public class AlunoService : IAlunoService
 
 	public List<AlunoList> GetAlunosAulaZeroDropdown()
 	{
-		var alunosQueryable =
-			from a in _db.AlunoList
-			join e in _db.Evento
-					on a.AulaZero_Id equals e.Id
-			join p in _db.Evento_Participacao_Aluno
-					on e.Id equals p.Evento_Id
-
-			where a.AulaZero_Id == null || p.Presente != true
-			select a;
+		var alunosQueryable = _db.AlunoList.Where(aluno => aluno.AulaZero_Id == null
+				|| _db.Evento_Participacao_Aluno.Any(x => x.Evento_Id == aluno.AulaZero_Id && x.Presente != true));
 
 		List<AlunoList> alunos = alunosQueryable
 			.OrderBy(a => a.Nome)
@@ -81,15 +74,8 @@ public class AlunoService : IAlunoService
 	
 	public List<AlunoList> GetAlunosPrimeiraAulaDropdown()
 	{
-		var alunosQueryable =
-			from a in _db.AlunoList
-			join e in _db.Evento
-					on a.PrimeiraAula_Id equals e.Id
-			join p in _db.Evento_Participacao_Aluno
-					on e.Id equals p.Evento_Id
-
-			where a.PrimeiraAula_Id == null || p.Presente != true
-			select a;
+		var alunosQueryable = _db.AlunoList.Where(aluno => aluno.PrimeiraAula_Id == null
+				|| _db.Evento_Participacao_Aluno.Any(x => x.Evento_Id == aluno.PrimeiraAula_Id && x.Presente != true));
 
 		List<AlunoList> alunos = alunosQueryable
 			.OrderBy(a => a.Nome)
