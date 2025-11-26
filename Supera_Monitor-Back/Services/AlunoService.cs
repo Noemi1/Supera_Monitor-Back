@@ -13,13 +13,14 @@ public interface IAlunoService
 {
 
 	List<AlunoList> GetAll();
+	List<AlunoList> GetAlunosAulaZeroDropdown();
+	List<AlunoList> GetAlunosPrimeiraAulaDropdown();
+
 	AlunoResponse Get(int alunoId);
 	List<AlunoHistoricoList> GetHistoricoById(int alunoId);
 	List<AlunoVigenciaList> GetVigenciaById(int alunoId);
-	List<AlunoResponse> GetAllWithChecklist(AlunoRequest request);
-	List<AlunoChecklistItemList> GetAlunoChecklistItemList(AlunoRequest request);
-	ResponseModel GetProfileImage(int alunoId);
 	List<ApostilaList> GetApostilasByAluno(int alunoId);
+	ResponseModel GetProfileImage(int alunoId);
 	ResponseModel Insert(CreateAlunoRequest model);
 	ResponseModel Update(UpdateAlunoRequest model);
 	ResponseModel ToggleDeactivate(int alunoId);
@@ -58,6 +59,45 @@ public class AlunoService : IAlunoService
 		return alunos;
 	}
 
+
+	public List<AlunoList> GetAlunosAulaZeroDropdown()
+	{
+		var alunosQueryable =
+			from a in _db.AlunoList
+			join e in _db.Evento
+					on a.AulaZero_Id equals e.Id
+			join p in _db.Evento_Participacao_Aluno
+					on e.Id equals p.Evento_Id
+
+			where a.AulaZero_Id == null || p.Presente != true
+			select a;
+
+		List<AlunoList> alunos = alunosQueryable
+			.OrderBy(a => a.Nome)
+			.ToList();
+
+		return alunos;
+	}
+	
+	public List<AlunoList> GetAlunosPrimeiraAulaDropdown()
+	{
+		var alunosQueryable =
+			from a in _db.AlunoList
+			join e in _db.Evento
+					on a.PrimeiraAula_Id equals e.Id
+			join p in _db.Evento_Participacao_Aluno
+					on e.Id equals p.Evento_Id
+
+			where a.PrimeiraAula_Id == null || p.Presente != true
+			select a;
+
+		List<AlunoList> alunos = alunosQueryable
+			.OrderBy(a => a.Nome)
+			.ToList();
+
+		return alunos;
+	}
+
 	public AlunoResponse Get(int alunoId)
 	{
 		AlunoList? aluno = _db.AlunoList
@@ -80,51 +120,6 @@ public class AlunoService : IAlunoService
 			.ToList();
 
 		return model;
-	}
-
-	public List<AlunoResponse> GetAllWithChecklist(AlunoRequest request)
-	{
-		IQueryable<AlunoList> alunosQueryable = _db.AlunoList
-		  .Where(a => a.Deactivated == null)
-		  .AsQueryable();
-
-
-		if (request.Turma_Id.HasValue)
-		{
-			alunosQueryable = alunosQueryable.Where(a => a.Turma_Id == request.Turma_Id);
-		}
-
-		if (request.Professor_Id.HasValue)
-		{
-			alunosQueryable = alunosQueryable.Where(a => a.Professor_Id == request.Professor_Id);
-		}
-
-		if (request.Aluno_Id.HasValue)
-		{
-			alunosQueryable = alunosQueryable.Where(a => a.Id == request.Aluno_Id);
-		}
-
-
-		List<AlunoList> alunos = alunosQueryable.OrderBy(a => a.Nome).ToList();
-		List<int> alunosIds = alunos.Select(x => x.Id).ToList();
-
-		List<AlunoResponse> alunosWithChecklist = _mapper.Map<List<AlunoResponse>>(alunos);
-
-
-		List<AlunoChecklistView> listAlunoChecklistView = _db.AlunoChecklistViews
-			.Where(c => alunosIds.Contains(c.Aluno_Id))
-			.ToList();
-
-		alunosWithChecklist.ForEach(aluno =>
-		{
-			aluno.AlunoChecklist = listAlunoChecklistView
-				.Where(a => aluno.Id == a.Aluno_Id)
-				.OrderBy(a => a.Checklist_Id)
-				.ThenBy(a => a.Ordem)
-				.ToList();
-		});
-
-		return alunosWithChecklist;
 	}
 
 	public ResponseModel Insert(CreateAlunoRequest request)
@@ -659,30 +654,6 @@ public class AlunoService : IAlunoService
 
 		return list;
 
-	}
-
-	public List<AlunoChecklistItemList> GetAlunoChecklistItemList(AlunoRequest request)
-	{
-		IQueryable<AlunoChecklistItemList> listQueryable = _db.AlunoChecklistItemLists
-			.Where(a => a.Finalizado == 0)
-			.AsQueryable();
-
-		if (request.Turma_Id.HasValue)
-		{
-			listQueryable = listQueryable.Where(a => a.Turma_Id == request.Turma_Id);
-		}
-
-		if (request.Professor_Id.HasValue)
-		{
-			listQueryable = listQueryable.Where(a => a.Professor_Id == request.Professor_Id);
-		}
-
-		if (request.Aluno_Id.HasValue)
-		{
-			listQueryable = listQueryable.Where(a => a.Aluno_Id == request.Aluno_Id);
-		}
-
-		return listQueryable.ToList();
 	}
 
 }

@@ -35,7 +35,37 @@ namespace Supera_Monitor_Back.Controllers
 			}
 			catch (Exception e)
 			{
-				// _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+				return StatusCode(500, e);
+			}
+		}
+
+		[Authorize]
+		[HttpGet("dropdown/aula-zero")]
+		public ActionResult<List<AlunoList>> GetAlunosAulaZeroDropdown()
+		{
+			try
+			{
+				var response = _alunoService.GetAlunosAulaZeroDropdown();
+				return Ok(response);
+			}
+			catch (Exception e)
+			{
+				return StatusCode(500, e);
+			}
+		}
+
+
+		[Authorize]
+		[HttpGet("dropdown/primeira-aula")]
+		public ActionResult<List<AlunoList>> GetAlunosPrimeiraAulaDropdown()
+		{
+			try
+			{
+				var response = _alunoService.GetAlunosPrimeiraAulaDropdown();
+				return Ok(response);
+			}
+			catch (Exception e)
+			{
 				return StatusCode(500, e);
 			}
 		}
@@ -47,7 +77,6 @@ namespace Supera_Monitor_Back.Controllers
 			try
 			{
 				var response = _alunoService.Get(alunoId);
-
 				return Ok(response);
 			}
 			catch (Exception e)
@@ -63,12 +92,10 @@ namespace Supera_Monitor_Back.Controllers
 			try
 			{
 				List<AlunoHistoricoList> response = _alunoService.GetHistoricoById(alunoId);
-
 				return Ok(response);
 			}
 			catch (Exception e)
 			{
-				// _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
 				return StatusCode(500, e);
 			}
 		}
@@ -80,12 +107,10 @@ namespace Supera_Monitor_Back.Controllers
 			try
 			{
 				List<AlunoVigenciaList> response = _alunoService.GetVigenciaById(alunoId);
-
 				return Ok(response);
 			}
 			catch (Exception e)
 			{
-				// _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
 				return StatusCode(500, e);
 			}
 		}
@@ -97,12 +122,10 @@ namespace Supera_Monitor_Back.Controllers
 			try
 			{
 				ResponseModel response = _alunoService.GetProfileImage(alunoId);
-
 				return Ok(response);
 			}
 			catch (Exception e)
 			{
-				// _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
 				return StatusCode(500, e);
 			}
 		}
@@ -117,7 +140,6 @@ namespace Supera_Monitor_Back.Controllers
 				if (response.Success)
 				{
 					int alunoId = response.Object!.Id;
-					// _logger.Log("Insert", "Alunos", response, Account?.Id);
 					return Created(@$"/alunos/{alunoId}", response);
 				}
 
@@ -125,7 +147,6 @@ namespace Supera_Monitor_Back.Controllers
 			}
 			catch (Exception e)
 			{
-				// _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
 				return StatusCode(500, e);
 			}
 		}
@@ -140,7 +161,6 @@ namespace Supera_Monitor_Back.Controllers
 
 				if (response.Success)
 				{
-					// _logger.Log("Update", "Alunos", response, Account?.Id);
 					return Ok(response);
 				}
 
@@ -148,7 +168,6 @@ namespace Supera_Monitor_Back.Controllers
 			}
 			catch (Exception e)
 			{
-				// _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
 				return StatusCode(500, e);
 			}
 		}
@@ -164,8 +183,6 @@ namespace Supera_Monitor_Back.Controllers
 				if (response.Success)
 				{
 					string action = response.Object!.Deactivated is null ? "Enable" : "Disable";
-
-					// _logger.Log(action, "Alunos", response, Account?.Id);
 					return Ok(response);
 				}
 
@@ -173,7 +190,6 @@ namespace Supera_Monitor_Back.Controllers
 			}
 			catch (Exception e)
 			{
-				// _logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
 				return StatusCode(500, e);
 			}
 		}

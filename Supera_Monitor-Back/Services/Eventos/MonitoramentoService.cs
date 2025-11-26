@@ -175,6 +175,11 @@ public class MonitoramentoService : IMonitoramentoService
 			response.MesesRoteiro.Add(mes);
 		}
 
+		response.Alunos = response.Alunos
+			.OrderBy(x => x.Turma_Id)
+			.ThenBy(x => x.Nome)
+			.ToList();
+
 		#region foreach roteiros x foreach alunos
 
 		var monitoramentosAlunos = _mapper.Map<List<Monitoramento_Aluno>>(alunos);
