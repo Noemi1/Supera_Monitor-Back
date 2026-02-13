@@ -62,7 +62,7 @@ namespace Supera_Monitor_Back.Helpers
                 .ForMember(dest => dest.Aluno_Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Aluno, opt => opt.MapFrom(src => src.Nome))
                 .ForMember(dest => dest.Evento_Id, opt => opt.MapFrom(src => -1))
-                .ForMember(dest => dest.Observacao, opt => opt.MapFrom(src => ""));
+				.ForMember(dest => dest.Observacao, opt => opt.MapFrom(src => ""));
 
             CreateMap<Evento_Aula, AulaModel>()
                 .ForMember(dest => dest.Professor, opt => opt.MapFrom(src => src.Professor.Account.Name))

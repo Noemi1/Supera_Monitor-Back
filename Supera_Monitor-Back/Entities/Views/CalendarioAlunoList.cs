@@ -13,6 +13,7 @@ public partial class CalendarioAlunoList
 	public string? Aluno_Foto { get; set; }
 	public int? Turma_Id { get; set; }
 	public string? Turma { get; set; }
+	public bool PrimeiraAula { get; set; }
 	public int? PrimeiraAula_Id { get; set; }
 	public int? AulaZero_Id { get; set; }
 	public bool? RestricaoMobilidade { get; set; }

@@ -348,7 +348,6 @@ public class CalendarioService : ICalendarioService
 			{
 				DateTime dataTurma = new DateTime(data.Year, data.Month, data.Day, turma.Horario!.Value.Hours, turma.Horario!.Value.Minutes, 0);
 
-
 				if (!eventosByTurmaData.TryGetValue((turma.Id, dataTurma.ToString(formatDateDict)), out var eventoAula))
 				{
 					var vigenciasDaTurma = vigenciasPorTurma.GetValueOrDefault(turma.Id, new List<Aluno_Turma_Vigencia>())
@@ -407,9 +406,10 @@ public class CalendarioService : ICalendarioService
 						Deactivated = feriadoNoDia is null ? null : feriadoNoDia.Data,
 						Observacao = feriadoNoDia is null ? null : "Cancelamento Automático. <br> Feriado: " + feriadoNoDia.Descricao,
 
-						Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos)
-												.OrderBy(a => a.Aluno)	
-												.ToList(),
+						//Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos)
+						//						.OrderBy(a => a.Aluno)	
+						//						.ToList(),
+						Alunos = new List<CalendarioAlunoList>(),
 					};
 
 					var perfilEvento = perfilPorTurma.GetValueOrDefault(turma.Id, new List<PerfilCognitivo>());
@@ -451,6 +451,7 @@ public class CalendarioService : ICalendarioService
 							Aluno_Foto = null,
 							Turma_Id = aluno.Turma_Id,
 							Turma = aluno.Turma,
+							PrimeiraAula = false,
 							PrimeiraAula_Id = aluno.PrimeiraAula_Id,
 							AulaZero_Id = aluno.AulaZero_Id,
 							RestricaoMobilidade = aluno.RestricaoMobilidade,
@@ -513,15 +514,6 @@ public class CalendarioService : ICalendarioService
 		var eventoAulaIds = events
 			//.Where(e => e.Evento_Tipo_Id == (int)EventoTipo.Aula || e.Evento_Tipo_Id == (int)EventoTipo.AulaExtra)
 			.Select(e => e.Id);
-
-		//// Fazendo o possível pra otimizar, mas CalendarioAlunoList é uma view, então não lida muito bem com chaves
-		//var query = from a in _db.CalendarioAlunoLists
-		//			// join p in _db.Evento_Participacao_Aluno on a.Id equals p.Id
-		//			where eventoIds.Contains(a.Evento_Id)
-		//			orderby a.Aluno
-		//			select a;
-
-		//var allAlunos = query.ToList();
 
 		var allAlunos = _db.CalendarioAlunoList
 			.Where(x => eventoAulaIds.Contains(x.Evento_Id))

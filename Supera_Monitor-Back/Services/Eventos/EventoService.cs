@@ -2065,6 +2065,7 @@ public class EventoService : IEventoService
 					NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
 					Apostila_AH_Id = aluno.Apostila_AH_Id,
 					NumeroPaginaAH = aluno.NumeroPaginaAH,
+					PrimeiraAula = true,
 				};
 
 				_db.Evento_Participacao_Aluno.Add(participacao);
