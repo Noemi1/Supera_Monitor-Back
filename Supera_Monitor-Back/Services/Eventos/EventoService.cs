@@ -1867,9 +1867,7 @@ public class EventoService : IEventoService
 				return new ResponseModel { Message = "Esse evento de aula já está em sua capacidade máxima." };
 
 			var participacaoSource = eventoSource.Evento_Participacao_Aluno
-				.FirstOrDefault(p =>
-					p.Deactivated == null
-					&& p.Aluno_Id == aluno.Id
+				.FirstOrDefault(p => p.Aluno_Id == request.Aluno_Id
 					&& p.Evento_Id == eventoSource.Id);
 
 			if (participacaoSource is null)
@@ -1877,6 +1875,17 @@ public class EventoService : IEventoService
 
 			if (participacaoSource.Presente == true)
 				return new ResponseModel { Message = "Não é possível marcar reposição de uma aula que o aluno esteve presente." };
+
+			var reposicaoParaAlreadyExists = _db.Evento_Participacao_Aluno
+				.Include(x => x.Evento)
+				.FirstOrDefault(x => x.ReposicaoDe_Evento_Id == eventoSource.Id);
+
+			if (reposicaoParaAlreadyExists is not null)
+			{
+				var ev = reposicaoParaAlreadyExists.Evento
+				return new ResponseModel { Message = $"Uma outra reposição para essa aula já está agendada para o dia {ev.Data.ToString("dd/MM/yyyy HH:mm")} com a turma {ev.Descricao}" };
+			}
+
 
 			//
 			// Validations passed
