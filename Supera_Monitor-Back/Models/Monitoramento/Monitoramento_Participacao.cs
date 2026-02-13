@@ -37,6 +37,8 @@ namespace Supera_Monitor_Back.Models.Monitoramento
 		public int? ReposicaoPara_Evento_Id { get; set; }
 		
 		public int? ReposicaoDe_Evento_Id { get; set; }
+
+		public bool PrimeiraAula { get; set; }
 	}
 
 }

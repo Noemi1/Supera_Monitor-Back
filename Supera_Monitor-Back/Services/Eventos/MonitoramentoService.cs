@@ -307,6 +307,7 @@ public class MonitoramentoService : IMonitoramentoService
 									NumeroPaginaAH = aluno.NumeroPaginaAH,
 									Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
 									Apostila_AH_Id = aluno.Apostila_AH_Id,
+									PrimeiraAula = false,
 								};
 							}
 
@@ -346,6 +347,7 @@ public class MonitoramentoService : IMonitoramentoService
 							NumeroPaginaAH = aluno.NumeroPaginaAH,
 							Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
 							Apostila_AH_Id = aluno.Apostila_AH_Id,
+							PrimeiraAula = false,
 						};
 					}
 
