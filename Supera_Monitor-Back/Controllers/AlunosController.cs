@@ -69,6 +69,34 @@ namespace Supera_Monitor_Back.Controllers
 				return StatusCode(500, e);
 			}
 		}
+		[Authorize]
+		[HttpGet("dropdown/reposicao-de/{evento_Id}")]
+		public ActionResult<List<AlunoList>> GetAlunosReposicaoDeDropdown(int evento_Id)
+		{
+			try
+			{
+				var response = _alunoService.GetAlunosReposicaoDeDropdown(evento_Id);
+				return Ok(response);
+			}
+			catch (Exception e)
+			{
+				return StatusCode(500, e);
+			}
+		}
+		[Authorize]
+		[HttpGet("dropdown/reposicao-para/{evento_Id}")]
+		public ActionResult<List<AlunoList>> GetAlunosReposicaoParaDropdown(int evento_Id)
+		{
+			try
+			{
+				var response = _alunoService.GetAlunosReposicaoParaDropdown(evento_Id);
+				return Ok(response);
+			}
+			catch (Exception e)
+			{
+				return StatusCode(500, e);
+			}
+		}
 
 		[Authorize]
 		[HttpGet("{alunoId}")]

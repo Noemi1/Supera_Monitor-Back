@@ -26,3 +26,9 @@ public enum SalaAulaId
 	NeuroSalaSinapse = 7,
 	NeuroSalaAxonio = 8,
 }
+public enum SalaAndar
+{
+	Terreo = 0,
+	Andar1 = 1,
+	Andar2 = 2
+}

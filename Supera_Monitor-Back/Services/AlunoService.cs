@@ -15,6 +15,8 @@ public interface IAlunoService
 	List<AlunoList> GetAll();
 	List<AlunoList> GetAlunosAulaZeroDropdown();
 	List<AlunoList> GetAlunosPrimeiraAulaDropdown();
+	List<AlunoList> GetAlunosReposicaoDeDropdown(int evento_Id);
+	List<AlunoList> GetAlunosReposicaoParaDropdown(int evento_Id);
 
 	AlunoResponse Get(int alunoId);
 	List<AlunoHistoricoList> GetHistoricoById(int alunoId);
@@ -59,6 +61,96 @@ public class AlunoService : IAlunoService
 		return alunos;
 	}
 
+	public List<AlunoList> GetAlunosReposicaoDeDropdown(int evento_Id)
+	{
+		//var participacao = _db.CalendarioAlunoList
+		//	.Where(x => x.Evento_Id == reposicaoDe_Evento_Id
+		//				&& x.ReposicaoPara_Evento_Id != null
+		//				&& (x.ReposicaoDe_Evento_Id == null || x.Presente != false))
+		//	.ToList();
+
+		//var Aluno_Id = participacao.Select(x => x.Aluno_Id).ToList();
+
+		//var alunos = _db.AlunoList
+		//	.Where(x => x.Active && Aluno_Id.Contains(x.Id ) )
+		//	.ToList();
+
+		var alunos = _db.AlunoList
+			.Where(aluno => aluno.Active &&
+				!_db.CalendarioAlunoList.Any(participacao =>
+					participacao.Evento_Id == evento_Id
+					&& participacao.ReposicaoPara_Evento_Id != null
+					&& (participacao.ReposicaoDe_Evento_Id == null || participacao.Presente != false)
+					&& participacao.Aluno_Id == aluno.Id
+				)
+			)
+			.ToList();
+		return alunos;
+	}
+	
+	public List<AlunoList> GetAlunosReposicaoParaDropdown(int evento_Id)
+	{
+		//var participacao = _db.CalendarioAlunoList
+		//	.Where(x => x.Evento_Id == evento_Id);
+
+		//var Aluno_Id = participacao.Select(x => x.Aluno_Id).ToList();
+
+		//var evento = _db.Evento
+		//	.Include(x => x.Evento_Aula.Evento_Aula_PerfilCognitivo_Rel)
+		//	.ThenInclude(x => x.PerfilCognitivo)
+		//	.FirstOrDefault(x => x.Id == evento_Id);
+
+		//var perfis = evento.Evento_Aula.Evento_Aula_PerfilCognitivo_Rel.Select(x => x.PerfilCognitivo_Id).ToList();	
+
+		//var alunos = _db.AlunoList
+		//	.Where(aluno => aluno.Active
+		//		&& Aluno_Id.Contains(aluno.Id) == false
+		//		&& (aluno.PerfilCognitivo_Id == null || perfis.Contains(aluno.PerfilCognitivo_Id.Value) )
+		//		&& (aluno.RestricaoMobilidade == false || evento.Sala.Andar == (int)SalaAndar.Terreo)
+		//		)
+		//	.ToList();
+
+		var eventoInfo = _db.Evento
+		.Where(e => e.Id == evento_Id)
+		.Select(e => new
+		{
+			SalaAndar = e.Sala.Andar,
+			Perfis = e.Evento_Aula
+				.Evento_Aula_PerfilCognitivo_Rel
+				.Select(p => p.PerfilCognitivo_Id)
+		})
+		.FirstOrDefault();
+
+		if (eventoInfo == null)
+			return this.GetAll();
+
+		var alunos = _db.AlunoList
+			.Where(aluno =>
+				aluno.Active
+
+				// Aluno ainda não está no evento
+				&& !_db.CalendarioAlunoList.Any(c =>
+					c.Evento_Id == evento_Id &&
+					c.Aluno_Id == aluno.Id
+				)
+
+				// Perfil cognitivo compatível
+				&& (
+					aluno.PerfilCognitivo_Id == null ||
+					eventoInfo.Perfis.Contains(aluno.PerfilCognitivo_Id.Value)
+				)
+
+				// Restrição de mobilidade
+				&& (
+					!aluno.RestricaoMobilidade ||
+					eventoInfo.SalaAndar == (int)SalaAndar.Terreo
+				)
+			)
+			.AsNoTracking()
+			.ToList();
+
+		return alunos;
+	}
 
 	public List<AlunoList> GetAlunosAulaZeroDropdown()
 	{
