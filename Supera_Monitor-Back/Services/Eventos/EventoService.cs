@@ -1882,7 +1882,7 @@ public class EventoService : IEventoService
 
 			if (reposicaoParaAlreadyExists is not null)
 			{
-				var ev = reposicaoParaAlreadyExists.Evento
+				var ev = reposicaoParaAlreadyExists.Evento;
 				return new ResponseModel { Message = $"Uma outra reposição para essa aula já está agendada para o dia {ev.Data.ToString("dd/MM/yyyy HH:mm")} com a turma {ev.Descricao}" };
 			}
 
