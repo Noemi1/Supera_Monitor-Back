@@ -1878,7 +1878,7 @@ public class EventoService : IEventoService
 
 			var reposicaoParaAlreadyExists = _db.Evento_Participacao_Aluno
 				.Include(x => x.Evento)
-				.FirstOrDefault(x => x.ReposicaoDe_Evento_Id == eventoSource.Id);
+				.FirstOrDefault(x => x.ReposicaoDe_Evento_Id == eventoSource.Id && x.Aluno_Id == request.Aluno_Id);
 
 			if (reposicaoParaAlreadyExists is not null)
 			{
