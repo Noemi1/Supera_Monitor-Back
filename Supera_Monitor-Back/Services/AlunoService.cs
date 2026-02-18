@@ -68,24 +68,6 @@ public class AlunoService : IAlunoService
 	//
 	public List<AlunoList> GetAlunosAgendarFaltaDropdown()
 	{
-		//List<int> eventosIds = _db.CalendarioEventoList
-		//	.Where(x => !x.Finalizado
-		//		&& x.Active == true)
-		//	.Select(x => x.Id)
-		//	.ToList();
-
-		//List<int> alunosIdsParticipacoes = _db.CalendarioAlunoList
-		//	.Where(x => eventosIds.Contains(x.Evento_Id))
-		//	.Select(x => x.Aluno_Id)
-		//	.Distinct()
-		//	.ToList();
-
-		//List<AlunoList> alunos = _db.AlunoList
-		//	.Where(x => x.Active && (x.Turma_Id.HasValue || alunosIdsParticipacoes.Contains(x.Id)))
-		//	.OrderBy(a => a.Nome)
-		//	.ToList();
-
-
 
 		List<AlunoList> alunos = _db.AlunoList
 			.Where(a =>
@@ -109,20 +91,11 @@ public class AlunoService : IAlunoService
 		return alunos;
 	}
 
+	//
+	// Retorna os alunos que participam de uma aula para saber quem daquela aula irá marcar reposição
+	//
 	public List<AlunoList> GetAlunosReposicaoDeDropdown(int evento_Id)
 	{
-		//var participacao = _db.CalendarioAlunoList
-		//	.Where(x => x.Evento_Id == reposicaoDe_Evento_Id
-		//				&& x.ReposicaoPara_Evento_Id != null
-		//				&& (x.ReposicaoDe_Evento_Id == null || x.Presente != false))
-		//	.ToList();
-
-		//var Aluno_Id = participacao.Select(x => x.Aluno_Id).ToList();
-
-		//var alunos = _db.AlunoList
-		//	.Where(x => x.Active && Aluno_Id.Contains(x.Id ) )
-		//	.ToList();
-
 		var alunos = _db.AlunoList
 			.Where(aluno => aluno.Active &&
 				!_db.CalendarioAlunoList.Any(participacao =>
@@ -135,29 +108,13 @@ public class AlunoService : IAlunoService
 			.ToList();
 		return alunos;
 	}
-	
+	//
+	// Retorna os alunos que podem agendar reposição nessa aula
+	// Apenas alunos ativos, que ainda não estão atribuidos, com perfil cognitivo válido e restrição de mobilidade coerente com a sala
+	//
 	public List<AlunoList> GetAlunosReposicaoParaDropdown(int evento_Id)
 	{
-		//var participacao = _db.CalendarioAlunoList
-		//	.Where(x => x.Evento_Id == evento_Id);
-
-		//var Aluno_Id = participacao.Select(x => x.Aluno_Id).ToList();
-
-		//var evento = _db.Evento
-		//	.Include(x => x.Evento_Aula.Evento_Aula_PerfilCognitivo_Rel)
-		//	.ThenInclude(x => x.PerfilCognitivo)
-		//	.FirstOrDefault(x => x.Id == evento_Id);
-
-		//var perfis = evento.Evento_Aula.Evento_Aula_PerfilCognitivo_Rel.Select(x => x.PerfilCognitivo_Id).ToList();	
-
-		//var alunos = _db.AlunoList
-		//	.Where(aluno => aluno.Active
-		//		&& Aluno_Id.Contains(aluno.Id) == false
-		//		&& (aluno.PerfilCognitivo_Id == null || perfis.Contains(aluno.PerfilCognitivo_Id.Value) )
-		//		&& (aluno.RestricaoMobilidade == false || evento.Sala.Andar == (int)SalaAndar.Terreo)
-		//		)
-		//	.ToList();
-
+		
 		var eventoInfo = _db.Evento
 		.Where(e => e.Id == evento_Id)
 		.Select(e => new
@@ -200,10 +157,17 @@ public class AlunoService : IAlunoService
 		return alunos;
 	}
 
+	//
+	// Retorna os alunos que podem agendar aula zero
+	// Apenas alunos ativos que ainda não tenham participado de uma aula zero
+	//
 	public List<AlunoList> GetAlunosAulaZeroDropdown()
 	{
-		var alunosQueryable = _db.AlunoList.Where(aluno => aluno.AulaZero_Id == null
-				|| _db.Evento_Participacao_Aluno.Any(x => x.Evento_Id == aluno.AulaZero_Id && x.Presente != true));
+		var alunosQueryable = _db.AlunoList.Where(aluno => 
+				aluno.Active == true
+				&& (aluno.AulaZero_Id == null
+					|| _db.Evento_Participacao_Aluno.Any(x => x.Evento_Id == aluno.AulaZero_Id && x.Presente != true))
+				);
 
 		List<AlunoList> alunos = alunosQueryable
 			.OrderBy(a => a.Nome)
@@ -214,8 +178,10 @@ public class AlunoService : IAlunoService
 	
 	public List<AlunoList> GetAlunosPrimeiraAulaDropdown()
 	{
-		var alunosQueryable = _db.AlunoList.Where(aluno => aluno.PrimeiraAula_Id == null
-				|| _db.Evento_Participacao_Aluno.Any(x => x.Evento_Id == aluno.PrimeiraAula_Id && x.Presente != true));
+		var alunosQueryable = _db.AlunoList.Where(aluno =>
+				aluno.Active == true
+				&& (aluno.PrimeiraAula_Id == null
+				|| _db.Evento_Participacao_Aluno.Any(x => x.Evento_Id == aluno.PrimeiraAula_Id && x.Presente != true)));
 
 		List<AlunoList> alunos = alunosQueryable
 			.OrderBy(a => a.Nome)
