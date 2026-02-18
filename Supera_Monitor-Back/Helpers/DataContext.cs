@@ -319,7 +319,6 @@ public partial class DataContext : DbContext
 			entity.Property(e => e.AspNetUsers_Created_Id)
 				.HasMaxLength(128)
 				.IsUnicode(false);
-			entity.Property(e => e.AulaZero).HasColumnType("datetime");
 			entity.Property(e => e.Celular)
 				.HasMaxLength(256)
 				.IsUnicode(false);
@@ -358,11 +357,9 @@ public partial class DataContext : DbContext
 			entity.Property(e => e.Pessoa_Sexo)
 				.HasMaxLength(50)
 				.IsUnicode(false);
-			entity.Property(e => e.PrimeiraAula).HasColumnType("datetime");
 			entity.Property(e => e.RM)
 				.HasMaxLength(6)
 				.IsUnicode(false);
-			entity.Property(e => e.PrimeiraAula).HasColumnType("datetime");
 			entity.Property(e => e.SenhaApp)
 				.HasMaxLength(250)
 				.IsUnicode(false);
