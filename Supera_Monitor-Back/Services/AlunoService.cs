@@ -15,6 +15,7 @@ public interface IAlunoService
 	List<AlunoList> GetAll();
 	List<AlunoList> GetAlunosAulaZeroDropdown();
 	List<AlunoList> GetAlunosPrimeiraAulaDropdown();
+	List<AlunoList> GetAlunosAgendarFaltaDropdown();
 	List<AlunoList> GetAlunosReposicaoDeDropdown(int evento_Id);
 	List<AlunoList> GetAlunosReposicaoParaDropdown(int evento_Id);
 
@@ -55,6 +56,32 @@ public class AlunoService : IAlunoService
 	public List<AlunoList> GetAll()
 	{
 		List<AlunoList> alunos = _db.AlunoList
+			.OrderBy(a => a.Nome)
+			.ToList();
+
+		return alunos;
+	}
+
+	//
+	// Retorna os alunos disponíveis para se marcar faltas
+	// Apenas alunos ativos, e alunos com turma definida ou alunos com alguma aula agendada
+	//
+	public List<AlunoList> GetAlunosAgendarFaltaDropdown()
+	{
+		List<int> eventosIds = _db.CalendarioEventoList
+			.Where(x => !x.Finalizado
+				&& x.Active == true)
+			.Select(x => x.Id)
+			.ToList();
+
+		List<int> alunosIdsParticipacoes = _db.CalendarioAlunoList
+			.Where(x => eventosIds.Contains(x.Evento_Id))
+			.Select(x => x.Aluno_Id)
+			.Distinct()
+			.ToList();
+
+		List<AlunoList> alunos = _db.AlunoList
+			.Where(x => x.Active && (x.Turma_Id.HasValue || alunosIdsParticipacoes.Contains(x.Id)))
 			.OrderBy(a => a.Nome)
 			.ToList();
 

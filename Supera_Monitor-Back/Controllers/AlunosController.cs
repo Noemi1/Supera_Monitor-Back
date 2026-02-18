@@ -99,6 +99,21 @@ namespace Supera_Monitor_Back.Controllers
 		}
 
 		[Authorize]
+		[HttpGet("dropdown/agendar-falta")]
+		public ActionResult<List<AlunoList>> GetAlunosAgendarFaltaDropdown()
+		{
+			try
+			{
+				var response = _alunoService.GetAlunosAgendarFaltaDropdown();
+				return Ok(response);
+			}
+			catch (Exception e)
+			{
+				return StatusCode(500, e);
+			}
+		}
+
+		[Authorize]
 		[HttpGet("{alunoId}")]
 		public ActionResult<AlunoResponse> Get(int alunoId)
 		{
