@@ -602,6 +602,9 @@ public partial class DataContext : DbContext
 			entity
 				.HasNoKey()
 				.ToView("CalendarioEventoList");
+
+			entity.Ignore(x => x.Feriado);
+
 		});
 
 		modelBuilder.Entity<CalendarioProfessorList>(entity =>

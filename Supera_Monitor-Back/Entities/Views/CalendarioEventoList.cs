@@ -41,7 +41,7 @@ public partial class CalendarioEventoList {
     public string Evento_Tipo { get; set; } = null!;
     public int? Account_Created_Id { get; set; }
     public string? Account_Created { get; set; }
-    public bool Active => Deactivated == null;
+    public bool Active { get; set; }
 
     public virtual ICollection<CalendarioAlunoList> Alunos { get; set; } = new List<CalendarioAlunoList>();
     public virtual ICollection<CalendarioProfessorList> Professores { get; set; } = new List<CalendarioProfessorList>();
