@@ -14,7 +14,7 @@ namespace Supera_Monitor_Back.Models.Monitoramento
 		
 		public DateTime? Deactivated { get; set; }
 		
-		public bool Active => !Deactivated.HasValue;
+		public bool Active { get; set; }
 
 		public string Apostila_Abaco { get; set; } = String.Empty;
 		
@@ -39,6 +39,8 @@ namespace Supera_Monitor_Back.Models.Monitoramento
 		public int? ReposicaoDe_Evento_Id { get; set; }
 
 		public bool PrimeiraAula { get; set; }
+
+		public DateTime? AgendouFalta { get; set; }
 	}
 
 }

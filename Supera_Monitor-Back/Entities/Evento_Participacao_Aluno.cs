@@ -17,6 +17,7 @@ public partial class Evento_Participacao_Aluno
 	public string? ContatoObservacao { get; set; }
 	public int? StatusContato_Id { get; set; }
 	public bool PrimeiraAula { get; set; }
+	public DateTime? AgendouFalta { get; set; }
 	public virtual Aluno Aluno { get; set; } = null!;
 	public virtual Apostila? Apostila_AH { get; set; }
 	public virtual Apostila? Apostila_Abaco { get; set; }

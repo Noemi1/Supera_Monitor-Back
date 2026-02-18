@@ -306,6 +306,7 @@ public class ParticipacaoService : IParticipacaoService
 			participacao.AlunoContactado = request.AlunoContactado;
 			participacao.ContatoObservacao = request.ContatoObservacao;
 			participacao.Observacao = request.Observacao;
+			participacao.AgendouFalta = participacao.Deactivated;
 
 			_db.Aluno_Checklist_Item.UpdateRange(checklist);
 			_db.Evento_Participacao_Aluno.Update(participacao);

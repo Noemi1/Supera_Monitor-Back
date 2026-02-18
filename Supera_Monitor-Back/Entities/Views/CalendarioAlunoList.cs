@@ -30,10 +30,11 @@ public partial class CalendarioAlunoList
 	public int? NumeroPaginaAH { get; set; }
 	public string? Observacao { get; set; }
 	public DateTime? Deactivated { get; set; }
+	public bool Active { get; set; }
 	public DateTime? AlunoContactado { get; set; }
 	public string? ContatoObservacao { get; set; }
 	public int? StatusContato_Id { get; set; }
-	public bool Active => Deactivated == null;
+	public DateTime? AgendouFalta { get; set; }
 	public int? PerfilCognitivo_Id { get; set; }
 	public string? PerfilCognitivo { get; set; }
 }
