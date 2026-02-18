@@ -1892,7 +1892,7 @@ public class EventoService : IEventoService
 			//
 
 			// Se for a primeira aula do aluno, atualizar a data de primeira aula para a data da aula destino
-			if (eventoSource.Id == aluno.PrimeiraAula_Id)
+			if (participacaoSource.PrimeiraAula)
 			{
 				var hoje = TimeFunctions.HoraAtualBR();
 
@@ -1965,6 +1965,7 @@ public class EventoService : IEventoService
 				NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
 				Apostila_AH_Id = aluno.Apostila_AH_Id,
 				NumeroPaginaAH = aluno.NumeroPaginaAH,
+				PrimeiraAula = participacaoSource.PrimeiraAula
 			};
 
 			// Desativar o registro da aula
