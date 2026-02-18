@@ -159,7 +159,7 @@ public class AlunoService : IAlunoService
 
 	//
 	// Retorna os alunos que podem agendar aula zero
-	// Apenas alunos ativos que ainda não tenham participado de uma aula zero
+	// Apenas alunos ativos que ainda não tenham participado de uma aula zero	
 	//
 	public List<AlunoList> GetAlunosAulaZeroDropdown()
 	{
