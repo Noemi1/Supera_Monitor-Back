@@ -7,11 +7,6 @@ public partial class AlunoList
     public string Nome { get; set; } = string.Empty;
     public int? Checklist_Id { get; set; }
     public string? Checklist { get; set; }
-    public string? CorLegenda { get; set; }
-    public int? PrimeiraAula_Id { get; set; }
-    public DateTime? PrimeiraAula { get; set; }
-    public int? AulaZero_Id { get; set; }
-    public DateTime? AulaZero { get; set; }
     public bool RestricaoMobilidade { get; set; }
     public DateTime? DataNascimento { get; set; }
     public string? Celular { get; set; }
@@ -24,6 +19,7 @@ public partial class AlunoList
     public int? DiaSemana { get; set; }
     public TimeSpan? Horario { get; set; }
     public int? Professor_Id { get; set; }
+    public string? CorLegenda { get; set; }
     public string? Professor { get; set; }
     public int? Pessoa_Sexo_Id { get; set; }
     public string? Pessoa_Sexo { get; set; }
@@ -49,5 +45,8 @@ public partial class AlunoList
     public string? LoginApp { get; set; }
     public string? SenhaApp { get; set; }
     public string? LinkGrupo { get; set; }
+    public int? PrimeiraAula_Id { get; set; }
+    public int? AulaZero_Id { get; set; }
+
     public virtual ICollection<AlunoRestricaoList> Restricoes { get; set; } = new List<AlunoRestricaoList>();
 }
