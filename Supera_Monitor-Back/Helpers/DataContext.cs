@@ -602,29 +602,6 @@ public partial class DataContext : DbContext
 			entity
 				.HasNoKey()
 				.ToView("CalendarioEventoList");
-
-			entity.Property(e => e.CorLegenda)
-				.HasMaxLength(20)
-				.IsUnicode(false);
-			entity.Property(e => e.Created).HasColumnType("datetime");
-			entity.Property(e => e.Data).HasColumnType("datetime");
-			entity.Property(e => e.Deactivated).HasColumnType("datetime");
-			entity.Property(e => e.Descricao)
-				.HasMaxLength(250)
-				.IsUnicode(false);
-			entity.Property(e => e.Evento_Tipo)
-				.HasMaxLength(50)
-				.IsUnicode(false);
-			entity.Property(e => e.LastUpdated).HasColumnType("datetime");
-			entity.Property(e => e.Observacao).IsUnicode(false);
-			entity.Property(e => e.Tema)
-				.HasMaxLength(250)
-				.IsUnicode(false);
-			entity.Property(e => e.Turma)
-				.HasMaxLength(100)
-				.IsUnicode(false);
-			entity.Ignore(x => x.Feriado);
-
 		});
 
 		modelBuilder.Entity<CalendarioProfessorList>(entity =>
