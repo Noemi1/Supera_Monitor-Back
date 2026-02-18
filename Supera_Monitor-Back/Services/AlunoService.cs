@@ -68,20 +68,41 @@ public class AlunoService : IAlunoService
 	//
 	public List<AlunoList> GetAlunosAgendarFaltaDropdown()
 	{
-		List<int> eventosIds = _db.CalendarioEventoList
-			.Where(x => !x.Finalizado
-				&& x.Active == true)
-			.Select(x => x.Id)
-			.ToList();
+		//List<int> eventosIds = _db.CalendarioEventoList
+		//	.Where(x => !x.Finalizado
+		//		&& x.Active == true)
+		//	.Select(x => x.Id)
+		//	.ToList();
 
-		List<int> alunosIdsParticipacoes = _db.CalendarioAlunoList
-			.Where(x => eventosIds.Contains(x.Evento_Id))
-			.Select(x => x.Aluno_Id)
-			.Distinct()
-			.ToList();
+		//List<int> alunosIdsParticipacoes = _db.CalendarioAlunoList
+		//	.Where(x => eventosIds.Contains(x.Evento_Id))
+		//	.Select(x => x.Aluno_Id)
+		//	.Distinct()
+		//	.ToList();
+
+		//List<AlunoList> alunos = _db.AlunoList
+		//	.Where(x => x.Active && (x.Turma_Id.HasValue || alunosIdsParticipacoes.Contains(x.Id)))
+		//	.OrderBy(a => a.Nome)
+		//	.ToList();
+
+
 
 		List<AlunoList> alunos = _db.AlunoList
-			.Where(x => x.Active && (x.Turma_Id.HasValue || alunosIdsParticipacoes.Contains(x.Id)))
+			.Where(a =>
+				a.Active &&
+				(
+					a.Turma_Id.HasValue ||
+
+					_db.CalendarioAlunoList.Any(ca =>
+						ca.Aluno_Id == a.Id &&
+						_db.CalendarioEventoList.Any(e =>
+							e.Id == ca.Evento_Id &&
+							!e.Finalizado &&
+							e.Active
+						)
+					)
+				)
+			)
 			.OrderBy(a => a.Nome)
 			.ToList();
 
