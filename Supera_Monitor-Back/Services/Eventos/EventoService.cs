@@ -2059,8 +2059,14 @@ public class EventoService : IEventoService
 
 
 			// Se o aluno já estiver no evento, precisa apenas marcar como primeira aula
-			if (!evento.Evento_Participacao_Aluno.Any(a => a.Aluno_Id == aluno.Id))
+			if (evento.Evento_Participacao_Aluno.Any(a => a.Aluno_Id == aluno.Id))
 			{
+				var participacao = evento.Evento_Participacao_Aluno.FirstOrDefault(x => x.Aluno_Id == aluno.Id);
+				participacao.PrimeiraAula = true;
+				_db.Evento_Participacao_Aluno.Update(participacao);
+			}
+			// Se o aluno não estiver no evento, insere e marca primeira aula
+			else { 
 				var eventoList = _db.CalendarioEventoList.FirstOrDefault(x => x.Id == request.Evento_Id);
 
 				// O evento deve ter espaço para comportar o aluno
