@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+﻿	using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
@@ -57,7 +57,7 @@ public class CalendarioService : ICalendarioService
 		var eventosQueryable = _db.CalendarioEventoList
 			.Where(e => e.Data.Date >= request.IntervaloDe.Value.Date && e.Data.Date <= request.IntervaloAte.Value.Date);
 
-		var alunosQueryable = _db.AlunoList;
+		var alunosQueryable = _db.AlunoList.AsQueryable();
 
 		var professoresQueryable = _db.ProfessorList
 			.Where(x => x.Active == true);

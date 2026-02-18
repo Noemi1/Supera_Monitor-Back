@@ -306,69 +306,6 @@ public partial class DataContext : DbContext
 			entity
 				.HasNoKey()
 				.ToView("AlunoList");
-
-			entity.Property(e => e.Apostila_AH)
-				.HasMaxLength(50)
-				.IsUnicode(false);
-			entity.Property(e => e.Apostila_Abaco)
-				.HasMaxLength(50)
-				.IsUnicode(false);
-			entity.Property(e => e.AspNetUsers_Created)
-				.HasMaxLength(45)
-				.IsUnicode(false);
-			entity.Property(e => e.AspNetUsers_Created_Id)
-				.HasMaxLength(128)
-				.IsUnicode(false);
-			entity.Property(e => e.Celular)
-				.HasMaxLength(256)
-				.IsUnicode(false);
-			entity.Property(e => e.Checklist)
-				.HasMaxLength(50)
-				.IsUnicode(false);
-			entity.Property(e => e.CorLegenda)
-				.HasMaxLength(20)
-				.IsUnicode(false);
-			entity.Property(e => e.Created).HasColumnType("datetime");
-			entity.Property(e => e.DataNascimento).HasColumnType("date");
-			entity.Property(e => e.Deactivated).HasColumnType("datetime");
-			entity.Property(e => e.Email)
-				.HasMaxLength(250)
-				.IsUnicode(false);
-			entity.Property(e => e.Endereco)
-				.HasMaxLength(250)
-				.IsUnicode(false);
-			entity.Property(e => e.Kit)
-				.HasMaxLength(50)
-				.IsUnicode(false);
-			entity.Property(e => e.LastUpdated).HasColumnType("datetime");
-			entity.Property(e => e.LinkGrupo).IsUnicode(false);
-			entity.Property(e => e.LoginApp)
-				.HasMaxLength(250)
-				.IsUnicode(false);
-			entity.Property(e => e.Nome)
-				.HasMaxLength(250)
-				.IsUnicode(false);
-			entity.Property(e => e.Observacao)
-				.HasMaxLength(8000)
-				.IsUnicode(false);
-			entity.Property(e => e.PerfilCognitivo)
-				.HasMaxLength(50)
-				.IsUnicode(false);
-			entity.Property(e => e.Pessoa_Sexo)
-				.HasMaxLength(50)
-				.IsUnicode(false);
-			entity.Property(e => e.RM)
-				.HasMaxLength(6)
-				.IsUnicode(false);
-			entity.Property(e => e.SenhaApp)
-				.HasMaxLength(250)
-				.IsUnicode(false);
-			entity.Property(e => e.Telefone)
-				.HasMaxLength(256)
-				.IsUnicode(false);
-			entity.Property(e => e.Turma)
-				.HasMaxLength(100)
-				.IsUnicode(false);
 		});
 
 		modelBuilder.Entity<AlunoVigenciaList>(entity =>
