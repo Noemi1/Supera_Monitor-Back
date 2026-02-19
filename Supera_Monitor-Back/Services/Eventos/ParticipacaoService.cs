@@ -370,9 +370,6 @@ public class ParticipacaoService : IParticipacaoService
             if (evento == null)
                 return new ResponseModel { Message = $"Evento não encontrado." };
 
-            if (evento.Deactivated.HasValue)
-                return new ResponseModel { Message = $"{tipo} está inativa." };
-
             if (evento.Finalizado)
                 return new ResponseModel { Message = $"{tipo} já foi finalizada." };
 
