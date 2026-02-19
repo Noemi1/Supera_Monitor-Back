@@ -280,12 +280,25 @@ public class CalendarioService : ICalendarioService
 						Sala = "Sala Indefinida",
 
 						Feriado = feriadoNoDia,
-						Deactivated = feriadoNoDia is null ? null : feriadoNoDia.Data,
-						Observacao = feriadoNoDia is null ? null : "Cancelamento Automático. <br> Feriado: " + feriadoNoDia.Descricao,
-
 					};
 
-					eventosResponse.Add(pseudoOficina);
+					pseudoOficina.Deactivated = feriadoNoDia is not null
+							? feriadoNoDia.Data
+								: roteiroDoDia is not null 
+									&& roteiroDoDia.Recesso 
+									&& roteiroDoDia.Deactivated.HasValue
+							? roteiroDoDia.DataInicio
+								: null;
+					pseudoOficina.Active = pseudoOficina.Deactivated.HasValue == false;
+                    pseudoOficina.Observacao = feriadoNoDia is not null
+                            ? $"Cancelamento Automático. <br> Feriado: {feriadoNoDia.Descricao}" 
+                                : roteiroDoDia is not null
+                                    && roteiroDoDia.Recesso
+                                    && roteiroDoDia.Deactivated.HasValue
+                            ? $"Cancelamento Automático. <br> Recesso: {roteiroDoDia.Tema}"
+                                : null;
+
+                    eventosResponse.Add(pseudoOficina);
 				}
 			}
 			
@@ -328,8 +341,6 @@ public class CalendarioService : ICalendarioService
 						RoteiroCorLegenda = roteiroDoDia?.CorLegenda,
 
 						Feriado = feriadoNoDia,
-						Deactivated = feriadoNoDia is null ? null : feriadoNoDia.Data,
-						Observacao = feriadoNoDia is null ? null : "Cancelamento Automático. <br> Feriado: " + feriadoNoDia.Descricao,
 
 						Professores = professores.Select(professor => new CalendarioProfessorList
 						{
@@ -344,7 +355,26 @@ public class CalendarioService : ICalendarioService
 						}).ToList()
 					};
 
-					eventosResponse.Add(pseudoReuniao);
+
+                    pseudoReuniao.Deactivated = feriadoNoDia is not null
+                            ? feriadoNoDia.Data
+                                : roteiroDoDia is not null
+                                    && roteiroDoDia.Recesso
+                                    && roteiroDoDia.Deactivated.HasValue
+                            ? roteiroDoDia.DataInicio
+                                : null;
+                    
+					pseudoReuniao.Active = pseudoReuniao.Deactivated.HasValue == false;
+                    
+					pseudoReuniao.Observacao = feriadoNoDia is not null
+                            ? $"Cancelamento Automático. <br> Feriado: {feriadoNoDia.Descricao}"
+                                : roteiroDoDia is not null
+                                    && roteiroDoDia.Recesso
+                                    && roteiroDoDia.Deactivated.HasValue
+                            ? $"Cancelamento Automático. <br> Recesso: {roteiroDoDia.Tema}"
+                                : null;
+
+                    eventosResponse.Add(pseudoReuniao);
 				}
 			}
 
@@ -418,16 +448,27 @@ public class CalendarioService : ICalendarioService
 						Andar = turma.Andar,
 
 						Feriado = feriadoNoDia,
-						Deactivated = feriadoNoDia is null ? null : feriadoNoDia.Data,
-						Observacao = feriadoNoDia is null ? null : "Cancelamento Automático. <br> Feriado: " + feriadoNoDia.Descricao,
-
-						//Alunos = _mapper.Map<List<CalendarioAlunoList>>(alunos)
-						//						.OrderBy(a => a.Aluno)	
-						//						.ToList(),
 						Alunos = new List<CalendarioAlunoList>(),
 					};
+                    pseudoAula.Deactivated = feriadoNoDia is not null
+                            ? feriadoNoDia.Data
+                                : roteiroDoDia is not null
+                                    && roteiroDoDia.Recesso
+                                    && roteiroDoDia.Deactivated.HasValue
+                            ? roteiroDoDia.DataInicio
+                                : null;
 
-					var perfilEvento = perfilPorTurma.GetValueOrDefault(turma.Id, new List<PerfilCognitivo>());
+                    pseudoAula.Active = pseudoAula.Deactivated.HasValue == false;
+
+                    pseudoAula.Observacao = feriadoNoDia is not null
+                            ? $"Cancelamento Automático. <br> Feriado: {feriadoNoDia.Descricao}"
+                                : roteiroDoDia is not null
+                                    && roteiroDoDia.Recesso
+                                    && roteiroDoDia.Deactivated.HasValue
+                            ? $"Cancelamento Automático. <br> Recesso: {roteiroDoDia.Tema}"
+                                : null;
+
+                    var perfilEvento = perfilPorTurma.GetValueOrDefault(turma.Id, new List<PerfilCognitivo>());
 					pseudoAula.PerfilCognitivo = _mapper.Map<List<PerfilCognitivoModel>>(perfilEvento);
 
 					if (professoresPorId.TryGetValue(turma.Professor_Id!.Value, out var professor))
