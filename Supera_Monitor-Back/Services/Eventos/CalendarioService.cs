@@ -62,14 +62,17 @@ public class CalendarioService : ICalendarioService
 		var eventosQueryable = _db.CalendarioEventoList
 			.Where(e => e.Data.Date >= intervaloDe && e.Data.Date <= intervaloAte);
 
-		var alunosQueryable = _db.AlunoList.AsQueryable();
+		var alunosQueryable = _db.AlunoList
+            .Where(x => x.Created.Date <= intervaloAte
+                        && (x.Deactivated.HasValue == false || x.Deactivated.Value.Date >= intervaloDe));
 
-		var professoresQueryable = _db.ProfessorList
+        var professoresQueryable = _db.ProfessorList
 			.Where(x => x.Active == true);
 
 		var turmasQueryable = _db.TurmaLists
 			.Where(x => x.Created.Date <= intervaloAte
                         && (x.Deactivated.HasValue == false || x.Deactivated.Value.Date >= intervaloDe));
+
         if (request.Perfil_Cognitivo_Id.HasValue)
 		{
 			eventosQueryable =
@@ -369,7 +372,9 @@ public class CalendarioService : ICalendarioService
 						from a in alunos
 						join v in vigenciasDaTurma
 							on a.Id equals v.Aluno_Id
-						select a;
+                        where a.Created.Date <= data  // aluno já existe na data
+                              && (!a.Deactivated.HasValue || a.Deactivated.Value.Date >= data) // aluno não foi desativado antes
+                        select a;
 
 					var alunosTurma = alunosDoDia.ToList();
 

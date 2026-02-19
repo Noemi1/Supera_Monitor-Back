@@ -43,7 +43,7 @@ public class MonitoramentoService : IMonitoramentoService
 
 	public async Task<Monitoramento_Response> GetMonitoramento(Monitoramento_Request request)
 	{
-		DateTime intervaloDe = new(request.Ano, 1, 1);
+		DateTime intervaloDe = new DateTime(request.Ano, 1, 1);
 		DateTime intervaloAte = intervaloDe.AddYears(1).AddDays(-1);
 
 		var response = new Monitoramento_Response();
@@ -55,15 +55,16 @@ public class MonitoramentoService : IMonitoramentoService
 		var participacoesQueryable = _db.CalendarioAlunoList
 			.AsQueryable();
 
-		var turmasQueryable = _db.TurmaLists
-			.Where(t => t.Deactivated == null);
+		var turmasQueryable = _db.TurmaLists;
+            //.Where(x => x.Created.Date <= intervaloAte	
+            //            && (x.Deactivated.HasValue == false || x.Deactivated.Value.Date >= intervaloDe));
+
+        var alunosQueryable = _db.AlunoList
+            .Where(x => x.Created.Date <= intervaloAte
+                        && (x.Deactivated.HasValue == false || x.Deactivated.Value.Date >= intervaloDe));
 
 
-		var alunosQueryable = _db.AlunoList
-			.Where(t => t.Deactivated == null);
-
-
-		if (request.Turma_Id.HasValue)
+        if (request.Turma_Id.HasValue)
 		{
 			alunosQueryable = alunosQueryable.Where(x => x.Turma_Id == request.Turma_Id.Value);
 		}
@@ -79,13 +80,30 @@ public class MonitoramentoService : IMonitoramentoService
 			alunosQueryable = alunosQueryable.Where(x => x.Professor_Id == request.Professor_Id.Value);
 		}
 
-		var alunosIds = alunosQueryable.AsNoTracking().Select(x => x.Id);
-		var turmasIds = turmasQueryable.AsNoTracking().Select(x => x.Id);
+		var alunosIds = alunosQueryable
+			.AsNoTracking()
+			.Select(x => x.Id);
 
-		var alunos = alunosQueryable.AsNoTracking().ToList();
-		var turmas = turmasQueryable.AsNoTracking().ToList();
-		var participacoes = participacoesQueryable.AsNoTracking().ToList();
-		var eventos = eventosQueryable.AsNoTracking().ToList();
+		var turmasIds = turmasQueryable
+			.AsNoTracking()
+			.Select(x => x.Id);
+
+		var alunos = alunosQueryable
+			.AsNoTracking()
+			.ToList();
+
+		var turmas = turmasQueryable
+			.AsNoTracking()
+			.ToList();
+
+		var participacoes = participacoesQueryable
+			.AsNoTracking()
+			.ToList();
+
+		var eventos = eventosQueryable
+			.AsNoTracking()
+			.ToList();
+
 		var vigencias = _db.Aluno_Turma_Vigencia
 			.Where(x => alunosIds.Contains(x.Aluno_Id)
 						&& turmasIds.Contains(x.Turma_Id)
@@ -175,15 +193,9 @@ public class MonitoramentoService : IMonitoramentoService
 			response.MesesRoteiro.Add(mes);
 		}
 
-		response.Alunos = response.Alunos
-			.OrderBy(x => x.Turma_Id)
-			.ThenBy(x => x.Nome)
-			.ToList();
-
 		#region foreach roteiros x foreach alunos
 
 		var monitoramentosAlunos = _mapper.Map<List<Monitoramento_Aluno>>(alunos);
-
 
 		foreach (RoteiroModel roteiro in roteiros)
 		{
@@ -217,138 +229,148 @@ public class MonitoramentoService : IMonitoramentoService
 						if (turmasPorId.TryGetValue(vigenciaAlunoRoteiro.Turma_Id, out var turma))
 						{
 							dataTurma = GetDataTurmaFromInterval(turma, roteiro.DataInicio, roteiro.DataFim);
-							feriadosPorData.TryGetValue(dataTurma.ToString(dateFormatDict), out feriado);
 
-							//
-							// Aula Instanciada
-							//
-							if (eventosPorTurmaData.TryGetValue((turma.Id, dataTurma.Date), out var aula))
-							{
-								monitoramentoAula = _mapper.Map<Monitoramento_Aula>(aula);
-								monitoramentoAula.Tema = aula.Tema ?? roteiro.Tema;
-								monitoramentoAula.Semana = aula.Semana ?? roteiro.Semana;
-								monitoramentoAula.RoteiroCorLegenda = roteiro.CorLegenda;
-								monitoramentoAula.Recesso = roteiro.Recesso;
+                            if (turma.Created.Date <= dataTurma
+								&& (!turma.Deactivated.HasValue || turma.Deactivated.Value.Date >= dataTurma)
+								&& aluno.Created.Date <= dataTurma)
+							{ 
+                                feriadosPorData.TryGetValue(dataTurma.ToString(dateFormatDict), out feriado);
 
-								if (participacaoPorAlunoEvento.TryGetValue((aluno.Id, aula.Id), out var participacao))
+								//
+								// Aula Instanciada
+								//
+								if (eventosPorTurmaData.TryGetValue((turma.Id, dataTurma.Date), out var aula))
 								{
-									monitoramentoParticipacao = _mapper.Map<Monitoramento_Participacao>(participacao);
+									monitoramentoAula = _mapper.Map<Monitoramento_Aula>(aula);
+									monitoramentoAula.Tema = aula.Tema ?? roteiro.Tema;
+									monitoramentoAula.Semana = aula.Semana ?? roteiro.Semana;
+									monitoramentoAula.RoteiroCorLegenda = roteiro.CorLegenda;
+									monitoramentoAula.Recesso = roteiro.Recesso;
 
-									if (participacao.ReposicaoPara_Evento_Id.HasValue)
+									if (participacaoPorAlunoEvento.TryGetValue((aluno.Id, aula.Id), out var participacao))
 									{
-										if (eventosPorId.TryGetValue(participacao.ReposicaoPara_Evento_Id.Value, out var reposicaoPara))
+										monitoramentoParticipacao = _mapper.Map<Monitoramento_Participacao>(participacao);
+
+										if (participacao.ReposicaoPara_Evento_Id.HasValue)
 										{
-											participacaoPorAlunoEvento.TryGetValue((aluno.Id, participacao.ReposicaoPara_Evento_Id.Value), out var participacaoReposicaoPara);
-											feriadosPorData.TryGetValue(reposicaoPara.Data.ToString(dateFormatDict), out var feriadoReposicaoPara);
-
-											RoteiroModel? roteiroReposicaoPara;
-											if (reposicaoPara.Roteiro_Id.HasValue)
+											if (eventosPorId.TryGetValue(participacao.ReposicaoPara_Evento_Id.Value, out var reposicaoPara))
 											{
-												roteirosPorId.TryGetValue(reposicaoPara.Roteiro_Id.Value, out var roteiroDict);
-												roteiroReposicaoPara = roteiroDict;
-											}
-											else
-											{
-												//roteirosPorDataInicio.TryGetValue(aula.Data.ToString(dateFormatDict), out var roteiroDict);
-												var aulaData = aula.Data.Date;
-												roteiroReposicaoPara = roteiros.FirstOrDefault(x => aulaData >= x.DataInicio && aulaData <= x.DataFim);
+												participacaoPorAlunoEvento.TryGetValue((aluno.Id, participacao.ReposicaoPara_Evento_Id.Value), out var participacaoReposicaoPara);
+												feriadosPorData.TryGetValue(reposicaoPara.Data.ToString(dateFormatDict), out var feriadoReposicaoPara);
+
+												RoteiroModel? roteiroReposicaoPara;
+												if (reposicaoPara.Roteiro_Id.HasValue)
+												{
+													roteirosPorId.TryGetValue(reposicaoPara.Roteiro_Id.Value, out var roteiroDict);
+													roteiroReposicaoPara = roteiroDict;
+												}
+												else
+												{
+													//roteirosPorDataInicio.TryGetValue(aula.Data.ToString(dateFormatDict), out var roteiroDict);
+													var aulaData = aula.Data.Date;
+													roteiroReposicaoPara = roteiros.FirstOrDefault(x => aulaData >= x.DataInicio && aulaData <= x.DataFim);
+												}
+
+												monitoramentoReposicaoPara = new Monitoramento_Aula_Participacao_Rel();
+												monitoramentoReposicaoPara.Aula = _mapper.Map<Monitoramento_Aula>(reposicaoPara);
+												monitoramentoReposicaoPara.Aula.Tema = reposicaoPara.Tema ?? roteiroReposicaoPara?.Tema ?? "Tema indefinido";
+												monitoramentoReposicaoPara.Aula.Semana = reposicaoPara.Semana ?? roteiroReposicaoPara?.Semana ?? -1;
+												monitoramentoReposicaoPara.Aula.RoteiroCorLegenda = roteiroReposicaoPara?.CorLegenda ?? "";
+												monitoramentoReposicaoPara.Aula.Recesso = roteiroReposicaoPara?.Recesso ?? false;
+												monitoramentoReposicaoPara.Participacao = _mapper.Map<Monitoramento_Participacao>(participacaoReposicaoPara);
+
+												if (feriadoReposicaoPara is not null && monitoramentoReposicaoPara.Aula.Active == true)
+												{
+
+													monitoramentoReposicaoPara.Aula.Feriado = _mapper.Map<Monitoramento_Feriado>(feriadoReposicaoPara);
+													monitoramentoReposicaoPara.Aula.Observacao = "Cancelamento Automático. <br> Feriado: " + feriadoReposicaoPara.Descricao;
+													monitoramentoReposicaoPara.Aula.Deactivated = feriadoReposicaoPara.Data;
+												}
 											}
 
-											monitoramentoReposicaoPara = new Monitoramento_Aula_Participacao_Rel();
-											monitoramentoReposicaoPara.Aula = _mapper.Map<Monitoramento_Aula>(reposicaoPara);
-											monitoramentoReposicaoPara.Aula.Tema = reposicaoPara.Tema ?? roteiroReposicaoPara?.Tema ?? "Tema indefinido";
-											monitoramentoReposicaoPara.Aula.Semana = reposicaoPara.Semana ?? roteiroReposicaoPara?.Semana ?? -1;
-											monitoramentoReposicaoPara.Aula.RoteiroCorLegenda = roteiroReposicaoPara?.CorLegenda ?? "";
-											monitoramentoReposicaoPara.Aula.Recesso = roteiroReposicaoPara?.Recesso ?? false;
-											monitoramentoReposicaoPara.Participacao = _mapper.Map<Monitoramento_Participacao>(participacaoReposicaoPara);
-
-											if (feriadoReposicaoPara is not null && monitoramentoReposicaoPara.Aula.Active == true)
-											{
-
-												monitoramentoReposicaoPara.Aula.Feriado = _mapper.Map<Monitoramento_Feriado>(feriadoReposicaoPara);
-												monitoramentoReposicaoPara.Aula.Observacao = "Cancelamento Automático. <br> Feriado: " + feriadoReposicaoPara.Descricao;
-												monitoramentoReposicaoPara.Aula.Deactivated = feriadoReposicaoPara.Data;
-											}
 										}
-
 									}
 								}
-							}
-							//
-							// Pseudo Aula
-							//
-							else
-							{
-								monitoramentoAula = new Monitoramento_Aula
+								//
+								// Pseudo Aula
+								//
+								else
 								{
-									Id = -1,
-									EventoTipo_Id = (int)EventoTipo.Aula,
-									Data = dataTurma,
-									Descricao = turma.Nome,
-									Observacao = string.Empty,
-									Finalizado = false,
-									Sala = turma.Sala ?? "Sala Indefinida",
-									Andar = turma.Andar ?? 0,
-									NumeroSala = turma.NumeroSala ?? 0,
-									Tema = roteiro.Tema,
-									Semana = roteiro.Semana,
-									Recesso = roteiro.Recesso,
-									RoteiroCorLegenda = roteiro.CorLegenda,
-									Turma = turma.Nome,
-									Professor = turma.Professor ?? string.Empty,
-									CorLegenda = turma.CorLegenda ?? string.Empty,
-								};
-								monitoramentoParticipacao = new Monitoramento_Participacao
-								{
-									Id = -1,
-									Apostila_Abaco = aluno.Apostila_Abaco ?? string.Empty,
-									Apostila_AH = aluno.Apostila_AH ?? string.Empty,
-									NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
-									NumeroPaginaAH = aluno.NumeroPaginaAH,
-									Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
-									Apostila_AH_Id = aluno.Apostila_AH_Id,
-									PrimeiraAula = false,
-								};
-							}
+									monitoramentoAula = new Monitoramento_Aula
+									{
+										Id = -1,
+										EventoTipo_Id = (int)EventoTipo.Aula,
+										Data = dataTurma,
+										Descricao = turma.Nome,
+										Observacao = string.Empty,
+										Finalizado = false,
+										Sala = turma.Sala ?? "Sala Indefinida",
+										Andar = turma.Andar ?? 0,
+										NumeroSala = turma.NumeroSala ?? 0,
+										Tema = roteiro.Tema,
+										Semana = roteiro.Semana,
+										Recesso = roteiro.Recesso,
+										RoteiroCorLegenda = roteiro.CorLegenda,
+										Turma = turma.Nome,
+										Professor = turma.Professor ?? string.Empty,
+										CorLegenda = turma.CorLegenda ?? string.Empty,
+									};
+									monitoramentoParticipacao = new Monitoramento_Participacao
+									{
+										Id = -1,
+										Apostila_Abaco = aluno.Apostila_Abaco ?? string.Empty,
+										Apostila_AH = aluno.Apostila_AH ?? string.Empty,
+										NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
+										NumeroPaginaAH = aluno.NumeroPaginaAH,
+										Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
+										Apostila_AH_Id = aluno.Apostila_AH_Id,
+										PrimeiraAula = false,
+									};
+								}
 
+							}
 
 						}
 					}
 					else if (turmasPorId.TryGetValue(aluno.Turma_Id!.Value, out var turma))
 					{
-						dataTurma = GetDataTurmaFromInterval(turma, roteiro.DataInicio, roteiro.DataFim);
-						feriadosPorData.TryGetValue(dataTurma.ToString(dateFormatDict), out feriado);
+						//if (turma.Created.Date <= dataTurma.Date
+						//	&& (!turma.Deactivated.HasValue || turma.Deactivated.Value.Date >= dataTurma.Date))
+						//{
+							dataTurma = GetDataTurmaFromInterval(turma, roteiro.DataInicio, roteiro.DataFim);
+							feriadosPorData.TryGetValue(dataTurma.ToString(dateFormatDict), out feriado);
 
-						monitoramentoAula = new Monitoramento_Aula
-						{
-							Id = -1,
-							EventoTipo_Id = (int)EventoTipo.Aula,
-							Data = dataTurma,
-							Descricao = turma.Nome,
-							Observacao = string.Empty,
-							Finalizado = false,
-							Sala = turma.Sala ?? "Sala Indefinida",
-							Andar = turma.Andar ?? 0,
-							NumeroSala = turma.NumeroSala ?? 0,
-							Tema = roteiro.Tema,
-							Semana = roteiro.Semana,
-							Recesso = roteiro.Recesso,
-							RoteiroCorLegenda = roteiro.CorLegenda,
-							Turma = turma.Nome,
-							Professor = turma.Professor ?? string.Empty,
-							CorLegenda = turma.CorLegenda ?? string.Empty,
-						};
-						monitoramentoParticipacao = new Monitoramento_Participacao
-						{
-							Id = -1,
-							Apostila_Abaco = aluno.Apostila_Abaco ?? string.Empty,
-							Apostila_AH = aluno.Apostila_AH ?? string.Empty,
-							NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
-							NumeroPaginaAH = aluno.NumeroPaginaAH,
-							Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
-							Apostila_AH_Id = aluno.Apostila_AH_Id,
-							PrimeiraAula = false,
-						};
+							monitoramentoAula = new Monitoramento_Aula
+							{
+								Id = -1,
+								EventoTipo_Id = (int)EventoTipo.Aula,
+								Data = dataTurma,
+								Descricao = turma.Nome,
+								Observacao = string.Empty,
+								Finalizado = false,
+								Sala = turma.Sala ?? "Sala Indefinida",
+								Andar = turma.Andar ?? 0,
+								NumeroSala = turma.NumeroSala ?? 0,
+								Tema = roteiro.Tema,
+								Semana = roteiro.Semana,
+								Recesso = roteiro.Recesso,
+								RoteiroCorLegenda = roteiro.CorLegenda,
+								Turma = turma.Nome,
+								Professor = turma.Professor ?? string.Empty,
+								CorLegenda = turma.CorLegenda ?? string.Empty,
+							};
+							monitoramentoParticipacao = new Monitoramento_Participacao
+							{
+								Id = -1,
+								Apostila_Abaco = aluno.Apostila_Abaco ?? string.Empty,
+								Apostila_AH = aluno.Apostila_AH ?? string.Empty,
+								NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
+								NumeroPaginaAH = aluno.NumeroPaginaAH,
+								Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
+								Apostila_AH_Id = aluno.Apostila_AH_Id,
+								PrimeiraAula = false,
+							};
+						//}
 					}
 
 					if (feriado is not null && monitoramentoAula.Active)
@@ -378,178 +400,11 @@ public class MonitoramentoService : IMonitoramentoService
 				}
 			}
 		}
+		
 		response.Alunos = monitoramentosAlunos;
 
 		#endregion
 
-		#region foreach alunos x foreach roteiros
-
-		//foreach (AlunoList aluno in alunos)
-		//{
-		//	var monitoramentoAluno = _mapper.Map<Monitoramento_Aluno>(aluno);
-
-		//	var vigenciasAluno = vigenciaPorAluno.GetValueOrDefault(aluno.Id, new List<Aluno_Turma_Vigencia>() { }) ;
-
-		//	foreach (RoteiroModel roteiro in roteiros)
-		//	{
-		//		var vigenciaAlunoRoteiro = vigenciasAluno
-		//				.FirstOrDefault(x => x.DataInicioVigencia.Date <= roteiro.DataInicio.Date
-		//							&& (!x.DataFimVigencia.HasValue || x.DataFimVigencia.Value.Date >= roteiro.DataFim.Date));
-
-		//		DateTime dataTurma = roteiro.DataInicio.Date;
-		//		var monitoramentoAlunoItem = new Monitoramento_Aluno_Item();
-		//		var monitoramentoAula = new Monitoramento_Aula();
-		//		var monitoramentoParticipacao = new Monitoramento_Participacao();
-		//		Monitoramento_Aula_Participacao_Rel? monitoramentoReposicaoPara = null;
-
-		//		if (vigenciaAlunoRoteiro is not null)
-		//		{
-
-		//			// Celula/Aula da vigencia do roteiro
-		//			if (turmasPorId.TryGetValue(vigenciaAlunoRoteiro.Turma_Id, out var turma))
-		//			{
-		//				dataTurma = GetDataTurmaFromInterval(turma, roteiro.DataInicio, roteiro.DataFim);
-		//				feriadosPorData.TryGetValue(dataTurma.ToString(dateFormatDict), out var feriado);
-
-		//				//
-		//				// Aula Instanciada
-		//				//
-		//				if (eventosPorTurmaData.TryGetValue((turma.Id, dataTurma.Date), out var aula))
-		//				{
-		//					monitoramentoAula = _mapper.Map<Monitoramento_Aula>(aula);
-		//					monitoramentoAula.Feriado = feriado is null ? null : new Monitoramento_Feriado { Name = feriado.name, Date = feriado.date };
-		//					monitoramentoAula.Tema = aula.Tema ?? roteiro.Tema;
-		//					monitoramentoAula.Semana = aula.Semana ?? roteiro.Semana;
-		//					monitoramentoAula.RoteiroCorLegenda = roteiro.CorLegenda;
-		//					monitoramentoAula.Recesso = roteiro.Recesso;
-
-
-		//					if (participacaoPorAlunoEvento.TryGetValue((aluno.Id, aula.Id), out var participacao))
-		//					{
-		//						monitoramentoParticipacao = _mapper.Map<Monitoramento_Participacao>(participacao);
-
-		//						if (participacao.ReposicaoPara_Evento_Id.HasValue)
-		//						{
-		//							if (eventosPorId.TryGetValue(participacao.ReposicaoPara_Evento_Id.Value, out var reposicaoPara))
-		//							{
-		//								participacaoPorAlunoEvento.TryGetValue((aluno.Id, participacao.ReposicaoPara_Evento_Id.Value), out var participacaoReposicaoPara);
-		//								feriadosPorData.TryGetValue(aula.Data.ToString(dateFormatDict), out var feriadoReposicaoPara);
-
-		//								RoteiroModel? roteiroReposicaoPara;
-		//								if (reposicaoPara.Roteiro_Id.HasValue)
-		//								{
-		//									roteirosPorId.TryGetValue(reposicaoPara.Roteiro_Id.Value, out var roteiroDict);
-		//									roteiroReposicaoPara = roteiroDict;
-		//								}
-		//								else
-		//								{
-		//									roteirosPorDataInicio.TryGetValue(aula.Data.ToString(dateFormatDict), out var roteiroDict);
-		//									roteiroReposicaoPara = roteiroDict;
-		//								}
-
-		//								monitoramentoReposicaoPara = new Monitoramento_Aula_Participacao_Rel();
-		//								monitoramentoReposicaoPara.Aula = _mapper.Map<Monitoramento_Aula>(reposicaoPara);
-		//								monitoramentoReposicaoPara.Aula.Feriado = feriadoReposicaoPara is null ? null : new Monitoramento_Feriado { Name = feriadoReposicaoPara.name, Date = feriadoReposicaoPara.date };
-		//								monitoramentoReposicaoPara.Aula.Tema = reposicaoPara.Tema ?? roteiroReposicaoPara?.Tema ?? "Tema indefinido";
-		//								monitoramentoReposicaoPara.Aula.Semana = reposicaoPara.Semana ?? roteiroReposicaoPara?.Semana ?? -1;
-		//								monitoramentoReposicaoPara.Aula.RoteiroCorLegenda = roteiroReposicaoPara?.CorLegenda ?? "";
-		//								monitoramentoReposicaoPara.Aula.Recesso = roteiroReposicaoPara?.Recesso ?? false;
-		//								monitoramentoReposicaoPara.Participacao = _mapper.Map<Monitoramento_Participacao>(participacaoReposicaoPara);
-
-		//							}
-
-		//						}
-		//					}
-		//				}
-		//				//
-		//				// Pseudo Aula
-		//				//
-		//				else
-		//				{
-		//					monitoramentoAula = new Monitoramento_Aula
-		//					{
-		//						Id = -1,
-		//						EventoTipo_Id = (int)EventoTipo.Aula,
-		//						Data = dataTurma,
-		//						Descricao = turma.Nome,
-		//						Observacao = string.Empty,
-		//						Finalizado = false,
-		//						Sala = turma.Sala ?? "Sala Indefinida",
-		//						Andar = turma.Andar ?? 0,
-		//						NumeroSala = turma.NumeroSala ?? 0,
-		//						Tema = roteiro.Tema,
-		//						Semana = roteiro.Semana,
-		//						Recesso = roteiro.Recesso,
-		//						RoteiroCorLegenda = roteiro.CorLegenda,
-		//						Turma = turma.Nome,
-		//						Professor = turma.Professor ?? string.Empty,
-		//						CorLegenda = turma.CorLegenda ?? string.Empty,
-		//						Feriado = feriado is not null ? new Monitoramento_Feriado { Name = feriado.name, Date = feriado.date } : null,
-		//					};
-		//					monitoramentoParticipacao = new Monitoramento_Participacao
-		//					{
-		//						Id = -1,
-		//						Apostila_Abaco = aluno.Apostila_Abaco ?? string.Empty,
-		//						Apostila_AH = aluno.Apostila_AH ?? string.Empty,
-		//						NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
-		//						NumeroPaginaAH = aluno.NumeroPaginaAH,
-		//					};
-		//				}
-
-
-		//			}
-		//		}
-		//		else if (turmasPorId.TryGetValue(aluno.Turma_Id!.Value, out var turma))
-		//		{
-		//			dataTurma = GetDataTurmaFromInterval(turma, roteiro.DataInicio, roteiro.DataFim);
-		//			feriadosPorData.TryGetValue(dataTurma.ToString(dateFormatDict), out var feriado);
-
-		//			monitoramentoAula = new Monitoramento_Aula
-		//			{
-		//				Id = -1,
-		//				EventoTipo_Id = (int)EventoTipo.Aula,
-		//				Data = dataTurma,
-		//				Descricao = turma.Nome,
-		//				Observacao = string.Empty,
-		//				Finalizado = false,
-		//				Sala = turma.Sala ?? "Sala Indefinida",
-		//				Andar = turma.Andar ?? 0,
-		//				NumeroSala = turma.NumeroSala ?? 0,
-		//				Tema = roteiro.Tema,
-		//				Semana = roteiro.Semana,
-		//				Recesso = roteiro.Recesso,
-		//				RoteiroCorLegenda = roteiro.CorLegenda,
-		//				Turma = turma.Nome,
-		//				Professor = turma.Professor ?? string.Empty,
-		//				CorLegenda = turma.CorLegenda ?? string.Empty,
-		//				Feriado = feriado is not null ? new Monitoramento_Feriado { Name = feriado.name, Date = feriado.date } : null,
-		//			};
-		//			monitoramentoParticipacao = new Monitoramento_Participacao
-		//			{
-		//				Id = -1,
-		//				Apostila_Abaco = aluno.Apostila_Abaco ?? string.Empty,
-		//				Apostila_AH = aluno.Apostila_AH ?? string.Empty,
-		//				NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
-		//				NumeroPaginaAH = aluno.NumeroPaginaAH,
-		//			};
-		//		}
-
-		//		monitoramentoAlunoItem.Id = monitoramentoAula.Id;
-		//		monitoramentoAlunoItem.Show = dataTurma.Year == request.Ano && roteiro.Recesso == false;
-		//		monitoramentoAlunoItem.ReposicaoPara = monitoramentoReposicaoPara;
-		//		monitoramentoAlunoItem.Aula = new Monitoramento_Aula_Participacao_Rel
-		//		{
-		//			Aula = monitoramentoAula,
-		//			Participacao = monitoramentoParticipacao,
-		//		};
-		//		monitoramentoAluno.Items.Add(monitoramentoAlunoItem);
-
-		//	}
-
-		//	response.Alunos.Add(monitoramentoAluno);
-		//}
-
-		#endregion
 		return response;
 
 	}
@@ -568,6 +423,175 @@ public class MonitoramentoService : IMonitoramentoService
 		return data;
 
 	}
+
+    #region foreach alunos x foreach roteiros
+
+    //foreach (AlunoList aluno in alunos)
+    //{
+    //	var monitoramentoAluno = _mapper.Map<Monitoramento_Aluno>(aluno);
+
+    //	var vigenciasAluno = vigenciaPorAluno.GetValueOrDefault(aluno.Id, new List<Aluno_Turma_Vigencia>() { }) ;
+
+    //	foreach (RoteiroModel roteiro in roteiros)
+    //	{
+    //		var vigenciaAlunoRoteiro = vigenciasAluno
+    //				.FirstOrDefault(x => x.DataInicioVigencia.Date <= roteiro.DataInicio.Date
+    //							&& (!x.DataFimVigencia.HasValue || x.DataFimVigencia.Value.Date >= roteiro.DataFim.Date));
+
+    //		DateTime dataTurma = roteiro.DataInicio.Date;
+    //		var monitoramentoAlunoItem = new Monitoramento_Aluno_Item();
+    //		var monitoramentoAula = new Monitoramento_Aula();
+    //		var monitoramentoParticipacao = new Monitoramento_Participacao();
+    //		Monitoramento_Aula_Participacao_Rel? monitoramentoReposicaoPara = null;
+
+    //		if (vigenciaAlunoRoteiro is not null)
+    //		{
+
+    //			// Celula/Aula da vigencia do roteiro
+    //			if (turmasPorId.TryGetValue(vigenciaAlunoRoteiro.Turma_Id, out var turma))
+    //			{
+    //				dataTurma = GetDataTurmaFromInterval(turma, roteiro.DataInicio, roteiro.DataFim);
+    //				feriadosPorData.TryGetValue(dataTurma.ToString(dateFormatDict), out var feriado);
+
+    //				//
+    //				// Aula Instanciada
+    //				//
+    //				if (eventosPorTurmaData.TryGetValue((turma.Id, dataTurma.Date), out var aula))
+    //				{
+    //					monitoramentoAula = _mapper.Map<Monitoramento_Aula>(aula);
+    //					monitoramentoAula.Feriado = feriado is null ? null : new Monitoramento_Feriado { Name = feriado.name, Date = feriado.date };
+    //					monitoramentoAula.Tema = aula.Tema ?? roteiro.Tema;
+    //					monitoramentoAula.Semana = aula.Semana ?? roteiro.Semana;
+    //					monitoramentoAula.RoteiroCorLegenda = roteiro.CorLegenda;
+    //					monitoramentoAula.Recesso = roteiro.Recesso;
+
+
+    //					if (participacaoPorAlunoEvento.TryGetValue((aluno.Id, aula.Id), out var participacao))
+    //					{
+    //						monitoramentoParticipacao = _mapper.Map<Monitoramento_Participacao>(participacao);
+
+    //						if (participacao.ReposicaoPara_Evento_Id.HasValue)
+    //						{
+    //							if (eventosPorId.TryGetValue(participacao.ReposicaoPara_Evento_Id.Value, out var reposicaoPara))
+    //							{
+    //								participacaoPorAlunoEvento.TryGetValue((aluno.Id, participacao.ReposicaoPara_Evento_Id.Value), out var participacaoReposicaoPara);
+    //								feriadosPorData.TryGetValue(aula.Data.ToString(dateFormatDict), out var feriadoReposicaoPara);
+
+    //								RoteiroModel? roteiroReposicaoPara;
+    //								if (reposicaoPara.Roteiro_Id.HasValue)
+    //								{
+    //									roteirosPorId.TryGetValue(reposicaoPara.Roteiro_Id.Value, out var roteiroDict);
+    //									roteiroReposicaoPara = roteiroDict;
+    //								}
+    //								else
+    //								{
+    //									roteirosPorDataInicio.TryGetValue(aula.Data.ToString(dateFormatDict), out var roteiroDict);
+    //									roteiroReposicaoPara = roteiroDict;
+    //								}
+
+    //								monitoramentoReposicaoPara = new Monitoramento_Aula_Participacao_Rel();
+    //								monitoramentoReposicaoPara.Aula = _mapper.Map<Monitoramento_Aula>(reposicaoPara);
+    //								monitoramentoReposicaoPara.Aula.Feriado = feriadoReposicaoPara is null ? null : new Monitoramento_Feriado { Name = feriadoReposicaoPara.name, Date = feriadoReposicaoPara.date };
+    //								monitoramentoReposicaoPara.Aula.Tema = reposicaoPara.Tema ?? roteiroReposicaoPara?.Tema ?? "Tema indefinido";
+    //								monitoramentoReposicaoPara.Aula.Semana = reposicaoPara.Semana ?? roteiroReposicaoPara?.Semana ?? -1;
+    //								monitoramentoReposicaoPara.Aula.RoteiroCorLegenda = roteiroReposicaoPara?.CorLegenda ?? "";
+    //								monitoramentoReposicaoPara.Aula.Recesso = roteiroReposicaoPara?.Recesso ?? false;
+    //								monitoramentoReposicaoPara.Participacao = _mapper.Map<Monitoramento_Participacao>(participacaoReposicaoPara);
+
+    //							}
+
+    //						}
+    //					}
+    //				}
+    //				//
+    //				// Pseudo Aula
+    //				//
+    //				else
+    //				{
+    //					monitoramentoAula = new Monitoramento_Aula
+    //					{
+    //						Id = -1,
+    //						EventoTipo_Id = (int)EventoTipo.Aula,
+    //						Data = dataTurma,
+    //						Descricao = turma.Nome,
+    //						Observacao = string.Empty,
+    //						Finalizado = false,
+    //						Sala = turma.Sala ?? "Sala Indefinida",
+    //						Andar = turma.Andar ?? 0,
+    //						NumeroSala = turma.NumeroSala ?? 0,
+    //						Tema = roteiro.Tema,
+    //						Semana = roteiro.Semana,
+    //						Recesso = roteiro.Recesso,
+    //						RoteiroCorLegenda = roteiro.CorLegenda,
+    //						Turma = turma.Nome,
+    //						Professor = turma.Professor ?? string.Empty,
+    //						CorLegenda = turma.CorLegenda ?? string.Empty,
+    //						Feriado = feriado is not null ? new Monitoramento_Feriado { Name = feriado.name, Date = feriado.date } : null,
+    //					};
+    //					monitoramentoParticipacao = new Monitoramento_Participacao
+    //					{
+    //						Id = -1,
+    //						Apostila_Abaco = aluno.Apostila_Abaco ?? string.Empty,
+    //						Apostila_AH = aluno.Apostila_AH ?? string.Empty,
+    //						NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
+    //						NumeroPaginaAH = aluno.NumeroPaginaAH,
+    //					};
+    //				}
+
+
+    //			}
+    //		}
+    //		else if (turmasPorId.TryGetValue(aluno.Turma_Id!.Value, out var turma))
+    //		{
+    //			dataTurma = GetDataTurmaFromInterval(turma, roteiro.DataInicio, roteiro.DataFim);
+    //			feriadosPorData.TryGetValue(dataTurma.ToString(dateFormatDict), out var feriado);
+
+    //			monitoramentoAula = new Monitoramento_Aula
+    //			{
+    //				Id = -1,
+    //				EventoTipo_Id = (int)EventoTipo.Aula,
+    //				Data = dataTurma,
+    //				Descricao = turma.Nome,
+    //				Observacao = string.Empty,
+    //				Finalizado = false,
+    //				Sala = turma.Sala ?? "Sala Indefinida",
+    //				Andar = turma.Andar ?? 0,
+    //				NumeroSala = turma.NumeroSala ?? 0,
+    //				Tema = roteiro.Tema,
+    //				Semana = roteiro.Semana,
+    //				Recesso = roteiro.Recesso,
+    //				RoteiroCorLegenda = roteiro.CorLegenda,
+    //				Turma = turma.Nome,
+    //				Professor = turma.Professor ?? string.Empty,
+    //				CorLegenda = turma.CorLegenda ?? string.Empty,
+    //				Feriado = feriado is not null ? new Monitoramento_Feriado { Name = feriado.name, Date = feriado.date } : null,
+    //			};
+    //			monitoramentoParticipacao = new Monitoramento_Participacao
+    //			{
+    //				Id = -1,
+    //				Apostila_Abaco = aluno.Apostila_Abaco ?? string.Empty,
+    //				Apostila_AH = aluno.Apostila_AH ?? string.Empty,
+    //				NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
+    //				NumeroPaginaAH = aluno.NumeroPaginaAH,
+    //			};
+    //		}
+
+    //		monitoramentoAlunoItem.Id = monitoramentoAula.Id;
+    //		monitoramentoAlunoItem.Show = dataTurma.Year == request.Ano && roteiro.Recesso == false;
+    //		monitoramentoAlunoItem.ReposicaoPara = monitoramentoReposicaoPara;
+    //		monitoramentoAlunoItem.Aula = new Monitoramento_Aula_Participacao_Rel
+    //		{
+    //			Aula = monitoramentoAula,
+    //			Participacao = monitoramentoParticipacao,
+    //		};
+    //		monitoramentoAluno.Items.Add(monitoramentoAlunoItem);
+
+    //	}
+
+    //	response.Alunos.Add(monitoramentoAluno);
+    //}
+
+    #endregion
 
 
 }
