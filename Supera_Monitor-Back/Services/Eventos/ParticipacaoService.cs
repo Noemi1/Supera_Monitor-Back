@@ -465,6 +465,7 @@ public class ParticipacaoService : IParticipacaoService
             //
             // Salva Evento_Participacao_Aluno
             //
+            participacao.Presente = null;
             participacao.Deactivated = null;
             participacao.AgendouFalta = null;
             participacao.AlunoContactado = null;
