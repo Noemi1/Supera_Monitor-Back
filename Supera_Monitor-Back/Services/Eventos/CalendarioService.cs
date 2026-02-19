@@ -1,5 +1,6 @@
 ﻿	using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
 using Supera_Monitor_Back.Helpers;
@@ -49,13 +50,17 @@ public class CalendarioService : ICalendarioService
 		request.IntervaloDe ??= GetThisWeeksMonday(now); // Se não passar data inicio, considera a segunda-feira da semana atual
 		request.IntervaloAte ??= GetThisWeeksSaturday((DateTime)request.IntervaloDe); // Se não passar data fim, considera o sábado da semana da data inicio
 
+
+		DateTime intervaloDe = request.IntervaloDe.Value.Date;
+		DateTime intervaloAte = request.IntervaloAte.Value.Date;
+
 		if (request.IntervaloAte < request.IntervaloDe)
 		{
 			throw new Exception("Final do intervalo não pode ser antes do seu próprio início");
 		}
 
 		var eventosQueryable = _db.CalendarioEventoList
-			.Where(e => e.Data.Date >= request.IntervaloDe.Value.Date && e.Data.Date <= request.IntervaloAte.Value.Date);
+			.Where(e => e.Data.Date >= intervaloDe && e.Data.Date <= intervaloAte);
 
 		var alunosQueryable = _db.AlunoList.AsQueryable();
 
@@ -63,10 +68,9 @@ public class CalendarioService : ICalendarioService
 			.Where(x => x.Active == true);
 
 		var turmasQueryable = _db.TurmaLists
-			.Where(x => x.Active == true);
-
-
-		if (request.Perfil_Cognitivo_Id.HasValue)
+			.Where(x => x.Created.Date <= intervaloAte
+                        && (x.Deactivated.HasValue == false || x.Deactivated.Value.Date >= intervaloDe));
+        if (request.Perfil_Cognitivo_Id.HasValue)
 		{
 			eventosQueryable =
 				from e in eventosQueryable
@@ -153,6 +157,7 @@ public class CalendarioService : ICalendarioService
 			.ToList();
 
 		var turmas = turmasQueryable
+			.OrderBy(x => x.Id)
 			.AsNoTracking()
 			.ToList();
 
@@ -196,7 +201,6 @@ public class CalendarioService : ICalendarioService
 
 		PopulateCalendarioEvents(eventosResponse, feriados, roteiros);
 
-		DateTime data = request.IntervaloDe.Value.Date;
 
 		string formatDateDict = "ddMMyyyyHHmm";
 
@@ -228,7 +232,9 @@ public class CalendarioService : ICalendarioService
 		var roteirosPorData = roteiros
 			.ToDictionary(x => x.DataInicio.ToString(formatDateDict), x => x);
 
-		while (data <= request.IntervaloAte.Value)
+		DateTime data = intervaloDe;
+
+		while (data <= intervaloAte)
 		{
 			var diaSemana = data.DayOfWeek;
 
@@ -343,6 +349,10 @@ public class CalendarioService : ICalendarioService
 
 
 			var turmasDoDia = turmasPorDiaSemana.GetValueOrDefault((int)data.DayOfWeek, new List<TurmaList>());
+
+			turmasDoDia = turmasDoDia
+				.Where(x => !x.Deactivated.HasValue || x.Deactivated.Value.Date >= data)
+				.ToList();
 
 			foreach (TurmaList turma in turmasDoDia)
 			{
