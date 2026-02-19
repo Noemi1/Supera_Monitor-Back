@@ -2,6 +2,7 @@
 using System.Text.Json;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Azure.Core;
 using Microsoft.EntityFrameworkCore;
 using Supera_Monitor_Back.Entities;
 using Supera_Monitor_Back.Entities.Views;
@@ -19,6 +20,8 @@ public interface IParticipacaoService
 	ResponseModel InsertParticipacao(InsertParticipacaoRequest request);
 	ResponseModel UpdateParticipacao(UpdateParticipacaoRequest request);
 	ResponseModel CancelarParticipacao(CancelarParticipacaoRequest request);
+
+	ResponseModel CancelarFaltaAgendada(int participacaoId);
 }
 
 public class ParticipacaoService : IParticipacaoService
@@ -66,10 +69,10 @@ public class ParticipacaoService : IParticipacaoService
 			if (!eventValidation.Success)
 				return eventValidation;
 
-			// Se aluno já está inscrito, não deve poder ser inscrito novamente
-			bool alunoInscrito = evento.Evento_Participacao_Aluno.Any(p => p.Aluno_Id == request.Aluno_Id);
-			if (alunoInscrito)
-				return new ResponseModel { Message = "Aluno já está inscrito neste evento" };
+			//// Se aluno já está inscrito, não deve poder ser inscrito novamente
+			//bool alunoInscrito = evento.Evento_Participacao_Aluno.Any(p => p.Aluno_Id == request.Aluno_Id);
+			//if (alunoInscrito)
+			//	return new ResponseModel { Message = "Aluno já está inscrito neste evento" };
 
 			Aluno? aluno = _db.Aluno
 					.Include(x => x.AulaZero)
@@ -83,10 +86,10 @@ public class ParticipacaoService : IParticipacaoService
 			int alunosAtivos = eventoList?.AlunosAtivosEvento ?? 0;
 
 			if (evento.Evento_Tipo_Id == (int)EventoTipo.Aula
-			 || evento.Evento_Tipo_Id == (int)EventoTipo.AulaExtra
+			 || evento.Evento_Tipo_Id == (int)EventoTipo.TurmaExtra
 			 || evento.Evento_Tipo_Id == (int)EventoTipo.Oficina)
 			{
-				if (alunosAtivos >= evento.CapacidadeMaximaAlunos)
+				if (eventoList.VagasDisponiveisEvento < 1)
 					return new ResponseModel { Message = "Essa " + tipo +" está lotada." };
 			}
 
@@ -174,16 +177,36 @@ public class ParticipacaoService : IParticipacaoService
 				Data = hoje,
 			});
 
-			_db.Evento_Participacao_Aluno.Add(new Evento_Participacao_Aluno()
+            var alunoInscrito = evento.Evento_Participacao_Aluno.FirstOrDefault(p => p.Aluno_Id == request.Aluno_Id);
+
+			if (alunoInscrito is not null)
 			{
-				Evento_Id = evento.Id,
-				Aluno_Id = aluno.Id,
-				Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
-				NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
-				Apostila_AH_Id = aluno.Apostila_AH_Id,
-				NumeroPaginaAH = aluno.NumeroPaginaAH,
-			});
+				alunoInscrito.Presente = null;
+				alunoInscrito.Deactivated = null;
+				alunoInscrito.AgendouFalta = null;
+				alunoInscrito.Apostila_Abaco_Id = aluno.Apostila_Abaco_Id;
+				alunoInscrito.Apostila_AH_Id = aluno.Apostila_AH_Id;
+				alunoInscrito.NumeroPaginaAbaco = aluno.NumeroPaginaAbaco;
+				alunoInscrito.NumeroPaginaAH = aluno.NumeroPaginaAH;
+
+				_db.Evento_Participacao_Aluno.Update(alunoInscrito);
+            }
+			else
+			{
+
+				_db.Evento_Participacao_Aluno.Add(new Evento_Participacao_Aluno()
+				{
+					Evento_Id = evento.Id,
+					Aluno_Id = aluno.Id,
+					Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
+					NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
+					Apostila_AH_Id = aluno.Apostila_AH_Id,
+					NumeroPaginaAH = aluno.NumeroPaginaAH,
+				});
 			
+			}
+
+
 			_db.SaveChanges();
 
 			response.Message = $"Aluno foi inscrito no evento com sucesso";
@@ -312,7 +335,7 @@ public class ParticipacaoService : IParticipacaoService
 			_db.Evento_Participacao_Aluno.Update(participacao);
 			_db.SaveChanges();
 
-			response.Message = "Aluno removido scom sucesso";
+			response.Message = "Aluno removido com sucesso";
 			response.Object = _eventoService.GetEventoById(participacao.Evento_Id);
 			response.Success = true;
 		}
@@ -322,6 +345,67 @@ public class ParticipacaoService : IParticipacaoService
 		}
 
 		return response;
+	}
+
+
+	public ResponseModel CancelarFaltaAgendada(int participacaoId)
+	{
+		ResponseModel response = new() { Success = false };
+
+		try
+		{
+
+            var participacao = _db.Evento_Participacao_Aluno
+                .Include(e => e.Aluno)
+                .FirstOrDefault(p => p.Id == participacaoId);
+
+            var evento = _db.CalendarioEventoList
+                .FirstOrDefault(x => x.Id == participacao.Evento_Id);
+
+            if (participacao is null)
+                return new ResponseModel { Message = "Aluno não encontrado." };
+
+            if (participacao.Presente == true)
+                return new ResponseModel { Message = $"Aluno já participou dessa {evento.Evento_Tipo}." };
+
+			if (evento == null)
+				return new ResponseModel { Message = $"Evento não encontrado." };
+
+            if (evento.Deactivated.HasValue)
+                return new ResponseModel { Message = $"{evento.Evento_Tipo} está inativa." };
+
+            if (evento.Finalizado)
+                return new ResponseModel { Message = $"{evento.Evento_Tipo} já foi finalizada." };
+
+			if (evento.VagasDisponiveisEvento < 1) 
+            return new ResponseModel { Message = $"Capacidade máxima " };
+
+            if (evento.Evento_Tipo_Id == (int)EventoTipo.Aula
+             || evento.Evento_Tipo_Id == (int)EventoTipo.TurmaExtra
+             || evento.Evento_Tipo_Id == (int)EventoTipo.Oficina)
+            {
+                if (evento.VagasDisponiveisEvento <1 )
+                    return new ResponseModel { Message = $"Essa {evento.Evento_Tipo} está lotada." };
+            }
+
+            participacao.Deactivated = null;
+			participacao.AgendouFalta = null;
+
+			_db.Evento_Participacao_Aluno.Update(participacao);
+			_db.SaveChanges();
+
+            response.Message = "Falta cancelada com sucesso";
+            response.Object = _eventoService.GetEventoById(participacao.Evento_Id);
+            response.Success = true;
+        }
+
+        catch (Exception ex)
+        {
+            response.Message = $"Falha ao cancelar participação do aluno no evento: {ex}";
+        }
+
+
+        return response;
 	}
 
 }

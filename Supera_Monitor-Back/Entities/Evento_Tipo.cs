@@ -12,5 +12,5 @@ public enum EventoTipo {
     Superacao = 3,
     Reuniao = 4,
     AulaZero = 5,
-    AulaExtra = 7,
+    TurmaExtra = 7,
 }

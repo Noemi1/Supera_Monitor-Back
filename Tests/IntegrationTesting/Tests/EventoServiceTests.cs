@@ -292,7 +292,7 @@ public class EventoServiceTests : BaseIntegrationTest {
             Sala_Id = 1,
             CapacidadeMaximaAlunos = 12,
             DuracaoMinutos = 60,
-            Evento_Tipo_Id = (int)EventoTipo.AulaExtra,
+            Evento_Tipo_Id = (int)EventoTipo.TurmaExtra,
             Evento_Aula = new Evento_Aula
             {
                 Roteiro_Id = null,
@@ -554,7 +554,7 @@ public class EventoServiceTests : BaseIntegrationTest {
             CapacidadeMaximaAlunos = 999,
             DuracaoMinutos = 60,
             Data = TimeFunctions.HoraAtualBR(),
-            Evento_Tipo_Id = (int)EventoTipo.AulaExtra,
+            Evento_Tipo_Id = (int)EventoTipo.TurmaExtra,
             Evento_Aula = new Evento_Aula
             {
                 Roteiro_Id = null,
@@ -592,7 +592,7 @@ public class EventoServiceTests : BaseIntegrationTest {
         {
             Descricao = "Test atualizar numero página do aluno",
             Data = TimeFunctions.HoraAtualBR().AddDays(1),
-            Evento_Tipo_Id = (int)EventoTipo.AulaExtra,
+            Evento_Tipo_Id = (int)EventoTipo.TurmaExtra,
             DuracaoMinutos = 120,
             Sala_Id = 1,
             CapacidadeMaximaAlunos = 10,

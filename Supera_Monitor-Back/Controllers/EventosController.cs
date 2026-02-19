@@ -476,5 +476,23 @@ public class EventosController : _BaseController
 			return StatusCode(500, e);
 		}
 	}
+	[HttpPatch("participacao/cancelar-falta/{participacaoId}")]
+	public ActionResult<ResponseModel> CancelarFaltaAgendada(int participacaoId)
+	{
+		try
+		{
+			var response =  _participacaoService.CancelarFaltaAgendada(participacaoId);
+
+			if (!response.Success)
+				return BadRequest(response);
+
+			return Ok(response);
+		}
+		catch (Exception e)
+		{
+			_logger.LogError(e, MethodBase.GetCurrentMethod()!.DeclaringType!.Name.ToString() + "." + MethodBase.GetCurrentMethod()!.ToString());
+			return StatusCode(500, e);
+		}
+	}
 
 }

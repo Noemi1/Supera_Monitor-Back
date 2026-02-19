@@ -50,7 +50,7 @@ public class MonitoramentoService : IMonitoramentoService
 
 		var eventosQueryable = _db.CalendarioEventoList
 				.Where(x => x.Data.Date >= intervaloDe.Date && x.Data.Date <= intervaloAte.Date
-							&& (x.Evento_Tipo_Id == (int)EventoTipo.Aula || x.Evento_Tipo_Id == (int)EventoTipo.AulaExtra));
+							&& (x.Evento_Tipo_Id == (int)EventoTipo.Aula || x.Evento_Tipo_Id == (int)EventoTipo.TurmaExtra));
 
 		var participacoesQueryable = _db.CalendarioAlunoList
 			.AsQueryable();

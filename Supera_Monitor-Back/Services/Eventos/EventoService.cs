@@ -750,7 +750,7 @@ public class EventoService : IEventoService
 				DuracaoMinutos = request.DuracaoMinutos,
 				CapacidadeMaximaAlunos = request.CapacidadeMaximaAlunos,
 
-				Evento_Tipo_Id = (int)EventoTipo.AulaExtra,
+				Evento_Tipo_Id = (int)EventoTipo.TurmaExtra,
 
 				Created = TimeFunctions.HoraAtualBR(),
 				LastUpdated = null,
