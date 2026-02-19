@@ -381,10 +381,12 @@ public class ParticipacaoService : IParticipacaoService
                     return new ResponseModel { Message = $"Essa {evento.Evento_Tipo} está lotada." };
             }
 
-
+            //
+            // Atualiza Evento
+            //
             var eventoEntity = _db.Evento.Find(participacao.Evento_Id);
 
-            if (eventoEntity is not null && evento.AlunosAtivosEvento == 1)
+            if (eventoEntity is not null && eventoEntity.Evento_Participacao_Aluno.Count == 1)
             {
                 eventoEntity.Deactivated = null;
                 eventoEntity.Observacao = null;
@@ -463,7 +465,7 @@ public class ParticipacaoService : IParticipacaoService
 
 
             //
-            // Salva Evento_Participacao_Aluno
+            // Atualiza Evento_Participacao_Aluno
             //
             participacao.Observacao = null;
             participacao.Presente = null;
@@ -472,6 +474,7 @@ public class ParticipacaoService : IParticipacaoService
             participacao.AlunoContactado = null;
             participacao.ContatoObservacao = null;
             participacao.StatusContato_Id = null;
+                
             _db.Evento_Participacao_Aluno.Update(participacao);
 
             _db.SaveChanges();
