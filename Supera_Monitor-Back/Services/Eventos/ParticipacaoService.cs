@@ -376,9 +376,6 @@ public class ParticipacaoService : IParticipacaoService
             if (evento.Finalizado)
                 return new ResponseModel { Message = $"{tipo} já foi finalizada." };
 
-            if (evento.VagasDisponiveisEvento < 1)
-                return new ResponseModel { Message = $"Capacidade máxima " };
-
             if (evento.Evento_Tipo_Id == (int)EventoTipo.Aula
              || evento.Evento_Tipo_Id == (int)EventoTipo.TurmaExtra
              || evento.Evento_Tipo_Id == (int)EventoTipo.Oficina)
