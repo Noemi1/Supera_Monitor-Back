@@ -197,6 +197,7 @@ public class MonitoramentoService : IMonitoramentoService
 
 		var monitoramentosAlunos = _mapper.Map<List<Monitoramento_Aluno>>(alunos);
 
+
 		foreach (RoteiroModel roteiro in roteiros)
 		{
 			foreach (var monitoramentoAluno in monitoramentosAlunos)
@@ -214,152 +215,152 @@ public class MonitoramentoService : IMonitoramentoService
 							&& (vigencia.DataFimVigencia == null || roteiro.DataInicio.Date <= vigencia.DataFimVigencia.Value.Date)
 						);
 
-					DateTime dataTurma = roteiro.DataInicio.Date;
-					var monitoramentoAlunoItem = new Monitoramento_Aluno_Item();
-					var monitoramentoAula = new Monitoramento_Aula();
-					var monitoramentoParticipacao = new Monitoramento_Participacao();
 
+					var monitoramentoAlunoItem = new Monitoramento_Aluno_Item();
+					var pseudoAula = new Monitoramento_Aula();
+					var pseudoParticipacao = new Monitoramento_Participacao();
+
+					TurmaList? turma = null;
 					FeriadoList? feriado = null;
 					Monitoramento_Aula_Participacao_Rel? monitoramentoReposicaoPara = null;
+					
+					bool show = true;
+					DateTime dataTurma = roteiro.DataInicio.Date;
 
-					if (vigenciaAlunoRoteiro is not null)
+                    //
+                    // Recupera a turma do aluno pela vigencia atual
+                    //
+                    if (vigenciaAlunoRoteiro is not null)
 					{
 
-						// Celula/Aula da vigencia do roteiro
-						if (turmasPorId.TryGetValue(vigenciaAlunoRoteiro.Turma_Id, out var turma))
+						if (turmasPorId.TryGetValue(vigenciaAlunoRoteiro.Turma_Id, out turma))
 						{
 							dataTurma = GetDataTurmaFromInterval(turma, roteiro.DataInicio, roteiro.DataFim);
 
-                            if (turma.Created.Date <= dataTurma
-								&& (!turma.Deactivated.HasValue || turma.Deactivated.Value.Date >= dataTurma)
-								&& aluno.Created.Date <= dataTurma)
-							{ 
-                                feriadosPorData.TryGetValue(dataTurma.ToString(dateFormatDict), out feriado);
+                            feriadosPorData.TryGetValue(dataTurma.ToString(dateFormatDict), out feriado);
+							//
+							// Aula Instanciada
+							//
+							if (eventosPorTurmaData.TryGetValue((turma.Id, dataTurma.Date), out var aula))
+							{
+								pseudoAula = _mapper.Map<Monitoramento_Aula>(aula);
+								pseudoAula.Tema = aula.Tema ?? roteiro.Tema;
+								pseudoAula.Semana = aula.Semana ?? roteiro.Semana;
+								pseudoAula.RoteiroCorLegenda = roteiro.CorLegenda;
+								pseudoAula.Recesso = roteiro.Recesso;
 
-								//
-								// Aula Instanciada
-								//
-								if (eventosPorTurmaData.TryGetValue((turma.Id, dataTurma.Date), out var aula))
+								if (participacaoPorAlunoEvento.TryGetValue((aluno.Id, aula.Id), out var participacao))
 								{
-									monitoramentoAula = _mapper.Map<Monitoramento_Aula>(aula);
-									monitoramentoAula.Tema = aula.Tema ?? roteiro.Tema;
-									monitoramentoAula.Semana = aula.Semana ?? roteiro.Semana;
-									monitoramentoAula.RoteiroCorLegenda = roteiro.CorLegenda;
-									monitoramentoAula.Recesso = roteiro.Recesso;
+									pseudoParticipacao = _mapper.Map<Monitoramento_Participacao>(participacao);
 
-									if (participacaoPorAlunoEvento.TryGetValue((aluno.Id, aula.Id), out var participacao))
+									if (participacao.ReposicaoPara_Evento_Id.HasValue)
 									{
-										monitoramentoParticipacao = _mapper.Map<Monitoramento_Participacao>(participacao);
-
-										if (participacao.ReposicaoPara_Evento_Id.HasValue)
+										if (eventosPorId.TryGetValue(participacao.ReposicaoPara_Evento_Id.Value, out var reposicaoPara))
 										{
-											if (eventosPorId.TryGetValue(participacao.ReposicaoPara_Evento_Id.Value, out var reposicaoPara))
+											participacaoPorAlunoEvento.TryGetValue((aluno.Id, participacao.ReposicaoPara_Evento_Id.Value), out var participacaoReposicaoPara);
+											feriadosPorData.TryGetValue(reposicaoPara.Data.ToString(dateFormatDict), out var feriadoReposicaoPara);
+
+											RoteiroModel? roteiroReposicaoPara;
+											if (reposicaoPara.Roteiro_Id.HasValue)
 											{
-												participacaoPorAlunoEvento.TryGetValue((aluno.Id, participacao.ReposicaoPara_Evento_Id.Value), out var participacaoReposicaoPara);
-												feriadosPorData.TryGetValue(reposicaoPara.Data.ToString(dateFormatDict), out var feriadoReposicaoPara);
-
-												RoteiroModel? roteiroReposicaoPara;
-												if (reposicaoPara.Roteiro_Id.HasValue)
-												{
-													roteirosPorId.TryGetValue(reposicaoPara.Roteiro_Id.Value, out var roteiroDict);
-													roteiroReposicaoPara = roteiroDict;
-												}
-												else
-												{
-													//roteirosPorDataInicio.TryGetValue(aula.Data.ToString(dateFormatDict), out var roteiroDict);
-													var aulaData = aula.Data.Date;
-													roteiroReposicaoPara = roteiros.FirstOrDefault(x => aulaData >= x.DataInicio && aulaData <= x.DataFim);
-												}
-
-												monitoramentoReposicaoPara = new Monitoramento_Aula_Participacao_Rel();
-												monitoramentoReposicaoPara.Aula = _mapper.Map<Monitoramento_Aula>(reposicaoPara);
-												monitoramentoReposicaoPara.Aula.Tema = reposicaoPara.Tema ?? roteiroReposicaoPara?.Tema ?? "Tema indefinido";
-												monitoramentoReposicaoPara.Aula.Semana = reposicaoPara.Semana ?? roteiroReposicaoPara?.Semana ?? -1;
-												monitoramentoReposicaoPara.Aula.RoteiroCorLegenda = roteiroReposicaoPara?.CorLegenda ?? "";
-												monitoramentoReposicaoPara.Aula.Recesso = roteiroReposicaoPara?.Recesso ?? false;
-												monitoramentoReposicaoPara.Participacao = _mapper.Map<Monitoramento_Participacao>(participacaoReposicaoPara);
-
-												if (feriadoReposicaoPara is not null && monitoramentoReposicaoPara.Aula.Active == true)
-												{
-
-													monitoramentoReposicaoPara.Aula.Feriado = _mapper.Map<Monitoramento_Feriado>(feriadoReposicaoPara);
-													monitoramentoReposicaoPara.Aula.Observacao = "Cancelamento Automático. <br> Feriado: " + feriadoReposicaoPara.Descricao;
-													monitoramentoReposicaoPara.Aula.Deactivated = feriadoReposicaoPara.Data;
-												}
+												roteirosPorId.TryGetValue(reposicaoPara.Roteiro_Id.Value, out var roteiroDict);
+												roteiroReposicaoPara = roteiroDict;
+											}
+											else
+											{
+												//roteirosPorDataInicio.TryGetValue(aula.Data.ToString(dateFormatDict), out var roteiroDict);
+												var aulaData = aula.Data.Date;
+												roteiroReposicaoPara = roteiros.FirstOrDefault(x => aulaData >= x.DataInicio && aulaData <= x.DataFim);
 											}
 
+											monitoramentoReposicaoPara = new Monitoramento_Aula_Participacao_Rel();
+											monitoramentoReposicaoPara.Aula = _mapper.Map<Monitoramento_Aula>(reposicaoPara);
+											monitoramentoReposicaoPara.Aula.Tema = reposicaoPara.Tema ?? roteiroReposicaoPara?.Tema ?? "Tema indefinido";
+											monitoramentoReposicaoPara.Aula.Semana = reposicaoPara.Semana ?? roteiroReposicaoPara?.Semana ?? -1;
+											monitoramentoReposicaoPara.Aula.RoteiroCorLegenda = roteiroReposicaoPara?.CorLegenda ?? "";
+											monitoramentoReposicaoPara.Aula.Recesso = roteiroReposicaoPara?.Recesso ?? false;
+											monitoramentoReposicaoPara.Participacao = _mapper.Map<Monitoramento_Participacao>(participacaoReposicaoPara);
+
+											if (feriadoReposicaoPara is not null && monitoramentoReposicaoPara.Aula.Active == true)
+											{
+
+												monitoramentoReposicaoPara.Aula.Feriado = _mapper.Map<Monitoramento_Feriado>(feriadoReposicaoPara);
+												monitoramentoReposicaoPara.Aula.Observacao = "Cancelamento Automático. <br> Feriado: " + feriadoReposicaoPara.Descricao;
+												monitoramentoReposicaoPara.Aula.Deactivated = feriadoReposicaoPara.Data;
+											}
 										}
+
 									}
 								}
-								//
-								// Pseudo Aula
-								//
-								else
+							}
+							//
+							// Pseudo Aula
+							//
+							else
+							{
+								pseudoAula = new Monitoramento_Aula
 								{
-									monitoramentoAula = new Monitoramento_Aula
-									{
-										Id = -1,
-										EventoTipo_Id = (int)EventoTipo.Aula,
-										Data = dataTurma,
-										Descricao = turma.Nome,
-										Observacao = string.Empty,
-										Finalizado = false,
-										Sala = turma.Sala ?? "Sala Indefinida",
-										Andar = turma.Andar ?? 0,
-										NumeroSala = turma.NumeroSala ?? 0,
-										Tema = roteiro.Tema,
-										Semana = roteiro.Semana,
-										Recesso = roteiro.Recesso,
-										RoteiroCorLegenda = roteiro.CorLegenda,
-										Turma = turma.Nome,
-										Professor = turma.Professor ?? string.Empty,
-										CorLegenda = turma.CorLegenda ?? string.Empty,
-									};
-									monitoramentoParticipacao = new Monitoramento_Participacao
-									{
-										Id = -1,
-										Apostila_Abaco = aluno.Apostila_Abaco ?? string.Empty,
-										Apostila_AH = aluno.Apostila_AH ?? string.Empty,
-										NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
-										NumeroPaginaAH = aluno.NumeroPaginaAH,
-										Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
-										Apostila_AH_Id = aluno.Apostila_AH_Id,
-										PrimeiraAula = false,
-									};
-								}
-
+									Id = -1,
+									EventoTipo_Id = (int)EventoTipo.Aula,
+									Data = dataTurma,
+									Descricao = turma.Nome,
+									Observacao = string.Empty,
+									Finalizado = false,
+									Sala = turma.Sala ?? "Sala Indefinida",
+									Andar = turma.Andar ?? 0,
+									NumeroSala = turma.NumeroSala ?? 0,
+									Tema = roteiro.Tema,
+									Semana = roteiro.Semana,
+									Recesso = roteiro.Recesso,
+									RoteiroCorLegenda = roteiro.CorLegenda,
+									Turma = turma.Nome,
+									Professor = turma.Professor ?? string.Empty,
+									CorLegenda = turma.CorLegenda ?? string.Empty,
+								};
+								pseudoParticipacao = new Monitoramento_Participacao
+								{
+									Id = -1,
+									Apostila_Abaco = aluno.Apostila_Abaco ?? string.Empty,
+									Apostila_AH = aluno.Apostila_AH ?? string.Empty,
+									NumeroPaginaAbaco = aluno.NumeroPaginaAbaco,
+									NumeroPaginaAH = aluno.NumeroPaginaAH,
+									Apostila_Abaco_Id = aluno.Apostila_Abaco_Id,
+									Apostila_AH_Id = aluno.Apostila_AH_Id,
+									PrimeiraAula = false,
+								};
 							}
 
-						}
-					}
-					else if (turmasPorId.TryGetValue(aluno.Turma_Id!.Value, out var turma))
-					{
-						//if (turma.Created.Date <= dataTurma.Date
-						//	&& (!turma.Deactivated.HasValue || turma.Deactivated.Value.Date >= dataTurma.Date))
-						//{
-							dataTurma = GetDataTurmaFromInterval(turma, roteiro.DataInicio, roteiro.DataFim);
-							feriadosPorData.TryGetValue(dataTurma.ToString(dateFormatDict), out feriado);
 
-							monitoramentoAula = new Monitoramento_Aula
-							{
-								Id = -1,
-								EventoTipo_Id = (int)EventoTipo.Aula,
-								Data = dataTurma,
-								Descricao = turma.Nome,
-								Observacao = string.Empty,
-								Finalizado = false,
-								Sala = turma.Sala ?? "Sala Indefinida",
-								Andar = turma.Andar ?? 0,
-								NumeroSala = turma.NumeroSala ?? 0,
-								Tema = roteiro.Tema,
-								Semana = roteiro.Semana,
-								Recesso = roteiro.Recesso,
-								RoteiroCorLegenda = roteiro.CorLegenda,
-								Turma = turma.Nome,
-								Professor = turma.Professor ?? string.Empty,
-								CorLegenda = turma.CorLegenda ?? string.Empty,
-							};
-							monitoramentoParticipacao = new Monitoramento_Participacao
+						}
+                    }
+                    //
+                    // Recupera a turma do aluno pelo turma_Id e insere pseudo aula
+                    //
+                    else if (turmasPorId.TryGetValue(aluno.Turma_Id!.Value, out turma))
+					{
+						dataTurma = GetDataTurmaFromInterval(turma, roteiro.DataInicio, roteiro.DataFim);
+						feriadosPorData.TryGetValue(dataTurma.ToString(dateFormatDict), out feriado);
+
+						pseudoAula = new Monitoramento_Aula
+						{
+							Id = -1,
+							EventoTipo_Id = (int)EventoTipo.Aula,
+							Data = dataTurma,
+							Descricao = turma.Nome,
+							Observacao = string.Empty,
+							Finalizado = false,
+							Sala = turma.Sala ?? "Sala Indefinida",
+							Andar = turma.Andar ?? 0,
+							NumeroSala = turma.NumeroSala ?? 0,
+							Tema = roteiro.Tema,
+							Semana = roteiro.Semana,
+							Recesso = roteiro.Recesso,
+							RoteiroCorLegenda = roteiro.CorLegenda,
+							Turma = turma.Nome,
+							Professor = turma.Professor ?? string.Empty,
+							CorLegenda = turma.CorLegenda ?? string.Empty,
+						};
+						pseudoParticipacao = new Monitoramento_Participacao
 							{
 								Id = -1,
 								Apostila_Abaco = aluno.Apostila_Abaco ?? string.Empty,
@@ -370,27 +371,34 @@ public class MonitoramentoService : IMonitoramentoService
 								Apostila_AH_Id = aluno.Apostila_AH_Id,
 								PrimeiraAula = false,
 							};
-						//}
 					}
 
-					if (feriado is not null && monitoramentoAula.Active)
+					if (feriado is not null && pseudoAula.Active)
 					{
-						monitoramentoAula.Feriado = _mapper.Map<Monitoramento_Feriado>(feriado);
-						monitoramentoAula.Observacao = "Cancelamento Automático. <br> Feriado: " + feriado.Descricao;
-						monitoramentoAula.Deactivated = feriado.Data;
+						pseudoAula.Feriado = _mapper.Map<Monitoramento_Feriado>(feriado);
+						pseudoAula.Observacao = "Cancelamento Automático. <br> Feriado: " + feriado.Descricao;
+						pseudoAula.Deactivated = feriado.Data;
 					}
 
-					monitoramentoAlunoItem.Id = monitoramentoReposicaoPara is not null ? monitoramentoReposicaoPara.Aula.Id : monitoramentoAula.Id;
-					monitoramentoAlunoItem.Show = 
+					monitoramentoAlunoItem.Id = monitoramentoReposicaoPara is not null ? monitoramentoReposicaoPara.Aula.Id : pseudoAula.Id;
+
+					monitoramentoAlunoItem.Show =
 							feriado is null
-							&& dataTurma.Year == request.Ano 
+							&& dataTurma.Year == request.Ano
 							&& roteiro.Recesso == false
-							&& vigenciaAlunoRoteiro is not null;
-					monitoramentoAlunoItem.ReposicaoPara = monitoramentoReposicaoPara;
+							&& vigenciaAlunoRoteiro is not null
+							&& turma is not null
+							&& turma.Created.Date <= dataTurma
+							&& (!turma.Deactivated.HasValue || turma.Deactivated.Value.Date >= dataTurma)
+							&& aluno.Created.Date <= dataTurma;
+
+
+
+                    monitoramentoAlunoItem.ReposicaoPara = monitoramentoReposicaoPara;
 					monitoramentoAlunoItem.Aula = new Monitoramento_Aula_Participacao_Rel
 					{
-						Aula = monitoramentoAula,
-						Participacao = monitoramentoParticipacao,
+						Aula = pseudoAula,
+						Participacao = pseudoParticipacao,
 					};
 
 
