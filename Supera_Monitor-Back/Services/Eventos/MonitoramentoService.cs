@@ -199,7 +199,7 @@ public class MonitoramentoService : IMonitoramentoService
 
 
 		foreach (RoteiroModel roteiro in roteiros)
-		{
+			{
 			foreach (var monitoramentoAluno in monitoramentosAlunos)
 			{
 				if (alunosPorId.TryGetValue(monitoramentoAluno.Id, out var aluno))
@@ -384,7 +384,7 @@ public class MonitoramentoService : IMonitoramentoService
 
 					monitoramentoAlunoItem.Show =
 							feriado is null
-							&& dataTurma.Year == request.Ano
+							//&& dataTurma.Year == request.Ano
 							&& roteiro.Recesso == false
 							&& vigenciaAlunoRoteiro is not null
 							&& turma is not null
